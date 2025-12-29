@@ -107,6 +107,7 @@ def format_symbols(symbols: list[dict]) -> str:
         name = sym.get("name", "")
         detail = sym.get("detail", "")
         container = sym.get("container", "")
+        documentation = sym.get("documentation", "")
 
         location = f"{path}:{line}" if path else ""
 
@@ -117,6 +118,12 @@ def format_symbols(symbols: list[dict]) -> str:
             parts.append(f"in {container}")
 
         lines.append(" ".join(filter(None, parts)))
+        
+        if documentation:
+            doc_lines = documentation.strip().split("\n")
+            for doc_line in doc_lines:
+                lines.append(f"    {doc_line}")
+            lines.append("")
 
     return "\n".join(lines)
 
