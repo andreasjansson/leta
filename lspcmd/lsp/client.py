@@ -181,8 +181,11 @@ class LSPClient:
         else:
             response["result"] = result
 
-        self.stdin.write(encode_message(response))
+        encoded_response = encode_message(response)
+        logger.debug(f"Sending response for server request {request_id}: {len(encoded_response)} bytes")
+        self.stdin.write(encoded_response)
         await self.stdin.drain()
+        logger.debug(f"Sent response for server request {request_id}")
 
     async def _handle_notification(self, message: dict[str, Any]) -> None:
         method = message["method"]
