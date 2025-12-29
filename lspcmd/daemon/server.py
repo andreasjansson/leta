@@ -518,7 +518,7 @@ class DaemonServer:
                 if item.get("children"):
                     self._flatten_symbols(item["children"], file_path, output, item["name"])
 
-    async def _handle_workspace_symbols(self, params: dict) -> dict:
+    async def _handle_workspace_symbols(self, params: dict) -> list[dict]:
         query = params.get("query", "")
 
         workspace_root_param = params.get("workspace_root")
@@ -530,7 +530,7 @@ class DaemonServer:
                     workspace_root = workspace.root
                     break
             else:
-                return {"symbols": [], "missing_servers": []}
+                return []
         else:
             workspace_root = Path(workspace_root_param).resolve()
 
