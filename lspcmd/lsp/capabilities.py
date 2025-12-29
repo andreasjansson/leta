@@ -17,7 +17,6 @@ def get_client_capabilities() -> dict[str, Any]:
             },
             "executeCommand": {"dynamicRegistration": False},
             "workspaceFolders": True,
-            "configuration": True,
         },
         "textDocument": {
             "synchronization": {
