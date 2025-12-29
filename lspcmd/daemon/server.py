@@ -538,13 +538,18 @@ class DaemonServer:
         return await self._collect_all_workspace_symbols(workspace_root, query)
 
     async def _collect_all_workspace_symbols(self, workspace_root: Path, query: str) -> list[dict]:
+        import time
         from ..utils.text import get_language_id
         from ..servers.registry import get_server_for_language
+
+        start_time = time.time()
+        logger.info(f"Starting workspace symbol collection for {workspace_root}")
 
         skip_dirs = {"node_modules", "__pycache__", ".git", "venv", ".venv", "build", "dist", ".tox", ".eggs"}
         excluded_languages = set(self.session.config.get("workspaces", {}).get("excluded_languages", []))
         
         # Find all unique languages in the workspace
+        scan_start = time.time()
         languages_found: dict[str, list[Path]] = {}
         for file_path in workspace_root.rglob("*"):
             if not file_path.is_file():
@@ -565,23 +570,32 @@ class DaemonServer:
                 languages_found[lang_id] = []
             languages_found[lang_id].append(file_path)
 
+        logger.info(f"File scan took {time.time() - scan_start:.2f}s, found languages: {list(languages_found.keys())} with {sum(len(f) for f in languages_found.values())} files")
+
         all_symbols = []
         
         for lang_id, files in languages_found.items():
+            lang_start = time.time()
+            logger.info(f"Processing {lang_id} ({len(files)} files)...")
+            
             workspace = await self.session.get_or_create_workspace_for_language(lang_id, workspace_root)
+            logger.info(f"  Server startup took {time.time() - lang_start:.2f}s")
+            
             if not workspace or not workspace.client:
                 continue
 
             # Try workspace/symbol first, fall back to document symbols if not supported
             result = None
             try:
+                ws_start = time.time()
                 result = await workspace.client.send_request(
                     "workspace/symbol",
                     {"query": query},
                 )
+                logger.info(f"  workspace/symbol took {time.time() - ws_start:.2f}s, got {len(result) if result else 0} results")
             except LSPResponseError as e:
                 # Server doesn't support workspace/symbol, fall back to document symbols
-                logger.debug(f"workspace/symbol not supported for {lang_id}: {e.message}")
+                logger.info(f"  workspace/symbol not supported for {lang_id}: {e.message}")
 
             if result:
                 for item in result:
@@ -594,9 +608,14 @@ class DaemonServer:
                     })
             else:
                 # Fall back to document symbols for each file
+                ds_start = time.time()
                 symbols = await self._collect_symbols_from_files(workspace, workspace_root, files)
+                logger.info(f"  document symbols fallback took {time.time() - ds_start:.2f}s, got {len(symbols)} symbols")
                 all_symbols.extend(symbols)
+            
+            logger.info(f"  Total for {lang_id}: {time.time() - lang_start:.2f}s")
 
+        logger.info(f"Total workspace symbol collection: {time.time() - start_time:.2f}s, {len(all_symbols)} symbols")
         return all_symbols
 
     async def _collect_symbols_from_files(self, workspace: Workspace, workspace_root: Path, files: list[Path]) -> list[dict]:
