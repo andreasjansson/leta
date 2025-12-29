@@ -468,18 +468,66 @@ def rename(ctx, path, position, new_name):
     click.echo(format_output(response.get("result", response), "json" if ctx.obj["json"] else "plain"))
 
 
+VALID_SYMBOL_KINDS = {
+    "file", "module", "namespace", "package", "class", "method", "property",
+    "field", "constructor", "enum", "interface", "function", "variable",
+    "constant", "string", "number", "boolean", "array", "object", "key",
+    "null", "enummember", "struct", "event", "operator", "typeparameter",
+}
+
+
+def parse_kinds(kinds_str: str) -> set[str] | None:
+    """Parse comma-separated kinds into a set of normalized kind names."""
+    if not kinds_str:
+        return None
+    kinds = set()
+    for k in kinds_str.split(","):
+        k = k.strip().lower()
+        if k and k not in VALID_SYMBOL_KINDS:
+            raise click.BadParameter(
+                f"Unknown kind '{k}'. Valid kinds: {', '.join(sorted(VALID_SYMBOL_KINDS))}"
+            )
+        if k:
+            kinds.add(k)
+    return kinds if kinds else None
+
+
+def filter_symbols(symbols: list[dict], query: str | None, kinds: set[str] | None) -> list[dict]:
+    """Filter symbols by regex query and/or kinds."""
+    import re
+    
+    result = symbols
+    
+    if query:
+        regex = re.compile(query, re.IGNORECASE)
+        result = [s for s in result if regex.search(s.get("name", ""))]
+    
+    if kinds:
+        result = [s for s in result if s.get("kind", "").lower() in kinds]
+    
+    return result
+
+
 @cli.command("list-symbols")
 @click.argument("path", required=False)
-@click.option("-q", "--query", default="", help="Query filter for symbols")
+@click.option("-q", "--query", default="", help="Regex pattern to filter symbol names")
+@click.option("-k", "--kind", default="", help="Filter by kind (comma-separated): function,method,class,struct,...")
 @click.option("--docs", is_flag=True, help="Include documentation for each symbol")
 @click.pass_context
-def list_symbols(ctx, path, query, docs):
-    """List symbols in a file or current workspace.
+def list_symbols(ctx, path, query, kind, docs):
+    """List symbols in a file or workspace.
     
     PATH supports wildcards. Simple patterns like '*.go' search recursively.
     Use 'dir/*.go' for non-recursive, or 'dir/**/*.go' for explicit recursive.
+    
+    Examples:
+    
+      lspcmd list-symbols *.py --kind function,method
+    
+      lspcmd list-symbols --query "^Test" --kind function
     """
     config = load_config()
+    kinds = parse_kinds(kind)
 
     if path:
         files = expand_path_pattern(path)
@@ -489,93 +537,38 @@ def list_symbols(ctx, path, query, docs):
             response = run_request("list-symbols", {
                 "path": str(file_path),
                 "workspace_root": str(workspace_root),
-                "include_docs": docs,
             })
             result = response.get("result", [])
             if isinstance(result, list):
                 all_symbols.extend(result)
+        
+        all_symbols = filter_symbols(all_symbols, query, kinds)
+        
+        if docs and all_symbols:
+            workspace_root = get_workspace_root_for_path(files[0], config)
+            all_symbols = fetch_docs_for_symbols(all_symbols, workspace_root)
+        
         click.echo(format_output(all_symbols, "json" if ctx.obj["json"] else "plain"))
     else:
         workspace_root = get_workspace_root_for_cwd(config)
         response = run_request("list-symbols", {
             "workspace_root": str(workspace_root),
-            "query": query,
-            "include_docs": docs,
         })
-        click.echo(format_output(response.get("result", response), "json" if ctx.obj["json"] else "plain"))
+        result = response.get("result", [])
+        if isinstance(result, list):
+            result = filter_symbols(result, query, kinds)
+            if docs and result:
+                result = fetch_docs_for_symbols(result, workspace_root)
+        click.echo(format_output(result, "json" if ctx.obj["json"] else "plain"))
 
 
-@cli.command("search-symbol")
-@click.argument("pattern")
-@click.argument("path", required=False)
-@click.option("--docs", is_flag=True, help="Include documentation for each symbol")
-@click.pass_context
-def search_symbol(ctx, pattern, path, docs):
-    """Search for symbols matching a regex pattern.
-    
-    PATH supports wildcards. Simple patterns like '*.go' search recursively.
-    Use 'dir/*.go' for non-recursive, or 'dir/**/*.go' for explicit recursive.
-    """
-    config = load_config()
-
-    if path:
-        files = expand_path_pattern(path)
-        all_symbols = []
-        for file_path in files:
-            workspace_root = get_workspace_root_for_path(file_path, config)
-            response = run_request("search-symbol", {
-                "pattern": pattern,
-                "path": str(file_path),
-                "workspace_root": str(workspace_root),
-                "include_docs": docs,
-            })
-            result = response.get("result", [])
-            if isinstance(result, list):
-                all_symbols.extend(result)
-        click.echo(format_output(all_symbols, "json" if ctx.obj["json"] else "plain"))
-    else:
-        workspace_root = get_workspace_root_for_cwd(config)
-        response = run_request("search-symbol", {
-            "pattern": pattern,
-            "workspace_root": str(workspace_root),
-            "include_docs": docs,
-        })
-        click.echo(format_output(response.get("result", response), "json" if ctx.obj["json"] else "plain"))
-
-
-@cli.command("list-signatures")
-@click.argument("path", required=False)
-@click.option("--docs", is_flag=True, help="Include documentation for each signature")
-@click.pass_context
-def list_signatures(ctx, path, docs):
-    """List function signatures in a file or current workspace.
-    
-    PATH supports wildcards. Simple patterns like '*.go' search recursively.
-    Use 'dir/*.go' for non-recursive, or 'dir/**/*.go' for explicit recursive.
-    """
-    config = load_config()
-
-    if path:
-        files = expand_path_pattern(path)
-        all_signatures = []
-        for file_path in files:
-            workspace_root = get_workspace_root_for_path(file_path, config)
-            response = run_request("list-signatures", {
-                "path": str(file_path),
-                "workspace_root": str(workspace_root),
-                "include_docs": docs,
-            })
-            result = response.get("result", [])
-            if isinstance(result, list):
-                all_signatures.extend(result)
-        click.echo(format_output(all_signatures, "json" if ctx.obj["json"] else "plain"))
-    else:
-        workspace_root = get_workspace_root_for_cwd(config)
-        response = run_request("list-signatures", {
-            "workspace_root": str(workspace_root),
-            "include_docs": docs,
-        })
-        click.echo(format_output(response.get("result", response), "json" if ctx.obj["json"] else "plain"))
+def fetch_docs_for_symbols(symbols: list[dict], workspace_root: Path) -> list[dict]:
+    """Fetch documentation for a list of symbols via the daemon."""
+    response = run_request("fetch-symbol-docs", {
+        "symbols": symbols,
+        "workspace_root": str(workspace_root),
+    })
+    return response.get("result", symbols)
 
 
 @cli.command("restart-workspace")
