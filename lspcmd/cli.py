@@ -448,8 +448,9 @@ def rename(ctx, path, position, new_name):
 @cli.command("list-symbols")
 @click.argument("path", type=click.Path(exists=True), required=False)
 @click.option("-q", "--query", default="", help="Query filter for symbols")
+@click.option("--docs", is_flag=True, help="Include documentation for each symbol")
 @click.pass_context
-def list_symbols(ctx, path, query):
+def list_symbols(ctx, path, query, docs):
     """List symbols in a file or current workspace."""
     config = load_config()
 
@@ -459,12 +460,14 @@ def list_symbols(ctx, path, query):
         response = run_request("list-symbols", {
             "path": str(path),
             "workspace_root": str(workspace_root),
+            "include_docs": docs,
         })
     else:
         workspace_root = get_workspace_root_for_cwd(config)
         response = run_request("list-symbols", {
             "workspace_root": str(workspace_root),
             "query": query,
+            "include_docs": docs,
         })
 
     click.echo(format_output(response.get("result", response), "json" if ctx.obj["json"] else "plain"))
