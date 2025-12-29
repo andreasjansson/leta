@@ -521,69 +521,95 @@ class DaemonServer:
 
         workspace_root_param = params.get("workspace_root")
         if not workspace_root_param:
-            if not self.session.workspaces:
+            # Find any existing workspace
+            for servers in self.session.workspaces.values():
+                if servers:
+                    workspace = next(iter(servers.values()))
+                    workspace_root = workspace.root
+                    break
+            else:
                 return []
-            workspace = next(iter(self.session.workspaces.values()))
-            workspace_root = workspace.root
         else:
             workspace_root = Path(workspace_root_param).resolve()
-            workspace = self.session.workspaces.get(workspace_root)
-            if not workspace or not workspace.client:
-                sample_file = self._find_sample_file(workspace_root)
-                if not sample_file:
-                    return []
-                workspace = await self.session.get_or_create_workspace(sample_file, workspace_root)
 
-        result = await workspace.client.send_request(
-            "workspace/symbol",
-            {"query": query},
-        )
+        # Discover all languages in the workspace and collect symbols from each
+        return await self._collect_all_workspace_symbols(workspace_root, query)
 
-        if result:
-            return [
-                {
-                    "name": item["name"],
-                    "kind": SymbolKind(item["kind"]).name,
-                    "path": self._relative_path(uri_to_path(item["location"]["uri"]), workspace_root),
-                    "line": item["location"]["range"]["start"]["line"] + 1,
-                    "container": item.get("containerName"),
-                }
-                for item in result
-            ]
+    async def _collect_all_workspace_symbols(self, workspace_root: Path, query: str) -> list[dict]:
+        from ..utils.text import get_language_id
+        from ..servers.registry import get_server_for_language
 
-        return await self._collect_symbols_from_files(workspace, workspace_root)
+        skip_dirs = {"node_modules", "__pycache__", ".git", "venv", ".venv", "build", "dist", ".tox", ".eggs"}
+        
+        # Find all unique languages in the workspace
+        languages_found: dict[str, list[Path]] = {}
+        for file_path in workspace_root.rglob("*"):
+            if not file_path.is_file():
+                continue
+            if any(part.startswith(".") or part in skip_dirs or part.endswith(".egg-info")
+                   for part in file_path.parts):
+                continue
+            
+            lang_id = get_language_id(file_path)
+            if lang_id == "plaintext":
+                continue
+            
+            server_config = get_server_for_language(lang_id, self.session.config)
+            if server_config is None:
+                continue
+                
+            if lang_id not in languages_found:
+                languages_found[lang_id] = []
+            languages_found[lang_id].append(file_path)
 
-    def _find_sample_file(self, workspace_root: Path) -> Path | None:
-        for ext in [".py", ".rs", ".ts", ".js", ".go", ".java", ".rb", ".ex"]:
-            for f in workspace_root.rglob(f"*{ext}"):
-                if f.is_file() and not any(part.startswith(".") for part in f.parts):
-                    return f
-        return None
+        all_symbols = []
+        
+        for lang_id, files in languages_found.items():
+            try:
+                workspace = await self.session.get_or_create_workspace_for_language(lang_id, workspace_root)
+                if not workspace or not workspace.client:
+                    continue
 
-    async def _collect_symbols_from_files(self, workspace: Workspace, workspace_root: Path) -> list[dict]:
+                # Try workspace/symbol first
+                result = await workspace.client.send_request(
+                    "workspace/symbol",
+                    {"query": query},
+                )
+
+                if result:
+                    for item in result:
+                        all_symbols.append({
+                            "name": item["name"],
+                            "kind": SymbolKind(item["kind"]).name,
+                            "path": self._relative_path(uri_to_path(item["location"]["uri"]), workspace_root),
+                            "line": item["location"]["range"]["start"]["line"] + 1,
+                            "container": item.get("containerName"),
+                        })
+                else:
+                    # Fall back to document symbols for each file
+                    symbols = await self._collect_symbols_from_files(workspace, workspace_root, files)
+                    all_symbols.extend(symbols)
+                    
+            except Exception as e:
+                logger.warning(f"Failed to get symbols for language {lang_id}: {e}")
+
+        return all_symbols
+
+    async def _collect_symbols_from_files(self, workspace: Workspace, workspace_root: Path, files: list[Path]) -> list[dict]:
         symbols = []
-        file_patterns = workspace.server_config.file_patterns
-        skip_dirs = {"node_modules", "__pycache__", ".git", "venv", ".venv", "build", "dist", ".tox", ".eggs", "*.egg-info"}
 
-        for pattern in file_patterns:
-            for file_path in workspace_root.rglob(pattern):
-                if not file_path.is_file():
-                    continue
-                if any(part.startswith(".") or part in skip_dirs or part.endswith(".egg-info")
-                       for part in file_path.parts):
-                    continue
-
-                try:
-                    doc = await workspace.ensure_document_open(file_path)
-                    result = await workspace.client.send_request(
-                        "textDocument/documentSymbol",
-                        {"textDocument": {"uri": doc.uri}},
-                    )
-                    if result:
-                        rel_path = self._relative_path(file_path, workspace_root)
-                        self._flatten_symbols(result, rel_path, symbols)
-                except Exception as e:
-                    logger.warning(f"Failed to get symbols for {file_path}: {e}")
+        for file_path in files:
+            try:
+                doc = await workspace.ensure_document_open(file_path)
+                result = await workspace.client.send_request(
+                    "textDocument/documentSymbol",
+                    {"textDocument": {"uri": doc.uri}},
+                )
+                if result:
+                    rel_path = self._relative_path(file_path, workspace_root)
+                    self._flatten_symbols(result, rel_path, symbols)
+            except Exception as e:
+                logger.warning(f"Failed to get symbols for {file_path}: {e}")
 
         return symbols
 
