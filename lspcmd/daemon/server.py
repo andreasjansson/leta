@@ -101,7 +101,7 @@ class DaemonServer:
             "find-references": self._handle_find_references,
             "list-code-actions": self._handle_list_code_actions,
             "execute-code-action": self._handle_execute_code_action,
-            "format-buffer": self._handle_format_buffer,
+            "format": self._handle_format_buffer,
             "organize-imports": self._handle_organize_imports,
             "rename": self._handle_rename,
             "list-symbols": self._handle_list_symbols,
