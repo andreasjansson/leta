@@ -129,8 +129,9 @@ class Session:
             return workspace
 
         workspace = Workspace(root=workspace_root, server_config=server_config)
-        servers[server_config.name] = workspace
         await workspace.start_server()
+        # Only add to session after successful start
+        servers[server_config.name] = workspace
 
         return workspace
 
