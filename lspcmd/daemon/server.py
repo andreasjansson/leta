@@ -567,39 +567,29 @@ class DaemonServer:
         all_symbols = []
         
         for lang_id, files in languages_found.items():
-            try:
-                workspace = await self.session.get_or_create_workspace_for_language(lang_id, workspace_root)
-                if not workspace or not workspace.client:
-                    continue
+            workspace = await self.session.get_or_create_workspace_for_language(lang_id, workspace_root)
+            if not workspace or not workspace.client:
+                continue
 
-                # Try workspace/symbol first
-                result = await workspace.client.send_request(
-                    "workspace/symbol",
-                    {"query": query},
-                )
+            # Try workspace/symbol first
+            result = await workspace.client.send_request(
+                "workspace/symbol",
+                {"query": query},
+            )
 
-                if result:
-                    for item in result:
-                        all_symbols.append({
-                            "name": item["name"],
-                            "kind": SymbolKind(item["kind"]).name,
-                            "path": self._relative_path(uri_to_path(item["location"]["uri"]), workspace_root),
-                            "line": item["location"]["range"]["start"]["line"] + 1,
-                            "container": item.get("containerName"),
-                        })
-                else:
-                    # Fall back to document symbols for each file
-                    symbols = await self._collect_symbols_from_files(workspace, workspace_root, files)
-                    all_symbols.extend(symbols)
-                    
-            except FileNotFoundError:
-                server_config = get_server_for_language(lang_id, self.session.config)
-                if server_config and server_config.install_cmd:
-                    logger.info(f"Language server for {lang_id} not installed. Run: {server_config.install_cmd}")
-                else:
-                    logger.info(f"Language server for {lang_id} not installed")
-            except Exception as e:
-                logger.warning(f"Failed to get symbols for language {lang_id}: {e}")
+            if result:
+                for item in result:
+                    all_symbols.append({
+                        "name": item["name"],
+                        "kind": SymbolKind(item["kind"]).name,
+                        "path": self._relative_path(uri_to_path(item["location"]["uri"]), workspace_root),
+                        "line": item["location"]["range"]["start"]["line"] + 1,
+                        "container": item.get("containerName"),
+                    })
+            else:
+                # Fall back to document symbols for each file
+                symbols = await self._collect_symbols_from_files(workspace, workspace_root, files)
+                all_symbols.extend(symbols)
 
         return all_symbols
 
