@@ -70,8 +70,8 @@ requires_pyright = pytest.mark.skipif(
 )
 
 requires_rust_analyzer = pytest.mark.skipif(
-    not has_command("rust-analyzer"),
-    reason="rust-analyzer not installed"
+    not has_command("rust-analyzer") or not has_command("cargo"),
+    reason="rust-analyzer or cargo not installed"
 )
 
 requires_typescript_lsp = pytest.mark.skipif(
