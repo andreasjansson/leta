@@ -7,7 +7,7 @@ from typing import Any
 from ..lsp.client import LSPClient
 from ..utils.uri import path_to_uri
 from ..utils.text import get_language_id, read_file_content
-from ..servers.registry import ServerConfig, get_server_for_file
+from ..servers.registry import ServerConfig, get_server_for_file, get_server_for_language
 
 logger = logging.getLogger(__name__)
 
@@ -97,58 +97,91 @@ class Workspace:
 
 @dataclass
 class Session:
-    workspaces: dict[Path, Workspace] = field(default_factory=dict)
+    # Nested dict: workspace_root -> server_name -> Workspace
+    workspaces: dict[Path, dict[str, Workspace]] = field(default_factory=dict)
     config: dict = field(default_factory=dict)
 
     async def get_or_create_workspace(self, file_path: Path, workspace_root: Path) -> Workspace:
         workspace_root = workspace_root.resolve()
-
-        if workspace_root in self.workspaces:
-            workspace = self.workspaces[workspace_root]
-            if workspace.client is None:
-                await workspace.start_server()
-            return workspace
-
         server_config = get_server_for_file(file_path, self.config)
         if server_config is None:
             raise ValueError(f"No language server found for {file_path}")
 
+        return await self._get_or_create_workspace_for_server(workspace_root, server_config)
+
+    async def get_or_create_workspace_for_language(self, language_id: str, workspace_root: Path) -> Workspace | None:
+        workspace_root = workspace_root.resolve()
+        server_config = get_server_for_language(language_id, self.config)
+        if server_config is None:
+            return None
+
+        return await self._get_or_create_workspace_for_server(workspace_root, server_config)
+
+    async def _get_or_create_workspace_for_server(self, workspace_root: Path, server_config: ServerConfig) -> Workspace:
+        if workspace_root not in self.workspaces:
+            self.workspaces[workspace_root] = {}
+
+        servers = self.workspaces[workspace_root]
+        if server_config.name in servers:
+            workspace = servers[server_config.name]
+            if workspace.client is None:
+                await workspace.start_server()
+            return workspace
+
         workspace = Workspace(root=workspace_root, server_config=server_config)
-        self.workspaces[workspace_root] = workspace
+        servers[server_config.name] = workspace
         await workspace.start_server()
 
         return workspace
 
+    def get_workspaces_for_root(self, workspace_root: Path) -> list[Workspace]:
+        workspace_root = workspace_root.resolve()
+        servers = self.workspaces.get(workspace_root, {})
+        return list(servers.values())
+
+    def get_any_workspace_for_root(self, workspace_root: Path) -> Workspace | None:
+        workspace_root = workspace_root.resolve()
+        servers = self.workspaces.get(workspace_root, {})
+        if servers:
+            return next(iter(servers.values()))
+        return None
+
     async def close_workspace(self, root: Path) -> None:
         root = root.resolve()
-        workspace = self.workspaces.pop(root, None)
-        if workspace:
+        servers = self.workspaces.pop(root, {})
+        for workspace in servers.values():
             await workspace.stop_server()
 
     async def close_all(self) -> None:
-        for workspace in list(self.workspaces.values()):
-            await workspace.stop_server()
+        for servers in self.workspaces.values():
+            for workspace in servers.values():
+                await workspace.stop_server()
         self.workspaces.clear()
 
     def get_workspace_for_file(self, file_path: Path) -> Workspace | None:
         file_path = file_path.resolve()
-        for root, workspace in self.workspaces.items():
+        language_id = get_language_id(file_path)
+        server_config = get_server_for_language(language_id, self.config)
+        
+        for root, servers in self.workspaces.items():
             try:
                 file_path.relative_to(root)
-                return workspace
+                if server_config and server_config.name in servers:
+                    return servers[server_config.name]
+                if servers:
+                    return next(iter(servers.values()))
             except ValueError:
                 continue
         return None
 
     def to_dict(self) -> dict[str, Any]:
-        return {
-            "workspaces": [
-                {
+        result = {"workspaces": []}
+        for root, servers in self.workspaces.items():
+            for server_name, ws in servers.items():
+                result["workspaces"].append({
                     "root": str(root),
                     "server": ws.server_config.name,
                     "open_documents": list(ws.open_documents.keys()),
                     "running": ws.client is not None,
-                }
-                for root, ws in self.workspaces.items()
-            ]
-        }
+                })
+        return result
