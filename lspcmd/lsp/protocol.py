@@ -48,6 +48,28 @@ class LanguageServerNotFound(Exception):
         super().__init__(msg)
 
 
+class LanguageServerStartupError(Exception):
+    def __init__(self, server_name: str, language: str, workspace_root: str, original_error: Exception):
+        self.server_name = server_name
+        self.language = language
+        self.workspace_root = workspace_root
+        self.original_error = original_error
+        
+        msg = (
+            f"Language server '{server_name}' failed to start for {language} files in {workspace_root}\n"
+            f"\n"
+            f"Error: {original_error}\n"
+            f"\n"
+            f"Possible causes:\n"
+            f"  - The project may not be a valid {language} project (missing config files)\n"
+            f"  - The language server may have crashed or timed out\n"
+            f"  - Try running '{server_name}' directly in that directory to see detailed errors\n"
+            f"\n"
+            f"To exclude these files, use: lspcmd grep PATTERN 'your/path/*.ext' -x 'path/to/exclude/*'"
+        )
+        super().__init__(msg)
+
+
 def encode_message(obj: dict[str, Any]) -> bytes:
     content = json.dumps(obj).encode("utf-8")
     header = f"Content-Length: {len(content)}\r\n\r\n".encode("ascii")
