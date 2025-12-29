@@ -1,4 +1,6 @@
 import asyncio
+import logging
+import os
 import time
 from pathlib import Path
 
@@ -10,6 +12,10 @@ from lspcmd.servers.registry import get_server_for_file
 from lspcmd.utils.uri import path_to_uri
 
 from .conftest import requires_pyright, requires_rust_analyzer, requires_gopls
+
+os.environ["LSPCMD_REQUEST_TIMEOUT"] = "10"
+
+logging.basicConfig(level=logging.DEBUG)
 
 
 @pytest.fixture
