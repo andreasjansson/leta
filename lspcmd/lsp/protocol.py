@@ -49,25 +49,47 @@ class LanguageServerNotFound(Exception):
 
 
 class LanguageServerStartupError(Exception):
-    def __init__(self, server_name: str, language: str, workspace_root: str, original_error: Exception):
+    def __init__(
+        self,
+        server_name: str,
+        language: str,
+        workspace_root: str,
+        original_error: Exception,
+        server_stderr: str | None = None,
+        log_path: str | None = None,
+    ):
         self.server_name = server_name
         self.language = language
         self.workspace_root = workspace_root
         self.original_error = original_error
+        self.server_stderr = server_stderr
+        self.log_path = log_path
         
-        msg = (
-            f"Language server '{server_name}' failed to start for {language} files in {workspace_root}\n"
-            f"\n"
-            f"Error: {original_error}\n"
-            f"\n"
-            f"Possible causes:\n"
-            f"  - The project may not be a valid {language} project (missing config files)\n"
-            f"  - The language server may have crashed or timed out\n"
-            f"  - Try running '{server_name}' directly in that directory to see detailed errors\n"
-            f"\n"
-            f"To exclude these files, use: lspcmd grep PATTERN 'your/path/*.ext' -x 'path/to/exclude/*'"
-        )
-        super().__init__(msg)
+        lines = [
+            f"Language server '{server_name}' failed to start for {language} files in {workspace_root}",
+            f"",
+            f"Error: {original_error}",
+        ]
+        
+        if server_stderr and server_stderr.strip():
+            lines.append("")
+            lines.append(f"Server stderr:")
+            for line in server_stderr.strip().splitlines()[:20]:
+                lines.append(f"  {line}")
+        
+        lines.append("")
+        lines.append("Possible causes:")
+        lines.append(f"  - The project may not be a valid {language} project (missing config files)")
+        lines.append("  - The language server may have crashed or timed out")
+        lines.append(f"  - Try running '{server_name}' directly in that directory to see detailed errors")
+        lines.append("")
+        lines.append("To exclude these files, use: lspcmd grep PATTERN 'your/path/*.ext' -x 'path/to/exclude/*'")
+        
+        if log_path:
+            lines.append("")
+            lines.append(f"Daemon logs: {log_path}")
+        
+        super().__init__("\n".join(lines))
 
 
 def encode_message(obj: dict[str, Any]) -> bytes:
