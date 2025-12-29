@@ -106,13 +106,13 @@ class TestCliWithDaemon:
         result = runner.invoke(cli, ["describe-thing-at-point", str(main_py), "6,6"])
         assert result.exit_code == 0
 
-    def test_list_symbols_with_file(self, python_project, isolated_config):
+    def test_grep_with_file(self, python_project, isolated_config):
         main_py = python_project / "main.py"
         config = load_config()
         add_workspace_root(python_project, config)
 
         runner = CliRunner()
-        result = runner.invoke(cli, ["list-symbols", str(main_py)])
+        result = runner.invoke(cli, ["grep", ".*", str(main_py)])
         assert result.exit_code == 0
         assert "User" in result.output or "Class" in result.output
 
