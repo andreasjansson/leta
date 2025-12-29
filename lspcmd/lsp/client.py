@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+from pathlib import Path
 from typing import Any, Callable
 
 from .protocol import encode_message, read_message, LSPProtocolError, LSPResponseError
@@ -12,16 +13,26 @@ REQUEST_TIMEOUT = float(os.environ.get("LSPCMD_REQUEST_TIMEOUT", "30"))
 
 
 class LSPClient:
-    def __init__(self, process: asyncio.subprocess.Process, workspace_root: str, init_options: dict[str, Any] | None = None):
+    def __init__(
+        self,
+        process: asyncio.subprocess.Process,
+        workspace_root: str,
+        init_options: dict[str, Any] | None = None,
+        server_name: str | None = None,
+        log_file: Path | None = None,
+    ):
         self.process = process
         self.workspace_root = workspace_root
         self.init_options = init_options or {}
+        self.server_name = server_name
+        self.log_file = log_file
         self._request_id = 0
         self._pending_requests: dict[int, asyncio.Future[Any]] = {}
         self._reader_task: asyncio.Task | None = None
         self._initialized = False
         self._server_capabilities: dict[str, Any] = {}
         self._notification_handlers: dict[str, Callable] = {}
+        self._log_handle: Any | None = None
 
     @property
     def stdin(self) -> asyncio.StreamWriter:
