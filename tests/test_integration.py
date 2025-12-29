@@ -106,19 +106,21 @@ class TestPythonIntegration:
         await session.close_all()
 
     @pytest.mark.asyncio
-    async def test_formatting(self, python_project, session):
+    async def test_rename(self, python_project, session):
         main_py = python_project / "main.py"
         workspace = await session.get_or_create_workspace(main_py, python_project)
         await workspace.ensure_document_open(main_py)
 
         result = await workspace.client.send_request(
-            "textDocument/formatting",
+            "textDocument/rename",
             {
                 "textDocument": {"uri": path_to_uri(main_py)},
-                "options": {"tabSize": 4, "insertSpaces": True},
+                "position": {"line": 5, "character": 6},
+                "newName": "Person",
             },
         )
 
+        assert result is not None
         await session.close_all()
 
     @pytest.mark.asyncio
