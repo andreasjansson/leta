@@ -652,14 +652,23 @@ class DaemonServer:
     async def _handle_search_symbol(self, params: dict) -> list[dict]:
         import re
 
+        # Get symbols without docs first, then filter, then add docs
+        include_docs = params.pop("include_docs", False)
         symbols = await self._handle_list_symbols(params)
         pattern = params.get("pattern", "")
 
-        if not pattern:
-            return symbols
-
-        regex = re.compile(pattern, re.IGNORECASE)
-        return [s for s in symbols if regex.search(s["name"])]
+        if pattern:
+            regex = re.compile(pattern, re.IGNORECASE)
+            symbols = [s for s in symbols if regex.search(s["name"])]
+        
+        if include_docs:
+            workspace_root = Path(params.get("workspace_root", ".")).resolve()
+            for sym in symbols:
+                sym["documentation"] = await self._get_symbol_documentation(
+                    workspace_root, sym["path"], sym["line"], sym.get("column", 0)
+                )
+        
+        return symbols
 
     async def _handle_list_signatures(self, params: dict) -> list[dict]:
         symbols = await self._handle_list_symbols(params)
