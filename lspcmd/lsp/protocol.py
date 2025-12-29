@@ -36,6 +36,18 @@ class LSPResponseError(Exception):
         super().__init__(f"LSP Error {code}: {message}")
 
 
+class LanguageServerNotFound(Exception):
+    def __init__(self, server_name: str, language: str, install_cmd: str | None = None):
+        self.server_name = server_name
+        self.language = language
+        self.install_cmd = install_cmd
+        if install_cmd:
+            msg = f"Language server '{server_name}' for {language} not found. Install with: {install_cmd}"
+        else:
+            msg = f"Language server '{server_name}' for {language} not found"
+        super().__init__(msg)
+
+
 def encode_message(obj: dict[str, Any]) -> bytes:
     content = json.dumps(obj).encode("utf-8")
     header = f"Content-Length: {len(content)}\r\n\r\n".encode("ascii")
