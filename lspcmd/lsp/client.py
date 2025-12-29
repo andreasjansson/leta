@@ -157,7 +157,7 @@ class LSPClient:
         method = message["method"]
         request_id = message["id"]
 
-        logger.debug(f"Received server request: {method}")
+        logger.debug(f"Received server request: {method} (id={request_id})")
 
         result: Any = None
         error: dict | None = None
