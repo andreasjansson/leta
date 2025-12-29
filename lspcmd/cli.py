@@ -547,7 +547,7 @@ def grep(ctx, pattern, path, kind, docs, case_sensitive):
             if isinstance(result, list):
                 all_symbols.extend(result)
         
-        all_symbols = filter_symbols(all_symbols, pattern, kinds)
+        all_symbols = filter_symbols(all_symbols, pattern, kinds, case_sensitive)
         
         if docs and all_symbols:
             workspace_root = get_workspace_root_for_path(files[0], config)
@@ -561,7 +561,7 @@ def grep(ctx, pattern, path, kind, docs, case_sensitive):
         })
         result = response.get("result", [])
         if isinstance(result, list):
-            result = filter_symbols(result, pattern, kinds)
+            result = filter_symbols(result, pattern, kinds, case_sensitive)
             if docs and result:
                 result = fetch_docs_for_symbols(result, workspace_root)
         click.echo(format_output(result, "json" if ctx.obj["json"] else "plain"))
