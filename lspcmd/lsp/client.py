@@ -1,11 +1,14 @@
 import asyncio
 import logging
+import os
 from typing import Any, Callable
 
 from .protocol import encode_message, read_message, LSPProtocolError, LSPResponseError
 from .capabilities import get_client_capabilities
 
 logger = logging.getLogger(__name__)
+
+REQUEST_TIMEOUT = float(os.environ.get("LSPCMD_REQUEST_TIMEOUT", "30"))
 
 
 class LSPClient:
@@ -72,7 +75,7 @@ class LSPClient:
         await self.send_notification("initialized", {})
         self._initialized = True
 
-    async def send_request(self, method: str, params: dict | list | None) -> Any:
+    async def send_request(self, method: str, params: dict | list | None, timeout: float | None = None) -> Any:
         self._request_id += 1
         request_id = self._request_id
 
@@ -80,15 +83,20 @@ class LSPClient:
         if params is not None:
             message["params"] = params
 
-        future: asyncio.Future[Any] = asyncio.get_event_loop().create_future()
+        loop = asyncio.get_running_loop()
+        future: asyncio.Future[Any] = loop.create_future()
         self._pending_requests[request_id] = future
 
+        logger.debug(f"Sending request {request_id}: {method}")
         self.stdin.write(encode_message(message))
         await self.stdin.drain()
+        logger.debug(f"Sent request {request_id}: {method}, waiting for response")
 
-        logger.debug(f"Sent request {request_id}: {method}")
-
-        return await future
+        try:
+            return await asyncio.wait_for(future, timeout=timeout or REQUEST_TIMEOUT)
+        except asyncio.TimeoutError:
+            self._pending_requests.pop(request_id, None)
+            raise LSPResponseError(-1, f"Request {method} timed out after {timeout or REQUEST_TIMEOUT}s")
 
     async def send_notification(self, method: str, params: dict | list | None) -> None:
         message = {"jsonrpc": "2.0", "method": method}
