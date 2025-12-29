@@ -54,7 +54,17 @@ class Workspace:
 
         init_options = self._get_init_options()
         self.client = LSPClient(process, path_to_uri(self.root), init_options)
-        await self.client.start()
+        
+        try:
+            await self.client.start()
+        except Exception as e:
+            self.client = None
+            raise LanguageServerStartupError(
+                self.server_config.name,
+                ", ".join(self.server_config.languages),
+                str(self.root),
+                e,
+            )
 
         logger.info(f"Server {self.server_config.name} initialized")
 
