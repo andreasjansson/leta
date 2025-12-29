@@ -139,7 +139,7 @@ class TestCliWithDaemon:
 
         runner = CliRunner()
         # First, do something to initialize the workspace
-        runner.invoke(cli, ["list-symbols", str(main_py)])
+        runner.invoke(cli, ["grep", ".*", str(main_py)])
 
         # Now restart it
         result = runner.invoke(cli, ["restart-workspace", str(python_project)])
