@@ -131,6 +131,22 @@ def expand_path_pattern(pattern: str) -> list[Path]:
     return [Path(m).resolve() for m in sorted(matches) if Path(m).is_file()]
 
 
+def expand_exclude_pattern(pattern: str) -> set[Path]:
+    """Expand an exclude pattern to a set of paths to exclude.
+    
+    Same logic as expand_path_pattern but returns a set and doesn't error on no matches.
+    """
+    if "*" not in pattern and "?" not in pattern:
+        path = Path(pattern).resolve()
+        return {path} if path.exists() else set()
+    
+    if "/" not in pattern and not pattern.startswith("**"):
+        pattern = "**/" + pattern
+    
+    matches = glob.glob(pattern, recursive=True)
+    return {Path(m).resolve() for m in matches if Path(m).is_file()}
+
+
 @click.group()
 @click.option("--json", "json_output", is_flag=True, help="Output as JSON")
 @click.pass_context
