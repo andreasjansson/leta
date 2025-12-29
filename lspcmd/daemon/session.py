@@ -60,11 +60,22 @@ class Workspace:
             await self.client.start()
         except Exception as e:
             self.client = None
+            
+            server_stderr = None
+            if process.stderr:
+                try:
+                    stderr_data = await asyncio.wait_for(process.stderr.read(), timeout=1.0)
+                    server_stderr = stderr_data.decode("utf-8", errors="replace")
+                except asyncio.TimeoutError:
+                    pass
+            
             raise LanguageServerStartupError(
                 self.server_config.name,
                 ", ".join(self.server_config.languages),
                 str(self.root),
                 e,
+                server_stderr=server_stderr,
+                log_path=str(get_log_dir() / "daemon.log"),
             )
 
         logger.info(f"Server {self.server_config.name} initialized")
