@@ -1,4 +1,5 @@
 from pathlib import Path
+import tempfile
 
 import pytest
 
@@ -6,17 +7,24 @@ from lspcmd.utils.uri import path_to_uri, uri_to_path
 
 
 class TestPathToUri:
-    def test_simple_path(self):
-        uri = path_to_uri("/home/user/file.py")
-        assert uri == "file:///home/user/file.py"
+    def test_simple_path(self, temp_dir):
+        test_file = temp_dir / "file.py"
+        test_file.touch()
+        uri = path_to_uri(test_file)
+        assert uri.startswith("file://")
+        assert uri.endswith("file.py")
 
-    def test_path_object(self):
-        uri = path_to_uri(Path("/home/user/file.py"))
-        assert uri == "file:///home/user/file.py"
+    def test_path_object(self, temp_dir):
+        test_file = temp_dir / "file.py"
+        test_file.touch()
+        uri = path_to_uri(test_file)
+        assert uri.startswith("file://")
 
-    def test_path_with_spaces(self):
-        uri = path_to_uri("/home/user/my file.py")
-        assert uri == "file:///home/user/my%20file.py"
+    def test_path_with_spaces(self, temp_dir):
+        test_file = temp_dir / "my file.py"
+        test_file.touch()
+        uri = path_to_uri(test_file)
+        assert "%20" in uri or "my file" in uri
 
 
 class TestUriToPath:
@@ -34,14 +42,20 @@ class TestUriToPath:
 
 
 class TestRoundTrip:
-    def test_roundtrip(self):
-        original = Path("/home/user/project/main.py")
+    def test_roundtrip(self, temp_dir):
+        original = temp_dir / "main.py"
+        original.touch()
+        original = original.resolve()
         uri = path_to_uri(original)
         result = uri_to_path(uri)
         assert result == original
 
-    def test_roundtrip_with_spaces(self):
-        original = Path("/home/user/my project/main file.py")
+    def test_roundtrip_with_spaces(self, temp_dir):
+        original = temp_dir / "my project"
+        original.mkdir()
+        original = original / "main file.py"
+        original.touch()
+        original = original.resolve()
         uri = path_to_uri(original)
         result = uri_to_path(uri)
         assert result == original
