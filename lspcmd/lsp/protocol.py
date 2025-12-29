@@ -48,6 +48,34 @@ class LanguageServerNotFound(Exception):
         super().__init__(msg)
 
 
+KNOWN_ERROR_SOLUTIONS = [
+    (
+        "Unknown binary 'rust-analyzer' in official toolchain",
+        "rust-analyzer is not installed in your Rust toolchain.\n"
+        "Fix: rustup component add rust-analyzer"
+    ),
+    (
+        "could not find `Cargo.toml`",
+        "rust-analyzer requires a Cargo.toml file to work.\n"
+        "This directory doesn't appear to be a valid Rust project."
+    ),
+    (
+        "No such file or directory (os error 2)",
+        "The language server binary was not found.\n"
+        "Make sure it's installed and in your PATH."
+    ),
+]
+
+
+def get_known_error_solution(server_log: str | None) -> str | None:
+    if not server_log:
+        return None
+    for pattern, solution in KNOWN_ERROR_SOLUTIONS:
+        if pattern in server_log:
+            return solution
+    return None
+
+
 class LanguageServerStartupError(Exception):
     def __init__(
         self,
@@ -71,6 +99,13 @@ class LanguageServerStartupError(Exception):
             f"Error: {original_error}",
         ]
         
+        known_solution = get_known_error_solution(server_log)
+        if known_solution:
+            lines.append("")
+            lines.append("Solution:")
+            for line in known_solution.splitlines():
+                lines.append(f"  {line}")
+        
         if server_log and server_log.strip():
             lines.append("")
             lines.append(f"Server log (last 20 lines):")
@@ -81,11 +116,13 @@ class LanguageServerStartupError(Exception):
             lines.append("")
             lines.append(f"Full server log: {log_path}")
         
-        lines.append("")
-        lines.append("Possible causes:")
-        lines.append(f"  - The project may not be a valid {language} project (missing config files)")
-        lines.append("  - The language server may have crashed or timed out")
-        lines.append(f"  - Try running '{server_name}' directly in that directory to see detailed errors")
+        if not known_solution:
+            lines.append("")
+            lines.append("Possible causes:")
+            lines.append(f"  - The project may not be a valid {language} project (missing config files)")
+            lines.append("  - The language server may have crashed or timed out")
+            lines.append(f"  - Try running '{server_name}' directly in that directory to see detailed errors")
+        
         lines.append("")
         lines.append("To exclude these files, use: lspcmd grep PATTERN 'your/path/*.ext' -x 'path/to/exclude/*'")
         
