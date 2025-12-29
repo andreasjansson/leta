@@ -62,7 +62,5 @@ def get_client_capabilities() -> dict[str, Any]:
                 "relatedInformation": True,
             },
         },
-        "window": {
-            "workDoneProgress": True,
-        },
+        "window": {},
     }
