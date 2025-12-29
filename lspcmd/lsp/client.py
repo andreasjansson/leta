@@ -87,8 +87,9 @@ class LSPClient:
         future: asyncio.Future[Any] = loop.create_future()
         self._pending_requests[request_id] = future
 
-        logger.debug(f"Sending request {request_id}: {method}")
-        self.stdin.write(encode_message(message))
+        encoded = encode_message(message)
+        logger.debug(f"Sending request {request_id}: {method} ({len(encoded)} bytes)")
+        self.stdin.write(encoded)
         await self.stdin.drain()
         logger.debug(f"Sent request {request_id}: {method}, waiting for response")
 
