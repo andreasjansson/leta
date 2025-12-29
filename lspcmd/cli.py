@@ -476,8 +476,8 @@ def rename(ctx, path, position, new_name):
 def list_symbols(ctx, path, query, docs):
     """List symbols in a file or current workspace.
     
-    PATH can include wildcards: * matches any file, ** matches recursively.
-    Examples: 'src/*.py', 'src/**/*.go', 'lib/**/*_test.rs'
+    PATH supports wildcards. Simple patterns like '*.go' search recursively.
+    Use 'dir/*.go' for non-recursive, or 'dir/**/*.go' for explicit recursive.
     """
     config = load_config()
 
