@@ -54,19 +54,28 @@ class Workspace:
             )
 
         init_options = self._get_init_options()
-        self.client = LSPClient(process, path_to_uri(self.root), init_options)
+        server_log_file = get_log_dir() / f"{self.server_config.name}.log"
+        self.client = LSPClient(
+            process,
+            path_to_uri(self.root),
+            init_options,
+            server_name=self.server_config.name,
+            log_file=server_log_file,
+        )
         
         try:
             await self.client.start()
         except Exception as e:
             self.client = None
             
-            server_stderr = None
-            if process.stderr:
+            # Read recent lines from the server log file
+            server_log_tail = None
+            if server_log_file.exists():
                 try:
-                    stderr_data = await asyncio.wait_for(process.stderr.read(), timeout=1.0)
-                    server_stderr = stderr_data.decode("utf-8", errors="replace")
-                except asyncio.TimeoutError:
+                    content = server_log_file.read_text()
+                    lines = content.strip().splitlines()
+                    server_log_tail = "\n".join(lines[-30:])
+                except Exception:
                     pass
             
             raise LanguageServerStartupError(
@@ -74,8 +83,8 @@ class Workspace:
                 ", ".join(self.server_config.languages),
                 str(self.root),
                 e,
-                server_stderr=server_stderr,
-                log_path=str(get_log_dir() / "daemon.log"),
+                server_stderr=server_log_tail,
+                log_path=str(server_log_file),
             )
 
         logger.info(f"Server {self.server_config.name} initialized")
