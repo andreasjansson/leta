@@ -522,10 +522,18 @@ def filter_symbols(symbols: list[dict], pattern: str, kinds: set[str] | None, ca
     return result
 
 
+KIND_HELP = (
+    "Filter by kind (comma-separated). Valid kinds: "
+    "array, boolean, class, constant, constructor, enum, enummember, event, "
+    "field, file, function, interface, key, method, module, namespace, null, "
+    "number, object, operator, package, property, string, struct, typeparameter, variable"
+)
+
+
 @cli.command("grep")
 @click.argument("pattern")
 @click.argument("path", required=False)
-@click.option("-k", "--kind", default="", help="Filter by kind (comma-separated): function,method,class,struct,...")
+@click.option("-k", "--kind", default="", help=KIND_HELP)
 @click.option("-x", "--exclude", default="", help="Exclude files matching glob pattern (e.g. '*_test.go')")
 @click.option("-d", "--docs", is_flag=True, help="Include documentation for each symbol")
 @click.option("-C", "--case-sensitive", is_flag=True, help="Case-sensitive pattern matching")
