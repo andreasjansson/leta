@@ -282,8 +282,7 @@ class CallHierarchyIncomingCall(BaseModel):
     from_: CallHierarchyItem
     fromRanges: list[Range]
 
-    class Config:
-        fields = {"from_": "from"}
+    model_config = {"populate_by_name": True}
 
 
 class CallHierarchyOutgoingCall(BaseModel):
