@@ -111,7 +111,9 @@ class LSPClient:
     async def _read_loop(self) -> None:
         try:
             while True:
+                logger.debug("Waiting to read message from server")
                 message = await read_message(self.stdout)
+                logger.debug(f"Received message: id={message.get('id')}, method={message.get('method')}")
                 await self._handle_message(message)
         except LSPProtocolError as e:
             logger.error(f"Protocol error: {e}")
@@ -122,6 +124,9 @@ class LSPClient:
             raise
         except Exception as e:
             logger.exception(f"Error in read loop: {e}")
+            for future in self._pending_requests.values():
+                if not future.done():
+                    future.set_exception(e)
 
     async def _handle_message(self, message: dict[str, Any]) -> None:
         if "id" in message:
