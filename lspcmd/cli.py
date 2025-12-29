@@ -109,6 +109,21 @@ def parse_position(position: str) -> tuple[int, int]:
     return int(parts[0]), int(parts[1])
 
 
+def expand_path_pattern(pattern: str) -> list[Path]:
+    """Expand a path pattern with glob wildcards (* and **) to matching files."""
+    if "*" not in pattern and "?" not in pattern:
+        path = Path(pattern).resolve()
+        if not path.exists():
+            raise click.ClickException(f"Path not found: {pattern}")
+        return [path]
+    
+    matches = glob.glob(pattern, recursive=True)
+    if not matches:
+        raise click.ClickException(f"No files match pattern: {pattern}")
+    
+    return [Path(m).resolve() for m in sorted(matches) if Path(m).is_file()]
+
+
 @click.group()
 @click.option("--json", "json_output", is_flag=True, help="Output as JSON")
 @click.pass_context
