@@ -47,7 +47,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
     },
     "workspaces": {
         "roots": [],
-        "excluded_languages": ["json", "yaml"],
+        "excluded_languages": ["json", "yaml", "typescript", "javascript"],
     },
     "formatting": {
         "tab_size": 4,
