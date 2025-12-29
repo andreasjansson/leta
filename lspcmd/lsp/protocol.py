@@ -55,14 +55,14 @@ class LanguageServerStartupError(Exception):
         language: str,
         workspace_root: str,
         original_error: Exception,
-        server_stderr: str | None = None,
+        server_log: str | None = None,
         log_path: str | None = None,
     ):
         self.server_name = server_name
         self.language = language
         self.workspace_root = workspace_root
         self.original_error = original_error
-        self.server_stderr = server_stderr
+        self.server_log = server_log
         self.log_path = log_path
         
         lines = [
@@ -71,11 +71,15 @@ class LanguageServerStartupError(Exception):
             f"Error: {original_error}",
         ]
         
-        if server_stderr and server_stderr.strip():
+        if server_log and server_log.strip():
             lines.append("")
-            lines.append(f"Server stderr:")
-            for line in server_stderr.strip().splitlines()[:20]:
+            lines.append(f"Server log (last 20 lines):")
+            for line in server_log.strip().splitlines()[-20:]:
                 lines.append(f"  {line}")
+        
+        if log_path:
+            lines.append("")
+            lines.append(f"Full server log: {log_path}")
         
         lines.append("")
         lines.append("Possible causes:")
@@ -84,10 +88,6 @@ class LanguageServerStartupError(Exception):
         lines.append(f"  - Try running '{server_name}' directly in that directory to see detailed errors")
         lines.append("")
         lines.append("To exclude these files, use: lspcmd grep PATTERN 'your/path/*.ext' -x 'path/to/exclude/*'")
-        
-        if log_path:
-            lines.append("")
-            lines.append(f"Daemon logs: {log_path}")
         
         super().__init__("\n".join(lines))
 
