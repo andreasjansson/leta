@@ -495,8 +495,9 @@ def search_symbol(ctx, pattern, path):
 
 @cli.command("list-signatures")
 @click.argument("path", type=click.Path(exists=True), required=False)
+@click.option("--docs", is_flag=True, help="Include documentation for each signature")
 @click.pass_context
-def list_signatures(ctx, path):
+def list_signatures(ctx, path, docs):
     """List function signatures in a file or current workspace."""
     config = load_config()
 
@@ -506,11 +507,13 @@ def list_signatures(ctx, path):
         response = run_request("list-signatures", {
             "path": str(path),
             "workspace_root": str(workspace_root),
+            "include_docs": docs,
         })
     else:
         workspace_root = get_workspace_root_for_cwd(config)
         response = run_request("list-signatures", {
             "workspace_root": str(workspace_root),
+            "include_docs": docs,
         })
 
     click.echo(format_output(response.get("result", response), "json" if ctx.obj["json"] else "plain"))
