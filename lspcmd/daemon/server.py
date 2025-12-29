@@ -542,6 +542,7 @@ class DaemonServer:
         from ..servers.registry import get_server_for_language
 
         skip_dirs = {"node_modules", "__pycache__", ".git", "venv", ".venv", "build", "dist", ".tox", ".eggs"}
+        excluded_languages = set(self.session.config.get("workspaces", {}).get("excluded_languages", []))
         
         # Find all unique languages in the workspace
         languages_found: dict[str, list[Path]] = {}
@@ -553,7 +554,7 @@ class DaemonServer:
                 continue
             
             lang_id = get_language_id(file_path)
-            if lang_id == "plaintext":
+            if lang_id == "plaintext" or lang_id in excluded_languages:
                 continue
             
             server_config = get_server_for_language(lang_id, self.session.config)
