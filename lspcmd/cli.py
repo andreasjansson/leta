@@ -550,8 +550,8 @@ def search_symbol(ctx, pattern, path, docs):
 def list_signatures(ctx, path, docs):
     """List function signatures in a file or current workspace.
     
-    PATH can include wildcards: * matches any file, ** matches recursively.
-    Examples: 'src/*.py', 'src/**/*.go', 'lib/**/*_test.rs'
+    PATH supports wildcards. Simple patterns like '*.go' search recursively.
+    Use 'dir/*.go' for non-recursive, or 'dir/**/*.go' for explicit recursive.
     """
     config = load_config()
 
