@@ -7,14 +7,13 @@ from pathlib import Path
 
 import click
 
-from .daemon.pidfile import is_daemon_running, read_pid
+from .daemon.pidfile import is_daemon_running
 from .output.formatters import format_output
 from .utils.config import (
     get_socket_path,
     get_pid_path,
     get_config_path,
     load_config,
-    save_config,
     detect_workspace_root,
     get_known_workspace_root,
     add_workspace_root,
@@ -63,27 +62,41 @@ def run_request(method: str, params: dict) -> dict:
     return asyncio.run(send_request(method, params))
 
 
-def resolve_workspace_root(path: Path, config: dict) -> Path:
+def get_workspace_root_for_path(path: Path, config: dict) -> Path:
     path = path.resolve()
-
     known_root = get_known_workspace_root(path, config)
     if known_root:
         return known_root
 
     detected_root = detect_workspace_root(path)
-
     if detected_root:
-        if sys.stdin.isatty():
-            click.echo(f"Workspace root not configured for this file.", err=True)
-            click.echo(f"Detected: {detected_root}", err=True)
-            if click.confirm("Use this root?", default=True, err=True):
-                add_workspace_root(detected_root, config)
-                return detected_root
+        known = get_known_workspace_root(detected_root, config)
+        if known:
+            return known
 
-        add_workspace_root(detected_root, config)
-        return detected_root
+    raise click.ClickException(
+        f"No workspace initialized for {path}\n"
+        f"Run: lspcmd init-workspace"
+    )
 
-    return path.parent if path.is_file() else path
+
+def get_workspace_root_for_cwd(config: dict) -> Path:
+    cwd = Path.cwd().resolve()
+
+    known_root = get_known_workspace_root(cwd, config)
+    if known_root:
+        return known_root
+
+    detected_root = detect_workspace_root(cwd)
+    if detected_root:
+        known = get_known_workspace_root(detected_root, config)
+        if known:
+            return known
+
+    raise click.ClickException(
+        f"No workspace initialized for current directory\n"
+        f"Run: lspcmd init-workspace"
+    )
 
 
 def parse_position(position: str) -> tuple[int, int]:
@@ -99,6 +112,43 @@ def parse_position(position: str) -> tuple[int, int]:
 def cli(ctx, json_output):
     ctx.ensure_object(dict)
     ctx.obj["json"] = json_output
+
+
+@cli.command("init-workspace")
+@click.option("--root", type=click.Path(exists=True), help="Workspace root directory")
+@click.pass_context
+def init_workspace(ctx, root):
+    """Initialize a workspace for LSP operations."""
+    config = load_config()
+
+    if root:
+        workspace_root = Path(root).resolve()
+    else:
+        cwd = Path.cwd().resolve()
+        detected = detect_workspace_root(cwd)
+
+        if detected:
+            default_root = detected
+        else:
+            default_root = cwd
+
+        if sys.stdin.isatty():
+            workspace_root = click.prompt(
+                "Workspace root",
+                default=str(default_root),
+                type=click.Path(exists=True),
+            )
+            workspace_root = Path(workspace_root).resolve()
+        else:
+            workspace_root = default_root
+
+    known = get_known_workspace_root(workspace_root, config)
+    if known:
+        click.echo(f"Workspace already initialized: {known}")
+        return
+
+    add_workspace_root(workspace_root, config)
+    click.echo(f"Initialized workspace: {workspace_root}")
 
 
 @cli.command()
@@ -144,7 +194,7 @@ def describe_thing_at_point(ctx, path, position):
     path = Path(path).resolve()
     line, column = parse_position(position)
     config = load_config()
-    workspace_root = resolve_workspace_root(path, config)
+    workspace_root = get_workspace_root_for_path(path, config)
 
     response = run_request("describe-thing-at-point", {
         "path": str(path),
@@ -166,7 +216,7 @@ def find_definition(ctx, path, position, context):
     path = Path(path).resolve()
     line, column = parse_position(position)
     config = load_config()
-    workspace_root = resolve_workspace_root(path, config)
+    workspace_root = get_workspace_root_for_path(path, config)
 
     response = run_request("find-definition", {
         "path": str(path),
@@ -189,7 +239,7 @@ def find_declaration(ctx, path, position, context):
     path = Path(path).resolve()
     line, column = parse_position(position)
     config = load_config()
-    workspace_root = resolve_workspace_root(path, config)
+    workspace_root = get_workspace_root_for_path(path, config)
 
     response = run_request("find-declaration", {
         "path": str(path),
@@ -212,7 +262,7 @@ def find_implementation(ctx, path, position, context):
     path = Path(path).resolve()
     line, column = parse_position(position)
     config = load_config()
-    workspace_root = resolve_workspace_root(path, config)
+    workspace_root = get_workspace_root_for_path(path, config)
 
     response = run_request("find-implementation", {
         "path": str(path),
@@ -235,7 +285,7 @@ def find_type_definition(ctx, path, position, context):
     path = Path(path).resolve()
     line, column = parse_position(position)
     config = load_config()
-    workspace_root = resolve_workspace_root(path, config)
+    workspace_root = get_workspace_root_for_path(path, config)
 
     response = run_request("find-type-definition", {
         "path": str(path),
@@ -258,7 +308,7 @@ def find_references(ctx, path, position, context):
     path = Path(path).resolve()
     line, column = parse_position(position)
     config = load_config()
-    workspace_root = resolve_workspace_root(path, config)
+    workspace_root = get_workspace_root_for_path(path, config)
 
     response = run_request("find-references", {
         "path": str(path),
@@ -280,7 +330,7 @@ def print_definition(ctx, path, position):
     path = Path(path).resolve()
     line, column = parse_position(position)
     config = load_config()
-    workspace_root = resolve_workspace_root(path, config)
+    workspace_root = get_workspace_root_for_path(path, config)
 
     response = run_request("print-definition", {
         "path": str(path),
@@ -301,7 +351,7 @@ def list_code_actions(ctx, path, position):
     path = Path(path).resolve()
     line, column = parse_position(position)
     config = load_config()
-    workspace_root = resolve_workspace_root(path, config)
+    workspace_root = get_workspace_root_for_path(path, config)
 
     response = run_request("list-code-actions", {
         "path": str(path),
@@ -323,7 +373,7 @@ def execute_code_action(ctx, path, position, action_title):
     path = Path(path).resolve()
     line, column = parse_position(position)
     config = load_config()
-    workspace_root = resolve_workspace_root(path, config)
+    workspace_root = get_workspace_root_for_path(path, config)
 
     response = run_request("execute-code-action", {
         "path": str(path),
@@ -343,7 +393,7 @@ def format_buffer(ctx, path):
     """Format a file."""
     path = Path(path).resolve()
     config = load_config()
-    workspace_root = resolve_workspace_root(path, config)
+    workspace_root = get_workspace_root_for_path(path, config)
 
     response = run_request("format-buffer", {
         "path": str(path),
@@ -360,7 +410,7 @@ def organize_imports(ctx, path):
     """Organize imports in a file."""
     path = Path(path).resolve()
     config = load_config()
-    workspace_root = resolve_workspace_root(path, config)
+    workspace_root = get_workspace_root_for_path(path, config)
 
     response = run_request("organize-imports", {
         "path": str(path),
@@ -380,7 +430,7 @@ def rename(ctx, path, position, new_name):
     path = Path(path).resolve()
     line, column = parse_position(position)
     config = load_config()
-    workspace_root = resolve_workspace_root(path, config)
+    workspace_root = get_workspace_root_for_path(path, config)
 
     response = run_request("rename", {
         "path": str(path),
@@ -395,28 +445,25 @@ def rename(ctx, path, position, new_name):
 
 @cli.command("list-symbols")
 @click.argument("path", type=click.Path(exists=True), required=False)
-@click.option("--workspace", type=click.Path(exists=True), help="Workspace root for workspace symbols")
-@click.option("-q", "--query", default="", help="Query for workspace symbols")
+@click.option("-q", "--query", default="", help="Query filter for symbols")
 @click.pass_context
-def list_symbols(ctx, path, workspace, query):
-    """List symbols in a file or workspace."""
+def list_symbols(ctx, path, query):
+    """List symbols in a file or current workspace."""
     config = load_config()
 
     if path:
         path = Path(path).resolve()
-        workspace_root = resolve_workspace_root(path, config)
+        workspace_root = get_workspace_root_for_path(path, config)
         response = run_request("list-symbols", {
             "path": str(path),
             "workspace_root": str(workspace_root),
         })
-    elif workspace:
-        workspace_root = Path(workspace).resolve()
+    else:
+        workspace_root = get_workspace_root_for_cwd(config)
         response = run_request("list-symbols", {
             "workspace_root": str(workspace_root),
             "query": query,
         })
-    else:
-        raise click.UsageError("Either PATH or --workspace must be provided")
 
     click.echo(format_output(response.get("result", response), "json" if ctx.obj["json"] else "plain"))
 
@@ -424,9 +471,8 @@ def list_symbols(ctx, path, workspace, query):
 @cli.command("search-symbol")
 @click.argument("pattern")
 @click.argument("path", type=click.Path(exists=True), required=False)
-@click.option("--workspace", type=click.Path(exists=True), help="Workspace root for workspace symbols")
 @click.pass_context
-def search_symbol(ctx, pattern, path, workspace):
+def search_symbol(ctx, pattern, path):
     """Search for symbols matching a regex pattern."""
     config = load_config()
 
@@ -434,13 +480,12 @@ def search_symbol(ctx, pattern, path, workspace):
 
     if path:
         path = Path(path).resolve()
-        workspace_root = resolve_workspace_root(path, config)
+        workspace_root = get_workspace_root_for_path(path, config)
         params["path"] = str(path)
         params["workspace_root"] = str(workspace_root)
-    elif workspace:
-        params["workspace_root"] = str(Path(workspace).resolve())
     else:
-        raise click.UsageError("Either PATH or --workspace must be provided")
+        workspace_root = get_workspace_root_for_cwd(config)
+        params["workspace_root"] = str(workspace_root)
 
     response = run_request("search-symbol", params)
     click.echo(format_output(response.get("result", response), "json" if ctx.obj["json"] else "plain"))
@@ -448,36 +493,38 @@ def search_symbol(ctx, pattern, path, workspace):
 
 @cli.command("list-signatures")
 @click.argument("path", type=click.Path(exists=True), required=False)
-@click.option("--workspace", type=click.Path(exists=True), help="Workspace root for workspace symbols")
 @click.pass_context
-def list_signatures(ctx, path, workspace):
-    """List function signatures in a file or workspace."""
+def list_signatures(ctx, path):
+    """List function signatures in a file or current workspace."""
     config = load_config()
 
     if path:
         path = Path(path).resolve()
-        workspace_root = resolve_workspace_root(path, config)
+        workspace_root = get_workspace_root_for_path(path, config)
         response = run_request("list-signatures", {
             "path": str(path),
             "workspace_root": str(workspace_root),
         })
-    elif workspace:
-        workspace_root = Path(workspace).resolve()
+    else:
+        workspace_root = get_workspace_root_for_cwd(config)
         response = run_request("list-signatures", {
             "workspace_root": str(workspace_root),
         })
-    else:
-        raise click.UsageError("Either PATH or --workspace must be provided")
 
     click.echo(format_output(response.get("result", response), "json" if ctx.obj["json"] else "plain"))
 
 
 @cli.command("restart-workspace")
-@click.argument("workspace", type=click.Path(exists=True))
+@click.argument("workspace", type=click.Path(exists=True), required=False)
 @click.pass_context
 def restart_workspace(ctx, workspace):
     """Restart the language server for a workspace."""
-    workspace_root = Path(workspace).resolve()
+    config = load_config()
+
+    if workspace:
+        workspace_root = Path(workspace).resolve()
+    else:
+        workspace_root = get_workspace_root_for_cwd(config)
 
     response = run_request("restart-workspace", {
         "workspace_root": str(workspace_root),
