@@ -512,17 +512,20 @@ class DaemonServer:
     async def _handle_workspace_symbols(self, params: dict) -> list[dict]:
         query = params.get("query", "")
 
-        workspace_root = params.get("workspace_root")
-        if not workspace_root:
+        workspace_root_param = params.get("workspace_root")
+        if not workspace_root_param:
             if not self.session.workspaces:
                 return []
             workspace = next(iter(self.session.workspaces.values()))
             workspace_root = workspace.root
         else:
-            workspace_root = Path(workspace_root).resolve()
+            workspace_root = Path(workspace_root_param).resolve()
             workspace = self.session.workspaces.get(workspace_root)
             if not workspace or not workspace.client:
-                return []
+                sample_file = self._find_sample_file(workspace_root)
+                if not sample_file:
+                    return []
+                workspace = await self.session.get_or_create_workspace(sample_file, workspace_root)
 
         result = await workspace.client.send_request(
             "workspace/symbol",
@@ -542,6 +545,13 @@ class DaemonServer:
             ]
 
         return await self._collect_symbols_from_files(workspace, workspace_root)
+
+    def _find_sample_file(self, workspace_root: Path) -> Path | None:
+        for ext in [".py", ".rs", ".ts", ".js", ".go", ".java", ".rb", ".ex"]:
+            for f in workspace_root.rglob(f"*{ext}"):
+                if f.is_file() and not any(part.startswith(".") for part in f.parts):
+                    return f
+        return None
 
     async def _collect_symbols_from_files(self, workspace: "Workspace", workspace_root: Path) -> list[dict]:
         from ..utils.text import get_language_id
