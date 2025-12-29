@@ -62,7 +62,10 @@ async def send_request(method: str, params: dict) -> dict:
 
 def run_request(method: str, params: dict) -> dict:
     ensure_daemon_running()
-    return asyncio.run(send_request(method, params))
+    response = asyncio.run(send_request(method, params))
+    if "error" in response:
+        raise click.ClickException(response["error"])
+    return response
 
 
 def get_workspace_root_for_path(path: Path, config: dict) -> Path:
