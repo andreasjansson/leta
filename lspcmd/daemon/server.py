@@ -639,45 +639,17 @@ class DaemonServer:
 
         return symbols
 
-    async def _handle_search_symbol(self, params: dict) -> list[dict]:
-        import re
-
-        # Get symbols without docs first, then filter, then add docs
-        include_docs = params.pop("include_docs", False)
-        symbols = await self._handle_list_symbols(params)
-        pattern = params.get("pattern", "")
-
-        if pattern:
-            regex = re.compile(pattern, re.IGNORECASE)
-            symbols = [s for s in symbols if regex.search(s["name"])]
+    async def _handle_fetch_symbol_docs(self, params: dict) -> list[dict]:
+        """Fetch documentation for a list of symbols."""
+        symbols = params.get("symbols", [])
+        workspace_root = Path(params.get("workspace_root", ".")).resolve()
         
-        if include_docs:
-            workspace_root = Path(params.get("workspace_root", ".")).resolve()
-            for sym in symbols:
-                sym["documentation"] = await self._get_symbol_documentation(
-                    workspace_root, sym["path"], sym["line"], sym.get("column", 0)
-                )
+        for sym in symbols:
+            sym["documentation"] = await self._get_symbol_documentation(
+                workspace_root, sym["path"], sym["line"], sym.get("column", 0)
+            )
         
         return symbols
-
-    async def _handle_list_signatures(self, params: dict) -> list[dict]:
-        # Get symbols without docs first, filter to signatures, then add docs if needed
-        include_docs = params.get("include_docs", False)
-        params_copy = {**params, "include_docs": False}
-        symbols = await self._handle_list_symbols(params_copy)
-        signatures = [
-            s for s in symbols
-            if s["kind"] in ("Function", "Method", "Constructor")
-        ]
-        
-        if include_docs:
-            workspace_root = Path(params.get("workspace_root", ".")).resolve()
-            for sig in signatures:
-                sig["documentation"] = await self._get_symbol_documentation(
-                    workspace_root, sig["path"], sig["line"], sig.get("column", 0)
-                )
-        
-        return signatures
 
     async def _get_symbol_documentation(self, workspace_root: Path, rel_path: str, line: int, column: int) -> str | None:
         file_path = workspace_root / rel_path
