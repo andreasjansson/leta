@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any
 
 from ..lsp.client import LSPClient
+from ..lsp.protocol import LanguageServerNotFound
 from ..utils.uri import path_to_uri
 from ..utils.text import get_language_id, read_file_content
 from ..servers.registry import ServerConfig, get_server_for_file, get_server_for_language
@@ -33,13 +34,20 @@ class Workspace:
 
         logger.info(f"Starting {self.server_config.name} for {self.root}")
 
-        process = await asyncio.create_subprocess_exec(
-            *self.server_config.command,
-            stdin=asyncio.subprocess.PIPE,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-            cwd=str(self.root),
-        )
+        try:
+            process = await asyncio.create_subprocess_exec(
+                *self.server_config.command,
+                stdin=asyncio.subprocess.PIPE,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+                cwd=str(self.root),
+            )
+        except FileNotFoundError:
+            raise LanguageServerNotFound(
+                self.server_config.name,
+                ", ".join(self.server_config.languages),
+                self.server_config.install_cmd,
+            )
 
         self.client = LSPClient(process, path_to_uri(self.root))
         await self.client.start()
