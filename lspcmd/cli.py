@@ -476,12 +476,13 @@ def list_symbols(ctx, path, query, docs):
 @cli.command("search-symbol")
 @click.argument("pattern")
 @click.argument("path", type=click.Path(exists=True), required=False)
+@click.option("--docs", is_flag=True, help="Include documentation for each symbol")
 @click.pass_context
-def search_symbol(ctx, pattern, path):
+def search_symbol(ctx, pattern, path, docs):
     """Search for symbols matching a regex pattern."""
     config = load_config()
 
-    params = {"pattern": pattern}
+    params = {"pattern": pattern, "include_docs": docs}
 
     if path:
         path = Path(path).resolve()
