@@ -1,0 +1,98 @@
+from pathlib import Path
+
+import pytest
+
+from lspcmd.utils.config import (
+    detect_workspace_root,
+    get_known_workspace_root,
+    add_workspace_root,
+    load_config,
+    save_config,
+)
+
+
+class TestDetectWorkspaceRoot:
+    def test_detect_git(self, temp_dir):
+        project = temp_dir / "project"
+        project.mkdir()
+        (project / ".git").mkdir()
+        (project / "src").mkdir()
+        (project / "src" / "main.py").touch()
+
+        root = detect_workspace_root(project / "src" / "main.py")
+        assert root == project
+
+    def test_detect_pyproject(self, temp_dir):
+        project = temp_dir / "project"
+        project.mkdir()
+        (project / "pyproject.toml").touch()
+        (project / "main.py").touch()
+
+        root = detect_workspace_root(project / "main.py")
+        assert root == project
+
+    def test_detect_cargo(self, temp_dir):
+        project = temp_dir / "project"
+        (project / "src").mkdir(parents=True)
+        (project / "Cargo.toml").touch()
+        (project / "src" / "main.rs").touch()
+
+        root = detect_workspace_root(project / "src" / "main.rs")
+        assert root == project
+
+    def test_detect_package_json(self, temp_dir):
+        project = temp_dir / "project"
+        (project / "src").mkdir(parents=True)
+        (project / "package.json").touch()
+        (project / "src" / "main.ts").touch()
+
+        root = detect_workspace_root(project / "src" / "main.ts")
+        assert root == project
+
+    def test_no_markers(self, temp_dir):
+        project = temp_dir / "project"
+        project.mkdir()
+        (project / "main.py").touch()
+
+        root = detect_workspace_root(project / "main.py")
+        assert root is None
+
+
+class TestKnownWorkspaceRoot:
+    def test_known_root(self, temp_dir):
+        config = {"workspaces": {"roots": [str(temp_dir / "project")]}}
+        file_path = temp_dir / "project" / "src" / "main.py"
+
+        root = get_known_workspace_root(file_path, config)
+        assert root == temp_dir / "project"
+
+    def test_unknown_root(self, temp_dir):
+        config = {"workspaces": {"roots": []}}
+        file_path = temp_dir / "project" / "main.py"
+
+        root = get_known_workspace_root(file_path, config)
+        assert root is None
+
+
+class TestAddWorkspaceRoot:
+    def test_add_new_root(self, temp_dir, isolated_config):
+        config = load_config()
+        project = temp_dir / "project"
+        project.mkdir()
+
+        add_workspace_root(project, config)
+
+        loaded = load_config()
+        assert str(project) in loaded["workspaces"]["roots"]
+
+    def test_add_duplicate_root(self, temp_dir, isolated_config):
+        config = load_config()
+        project = temp_dir / "project"
+        project.mkdir()
+
+        add_workspace_root(project, config)
+        add_workspace_root(project, config)
+
+        loaded = load_config()
+        roots = loaded["workspaces"]["roots"]
+        assert roots.count(str(project)) == 1
