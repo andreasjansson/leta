@@ -63,6 +63,21 @@ class Workspace:
             return {"linksInHover": False}
         return {}
 
+    def _get_server_env(self) -> dict[str, str]:
+        import os
+        env = os.environ.copy()
+        home = os.path.expanduser("~")
+        extra_paths = [
+            f"{home}/go/bin",
+            f"{home}/.cargo/bin",
+            f"{home}/.local/bin",
+            "/usr/local/bin",
+            "/opt/homebrew/bin",
+        ]
+        current_path = env.get("PATH", "")
+        env["PATH"] = ":".join(extra_paths) + ":" + current_path
+        return env
+
     async def stop_server(self) -> None:
         if self.client is None:
             return
