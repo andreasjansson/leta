@@ -1,0 +1,649 @@
+import asyncio
+import json
+import logging
+import os
+import signal
+from pathlib import Path
+from typing import Any
+
+from .session import Session
+from .pidfile import write_pid, remove_pid
+from ..lsp.protocol import LSPResponseError
+from ..utils.config import get_socket_path, get_pid_path, get_log_dir, load_config
+from ..utils.uri import path_to_uri, uri_to_path
+from ..utils.text import read_file_content, get_lines_around
+from ..lsp.types import (
+    TextEdit,
+    WorkspaceEdit,
+    SymbolKind,
+    CodeActionKind,
+    FormattingOptions,
+)
+
+logger = logging.getLogger(__name__)
+
+
+class DaemonServer:
+    def __init__(self):
+        self.session = Session()
+        self.server: asyncio.Server | None = None
+        self._shutdown_event = asyncio.Event()
+
+    async def start(self) -> None:
+        self.session.config = load_config()
+
+        socket_path = get_socket_path()
+        socket_path.parent.mkdir(parents=True, exist_ok=True)
+
+        if socket_path.exists():
+            socket_path.unlink()
+
+        self.server = await asyncio.start_unix_server(self._handle_client, path=str(socket_path))
+
+        pid_path = get_pid_path()
+        write_pid(pid_path, os.getpid())
+
+        loop = asyncio.get_event_loop()
+        for sig in (signal.SIGTERM, signal.SIGINT):
+            loop.add_signal_handler(sig, lambda: asyncio.create_task(self._shutdown()))
+
+        logger.info(f"Daemon started, listening on {socket_path}")
+
+        await self._shutdown_event.wait()
+
+    async def _shutdown(self) -> None:
+        logger.info("Shutting down daemon")
+        await self.session.close_all()
+
+        if self.server:
+            self.server.close()
+            await self.server.wait_closed()
+
+        remove_pid(get_pid_path())
+        socket_path = get_socket_path()
+        if socket_path.exists():
+            socket_path.unlink()
+
+        self._shutdown_event.set()
+
+    async def _handle_client(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
+        try:
+            data = await reader.read(1024 * 1024)
+            if not data:
+                return
+
+            request = json.loads(data.decode())
+            response = await self._handle_request(request)
+
+            writer.write(json.dumps(response).encode())
+            await writer.drain()
+        except Exception as e:
+            logger.exception(f"Error handling client: {e}")
+            error_response = {"error": str(e)}
+            writer.write(json.dumps(error_response).encode())
+            await writer.drain()
+        finally:
+            writer.close()
+            await writer.wait_closed()
+
+    async def _handle_request(self, request: dict) -> dict:
+        method = request.get("method")
+        params = request.get("params", {})
+
+        handlers = {
+            "shutdown": self._handle_shutdown,
+            "describe-session": self._handle_describe_session,
+            "describe-thing-at-point": self._handle_hover,
+            "find-definition": self._handle_find_definition,
+            "find-declaration": self._handle_find_declaration,
+            "find-implementation": self._handle_find_implementation,
+            "find-type-definition": self._handle_find_type_definition,
+            "find-references": self._handle_find_references,
+            "list-code-actions": self._handle_list_code_actions,
+            "execute-code-action": self._handle_execute_code_action,
+            "format-buffer": self._handle_format_buffer,
+            "organize-imports": self._handle_organize_imports,
+            "rename": self._handle_rename,
+            "list-symbols": self._handle_list_symbols,
+            "search-symbol": self._handle_search_symbol,
+            "list-signatures": self._handle_list_signatures,
+            "print-definition": self._handle_print_definition,
+            "restart-workspace": self._handle_restart_workspace,
+        }
+
+        handler = handlers.get(method)
+        if not handler:
+            return {"error": f"Unknown method: {method}"}
+
+        try:
+            result = await handler(params)
+            return {"result": result}
+        except LSPResponseError as e:
+            return {"error": f"LSP error: {e.message}"}
+        except Exception as e:
+            logger.exception(f"Error in handler {method}")
+            return {"error": str(e)}
+
+    async def _get_workspace_and_document(self, params: dict):
+        path = Path(params["path"]).resolve()
+        workspace_root = Path(params["workspace_root"]).resolve()
+
+        workspace = await self.session.get_or_create_workspace(path, workspace_root)
+        doc = await workspace.ensure_document_open(path)
+
+        return workspace, doc, path
+
+    def _parse_position(self, params: dict) -> tuple[int, int]:
+        line = params["line"] - 1
+        column = params["column"]
+        return line, column
+
+    async def _handle_shutdown(self, params: dict) -> dict:
+        asyncio.create_task(self._shutdown())
+        return {"status": "shutting_down"}
+
+    async def _handle_describe_session(self, params: dict) -> dict:
+        return self.session.to_dict()
+
+    async def _handle_hover(self, params: dict) -> dict:
+        workspace, doc, path = await self._get_workspace_and_document(params)
+        line, column = self._parse_position(params)
+
+        result = await workspace.client.send_request(
+            "textDocument/hover",
+            {
+                "textDocument": {"uri": doc.uri},
+                "position": {"line": line, "character": column},
+            },
+        )
+
+        if not result:
+            return {"contents": None}
+
+        contents = result.get("contents")
+        if isinstance(contents, dict):
+            return {"contents": contents.get("value", str(contents))}
+        elif isinstance(contents, list):
+            return {"contents": "\n".join(str(c.get("value", c) if isinstance(c, dict) else c) for c in contents)}
+        else:
+            return {"contents": str(contents)}
+
+    async def _handle_location_request(self, params: dict, method: str) -> list[dict]:
+        workspace, doc, path = await self._get_workspace_and_document(params)
+        line, column = self._parse_position(params)
+        context = params.get("context", 0)
+
+        result = await workspace.client.send_request(
+            method,
+            {
+                "textDocument": {"uri": doc.uri},
+                "position": {"line": line, "character": column},
+            },
+        )
+
+        return self._format_locations(result, context)
+
+    def _format_locations(self, result: Any, context: int = 0) -> list[dict]:
+        if not result:
+            return []
+
+        if isinstance(result, dict):
+            result = [result]
+
+        locations = []
+        for item in result:
+            if "targetUri" in item:
+                uri = item["targetUri"]
+                range_ = item["targetSelectionRange"]
+            else:
+                uri = item["uri"]
+                range_ = item["range"]
+
+            file_path = uri_to_path(uri)
+            start_line = range_["start"]["line"]
+
+            location = {
+                "path": str(file_path),
+                "line": start_line + 1,
+                "column": range_["start"]["character"],
+            }
+
+            if context > 0 and file_path.exists():
+                content = read_file_content(file_path)
+                lines, start, end = get_lines_around(content, start_line, context)
+                location["context_lines"] = lines
+                location["context_start"] = start + 1
+
+            locations.append(location)
+
+        return locations
+
+    async def _handle_find_definition(self, params: dict) -> list[dict]:
+        return await self._handle_location_request(params, "textDocument/definition")
+
+    async def _handle_find_declaration(self, params: dict) -> list[dict]:
+        return await self._handle_location_request(params, "textDocument/declaration")
+
+    async def _handle_find_implementation(self, params: dict) -> list[dict]:
+        return await self._handle_location_request(params, "textDocument/implementation")
+
+    async def _handle_find_type_definition(self, params: dict) -> list[dict]:
+        return await self._handle_location_request(params, "textDocument/typeDefinition")
+
+    async def _handle_find_references(self, params: dict) -> list[dict]:
+        workspace, doc, path = await self._get_workspace_and_document(params)
+        line, column = self._parse_position(params)
+
+        result = await workspace.client.send_request(
+            "textDocument/references",
+            {
+                "textDocument": {"uri": doc.uri},
+                "position": {"line": line, "character": column},
+                "context": {"includeDeclaration": True},
+            },
+        )
+
+        return self._format_locations(result, params.get("context", 0))
+
+    async def _handle_list_code_actions(self, params: dict) -> list[dict]:
+        workspace, doc, path = await self._get_workspace_and_document(params)
+        line, column = self._parse_position(params)
+
+        result = await workspace.client.send_request(
+            "textDocument/codeAction",
+            {
+                "textDocument": {"uri": doc.uri},
+                "range": {
+                    "start": {"line": line, "character": column},
+                    "end": {"line": line, "character": column},
+                },
+                "context": {"diagnostics": []},
+            },
+        )
+
+        if not result:
+            return []
+
+        return [
+            {
+                "title": action.get("title"),
+                "kind": action.get("kind"),
+                "is_preferred": action.get("isPreferred", False),
+            }
+            for action in result
+        ]
+
+    async def _handle_execute_code_action(self, params: dict) -> dict:
+        workspace, doc, path = await self._get_workspace_and_document(params)
+        line, column = self._parse_position(params)
+        action_title = params["action_title"]
+
+        result = await workspace.client.send_request(
+            "textDocument/codeAction",
+            {
+                "textDocument": {"uri": doc.uri},
+                "range": {
+                    "start": {"line": line, "character": column},
+                    "end": {"line": line, "character": column},
+                },
+                "context": {"diagnostics": []},
+            },
+        )
+
+        if not result:
+            return {"error": "No code actions available"}
+
+        action = None
+        for a in result:
+            if a.get("title") == action_title:
+                action = a
+                break
+
+        if not action:
+            return {"error": f"Code action not found: {action_title}"}
+
+        if action.get("edit"):
+            files_modified = await self._apply_workspace_edit(action["edit"])
+            return {"files_modified": files_modified}
+
+        if action.get("command"):
+            cmd = action["command"]
+            await workspace.client.send_request(
+                "workspace/executeCommand",
+                {"command": cmd["command"], "arguments": cmd.get("arguments", [])},
+            )
+            return {"command_executed": cmd["command"]}
+
+        return {"status": "ok"}
+
+    async def _apply_workspace_edit(self, edit: dict) -> list[str]:
+        files_modified = []
+
+        if edit.get("changes"):
+            for uri, text_edits in edit["changes"].items():
+                file_path = uri_to_path(uri)
+                await self._apply_text_edits(file_path, text_edits)
+                files_modified.append(str(file_path))
+
+        if edit.get("documentChanges"):
+            for change in edit["documentChanges"]:
+                kind = change.get("kind")
+                if kind == "create":
+                    file_path = uri_to_path(change["uri"])
+                    file_path.touch()
+                    files_modified.append(str(file_path))
+                elif kind == "rename":
+                    old_path = uri_to_path(change["oldUri"])
+                    new_path = uri_to_path(change["newUri"])
+                    old_path.rename(new_path)
+                    files_modified.append(str(new_path))
+                elif kind == "delete":
+                    file_path = uri_to_path(change["uri"])
+                    file_path.unlink(missing_ok=True)
+                    files_modified.append(str(file_path))
+                elif "textDocument" in change:
+                    file_path = uri_to_path(change["textDocument"]["uri"])
+                    await self._apply_text_edits(file_path, change["edits"])
+                    files_modified.append(str(file_path))
+
+        return files_modified
+
+    async def _apply_text_edits(self, file_path: Path, edits: list[dict]) -> None:
+        content = read_file_content(file_path)
+        lines = content.splitlines(keepends=True)
+
+        if lines and not lines[-1].endswith("\n"):
+            lines[-1] += "\n"
+
+        sorted_edits = sorted(
+            edits,
+            key=lambda e: (e["range"]["start"]["line"], e["range"]["start"]["character"]),
+            reverse=True,
+        )
+
+        for edit in sorted_edits:
+            start = edit["range"]["start"]
+            end = edit["range"]["end"]
+            new_text = edit["newText"]
+
+            start_line = start["line"]
+            start_char = start["character"]
+            end_line = end["line"]
+            end_char = end["character"]
+
+            if start_line >= len(lines):
+                lines.extend([""] * (start_line - len(lines) + 1))
+
+            if start_line == end_line:
+                line = lines[start_line] if start_line < len(lines) else ""
+                lines[start_line] = line[:start_char] + new_text + line[end_char:]
+            else:
+                first_line = lines[start_line][:start_char] if start_line < len(lines) else ""
+                last_line = lines[end_line][end_char:] if end_line < len(lines) else ""
+                lines[start_line : end_line + 1] = [first_line + new_text + last_line]
+
+        result = "".join(lines)
+        if result.endswith("\n\n") and not content.endswith("\n\n"):
+            result = result[:-1]
+
+        file_path.write_text(result)
+
+    async def _handle_format_buffer(self, params: dict) -> dict:
+        workspace, doc, path = await self._get_workspace_and_document(params)
+        config = self.session.config.get("formatting", {})
+
+        result = await workspace.client.send_request(
+            "textDocument/formatting",
+            {
+                "textDocument": {"uri": doc.uri},
+                "options": {
+                    "tabSize": config.get("tab_size", 4),
+                    "insertSpaces": config.get("insert_spaces", True),
+                },
+            },
+        )
+
+        if result:
+            await self._apply_text_edits(path, result)
+            return {"formatted": True, "edits_applied": len(result)}
+
+        return {"formatted": False}
+
+    async def _handle_organize_imports(self, params: dict) -> dict:
+        workspace, doc, path = await self._get_workspace_and_document(params)
+
+        result = await workspace.client.send_request(
+            "textDocument/codeAction",
+            {
+                "textDocument": {"uri": doc.uri},
+                "range": {
+                    "start": {"line": 0, "character": 0},
+                    "end": {"line": 0, "character": 0},
+                },
+                "context": {
+                    "diagnostics": [],
+                    "only": [CodeActionKind.SourceOrganizeImports],
+                },
+            },
+        )
+
+        if not result:
+            return {"organized": False, "error": "No organize imports action available"}
+
+        action = result[0]
+
+        if action.get("edit"):
+            await self._apply_workspace_edit(action["edit"])
+            return {"organized": True}
+
+        if action.get("command"):
+            cmd = action["command"]
+            await workspace.client.send_request(
+                "workspace/executeCommand",
+                {"command": cmd["command"], "arguments": cmd.get("arguments", [])},
+            )
+            return {"organized": True}
+
+        return {"organized": False}
+
+    async def _handle_rename(self, params: dict) -> dict:
+        workspace, doc, path = await self._get_workspace_and_document(params)
+        line, column = self._parse_position(params)
+        new_name = params["new_name"]
+
+        result = await workspace.client.send_request(
+            "textDocument/rename",
+            {
+                "textDocument": {"uri": doc.uri},
+                "position": {"line": line, "character": column},
+                "newName": new_name,
+            },
+        )
+
+        if not result:
+            return {"renamed": False, "error": "Rename not supported or failed"}
+
+        files_modified = await self._apply_workspace_edit(result)
+        return {"renamed": True, "files_modified": files_modified}
+
+    async def _handle_list_symbols(self, params: dict) -> list[dict]:
+        if params.get("path"):
+            return await self._handle_document_symbols(params)
+        else:
+            return await self._handle_workspace_symbols(params)
+
+    async def _handle_document_symbols(self, params: dict) -> list[dict]:
+        workspace, doc, path = await self._get_workspace_and_document(params)
+
+        result = await workspace.client.send_request(
+            "textDocument/documentSymbol",
+            {"textDocument": {"uri": doc.uri}},
+        )
+
+        if not result:
+            return []
+
+        symbols = []
+        self._flatten_symbols(result, str(path), symbols)
+        return symbols
+
+    def _flatten_symbols(self, items: list, file_path: str, output: list, container: str | None = None) -> None:
+        for item in items:
+            if "location" in item:
+                output.append({
+                    "name": item["name"],
+                    "kind": SymbolKind(item["kind"]).name,
+                    "path": file_path,
+                    "line": item["location"]["range"]["start"]["line"] + 1,
+                    "container": item.get("containerName"),
+                })
+            else:
+                output.append({
+                    "name": item["name"],
+                    "kind": SymbolKind(item["kind"]).name,
+                    "path": file_path,
+                    "line": item["range"]["start"]["line"] + 1,
+                    "container": container,
+                    "detail": item.get("detail"),
+                })
+                if item.get("children"):
+                    self._flatten_symbols(item["children"], file_path, output, item["name"])
+
+    async def _handle_workspace_symbols(self, params: dict) -> list[dict]:
+        query = params.get("query", "")
+
+        workspace_root = params.get("workspace_root")
+        if not workspace_root:
+            if not self.session.workspaces:
+                return []
+            workspace = next(iter(self.session.workspaces.values()))
+        else:
+            workspace_root = Path(workspace_root).resolve()
+            workspace = self.session.workspaces.get(workspace_root)
+            if not workspace or not workspace.client:
+                return []
+
+        result = await workspace.client.send_request(
+            "workspace/symbol",
+            {"query": query},
+        )
+
+        if not result:
+            return []
+
+        return [
+            {
+                "name": item["name"],
+                "kind": SymbolKind(item["kind"]).name,
+                "path": str(uri_to_path(item["location"]["uri"])),
+                "line": item["location"]["range"]["start"]["line"] + 1,
+                "container": item.get("containerName"),
+            }
+            for item in result
+        ]
+
+    async def _handle_search_symbol(self, params: dict) -> list[dict]:
+        import re
+
+        symbols = await self._handle_list_symbols(params)
+        pattern = params.get("pattern", "")
+
+        if not pattern:
+            return symbols
+
+        regex = re.compile(pattern, re.IGNORECASE)
+        return [s for s in symbols if regex.search(s["name"])]
+
+    async def _handle_list_signatures(self, params: dict) -> list[dict]:
+        symbols = await self._handle_list_symbols(params)
+        return [
+            s for s in symbols
+            if s["kind"] in ("Function", "Method", "Constructor")
+        ]
+
+    async def _handle_print_definition(self, params: dict) -> dict:
+        locations = await self._handle_find_definition(params)
+
+        if not locations:
+            return {"error": "Definition not found"}
+
+        loc = locations[0]
+        file_path = Path(loc["path"])
+        target_line = loc["line"] - 1
+
+        workspace, doc, _ = await self._get_workspace_and_document({
+            "path": str(file_path),
+            "workspace_root": params["workspace_root"],
+        })
+
+        result = await workspace.client.send_request(
+            "textDocument/documentSymbol",
+            {"textDocument": {"uri": doc.uri}},
+        )
+
+        content = read_file_content(file_path)
+        lines = content.splitlines()
+
+        if result:
+            symbol = self._find_symbol_at_line(result, target_line)
+            if symbol:
+                start = symbol["range"]["start"]["line"]
+                end = symbol["range"]["end"]["line"]
+                return {
+                    "path": str(file_path),
+                    "start_line": start + 1,
+                    "end_line": end + 1,
+                    "content": "\n".join(lines[start : end + 1]),
+                }
+
+        return {
+            "path": str(file_path),
+            "start_line": loc["line"],
+            "end_line": loc["line"],
+            "content": lines[target_line] if target_line < len(lines) else "",
+        }
+
+    def _find_symbol_at_line(self, symbols: list, line: int) -> dict | None:
+        for sym in symbols:
+            if "range" in sym:
+                start = sym["range"]["start"]["line"]
+                end = sym["range"]["end"]["line"]
+                if start <= line <= end:
+                    if sym.get("children"):
+                        child = self._find_symbol_at_line(sym["children"], line)
+                        if child:
+                            return child
+                    return sym
+            elif "location" in sym:
+                sym_line = sym["location"]["range"]["start"]["line"]
+                if sym_line == line:
+                    return sym
+        return None
+
+    async def _handle_restart_workspace(self, params: dict) -> dict:
+        workspace_root = Path(params["workspace_root"]).resolve()
+        workspace = self.session.workspaces.get(workspace_root)
+
+        if not workspace:
+            return {"error": "Workspace not found"}
+
+        await workspace.stop_server()
+        await workspace.start_server()
+
+        return {"restarted": True}
+
+
+async def run_daemon() -> None:
+    log_dir = get_log_dir()
+    log_dir.mkdir(parents=True, exist_ok=True)
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        handlers=[
+            logging.FileHandler(log_dir / "daemon.log"),
+        ],
+    )
+
+    daemon = DaemonServer()
+    await daemon.start()
