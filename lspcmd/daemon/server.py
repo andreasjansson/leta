@@ -571,11 +571,16 @@ class DaemonServer:
             if not workspace or not workspace.client:
                 continue
 
-            # Try workspace/symbol first
-            result = await workspace.client.send_request(
-                "workspace/symbol",
-                {"query": query},
-            )
+            # Try workspace/symbol first, fall back to document symbols if not supported
+            result = None
+            try:
+                result = await workspace.client.send_request(
+                    "workspace/symbol",
+                    {"query": query},
+                )
+            except LSPResponseError as e:
+                # Server doesn't support workspace/symbol, fall back to document symbols
+                logger.debug(f"workspace/symbol not supported for {lang_id}: {e.message}")
 
             if result:
                 for item in result:
