@@ -108,7 +108,9 @@ lspcmd raw-lsp-request workspace/symbol '{"query": "Handler"}' -l typescript
 |---------|-------------|
 | `lspcmd definition PATH POSITION [-n CONTEXT] [-b]` | Find definition at position (-b for full body) |
 | `lspcmd references PATH POSITION [-n CONTEXT]` | Find all references at position |
-| `lspcmd implementations PATH POSITION [-n CONTEXT]` | Find implementations of interface/abstract method |
+| `lspcmd implementations PATH POSITION [-n CONTEXT]` | Find implementations of interface/abstract method (transitive) |
+| `lspcmd subtypes PATH POSITION [-n CONTEXT]` | Find direct subtypes of a type |
+| `lspcmd supertypes PATH POSITION [-n CONTEXT]` | Find direct supertypes of a type |
 | `lspcmd declaration PATH POSITION [-n CONTEXT]` | Find declaration at position |
 | `lspcmd describe PATH POSITION` | Show hover information (type, docs) |
 
