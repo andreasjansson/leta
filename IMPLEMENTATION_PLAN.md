@@ -161,11 +161,18 @@ lspcmd grep "." server.py                     # All symbols in any server.py fil
 
 | Command | Description |
 |---------|-------------|
-| `lspcmd list-code-actions PATH POSITION` | List available code actions |
-| `lspcmd execute-code-action PATH POSITION ACTION_TITLE` | Execute a code action |
 | `lspcmd format PATH` | Format a file |
 | `lspcmd organize-imports PATH` | Organize imports in a file |
 | `lspcmd rename PATH POSITION NEW_NAME` | Rename symbol at position |
+| `lspcmd move-file OLD_PATH NEW_PATH` | Move/rename file and update imports |
+
+The `move-file` command uses `workspace/willRenameFiles` to ask the language server
+to update all import statements across the workspace. Supported by:
+- **typescript-language-server**: Updates TypeScript/JavaScript imports
+- **rust-analyzer**: Updates mod declarations
+- **metals** (Scala): Updates imports
+
+Servers that don't support this will just move the file without updating imports.
 
 ### Position Format
 
