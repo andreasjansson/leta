@@ -284,6 +284,77 @@ class DaemonServer:
     async def _handle_find_implementations(self, params: dict) -> list[dict]:
         return await self._handle_location_request(params, "textDocument/implementation")
 
+    async def _handle_find_subtypes(self, params: dict) -> list[dict]:
+        return await self._handle_type_hierarchy_request(params, "typeHierarchy/subtypes")
+
+    async def _handle_find_supertypes(self, params: dict) -> list[dict]:
+        return await self._handle_type_hierarchy_request(params, "typeHierarchy/supertypes")
+
+    async def _handle_type_hierarchy_request(self, params: dict, method: str) -> list[dict]:
+        workspace, doc, path = await self._get_workspace_and_document(params)
+        line, column = self._parse_position(params)
+        context = params.get("context", 0)
+
+        await workspace.client.wait_for_service_ready()
+
+        try:
+            prepare_result = await workspace.client.send_request(
+                "textDocument/prepareTypeHierarchy",
+                {
+                    "textDocument": {"uri": doc.uri},
+                    "position": {"line": line, "character": column},
+                },
+            )
+        except LSPResponseError as e:
+            if e.is_method_not_found():
+                raise LSPMethodNotSupported("textDocument/prepareTypeHierarchy", workspace.server_config.name)
+            raise
+
+        if not prepare_result:
+            return []
+
+        item = prepare_result[0]
+
+        try:
+            result = await workspace.client.send_request(method, {"item": item})
+        except LSPResponseError as e:
+            if e.is_method_not_found():
+                raise LSPMethodNotSupported(method, workspace.server_config.name)
+            raise
+
+        return self._format_type_hierarchy_items(result, workspace.root, context)
+
+    def _format_type_hierarchy_items(self, result: Any, workspace_root: Path, context: int = 0) -> list[dict]:
+        if not result:
+            return []
+
+        locations = []
+        for item in result:
+            uri = item["uri"]
+            range_ = item.get("selectionRange", item.get("range"))
+
+            file_path = uri_to_path(uri)
+            start_line = range_["start"]["line"]
+
+            location = {
+                "path": self._relative_path(file_path, workspace_root),
+                "line": start_line + 1,
+                "column": range_["start"]["character"],
+                "name": item.get("name"),
+                "kind": SymbolKind(item.get("kind", 0)).name if item.get("kind") else None,
+                "detail": item.get("detail"),
+            }
+
+            if context > 0 and file_path.exists():
+                content = read_file_content(file_path)
+                lines, start, end = get_lines_around(content, start_line, context)
+                location["context_lines"] = lines
+                location["context_start"] = start + 1
+
+            locations.append(location)
+
+        return locations
+
     async def _handle_find_references(self, params: dict) -> list[dict]:
         workspace, doc, path = await self._get_workspace_and_document(params)
         line, column = self._parse_position(params)
