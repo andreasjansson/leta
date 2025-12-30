@@ -164,8 +164,11 @@ class TestPythonIntegration:
         await session.close_all()
 
 
-@requires_rust_analyzer
 class TestRustIntegration:
+    @pytest.fixture(autouse=True)
+    def check_rust_analyzer(self):
+        requires_rust_analyzer()
+
     @pytest.mark.asyncio
     async def test_initialize_server(self, rust_project, session):
         main_rs = rust_project / "src" / "main.rs"
@@ -209,8 +212,11 @@ class TestRustIntegration:
         await session.close_all()
 
 
-@requires_gopls
 class TestGoIntegration:
+    @pytest.fixture(autouse=True)
+    def check_gopls(self):
+        requires_gopls()
+
     @pytest.mark.asyncio
     async def test_initialize_server(self, go_project, session):
         main_go = go_project / "main.go"
