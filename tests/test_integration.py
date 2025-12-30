@@ -1007,15 +1007,25 @@ class TestMultiLanguageIntegration:
 
         assert output == """\
 app.py:10 [Class] ServiceProtocol
-app.py:14 [Method] greet in ServiceProtocol
-app.py:20 [Class] PythonUser
-app.py:27 [Class] PythonService
-app.py:30 [Method] __init__ in PythonService
-app.py:38 [Method] greet in PythonService
-app.py:42 [Method] add_user in PythonService
-app.py:46 [Method] get_users in PythonService
-app.py:51 [Function] create_service
-app.py:62 [Function] validate_email"""
+app.py:13 [Method] greet in ServiceProtocol
+app.py:18 [Class] PythonUser
+app.py:21 [Variable] name in PythonUser
+app.py:22 [Variable] email in PythonUser
+app.py:25 [Class] PythonService
+app.py:28 [Method] __init__ in PythonService
+app.py:28 [Variable] name in __init__
+app.py:37 [Method] greet in PythonService
+app.py:41 [Method] add_user in PythonService
+app.py:41 [Variable] user in add_user
+app.py:45 [Method] get_users in PythonService
+app.py:34 [Variable] name in PythonService
+app.py:35 [Variable] _users in PythonService
+app.py:50 [Function] create_service
+app.py:50 [Variable] name in create_service
+app.py:62 [Function] validate_email
+app.py:62 [Variable] email in validate_email
+app.py:65 [Variable] pattern in validate_email
+app.py:70 [Variable] service"""
 
     def test_go_symbols(self, workspace):
         requires_gopls()
@@ -1033,42 +1043,50 @@ app.py:62 [Function] validate_email"""
         output = format_output(response["result"], "plain")
 
         assert output == """\
-main.go:6 [Struct] GoUser
-main.go:7 [Field] Name in GoUser
-main.go:8 [Field] Email in GoUser
-main.go:12 [Struct] GoService
-main.go:13 [Field] Name in GoService
-main.go:14 [Field] users in GoService
-main.go:18 [Function] NewGoService
-main.go:26 [Method] Greet in GoService
-main.go:31 [Method] AddUser in GoService
-main.go:36 [Method] GetUsers in GoService
-main.go:43 [Interface] Servicer
-main.go:44 [Method] Greet in Servicer
-main.go:48 [Function] CreateService
-main.go:53 [Function] ValidateEmail
-main.go:63 [Function] main"""
+main.go:6 [Struct] GoUser (struct{...})
+main.go:7 [Field] Name (string) in GoUser
+main.go:8 [Field] Email (string) in GoUser
+main.go:12 [Struct] GoService (struct{...})
+main.go:13 [Field] Name (string) in GoService
+main.go:14 [Field] users ([]GoUser) in GoService
+main.go:18 [Function] NewGoService (func(name string) *GoService)
+main.go:26 [Method] (*GoService).Greet (func() string)
+main.go:31 [Method] (*GoService).AddUser (func(user GoUser))
+main.go:36 [Method] (*GoService).GetUsers (func() []GoUser)
+main.go:43 [Interface] Servicer (interface{...})
+main.go:44 [Method] Greet (func() string) in Servicer
+main.go:48 [Function] CreateService (func(name string) *GoService)
+main.go:53 [Function] ValidateEmail (func(email string) bool)
+main.go:63 [Function] main (func())"""
 
     def test_both_languages_in_same_workspace(self, workspace):
         requires_pyright()
         requires_gopls()
 
-        # Python
+        # Python symbols
         py_response = run_request("list-symbols", {
             "path": str(workspace / "app.py"),
             "workspace_root": str(workspace),
         })
         py_symbols = py_response["result"]
         py_names = [s["name"] for s in py_symbols]
-        assert "PythonService" in py_names
-        assert "PythonUser" in py_names
+        assert py_names == [
+            "ServiceProtocol", "greet", "PythonUser", "name", "email",
+            "PythonService", "__init__", "name", "greet", "add_user", "user",
+            "get_users", "name", "_users", "create_service", "name",
+            "validate_email", "email", "pattern", "service"
+        ]
 
-        # Go
+        # Go symbols
         go_response = run_request("list-symbols", {
             "path": str(workspace / "main.go"),
             "workspace_root": str(workspace),
         })
         go_symbols = go_response["result"]
         go_names = [s["name"] for s in go_symbols]
-        assert "GoService" in go_names
-        assert "GoUser" in go_names
+        assert go_names == [
+            "GoUser", "Name", "Email", "GoService", "Name", "users",
+            "NewGoService", "(*GoService).Greet", "(*GoService).AddUser",
+            "(*GoService).GetUsers", "Servicer", "Greet", "CreateService",
+            "ValidateEmail", "main"
+        ]
