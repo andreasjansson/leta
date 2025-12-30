@@ -161,7 +161,7 @@ def resolve_regex_position(content: str, pattern: str, line: int | None = None) 
             raise ValueError(
                 f"Pattern '{pattern}' matches {len(all_matches)} times in file:\n"
                 + "\n".join(locations)
-                + "\nUse LINE,REGEX or LINE,COLUMN syntax to specify which one."
+                + "\nUse LINE:REGEX or LINE,COLUMN to specify which one."
             )
         
         return (all_matches[0][0], all_matches[0][1])
