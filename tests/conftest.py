@@ -66,10 +66,7 @@ def has_command(cmd: str) -> bool:
 
 def require_command(cmd: str, name: str):
     if not has_command(cmd):
-        raise RuntimeError(
-            f"{name} not installed (command '{cmd}' not found). "
-            f"Install it to run this test."
-        )
+        pytest.skip(f"{name} not installed (command '{cmd}' not found)")
 
 
 def requires_pyright():
