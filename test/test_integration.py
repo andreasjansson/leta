@@ -194,11 +194,11 @@ main.py:80 [Class] UserRepository"""
         })
         output = format_output(response["result"], "plain")
         assert output == """\
-main.py:12 [Class] StorageProtocol
-main.py:24 [Class] User
-main.py:46 [Class] MemoryStorage
-main.py:59 [Class] FileStorage
-main.py:78 [Class] UserRepository"""
+main.py:14 [Class] StorageProtocol
+main.py:26 [Class] User
+main.py:48 [Class] MemoryStorage
+main.py:61 [Class] FileStorage
+main.py:80 [Class] UserRepository"""
 
     def test_grep_function_kind(self, workspace):
         os.chdir(workspace)
