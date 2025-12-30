@@ -269,12 +269,6 @@ class DaemonServer:
     async def _handle_find_declaration(self, params: dict) -> list[dict]:
         return await self._handle_location_request(params, "textDocument/declaration")
 
-    async def _handle_find_implementation(self, params: dict) -> list[dict]:
-        return await self._handle_location_request(params, "textDocument/implementation")
-
-    async def _handle_find_type_definition(self, params: dict) -> list[dict]:
-        return await self._handle_location_request(params, "textDocument/typeDefinition")
-
     async def _handle_find_references(self, params: dict) -> list[dict]:
         workspace, doc, path = await self._get_workspace_and_document(params)
         line, column = self._parse_position(params)
