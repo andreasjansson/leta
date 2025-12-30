@@ -803,10 +803,91 @@ class DaemonServer:
         return {"renamed": True, "files_modified": files_modified}
 
     async def _handle_grep(self, params: dict) -> list[dict]:
-        if params.get("path"):
-            return await self._handle_document_symbols(params)
+        import fnmatch
+        import re
+        
+        workspace_root = Path(params["workspace_root"]).resolve()
+        pattern = params.get("pattern", ".*")
+        kinds = params.get("kinds")  # list of lowercase kind names, or None
+        case_sensitive = params.get("case_sensitive", False)
+        include_docs = params.get("include_docs", False)
+        paths = params.get("paths")  # list of absolute paths, or None for workspace-wide
+        exclude_patterns = params.get("exclude_patterns", [])  # list of glob patterns
+        
+        # Compile the pattern regex
+        flags = 0 if case_sensitive else re.IGNORECASE
+        try:
+            regex = re.compile(pattern, flags)
+        except re.error as e:
+            raise ValueError(f"Invalid regex pattern '{pattern}': {e}")
+        
+        # Normalize kinds to lowercase set
+        kinds_set = set(k.lower() for k in kinds) if kinds else None
+        
+        # Collect symbols from files
+        if paths:
+            # Specific files provided
+            symbols = await self._collect_symbols_for_paths(
+                [Path(p) for p in paths], workspace_root
+            )
         else:
-            return await self._handle_workspace_symbols(params)
+            # Workspace-wide search
+            symbols = await self._collect_all_workspace_symbols(workspace_root, "")
+        
+        # Filter by exclude patterns
+        if exclude_patterns:
+            def is_excluded(rel_path: str) -> bool:
+                for pat in exclude_patterns:
+                    if fnmatch.fnmatch(rel_path, pat):
+                        return True
+                    # Also check just the filename
+                    if fnmatch.fnmatch(Path(rel_path).name, pat):
+                        return True
+                return False
+            symbols = [s for s in symbols if not is_excluded(s.get("path", ""))]
+        
+        # Filter by pattern
+        symbols = [s for s in symbols if regex.search(s.get("name", ""))]
+        
+        # Filter by kinds
+        if kinds_set:
+            symbols = [s for s in symbols if s.get("kind", "").lower() in kinds_set]
+        
+        # Fetch documentation if requested
+        if include_docs and symbols:
+            for sym in symbols:
+                sym["documentation"] = await self._get_symbol_documentation(
+                    workspace_root, sym["path"], sym["line"], sym.get("column", 0)
+                )
+        
+        return symbols
+
+    async def _collect_symbols_for_paths(self, paths: list[Path], workspace_root: Path) -> list[dict]:
+        from ..utils.text import get_language_id
+        
+        # Group files by language
+        files_by_language: dict[str, list[Path]] = {}
+        for file_path in paths:
+            if not file_path.exists():
+                continue
+            lang = get_language_id(file_path)
+            if lang and lang != "plaintext":
+                files_by_language.setdefault(lang, []).append(file_path)
+        
+        all_symbols = []
+        for lang, files in files_by_language.items():
+            try:
+                workspace = await self.session.get_or_create_workspace(files[0], workspace_root)
+            except ValueError:
+                continue
+            
+            if not workspace or not workspace.client:
+                continue
+            
+            symbols = await self._collect_symbols_from_files(workspace, workspace_root, files)
+            all_symbols.extend(symbols)
+        
+        return all_symbols
 
     async def _handle_document_symbols(self, params: dict) -> list[dict]:
         workspace, doc, path = await self._get_workspace_and_document(params)
