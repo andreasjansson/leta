@@ -127,7 +127,7 @@ class LSPClient:
         self._pending_requests[request_id] = future
 
         encoded = encode_message(message)
-        logger.info(f"LSP REQUEST [{request_id}] {method}: {params}")
+        logger.debug(f"LSP REQUEST [{request_id}] {method}: {params}")
         self.stdin.write(encoded)
         await self.stdin.drain()
 
