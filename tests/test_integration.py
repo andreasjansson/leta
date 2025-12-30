@@ -239,6 +239,7 @@ def create_sample_user() -> User:
 main.py:109-115
 
 
+
 def create_sample_user() -> User:
     \"\"\"Create a sample user for testing.\"\"\"
     return User(name="John Doe", email="john@example.com", age=30)
