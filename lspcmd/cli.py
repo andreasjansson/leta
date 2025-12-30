@@ -322,7 +322,7 @@ def config(ctx):
 def describe(ctx, path, position):
     """Show hover information at position.
     
-    POSITION can be LINE,COLUMN (e.g. 42,10), LINE,REGEX (e.g. 42,def foo),
+    POSITION can be LINE,COLUMN (e.g. 42,10), LINE:REGEX (e.g. 42:def foo),
     or just REGEX (e.g. def foo) to search the whole file.
     """
     path = Path(path).resolve()
@@ -348,7 +348,7 @@ def describe(ctx, path, position):
 def find_definition(ctx, path, position, context):
     """Find definition at position.
     
-    POSITION can be LINE,COLUMN (e.g. 42,10), LINE,REGEX (e.g. 42,def foo),
+    POSITION can be LINE,COLUMN (e.g. 42,10), LINE:REGEX (e.g. 42:def foo),
     or just REGEX (e.g. def foo) to search the whole file.
     """
     path = Path(path).resolve()
@@ -375,7 +375,7 @@ def find_definition(ctx, path, position, context):
 def find_declaration(ctx, path, position, context):
     """Find declaration at position.
     
-    POSITION can be LINE,COLUMN (e.g. 42,10), LINE,REGEX (e.g. 42,def foo),
+    POSITION can be LINE,COLUMN (e.g. 42,10), LINE:REGEX (e.g. 42:def foo),
     or just REGEX (e.g. def foo) to search the whole file.
     """
     path = Path(path).resolve()
@@ -402,7 +402,7 @@ def find_declaration(ctx, path, position, context):
 def find_references(ctx, path, position, context):
     """Find references at position.
     
-    POSITION can be LINE,COLUMN (e.g. 42,10), LINE,REGEX (e.g. 42,def foo),
+    POSITION can be LINE,COLUMN (e.g. 42,10), LINE:REGEX (e.g. 42:def foo),
     or just REGEX (e.g. def foo) to search the whole file.
     """
     path = Path(path).resolve()
@@ -428,7 +428,7 @@ def find_references(ctx, path, position, context):
 def print_definition(ctx, path, position):
     """Print the full definition at position.
     
-    POSITION can be LINE,COLUMN (e.g. 42,10), LINE,REGEX (e.g. 42,def foo),
+    POSITION can be LINE,COLUMN (e.g. 42,10), LINE:REGEX (e.g. 42:def foo),
     or just REGEX (e.g. def foo) to search the whole file.
     """
     path = Path(path).resolve()
@@ -453,7 +453,7 @@ def print_definition(ctx, path, position):
 def list_code_actions(ctx, path, position):
     """List code actions at position.
     
-    POSITION can be LINE,COLUMN (e.g. 42,10), LINE,REGEX (e.g. 42,def foo),
+    POSITION can be LINE,COLUMN (e.g. 42,10), LINE:REGEX (e.g. 42:def foo),
     or just REGEX (e.g. def foo) to search the whole file.
     """
     path = Path(path).resolve()
@@ -479,7 +479,7 @@ def list_code_actions(ctx, path, position):
 def execute_code_action(ctx, path, position, action_title):
     """Execute a code action at position.
     
-    POSITION can be LINE,COLUMN (e.g. 42,10), LINE,REGEX (e.g. 42,def foo),
+    POSITION can be LINE,COLUMN (e.g. 42,10), LINE:REGEX (e.g. 42:def foo),
     or just REGEX (e.g. def foo) to search the whole file.
     """
     path = Path(path).resolve()
@@ -540,7 +540,7 @@ def organize_imports(ctx, path):
 def rename(ctx, path, position, new_name):
     """Rename symbol at position.
     
-    POSITION can be LINE,COLUMN (e.g. 42,10), LINE,REGEX (e.g. 42,def foo),
+    POSITION can be LINE,COLUMN (e.g. 42,10), LINE:REGEX (e.g. 42:def foo),
     or just REGEX (e.g. def foo) to search the whole file.
     """
     path = Path(path).resolve()
