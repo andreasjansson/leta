@@ -2088,3 +2088,317 @@ class TestLuaIntegration:
         })
         output = format_output(response["result"], "plain")
         assert "User" in output
+
+
+# =============================================================================
+# Ruby Integration Tests (solargraph)
+# =============================================================================
+
+
+class TestRubyIntegration:
+    """Integration tests for Ruby using solargraph."""
+
+    @pytest.fixture(autouse=True)
+    def check_solargraph(self):
+        requires_solargraph()
+
+    @pytest.fixture(scope="class")
+    def project(self, class_temp_dir):
+        src = FIXTURES_DIR / "ruby_project"
+        dst = class_temp_dir / "ruby_project"
+        shutil.copytree(src, dst)
+        return dst
+
+    @pytest.fixture(scope="class")
+    def workspace(self, project, class_daemon, class_isolated_config):
+        config = load_config()
+        add_workspace_root(project, config)
+        run_request("grep", {
+            "paths": [str(project / "user.rb")],
+            "workspace_root": str(project),
+            "pattern": ".*",
+        })
+        time.sleep(1.0)
+        return project
+
+    # =========================================================================
+    # grep tests
+    # =========================================================================
+
+    def test_grep_pattern_filter(self, workspace):
+        os.chdir(workspace)
+        response = run_request("grep", {
+            "paths": [str(workspace / "user.rb")],
+            "workspace_root": str(workspace),
+            "pattern": "Storage",
+            "kinds": ["class"],
+        })
+        output = format_output(response["result"], "plain")
+        assert "Storage" in output
+        assert "MemoryStorage" in output
+        assert "FileStorage" in output
+
+    def test_grep_kind_filter_class(self, workspace):
+        os.chdir(workspace)
+        response = run_request("grep", {
+            "paths": [str(workspace / "user.rb")],
+            "workspace_root": str(workspace),
+            "pattern": ".*",
+            "kinds": ["class"],
+        })
+        output = format_output(response["result"], "plain")
+        assert "[Class] User" in output
+        assert "[Class] Storage" in output
+        assert "[Class] MemoryStorage" in output
+        assert "[Class] FileStorage" in output
+        assert "[Class] UserRepository" in output
+
+    def test_grep_kind_filter_method(self, workspace):
+        os.chdir(workspace)
+        response = run_request("grep", {
+            "paths": [str(workspace / "user.rb")],
+            "workspace_root": str(workspace),
+            "pattern": ".*",
+            "kinds": ["method"],
+        })
+        output = format_output(response["result"], "plain")
+        assert "initialize" in output
+        assert "adult?" in output
+        assert "display_name" in output
+
+    def test_grep_kind_filter_function(self, workspace):
+        os.chdir(workspace)
+        response = run_request("grep", {
+            "paths": [str(workspace / "main.rb")],
+            "workspace_root": str(workspace),
+            "pattern": ".*",
+            "kinds": ["function", "method"],
+        })
+        output = format_output(response["result"], "plain")
+        assert "create_sample_user" in output
+        assert "validate_user" in output
+        assert "process_users" in output
+        assert "main" in output
+
+    # =========================================================================
+    # definition tests
+    # =========================================================================
+
+    def test_definition_basic(self, workspace):
+        os.chdir(workspace)
+        response = run_request("definition", {
+            "path": str(workspace / "main.rb"),
+            "workspace_root": str(workspace),
+            "line": 36,
+            "column": 9,
+            "context": 0,
+            "body": False,
+        })
+        output = format_output(response["result"], "plain")
+        assert "create_sample_user" in output
+
+    def test_definition_with_body(self, workspace):
+        os.chdir(workspace)
+        response = run_request("definition", {
+            "path": str(workspace / "main.rb"),
+            "workspace_root": str(workspace),
+            "line": 36,
+            "column": 9,
+            "context": 0,
+            "body": True,
+        })
+        output = format_output(response["result"], "plain")
+        assert "create_sample_user" in output
+        assert "John Doe" in output
+
+    # =========================================================================
+    # references tests
+    # =========================================================================
+
+    def test_references_basic(self, workspace):
+        os.chdir(workspace)
+        response = run_request("references", {
+            "path": str(workspace / "user.rb"),
+            "workspace_root": str(workspace),
+            "line": 8,
+            "column": 6,
+            "context": 0,
+        })
+        output = format_output(response["result"], "plain")
+        assert "User" in output
+
+    # =========================================================================
+    # describe (hover) tests
+    # =========================================================================
+
+    def test_describe_hover(self, workspace):
+        os.chdir(workspace)
+        response = run_request("describe", {
+            "path": str(workspace / "user.rb"),
+            "workspace_root": str(workspace),
+            "line": 8,
+            "column": 6,
+        })
+        output = format_output(response["result"], "plain")
+        assert "User" in output
+
+
+# =============================================================================
+# PHP Integration Tests (intelephense)
+# =============================================================================
+
+
+class TestPhpIntegration:
+    """Integration tests for PHP using intelephense."""
+
+    @pytest.fixture(autouse=True)
+    def check_intelephense(self):
+        requires_intelephense()
+
+    @pytest.fixture(scope="class")
+    def project(self, class_temp_dir):
+        src = FIXTURES_DIR / "php_project"
+        dst = class_temp_dir / "php_project"
+        shutil.copytree(src, dst)
+        return dst
+
+    @pytest.fixture(scope="class")
+    def workspace(self, project, class_daemon, class_isolated_config):
+        config = load_config()
+        add_workspace_root(project, config)
+        run_request("grep", {
+            "paths": [str(project / "src" / "User.php")],
+            "workspace_root": str(project),
+            "pattern": ".*",
+        })
+        time.sleep(1.0)
+        return project
+
+    # =========================================================================
+    # grep tests
+    # =========================================================================
+
+    def test_grep_pattern_filter(self, workspace):
+        os.chdir(workspace)
+        response = run_request("grep", {
+            "paths": [str(workspace / "src" / "Storage.php")],
+            "workspace_root": str(workspace),
+            "pattern": "Storage",
+            "kinds": ["interface"],
+        })
+        output = format_output(response["result"], "plain")
+        assert "Storage" in output
+
+    def test_grep_kind_filter_class(self, workspace):
+        os.chdir(workspace)
+        response = run_request("grep", {
+            "paths": [str(workspace / "src" / "MemoryStorage.php")],
+            "workspace_root": str(workspace),
+            "pattern": ".*",
+            "kinds": ["class"],
+        })
+        output = format_output(response["result"], "plain")
+        assert "[Class] MemoryStorage" in output
+
+    def test_grep_kind_filter_interface(self, workspace):
+        os.chdir(workspace)
+        response = run_request("grep", {
+            "paths": [str(workspace / "src" / "Storage.php")],
+            "workspace_root": str(workspace),
+            "pattern": ".*",
+            "kinds": ["interface"],
+        })
+        output = format_output(response["result"], "plain")
+        assert "[Interface] Storage" in output
+
+    def test_grep_kind_filter_method(self, workspace):
+        os.chdir(workspace)
+        response = run_request("grep", {
+            "paths": [str(workspace / "src" / "User.php")],
+            "workspace_root": str(workspace),
+            "pattern": "^get",
+            "kinds": ["method"],
+        })
+        output = format_output(response["result"], "plain")
+        assert "getName" in output
+        assert "getEmail" in output
+        assert "getAge" in output
+
+    # =========================================================================
+    # definition tests
+    # =========================================================================
+
+    def test_definition_basic(self, workspace):
+        os.chdir(workspace)
+        response = run_request("definition", {
+            "path": str(workspace / "src" / "Main.php"),
+            "workspace_root": str(workspace),
+            "line": 60,
+            "column": 22,
+            "context": 0,
+            "body": False,
+        })
+        output = format_output(response["result"], "plain")
+        assert "createSampleUser" in output
+
+    def test_definition_with_body(self, workspace):
+        os.chdir(workspace)
+        response = run_request("definition", {
+            "path": str(workspace / "src" / "Main.php"),
+            "workspace_root": str(workspace),
+            "line": 60,
+            "column": 22,
+            "context": 0,
+            "body": True,
+        })
+        output = format_output(response["result"], "plain")
+        assert "createSampleUser" in output
+        assert "John Doe" in output
+
+    # =========================================================================
+    # references tests
+    # =========================================================================
+
+    def test_references_basic(self, workspace):
+        os.chdir(workspace)
+        response = run_request("references", {
+            "path": str(workspace / "src" / "User.php"),
+            "workspace_root": str(workspace),
+            "line": 10,
+            "column": 6,
+            "context": 0,
+        })
+        output = format_output(response["result"], "plain")
+        assert "User" in output
+
+    # =========================================================================
+    # implementations tests
+    # =========================================================================
+
+    def test_implementations_basic(self, workspace):
+        os.chdir(workspace)
+        response = run_request("implementations", {
+            "path": str(workspace / "src" / "Storage.php"),
+            "workspace_root": str(workspace),
+            "line": 11,
+            "column": 10,
+            "context": 0,
+        })
+        output = format_output(response["result"], "plain")
+        assert "MemoryStorage" in output
+        assert "FileStorage" in output
+
+    # =========================================================================
+    # describe (hover) tests
+    # =========================================================================
+
+    def test_describe_hover(self, workspace):
+        os.chdir(workspace)
+        response = run_request("describe", {
+            "path": str(workspace / "src" / "User.php"),
+            "workspace_root": str(workspace),
+            "line": 10,
+            "column": 6,
+        })
+        output = format_output(response["result"], "plain")
+        assert "User" in output
