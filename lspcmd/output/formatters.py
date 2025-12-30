@@ -64,6 +64,9 @@ def format_plain(data: Any) -> str:
 
         first = data[0]
 
+        if "error" in first:
+            return f"Error: {first['error']}"
+
         if "severity" in first and "message" in first:
             return format_diagnostics(data)
 
