@@ -2189,7 +2189,7 @@ class TestRubyIntegration:
         response = run_request("definition", {
             "path": str(workspace / "main.rb"),
             "workspace_root": str(workspace),
-            "line": 36,
+            "line": 35,
             "column": 9,
             "context": 0,
             "body": False,
@@ -2202,7 +2202,7 @@ class TestRubyIntegration:
         response = run_request("definition", {
             "path": str(workspace / "main.rb"),
             "workspace_root": str(workspace),
-            "line": 36,
+            "line": 35,
             "column": 9,
             "context": 0,
             "body": True,
