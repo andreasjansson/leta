@@ -494,6 +494,7 @@ class DaemonServer:
     ) -> None:
         """Wait until diagnostics stop arriving (quiet period with no changes)."""
         uris = [doc.uri for doc in docs]
+        logger.info(f"Waiting for diagnostics to stabilize for {len(uris)} files...")
         
         def count_diagnostics() -> int:
             return sum(len(workspace.client.get_stored_diagnostics(uri)) for uri in uris)
@@ -512,9 +513,11 @@ class DaemonServer:
             
             current_count = count_diagnostics()
             if current_count != last_count:
+                logger.debug(f"Diagnostics count changed: {last_count} -> {current_count}")
                 last_count = current_count
                 stable_since = now
             elif now - stable_since >= quiet_period:
+                logger.info(f"Diagnostics stable at {current_count} after {now - start_time:.2f}s")
                 break
 
     async def _check_pull_diagnostics_support(self, workspace: Workspace, sample_file: Path) -> bool:
