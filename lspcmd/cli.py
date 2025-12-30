@@ -224,6 +224,8 @@ def expand_exclude_pattern(pattern: str) -> set[Path]:
         "definition",
         "references",
         "implementations",
+        "supertypes",
+        "subtypes",
         "declaration",
         "describe",
         "rename",
@@ -503,6 +505,42 @@ def supertypes(ctx, path, position, context):
     or just REGEX (e.g. def foo) to search the whole file.
     """
     _run_location_command(ctx, path, position, context, "find-supertypes")
+
+
+@cli.command("diagnostics")
+@click.argument("path", type=click.Path(exists=True))
+@click.option("-s", "--severity", default=None, 
+              type=click.Choice(["error", "warning", "info", "hint"]),
+              help="Filter by minimum severity level")
+@click.pass_context
+def diagnostics(ctx, path, severity):
+    """Show diagnostics (errors, warnings) for a file.
+    
+    Examples:
+    
+      lspcmd diagnostics src/main.py
+    
+      lspcmd diagnostics src/main.py -s error  # errors only
+    
+      lspcmd --json diagnostics src/main.py    # JSON output
+    """
+    path = Path(path).resolve()
+    config = load_config()
+    workspace_root = get_workspace_root_for_path(path, config)
+
+    response = run_request("get-diagnostics", {
+        "path": str(path),
+        "workspace_root": str(workspace_root),
+    })
+
+    result = response.get("result", [])
+    
+    if severity:
+        severity_order = {"error": 0, "warning": 1, "info": 2, "hint": 3}
+        min_level = severity_order[severity]
+        result = [d for d in result if severity_order.get(d.get("severity", "error"), 0) <= min_level]
+
+    click.echo(format_output(result, "json" if ctx.obj["json"] else "plain"))
 
 
 @cli.command("list-code-actions")
