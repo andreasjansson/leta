@@ -8,6 +8,8 @@ from dataclasses import dataclass
 from typing import Optional, Protocol
 import os
 
+from utils import validate_email
+
 
 class StorageProtocol(Protocol):
     """Protocol defining the storage interface."""
