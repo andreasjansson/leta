@@ -720,7 +720,7 @@ class DaemonServer:
         action = result[0]
 
         if action.get("edit"):
-            await self._apply_workspace_edit(action["edit"])
+            await self._apply_workspace_edit(action["edit"], workspace.root)
             return {"organized": True}
 
         if action.get("command"):
@@ -750,7 +750,7 @@ class DaemonServer:
         if not result:
             return {"renamed": False, "error": "Rename not supported or failed"}
 
-        files_modified = await self._apply_workspace_edit(result)
+        files_modified = await self._apply_workspace_edit(result, workspace.root)
         return {"renamed": True, "files_modified": files_modified}
 
     async def _handle_list_symbols(self, params: dict) -> list[dict]:
