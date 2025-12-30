@@ -490,9 +490,13 @@ def list_code_actions(ctx, path, position):
 @click.argument("action_title")
 @click.pass_context
 def execute_code_action(ctx, path, position, action_title):
-    """Execute a code action at position (LINE,COLUMN)."""
+    """Execute a code action at position.
+    
+    POSITION can be LINE,COLUMN (e.g. 42,10), LINE,REGEX (e.g. 42,def foo),
+    or just REGEX (e.g. def foo) to search the whole file.
+    """
     path = Path(path).resolve()
-    line, column = parse_position(position)
+    line, column = parse_position(position, path)
     config = load_config()
     workspace_root = get_workspace_root_for_path(path, config)
 
