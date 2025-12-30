@@ -255,6 +255,7 @@ See `lspcmd COMMAND --help` for more documentation and command-specific options.
     cls=OrderedGroup,
     commands_order=[
         "grep",
+        "tree",
         "definition",
         "references",
         "implementations",
