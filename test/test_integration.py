@@ -233,30 +233,30 @@ main.py:127 [Function] main"""
         sensitive_output = format_output(response["result"], "plain")
         
         assert insensitive_output == """\
-main.py:24 [Class] User
-main.py:78 [Class] UserRepository
-main.py:87 [Method] add_user in UserRepository
-main.py:87 [Variable] user in add_user
-main.py:91 [Method] get_user in UserRepository
-main.py:95 [Method] delete_user in UserRepository
-main.py:102 [Method] list_users in UserRepository
-main.py:106 [Method] count_users in UserRepository
-main.py:85 [Variable] _users in UserRepository
-main.py:111 [Function] create_sample_user
-main.py:116 [Function] process_users
-main.py:128 [Variable] user in main"""
+main.py:26 [Class] User
+main.py:80 [Class] UserRepository
+main.py:89 [Method] add_user in UserRepository
+main.py:89 [Variable] user in add_user
+main.py:93 [Method] get_user in UserRepository
+main.py:97 [Method] delete_user in UserRepository
+main.py:104 [Method] list_users in UserRepository
+main.py:108 [Method] count_users in UserRepository
+main.py:87 [Variable] _users in UserRepository
+main.py:113 [Function] create_sample_user
+main.py:118 [Function] process_users
+main.py:130 [Variable] user in main"""
         
         assert sensitive_output == """\
-main.py:87 [Method] add_user in UserRepository
-main.py:87 [Variable] user in add_user
-main.py:91 [Method] get_user in UserRepository
-main.py:95 [Method] delete_user in UserRepository
-main.py:102 [Method] list_users in UserRepository
-main.py:106 [Method] count_users in UserRepository
-main.py:85 [Variable] _users in UserRepository
-main.py:111 [Function] create_sample_user
-main.py:116 [Function] process_users
-main.py:128 [Variable] user in main"""
+main.py:89 [Method] add_user in UserRepository
+main.py:89 [Variable] user in add_user
+main.py:93 [Method] get_user in UserRepository
+main.py:97 [Method] delete_user in UserRepository
+main.py:104 [Method] list_users in UserRepository
+main.py:108 [Method] count_users in UserRepository
+main.py:87 [Variable] _users in UserRepository
+main.py:113 [Function] create_sample_user
+main.py:118 [Function] process_users
+main.py:130 [Variable] user in main"""
 
     def test_grep_combined_filters(self, workspace):
         os.chdir(workspace)
