@@ -532,14 +532,14 @@ def diagnostics(ctx, path, severity):
     if path:
         path = Path(path).resolve()
         workspace_root = get_workspace_root_for_path(path, config)
-        response = run_request("get-diagnostics", {
+        response = run_request("diagnostics", {
             "path": str(path),
             "workspace_root": str(workspace_root),
         })
         result = response.get("result", [])
     else:
         workspace_root = get_workspace_root_for_cwd(config)
-        response = run_request("get-workspace-diagnostics", {
+        response = run_request("workspace-diagnostics", {
             "workspace_root": str(workspace_root),
         })
         result = response.get("result", [])
