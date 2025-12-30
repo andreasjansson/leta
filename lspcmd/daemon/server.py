@@ -603,46 +603,41 @@ class DaemonServer:
         workspace_root = Path(params["workspace_root"]).resolve()
 
         if not old_path.exists():
-            return {"error": f"Source file does not exist: {old_path}"}
+            raise ValueError(f"Source file does not exist: {old_path}")
 
         if new_path.exists():
-            return {"error": f"Destination already exists: {new_path}"}
+            raise ValueError(f"Destination already exists: {new_path}")
 
         workspace = await self.session.get_or_create_workspace(old_path, workspace_root)
         if not workspace or not workspace.client:
-            new_path.parent.mkdir(parents=True, exist_ok=True)
-            old_path.rename(new_path)
-            return {
-                "moved": True,
-                "imports_updated": False,
-                "message": "File moved (no language server available to update imports)",
-                "files_modified": [self._relative_path(new_path, workspace_root)],
-            }
+            raise ValueError(f"No language server available for {old_path.suffix} files")
 
         await workspace.client.wait_for_service_ready()
 
-        old_uri = path_to_uri(old_path)
-        new_uri = path_to_uri(new_path)
-
-        workspace_edit = None
+        server_name = workspace.server_config.name
         supports_will_rename = workspace.client.capabilities.get("workspace", {}).get(
             "fileOperations", {}
         ).get("willRename")
 
-        if supports_will_rename:
-            try:
-                workspace_edit = await workspace.client.send_request(
-                    "workspace/willRenameFiles",
-                    {
-                        "files": [
-                            {"oldUri": old_uri, "newUri": new_uri}
-                        ]
-                    },
-                )
-            except LSPResponseError as e:
-                if not e.is_method_not_found():
-                    raise
-                logger.debug(f"Server doesn't support willRenameFiles: {e}")
+        if not supports_will_rename:
+            raise ValueError(f"move-file is not supported by {server_name}")
+
+        old_uri = path_to_uri(old_path)
+        new_uri = path_to_uri(new_path)
+
+        try:
+            workspace_edit = await workspace.client.send_request(
+                "workspace/willRenameFiles",
+                {
+                    "files": [
+                        {"oldUri": old_uri, "newUri": new_uri}
+                    ]
+                },
+            )
+        except LSPResponseError as e:
+            if e.is_method_not_found():
+                raise ValueError(f"move-file is not supported by {server_name}")
+            raise
 
         new_path.parent.mkdir(parents=True, exist_ok=True)
         old_path.rename(new_path)
