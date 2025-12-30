@@ -447,39 +447,25 @@ class DaemonServer:
                 
             await workspace.client.wait_for_service_ready()
             
-            supports_pull = await self._check_pull_diagnostics_support(workspace, files[0])
-            logger.info(f"Language {lang}: {len(files)} files, pull_diagnostics={supports_pull}")
-            
-            if supports_pull:
-                for file_path in files:
-                    doc = await workspace.ensure_document_open(file_path)
-                    try:
-                        result = await workspace.client.send_request(
-                            "textDocument/diagnostic",
-                            {"textDocument": {"uri": doc.uri}},
-                        )
-                        if result and result.get("items"):
-                            all_diagnostics.extend(
-                                self._format_diagnostics(result["items"], file_path, workspace_root)
-                            )
-                    except LSPResponseError:
-                        pass
-                    finally:
-                        await workspace.close_document(file_path)
-            else:
-                opened_docs = []
-                for file_path in files:
-                    doc = await workspace.ensure_document_open(file_path)
-                    opened_docs.append((file_path, doc))
-                
-                await self._wait_for_diagnostics_stable(workspace, [doc for _, doc in opened_docs])
-                
-                for file_path, doc in opened_docs:
-                    stored = workspace.client.get_stored_diagnostics(doc.uri)
-                    if stored:
+            for file_path in files:
+                doc = await workspace.ensure_document_open(file_path)
+                try:
+                    result = await workspace.client.send_request(
+                        "textDocument/diagnostic",
+                        {"textDocument": {"uri": doc.uri}},
+                    )
+                    if result and result.get("items"):
                         all_diagnostics.extend(
-                            self._format_diagnostics(stored, file_path, workspace_root)
+                            self._format_diagnostics(result["items"], file_path, workspace_root)
                         )
+                except LSPResponseError as e:
+                    if e.is_method_not_found():
+                        stored = workspace.client.get_stored_diagnostics(doc.uri)
+                        if stored:
+                            all_diagnostics.extend(
+                                self._format_diagnostics(stored, file_path, workspace_root)
+                            )
+                finally:
                     await workspace.close_document(file_path)
         
         all_diagnostics.sort(key=lambda d: (d["path"], d["line"], d["column"]))
