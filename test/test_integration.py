@@ -548,7 +548,7 @@ Attributes:
         response = run_request("rename", {
             "path": str(workspace / "main.py"),
             "workspace_root": str(workspace),
-            "line": 25,
+            "line": 27,
             "column": 6,
             "new_name": "Person",
         })
@@ -566,7 +566,7 @@ Renamed in 1 file(s):
         run_request("rename", {
             "path": str(workspace / "main.py"),
             "workspace_root": str(workspace),
-            "line": 25,
+            "line": 27,
             "column": 6,
             "new_name": "User",
         })
