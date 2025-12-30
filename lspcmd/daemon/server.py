@@ -421,7 +421,7 @@ class DaemonServer:
 
         return self._format_locations(result, workspace.root, params.get("context", 0))
 
-    async def _handle_get_diagnostics(self, params: dict) -> list[dict]:
+    async def _handle_diagnostics(self, params: dict) -> list[dict]:
         workspace, doc, path = await self._get_workspace_and_document(params)
 
         await workspace.client.wait_for_service_ready()
