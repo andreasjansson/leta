@@ -484,6 +484,22 @@ class DaemonServer:
         all_diagnostics.sort(key=lambda d: (d["path"], d["line"], d["column"]))
         return all_diagnostics
 
+    async def _check_pull_diagnostics_support(self, workspace: Workspace, sample_file: Path) -> bool:
+        """Check if the server supports pull diagnostics by trying one request."""
+        doc = await workspace.ensure_document_open(sample_file)
+        try:
+            await workspace.client.send_request(
+                "textDocument/diagnostic",
+                {"textDocument": {"uri": doc.uri}},
+            )
+            return True
+        except LSPResponseError as e:
+            if e.is_method_not_found():
+                return False
+            raise
+        finally:
+            await workspace.close_document(sample_file)
+
     def _find_all_source_files(self, workspace_root: Path) -> list[Path]:
         source_extensions = {
             ".py", ".pyi", ".js", ".jsx", ".ts", ".tsx", ".go", ".rs",
