@@ -315,9 +315,9 @@ class TestCliWithGopls:
         # Find implementations of Storage interface (line 31)
         result = runner.invoke(cli, ["implementations", str(main_go), "31:Storage"])
         assert result.exit_code == 0, f"Failed with: {result.output}"
-        # Should find MemoryStorage (line 39) and FileStorage (line 80)
+        # Should find MemoryStorage (line 39) and FileStorage (line 85)
         assert "MemoryStorage" in result.output or "main.go:39" in result.output
-        assert "FileStorage" in result.output or "main.go:80" in result.output
+        assert "FileStorage" in result.output or "main.go:85" in result.output
 
     def test_subtypes(self, go_project, isolated_config):
         """Test that subtypes works for Go interfaces."""
