@@ -523,12 +523,16 @@ class DaemonServer:
             return await self._handle_workspace_symbols(params)
 
     async def _handle_document_symbols(self, params: dict) -> list[dict]:
+        logger.info(f"_handle_document_symbols called with params: {params}")
         workspace, doc, path = await self._get_workspace_and_document(params)
+        logger.info(f"Got workspace: root={workspace.root}, server={workspace.server_config.name}")
+        logger.info(f"Doc URI: {doc.uri}")
 
         result = await workspace.client.send_request(
             "textDocument/documentSymbol",
             {"textDocument": {"uri": doc.uri}},
         )
+        logger.info(f"documentSymbol result: {result}")
 
         if not result:
             return []
