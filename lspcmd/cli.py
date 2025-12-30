@@ -340,39 +340,50 @@ def describe(ctx, path, position):
     click.echo(format_output(response.get("result", response), "json" if ctx.obj["json"] else "plain"))
 
 
-@cli.command("find-definition")
+@cli.command("definition")
 @click.argument("path", type=click.Path(exists=True))
 @click.argument("position")
 @click.option("-n", "--context", default=0, help="Lines of context")
+@click.option("-b", "--body", is_flag=True, help="Print full definition body")
 @click.pass_context
-def find_definition(ctx, path, position, context):
+def definition(ctx, path, position, context, body):
     """Find definition at position.
     
     POSITION can be LINE,COLUMN (e.g. 42,10), LINE:REGEX (e.g. 42:def foo),
     or just REGEX (e.g. def foo) to search the whole file.
+    
+    Use -b/--body to print the full definition body (for functions, classes, etc.).
     """
     path = Path(path).resolve()
     line, column = parse_position(position, path)
     config = load_config()
     workspace_root = get_workspace_root_for_path(path, config)
 
-    response = run_request("find-definition", {
-        "path": str(path),
-        "workspace_root": str(workspace_root),
-        "line": line,
-        "column": column,
-        "context": context,
-    })
+    if body:
+        response = run_request("print-definition", {
+            "path": str(path),
+            "workspace_root": str(workspace_root),
+            "line": line,
+            "column": column,
+        })
+    else:
+        response = run_request("find-definition", {
+            "path": str(path),
+            "workspace_root": str(workspace_root),
+            "line": line,
+            "column": column,
+            "context": context,
+        })
 
     click.echo(format_output(response.get("result", response), "json" if ctx.obj["json"] else "plain"))
 
 
-@cli.command("find-declaration")
+@cli.command("declaration")
 @click.argument("path", type=click.Path(exists=True))
 @click.argument("position")
 @click.option("-n", "--context", default=0, help="Lines of context")
 @click.pass_context
-def find_declaration(ctx, path, position, context):
+def declaration(ctx, path, position, context):
     """Find declaration at position.
     
     POSITION can be LINE,COLUMN (e.g. 42,10), LINE:REGEX (e.g. 42:def foo),
@@ -394,12 +405,12 @@ def find_declaration(ctx, path, position, context):
     click.echo(format_output(response.get("result", response), "json" if ctx.obj["json"] else "plain"))
 
 
-@cli.command("find-references")
+@cli.command("references")
 @click.argument("path", type=click.Path(exists=True))
 @click.argument("position")
 @click.option("-n", "--context", default=0, help="Lines of context")
 @click.pass_context
-def find_references(ctx, path, position, context):
+def references(ctx, path, position, context):
     """Find references at position.
     
     POSITION can be LINE,COLUMN (e.g. 42,10), LINE:REGEX (e.g. 42:def foo),
@@ -416,31 +427,6 @@ def find_references(ctx, path, position, context):
         "line": line,
         "column": column,
         "context": context,
-    })
-
-    click.echo(format_output(response.get("result", response), "json" if ctx.obj["json"] else "plain"))
-
-
-@cli.command("print-definition")
-@click.argument("path", type=click.Path(exists=True))
-@click.argument("position")
-@click.pass_context
-def print_definition(ctx, path, position):
-    """Print the full definition at position.
-    
-    POSITION can be LINE,COLUMN (e.g. 42,10), LINE:REGEX (e.g. 42:def foo),
-    or just REGEX (e.g. def foo) to search the whole file.
-    """
-    path = Path(path).resolve()
-    line, column = parse_position(position, path)
-    config = load_config()
-    workspace_root = get_workspace_root_for_path(path, config)
-
-    response = run_request("print-definition", {
-        "path": str(path),
-        "workspace_root": str(workspace_root),
-        "line": line,
-        "column": column,
     })
 
     click.echo(format_output(response.get("result", response), "json" if ctx.obj["json"] else "plain"))
