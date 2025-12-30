@@ -6,6 +6,7 @@ from lspcmd.output.formatters import (
     format_symbols,
     format_code_actions,
     format_session,
+    format_tree,
 )
 
 
