@@ -941,6 +941,51 @@ class DaemonServer:
         
         return symbols
 
+    async def _handle_tree(self, params: dict) -> dict:
+        import fnmatch
+        
+        workspace_root = Path(params["workspace_root"]).resolve()
+        exclude_patterns = params.get("exclude_patterns", [])
+        
+        files = self._find_all_source_files(workspace_root)
+        
+        if exclude_patterns:
+            def is_excluded(file_path: Path) -> bool:
+                rel_path = self._relative_path(file_path, workspace_root)
+                path_parts = Path(rel_path).parts
+                for pat in exclude_patterns:
+                    if fnmatch.fnmatch(rel_path, pat):
+                        return True
+                    if "/" not in pat and "*" not in pat and "?" not in pat:
+                        if pat in path_parts:
+                            return True
+                    if fnmatch.fnmatch(file_path.name, pat):
+                        return True
+                return False
+            files = [f for f in files if not is_excluded(f)]
+        
+        tree_data: dict[str, dict] = {}
+        total_lines = 0
+        total_files = 0
+        
+        for file_path in sorted(files):
+            rel_path = self._relative_path(file_path, workspace_root)
+            try:
+                line_count = sum(1 for _ in file_path.open())
+            except Exception:
+                line_count = 0
+            
+            tree_data[rel_path] = {"lines": line_count}
+            total_lines += line_count
+            total_files += 1
+        
+        return {
+            "root": str(workspace_root),
+            "files": tree_data,
+            "total_files": total_files,
+            "total_lines": total_lines,
+        }
+
     async def _collect_symbols_for_paths(self, paths: list[Path], workspace_root: Path) -> list[dict]:
         from ..utils.text import get_language_id
         
