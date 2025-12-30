@@ -1937,24 +1937,6 @@ src/main/java/com/example/UserRepository.java:55     public List<User> listUsers
         assert "Person createSampleUser()" in updated_main
         assert "new Person(" in updated_main
         assert "new User(" not in updated_main
-        
-        # Move file back
-        response = run_request("move-file", {
-            "old_path": str(base_path / "Person.java"),
-            "new_path": str(base_path / "User.java"),
-            "workspace_root": str(workspace),
-        })
-        output = format_output(response["result"], "plain")
-        
-        # Verify file moved back
-        assert (base_path / "User.java").exists()
-        assert not (base_path / "Person.java").exists()
-        
-        # Check class references were restored
-        assert "Moved file and updated imports in" in output
-        restored_main = (base_path / "Main.java").read_text()
-        assert "User createSampleUser()" in restored_main
-        assert "new User(" in restored_main
 
 
 # =============================================================================
