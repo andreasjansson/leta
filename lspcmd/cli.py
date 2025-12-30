@@ -228,6 +228,7 @@ def expand_exclude_pattern(pattern: str) -> set[Path]:
         "subtypes",
         "declaration",
         "describe",
+        "diagnostics",
         "rename",
         "list-code-actions",
         "execute-code-action",
@@ -508,32 +509,43 @@ def supertypes(ctx, path, position, context):
 
 
 @cli.command("diagnostics")
-@click.argument("path", type=click.Path(exists=True))
+@click.argument("path", type=click.Path(exists=True), required=False)
 @click.option("-s", "--severity", default=None, 
               type=click.Choice(["error", "warning", "info", "hint"]),
               help="Filter by minimum severity level")
 @click.pass_context
 def diagnostics(ctx, path, severity):
-    """Show diagnostics (errors, warnings) for a file.
+    """Show diagnostics (errors, warnings) for a file or workspace.
+    
+    If PATH is provided, shows diagnostics for that file.
+    If PATH is omitted, shows diagnostics for all files in the workspace.
     
     Examples:
     
-      lspcmd diagnostics src/main.py
+      lspcmd diagnostics                       # all files in workspace
     
-      lspcmd diagnostics src/main.py -s error  # errors only
+      lspcmd diagnostics src/main.py           # single file
     
-      lspcmd --json diagnostics src/main.py    # JSON output
+      lspcmd diagnostics -s error              # errors only
+    
+      lspcmd --json diagnostics                # JSON output
     """
-    path = Path(path).resolve()
     config = load_config()
-    workspace_root = get_workspace_root_for_path(path, config)
-
-    response = run_request("get-diagnostics", {
-        "path": str(path),
-        "workspace_root": str(workspace_root),
-    })
-
-    result = response.get("result", [])
+    
+    if path:
+        path = Path(path).resolve()
+        workspace_root = get_workspace_root_for_path(path, config)
+        response = run_request("get-diagnostics", {
+            "path": str(path),
+            "workspace_root": str(workspace_root),
+        })
+        result = response.get("result", [])
+    else:
+        workspace_root = get_workspace_root_for_cwd(config)
+        response = run_request("get-workspace-diagnostics", {
+            "workspace_root": str(workspace_root),
+        })
+        result = response.get("result", [])
     
     if severity:
         severity_order = {"error": 0, "warning": 1, "info": 2, "hint": 3}
