@@ -24,6 +24,7 @@ from .conftest import (
     requires_gopls,
     requires_typescript_lsp,
     requires_jdtls,
+    requires_clangd,
     FIXTURES_DIR,
 )
 
