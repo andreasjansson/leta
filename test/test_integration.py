@@ -2884,29 +2884,18 @@ class TestRubyIntegration:
     # =========================================================================
 
     def test_move_file_not_supported(self, workspace):
+        import click
         os.chdir(workspace)
         
-        # solargraph doesn't support workspace/willRenameFiles
-        # It will move the file but won't update any require statements
-        response = run_request("move-file", {
-            "old_path": str(workspace / "user.rb"),
-            "new_path": str(workspace / "person.rb"),
-            "workspace_root": str(workspace),
-        })
-        output = format_output(response["result"], "plain")
+        with pytest.raises(click.ClickException) as exc_info:
+            run_request("move-file", {
+                "old_path": str(workspace / "user.rb"),
+                "new_path": str(workspace / "person.rb"),
+                "workspace_root": str(workspace),
+            })
+        assert str(exc_info.value) == "move-file is not supported by solargraph"
         
-        # File should be moved
-        assert not (workspace / "user.rb").exists()
-        assert (workspace / "person.rb").exists()
-        assert "Moved file" in output
-        
-        # Move file back
-        run_request("move-file", {
-            "old_path": str(workspace / "person.rb"),
-            "new_path": str(workspace / "user.rb"),
-            "workspace_root": str(workspace),
-        })
-        
+        # Verify file was NOT moved
         assert (workspace / "user.rb").exists()
         assert not (workspace / "person.rb").exists()
 
