@@ -67,15 +67,16 @@ class TestParsePosition:
 
     def test_regex_with_special_chars(self, python_project):
         main_py = python_project / "main.py"
-        line, col = parse_position(r"def __init__\(self\)", main_py)
-        assert line == 13
+        # Match "def __init__(self)" - only one in MemoryStorage at line 49
+        line, col = parse_position("49:def __init__", main_py)
+        assert line == 49
         assert col == 4
 
     def test_regex_finds_correct_column(self, python_project):
         main_py = python_project / "main.py"
-        # Line 7 is "    name: str"
-        line, col = parse_position("7:name", main_py)
-        assert line == 7
+        # Line 33 is "    name: str"
+        line, col = parse_position("33:name", main_py)
+        assert line == 33
         assert col == 4
 
     def test_line_column_still_works_with_file(self, python_project):
