@@ -230,7 +230,7 @@ class DaemonServer:
 
         return self._format_locations(result, workspace.root, context)
 
-    def _format_locations(self, result: Any, context: int = 0) -> list[dict]:
+    def _format_locations(self, result: Any, workspace_root: Path, context: int = 0) -> list[dict]:
         if not result:
             return []
 
@@ -250,7 +250,7 @@ class DaemonServer:
             start_line = range_["start"]["line"]
 
             location = {
-                "path": str(file_path),
+                "path": self._relative_path(file_path, workspace_root),
                 "line": start_line + 1,
                 "column": range_["start"]["character"],
             }
