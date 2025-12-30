@@ -104,7 +104,6 @@ def format_locations(locations: list[dict]) -> str:
 
 
 def _get_line_content(path: str, line: int) -> str | None:
-    from pathlib import Path
     try:
         file_path = Path(path)
         if not file_path.exists():
