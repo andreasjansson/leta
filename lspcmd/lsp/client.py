@@ -187,14 +187,13 @@ class LSPClient:
 
         if "error" in message:
             error = message["error"]
-            logger.info(f"LSP RESPONSE [{request_id}] ERROR: {error}")
+            logger.debug(f"LSP RESPONSE [{request_id}] ERROR: {error}")
             future.set_exception(
                 LSPResponseError(error.get("code", -1), error.get("message", "Unknown error"), error.get("data"))
             )
         else:
             result = message.get("result")
-            result_summary = str(result)[:500] if result else "null"
-            logger.info(f"LSP RESPONSE [{request_id}]: {result_summary}")
+            logger.debug(f"LSP RESPONSE [{request_id}]: {type(result).__name__}")
             future.set_result(result)
 
     async def _handle_server_request(self, message: dict[str, Any]) -> None:
