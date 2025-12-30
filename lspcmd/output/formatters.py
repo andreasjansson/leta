@@ -78,6 +78,8 @@ def format_plain(data: Any) -> str:
 
 
 def format_locations(locations: list[dict]) -> str:
+    from pathlib import Path
+    
     lines = []
     for loc in locations:
         path = loc["path"]
@@ -93,9 +95,28 @@ def format_locations(locations: list[dict]) -> str:
                 lines.append(f"{marker} {line_num:4d} | {context_line}")
             lines.append("")
         else:
-            lines.append(f"{path}:{line}:{col}")
+            line_content = _get_line_content(path, line)
+            if line_content is not None:
+                lines.append(f"{path}:{line}:{col}: {line_content}")
+            else:
+                lines.append(f"{path}:{line}:{col}")
 
     return "\n".join(lines)
+
+
+def _get_line_content(path: str, line: int) -> str | None:
+    from pathlib import Path
+    try:
+        file_path = Path(path)
+        if not file_path.exists():
+            return None
+        content = file_path.read_text()
+        file_lines = content.splitlines()
+        if 0 < line <= len(file_lines):
+            return file_lines[line - 1]
+        return None
+    except Exception:
+        return None
 
 
 def format_symbols(symbols: list[dict]) -> str:
