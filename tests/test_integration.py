@@ -892,6 +892,7 @@ fn create_sample_user() -> User {
         assert output == """\
 src/main.rs:6-11
 
+
 /// Creates a sample user for testing.
 fn create_sample_user() -> User {
     User::new("John Doe".to_string(), "john@example.com".to_string(), 30)
