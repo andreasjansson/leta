@@ -314,14 +314,7 @@ class TestCliWithGopls:
         runner = CliRunner()
         result = runner.invoke(cli, ["implementations", str(main_go), "31:Storage"])
         assert result.exit_code == 0, f"Failed with: {result.output}"
-
-        lines = result.output.strip().split("\n")
-        assert len(lines) == 2, f"Expected 2 implementations, got: {result.output}"
-
-        # Sort lines for consistent comparison (order may vary)
-        lines = sorted(lines)
-        assert "main.go:39" in lines[0] and "type MemoryStorage struct" in lines[0]
-        assert "main.go:85" in lines[1] and "type FileStorage struct" in lines[1]
+        assert result.output == "main.go:39\nmain.go:85\n"
 
     def test_subtypes(self, go_project, isolated_config):
         """Test that subtypes works for Go interfaces."""
@@ -333,13 +326,11 @@ class TestCliWithGopls:
         result = runner.invoke(cli, ["subtypes", str(main_go), "31:Storage"])
         assert result.exit_code == 0, f"Failed with: {result.output}"
 
-        lines = result.output.strip().split("\n")
-        assert len(lines) == 2, f"Expected 2 subtypes, got: {result.output}"
-
-        # Sort lines for consistent comparison
-        lines = sorted(lines)
-        assert "main.go:39" in lines[0] and "[Class] MemoryStorage" in lines[0]
-        assert "main.go:85" in lines[1] and "[Class] FileStorage" in lines[1]
+        lines = sorted(result.output.strip().split("\n"))
+        assert lines == [
+            "main.go:39 [Class] MemoryStorage (sample_project)",
+            "main.go:85 [Class] FileStorage (sample_project)",
+        ]
 
     def test_supertypes(self, go_project, isolated_config):
         """Test that supertypes works for Go structs."""
@@ -350,7 +341,4 @@ class TestCliWithGopls:
         runner = CliRunner()
         result = runner.invoke(cli, ["supertypes", str(main_go), "39:MemoryStorage"])
         assert result.exit_code == 0, f"Failed with: {result.output}"
-
-        lines = result.output.strip().split("\n")
-        assert len(lines) == 1, f"Expected 1 supertype, got: {result.output}"
-        assert "main.go:31" in lines[0] and "[Interface] Storage" in lines[0]
+        assert result.output == "main.go:31 [Interface] Storage (sample_project)\n"
