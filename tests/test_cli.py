@@ -312,12 +312,16 @@ class TestCliWithGopls:
         add_workspace_root(go_project, config)
 
         runner = CliRunner()
-        # Find implementations of Storage interface (line 31)
         result = runner.invoke(cli, ["implementations", str(main_go), "31:Storage"])
         assert result.exit_code == 0, f"Failed with: {result.output}"
-        # Should find MemoryStorage (line 39) and FileStorage (line 85)
-        assert "MemoryStorage" in result.output or "main.go:39" in result.output
-        assert "FileStorage" in result.output or "main.go:85" in result.output
+
+        lines = result.output.strip().split("\n")
+        assert len(lines) == 2, f"Expected 2 implementations, got: {result.output}"
+
+        # Sort lines for consistent comparison (order may vary)
+        lines = sorted(lines)
+        assert "main.go:39" in lines[0] and "type MemoryStorage struct" in lines[0]
+        assert "main.go:85" in lines[1] and "type FileStorage struct" in lines[1]
 
     def test_subtypes(self, go_project, isolated_config):
         """Test that subtypes works for Go interfaces."""
@@ -326,11 +330,16 @@ class TestCliWithGopls:
         add_workspace_root(go_project, config)
 
         runner = CliRunner()
-        # Find subtypes of Storage interface (line 31)
         result = runner.invoke(cli, ["subtypes", str(main_go), "31:Storage"])
         assert result.exit_code == 0, f"Failed with: {result.output}"
-        # Should find MemoryStorage and FileStorage as direct subtypes
-        assert "MemoryStorage" in result.output or "FileStorage" in result.output
+
+        lines = result.output.strip().split("\n")
+        assert len(lines) == 2, f"Expected 2 subtypes, got: {result.output}"
+
+        # Sort lines for consistent comparison
+        lines = sorted(lines)
+        assert "main.go:39" in lines[0] and "[Class] MemoryStorage" in lines[0]
+        assert "main.go:85" in lines[1] and "[Class] FileStorage" in lines[1]
 
     def test_supertypes(self, go_project, isolated_config):
         """Test that supertypes works for Go structs."""
@@ -339,8 +348,9 @@ class TestCliWithGopls:
         add_workspace_root(go_project, config)
 
         runner = CliRunner()
-        # Find supertypes of MemoryStorage (line 39)
         result = runner.invoke(cli, ["supertypes", str(main_go), "39:MemoryStorage"])
         assert result.exit_code == 0, f"Failed with: {result.output}"
-        # Should find Storage interface as a supertype
-        assert "Storage" in result.output
+
+        lines = result.output.strip().split("\n")
+        assert len(lines) == 1, f"Expected 1 supertype, got: {result.output}"
+        assert "main.go:31" in lines[0] and "[Interface] Storage" in lines[0]
