@@ -133,6 +133,7 @@ class DaemonServer:
             "find-type-definition": self._handle_find_type_definition,
             "find-references": self._handle_find_references,
             "list-code-actions": self._handle_list_code_actions,
+            "raw-lsp-request": self._handle_raw_lsp_request,
             "execute-code-action": self._handle_execute_code_action,
             "format": self._handle_format_buffer,
             "organize-imports": self._handle_organize_imports,
