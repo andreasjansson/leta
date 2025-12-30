@@ -220,13 +220,18 @@ class DaemonServer:
         line, column = self._parse_position(params)
         context = params.get("context", 0)
 
-        result = await workspace.client.send_request(
-            method,
-            {
-                "textDocument": {"uri": doc.uri},
-                "position": {"line": line, "character": column},
-            },
-        )
+        try:
+            result = await workspace.client.send_request(
+                method,
+                {
+                    "textDocument": {"uri": doc.uri},
+                    "position": {"line": line, "character": column},
+                },
+            )
+        except LSPResponseError as e:
+            if e.is_method_not_found():
+                raise LSPMethodNotSupported(method, workspace.server_config.name)
+            raise
 
         return self._format_locations(result, workspace.root, context)
 
