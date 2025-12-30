@@ -464,9 +464,13 @@ def print_definition(ctx, path, position):
 @click.argument("position")
 @click.pass_context
 def list_code_actions(ctx, path, position):
-    """List code actions at position (LINE,COLUMN)."""
+    """List code actions at position.
+    
+    POSITION can be LINE,COLUMN (e.g. 42,10), LINE,REGEX (e.g. 42,def foo),
+    or just REGEX (e.g. def foo) to search the whole file.
+    """
     path = Path(path).resolve()
-    line, column = parse_position(position)
+    line, column = parse_position(position, path)
     config = load_config()
     workspace_root = get_workspace_root_for_path(path, config)
 
