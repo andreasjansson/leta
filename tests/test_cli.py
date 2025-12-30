@@ -159,13 +159,13 @@ class TestCliWithDaemon:
         result = runner.invoke(cli, ["find-definition", str(main_py), "36,11"])
         assert result.exit_code == 0
 
-    def test_describe_thing_at_point(self, python_project, isolated_config):
+    def test_describe(self, python_project, isolated_config):
         main_py = python_project / "main.py"
         config = load_config()
         add_workspace_root(python_project, config)
 
         runner = CliRunner()
-        result = runner.invoke(cli, ["describe-thing-at-point", str(main_py), "6,6"])
+        result = runner.invoke(cli, ["describe", str(main_py), "6,6"])
         assert result.exit_code == 0
 
     def test_grep_with_file(self, python_project, isolated_config):
