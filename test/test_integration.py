@@ -1644,24 +1644,35 @@ Represents a user in the system."""
         assert not (workspace / "src" / "user.ts").exists()
         assert (workspace / "src" / "models" / "user.ts").exists()
         
-        # Check that the response indicates imports were updated
-        assert "Moved file" in output
+        # Check exact output - TypeScript updates imports
+        assert output == """\
+Moved file and updated imports in 2 file(s):
+  src/main.ts
+  src/models/user.ts"""
         
         # Check that imports were updated in main.ts
         updated_main = (workspace / "src" / "main.ts").read_text()
-        # TypeScript language server should update the import path
-        assert "from './models/user'" in updated_main or "from './user'" not in updated_main
+        assert "from './models/user'" in updated_main
         
         # Move file back and restore original import
-        run_request("move-file", {
+        response = run_request("move-file", {
             "old_path": str(workspace / "src" / "models" / "user.ts"),
             "new_path": str(workspace / "src" / "user.ts"),
             "workspace_root": str(workspace),
         })
+        output = format_output(response["result"], "plain")
         
         # Verify file moved back
         assert (workspace / "src" / "user.ts").exists()
         assert not (workspace / "src" / "models" / "user.ts").exists()
+        
+        # Check exact output and import restored
+        assert output == """\
+Moved file and updated imports in 2 file(s):
+  src/main.ts
+  src/user.ts"""
+        restored_main = (workspace / "src" / "main.ts").read_text()
+        assert "from './user'" in restored_main
 
 
 # =============================================================================
