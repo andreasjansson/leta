@@ -520,6 +520,10 @@ def diagnostics(ctx, path, severity):
     If PATH is provided, shows diagnostics for that file.
     If PATH is omitted, shows diagnostics for all files in the workspace.
     
+    Note: Some language servers (e.g. typescript-language-server) push
+    diagnostics asynchronously. After a workspace restart or on first run,
+    diagnostics may take a few seconds to become fully available.
+    
     Examples:
     
       lspcmd diagnostics                       # all files in workspace
