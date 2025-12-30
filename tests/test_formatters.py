@@ -33,6 +33,7 @@ class TestFormatLocations:
             "context_start": 1,
         }]
         result = format_locations(locations)
+        assert "/home/user/main.py:1-3" in result
         assert "line1" in result
         assert "line2" in result
         assert "line3" in result
