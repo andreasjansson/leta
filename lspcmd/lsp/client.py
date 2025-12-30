@@ -125,10 +125,9 @@ class LSPClient:
         self._pending_requests[request_id] = future
 
         encoded = encode_message(message)
-        logger.debug(f"Sending request {request_id}: {method} ({len(encoded)} bytes)")
+        logger.info(f"LSP REQUEST [{request_id}] {method}: {params}")
         self.stdin.write(encoded)
         await self.stdin.drain()
-        logger.debug(f"Sent request {request_id}: {method}, waiting for response")
 
         try:
             return await asyncio.wait_for(future, timeout=timeout or REQUEST_TIMEOUT)
