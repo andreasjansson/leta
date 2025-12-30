@@ -145,8 +145,7 @@ class LSPClient:
         self.stdin.write(encode_message(message))
         await self.stdin.drain()
 
-        params_summary = str(params)[:300] if params else "null"
-        logger.info(f"LSP NOTIFICATION {method}: {params_summary}")
+        logger.debug(f"LSP NOTIFICATION {method}")
 
     async def _read_loop(self) -> None:
         try:
