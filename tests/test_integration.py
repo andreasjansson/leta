@@ -1052,7 +1052,7 @@ function createSampleUser(): User {
 
         assert output == """\
 src/main.ts:5-7
-
+ */
 function createSampleUser(): User {
     return new User("John Doe", "john@example.com", 30);
 """
