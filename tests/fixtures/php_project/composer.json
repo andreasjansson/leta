@@ -1,0 +1,13 @@
+{
+    "name": "lspcmd/php-fixture",
+    "description": "PHP fixture for lspcmd integration tests",
+    "type": "project",
+    "require": {
+        "php": ">=8.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "LspcmdFixture\\": "src/"
+        }
+    }
+}
