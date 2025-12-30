@@ -236,13 +236,12 @@ def format_size(size: int) -> str:
 def format_tree(data: dict) -> str:
     from pathlib import Path as P
     
-    root = P(data["root"]).name
     files = data["files"]
     total_files = data["total_files"]
     total_bytes = data["total_bytes"]
     
     if not files:
-        return f"{root}\n\n0 files, 0B"
+        return "0 files, 0B"
     
     tree: dict = {}
     for rel_path, info in files.items():
@@ -254,22 +253,27 @@ def format_tree(data: dict) -> str:
             current = current[part]
         current[parts[-1]] = info
     
-    lines = [root]
+    lines: list[str] = []
     
-    def render_tree(node: dict, prefix: str = "") -> None:
+    def render_tree(node: dict, prefix: str = "", is_root: bool = True) -> None:
         entries = sorted(node.keys(), key=lambda k: (isinstance(node[k], dict) and "size" not in node[k], k))
         for i, name in enumerate(entries):
             is_last = i == len(entries) - 1
-            connector = "└── " if is_last else "├── "
             child = node[name]
+            
+            if is_root:
+                connector = ""
+                new_prefix = ""
+            else:
+                connector = "└── " if is_last else "├── "
+                new_prefix = prefix + ("    " if is_last else "│   ")
             
             if isinstance(child, dict) and "size" in child:
                 size_str = format_size(child["size"])
                 lines.append(f"{prefix}{connector}{name} ({size_str})")
             else:
                 lines.append(f"{prefix}{connector}{name}")
-                new_prefix = prefix + ("    " if is_last else "│   ")
-                render_tree(child, new_prefix)
+                render_tree(child, new_prefix, is_root=False)
     
     render_tree(tree)
     lines.append("")
