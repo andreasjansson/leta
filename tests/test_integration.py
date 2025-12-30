@@ -517,7 +517,7 @@ main.go:172 [Function] main (func())"""
 
         assert output == """\
 main.go:123-125
-
+// NewUserRepository creates a new repository with the given storage.
 func NewUserRepository(storage Storage) *UserRepository {
 \treturn &UserRepository{storage: storage}
 """
