@@ -713,7 +713,7 @@ KIND_HELP = (
 @click.argument("pattern")
 @click.argument("path", required=False)
 @click.option("-k", "--kind", default="", help=KIND_HELP)
-@click.option("-x", "--exclude", default="", help="Exclude files matching glob pattern or directory (e.g. '*_test.go', 'tests')")
+@click.option("-x", "--exclude", multiple=True, help="Exclude files matching glob pattern or directory (repeatable)")
 @click.option("-d", "--docs", is_flag=True, help="Include documentation for each symbol")
 @click.option("-C", "--case-sensitive", is_flag=True, help="Case-sensitive pattern matching")
 @click.pass_context
@@ -735,11 +735,11 @@ def grep(ctx, pattern, path, kind, exclude, docs, case_sensitive):
     
       lspcmd grep "URL" -C  # case-sensitive
     
-      lspcmd grep ".*" "*.go" -x tests  # exclude tests/ directory
+      lspcmd grep ".*" "*.go" -x tests -x vendor  # exclude multiple directories
     """
     config = load_config()
     kinds = parse_kinds(kind)
-    exclude_patterns = [exclude] if exclude else []
+    exclude_patterns = list(exclude)
 
     if path:
         files = expand_path_pattern(path)
