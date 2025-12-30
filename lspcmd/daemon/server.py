@@ -1007,50 +1007,6 @@ class DaemonServer:
         except Exception:
             return ""
 
-    async def _handle_print_definition(self, params: dict) -> dict:
-        locations = await self._handle_find_definition(params)
-
-        if not locations:
-            return {"error": "Definition not found"}
-
-        loc = locations[0]
-        workspace_root = Path(params["workspace_root"]).resolve()
-        rel_path = loc["path"]
-        file_path = workspace_root / rel_path
-        target_line = loc["line"] - 1
-
-        workspace, doc, _ = await self._get_workspace_and_document({
-            "path": str(file_path),
-            "workspace_root": params["workspace_root"],
-        })
-
-        result = await workspace.client.send_request(
-            "textDocument/documentSymbol",
-            {"textDocument": {"uri": doc.uri}},
-        )
-
-        content = read_file_content(file_path)
-        lines = content.splitlines()
-
-        if result:
-            symbol = self._find_symbol_at_line(result, target_line)
-            if symbol:
-                start = symbol["range"]["start"]["line"]
-                end = symbol["range"]["end"]["line"]
-                return {
-                    "path": rel_path,
-                    "start_line": start + 1,
-                    "end_line": end + 1,
-                    "content": "\n".join(lines[start : end + 1]),
-                }
-
-        return {
-            "path": rel_path,
-            "start_line": loc["line"],
-            "end_line": loc["line"],
-            "content": lines[target_line] if target_line < len(lines) else "",
-        }
-
     def _find_symbol_at_line(self, symbols: list, line: int) -> dict | None:
         for sym in symbols:
             if "range" in sym:
