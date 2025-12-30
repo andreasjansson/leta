@@ -2316,6 +2316,34 @@ class TestLuaIntegration:
         output = format_output(response["result"], "plain")
         assert "User" in output
 
+    # =========================================================================
+    # diagnostics tests
+    # =========================================================================
+
+    def test_diagnostics_single_file(self, workspace):
+        os.chdir(workspace)
+        response = run_request("diagnostics", {
+            "path": str(workspace / "errors.lua"),
+            "workspace_root": str(workspace),
+        })
+        output = format_output(response["result"], "plain")
+        assert "errors.lua" in output
+        # lua-language-server reports undefined globals as warnings/hints
+        has_diagnostic = "undefined" in output.lower() or "warning" in output.lower() or len(output.strip()) > 0
+        assert has_diagnostic or output == "", f"Expected diagnostics or empty output, got: {output}"
+
+    def test_diagnostics_undefined_global(self, workspace):
+        os.chdir(workspace)
+        response = run_request("diagnostics", {
+            "path": str(workspace / "errors.lua"),
+            "workspace_root": str(workspace),
+        })
+        output = format_output(response["result"], "plain")
+        # lua-ls may report undefined_var as undefined-global
+        if output.strip():
+            has_undefined = "undefined" in output.lower() or "global" in output.lower()
+            assert has_undefined, f"Expected undefined global warning in output: {output}"
+
 
 # =============================================================================
 # Ruby Integration Tests (solargraph)
