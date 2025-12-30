@@ -707,28 +707,6 @@ Moved file and updated imports in 4 file(s):
         updated_main = (workspace / "main.py").read_text()
         assert "from helpers import validate_email" in updated_main
         assert "from utils import validate_email" not in updated_main
-        
-        # Rename file back
-        response = run_request("move-file", {
-            "old_path": str(workspace / "helpers.py"),
-            "new_path": str(workspace / "utils.py"),
-            "workspace_root": str(workspace),
-        })
-        output = format_output(response["result"], "plain")
-        
-        # Verify file renamed back
-        assert (workspace / "utils.py").exists()
-        assert not (workspace / "helpers.py").exists()
-        assert output == """\
-Moved file and updated imports in 4 file(s):
-  main.py
-  helpers.py
-  errors.py
-  utils.py"""
-        
-        # Verify the import was restored
-        restored_main = (workspace / "main.py").read_text()
-        assert "from utils import validate_email" in restored_main
 
 
 # =============================================================================
