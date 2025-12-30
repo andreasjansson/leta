@@ -639,16 +639,20 @@ class DaemonServer:
                 raise ValueError(f"move-file is not supported by {server_name}")
             raise
 
-        new_path.parent.mkdir(parents=True, exist_ok=True)
-        old_path.rename(new_path)
-
-        files_modified = [self._relative_path(new_path, workspace_root)]
+        files_modified = []
         imports_updated = False
 
+        # Apply workspace edits BEFORE moving the file
+        # (edits update import statements in other files that reference the old path)
         if workspace_edit:
             additional_files = await self._apply_workspace_edit(workspace_edit, workspace_root)
             files_modified.extend(additional_files)
             imports_updated = len(additional_files) > 0
+
+        # Now move the file
+        new_path.parent.mkdir(parents=True, exist_ok=True)
+        old_path.rename(new_path)
+        files_modified.append(self._relative_path(new_path, workspace_root))
 
         return {
             "moved": True,
