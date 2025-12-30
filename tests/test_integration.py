@@ -315,58 +315,61 @@ class TestGoIntegration:
         output = format_output(response["result"], "plain")
 
         assert output == """\
-main.go:9 [Struct] User
-main.go:10 [Field] Name in User
-main.go:11 [Field] Email in User
-main.go:12 [Field] Age in User
-main.go:16 [Function] NewUser
-main.go:21 [Method] IsAdult in User
-main.go:26 [Method] DisplayName in User
-main.go:31 [Interface] Storage
-main.go:32 [Method] Save in Storage
-main.go:33 [Method] Load in Storage
-main.go:34 [Method] Delete in Storage
-main.go:35 [Method] List in Storage
-main.go:39 [Struct] MemoryStorage
-main.go:40 [Field] users in MemoryStorage
-main.go:44 [Function] NewMemoryStorage
-main.go:49 [Method] Save in MemoryStorage
-main.go:57 [Method] Load in MemoryStorage
-main.go:65 [Method] Delete in MemoryStorage
-main.go:73 [Method] List in MemoryStorage
-main.go:83 [Struct] FileStorage
-main.go:84 [Field] basePath in FileStorage
-main.go:88 [Function] NewFileStorage
-main.go:93 [Method] Save in FileStorage
-main.go:99 [Method] Load in FileStorage
-main.go:105 [Method] Delete in FileStorage
-main.go:111 [Method] List in FileStorage
-main.go:118 [Struct] UserRepository
-main.go:119 [Field] storage in UserRepository
-main.go:123 [Function] NewUserRepository
-main.go:128 [Method] AddUser in UserRepository
-main.go:133 [Method] GetUser in UserRepository
-main.go:138 [Method] DeleteUser in UserRepository
-main.go:143 [Method] ListUsers in UserRepository
-main.go:148 [Function] createSampleUser
-main.go:153 [Interface] Validator
-main.go:154 [Method] Validate in Validator
-main.go:158 [Function] ValidateUser
-main.go:170 [Function] main"""
+main.go:9 [Struct] User (struct{...})
+main.go:10 [Field] Name (string) in User
+main.go:11 [Field] Email (string) in User
+main.go:12 [Field] Age (int) in User
+main.go:16 [Function] NewUser (func(name, email string, age int) *User)
+main.go:21 [Method] (*User).IsAdult (func() bool)
+main.go:26 [Method] (*User).DisplayName (func() string)
+main.go:31 [Interface] Storage (interface{...})
+main.go:32 [Method] Save (func(user *User) error) in Storage
+main.go:33 [Method] Load (func(email string) (*User, error)) in Storage
+main.go:34 [Method] Delete (func(email string) error) in Storage
+main.go:35 [Method] List (func() ([]*User, error)) in Storage
+main.go:39 [Struct] MemoryStorage (struct{...})
+main.go:40 [Field] users (map[string]*User) in MemoryStorage
+main.go:44 [Function] NewMemoryStorage (func() *MemoryStorage)
+main.go:49 [Method] (*MemoryStorage).Save (func(user *User) error)
+main.go:58 [Method] (*MemoryStorage).Load (func(email string) (*User, error))
+main.go:67 [Method] (*MemoryStorage).Delete (func(email string) error)
+main.go:76 [Method] (*MemoryStorage).List (func() ([]*User, error))
+main.go:85 [Struct] FileStorage (struct{...})
+main.go:86 [Field] basePath (string) in FileStorage
+main.go:90 [Function] NewFileStorage (func(basePath string) *FileStorage)
+main.go:95 [Method] (*FileStorage).Save (func(user *User) error)
+main.go:101 [Method] (*FileStorage).Load (func(email string) (*User, error))
+main.go:107 [Method] (*FileStorage).Delete (func(email string) error)
+main.go:113 [Method] (*FileStorage).List (func() ([]*User, error))
+main.go:119 [Struct] UserRepository (struct{...})
+main.go:120 [Field] storage (Storage) in UserRepository
+main.go:124 [Function] NewUserRepository (func(storage Storage) *UserRepository)
+main.go:129 [Method] (*UserRepository).AddUser (func(user *User) error)
+main.go:134 [Method] (*UserRepository).GetUser (func(email string) (*User, error))
+main.go:139 [Method] (*UserRepository).DeleteUser (func(email string) error)
+main.go:144 [Method] (*UserRepository).ListUsers (func() ([]*User, error))
+main.go:149 [Function] createSampleUser (func() *User)
+main.go:154 [Interface] Validator (interface{...})
+main.go:155 [Method] Validate (func() error) in Validator
+main.go:159 [Function] ValidateUser (func(user *User) error)
+main.go:172 [Function] main (func())"""
 
     def test_find_definition(self, workspace):
+        # Line 174: "repo := NewUserRepository(storage)", column 9 is start of "NewUserRepository"
+        os.chdir(workspace)
         response = run_request("find-definition", {
             "path": str(workspace / "main.go"),
             "workspace_root": str(workspace),
-            "line": 172,
+            "line": 174,
             "column": 9,
             "context": 0,
         })
         output = format_output(response["result"], "plain")
 
-        assert output == "main.go:123 func NewUserRepository(storage Storage) *UserRepository {"
+        assert output == "main.go:124 func NewUserRepository(storage Storage) *UserRepository {"
 
     def test_find_references(self, workspace):
+        os.chdir(workspace)
         response = run_request("find-references", {
             "path": str(workspace / "main.go"),
             "workspace_root": str(workspace),
@@ -384,20 +387,24 @@ main.go:21 func (u *User) IsAdult() bool {
 main.go:26 func (u *User) DisplayName() string {
 main.go:32 \tSave(user *User) error
 main.go:33 \tLoad(email string) (*User, error)
+main.go:35 \tList() ([]*User, error)
+main.go:40 \tusers map[string]*User
+main.go:45 \treturn &MemoryStorage{users: make(map[string]*User)}
 main.go:49 func (m *MemoryStorage) Save(user *User) error {
-main.go:57 func (m *MemoryStorage) Load(email string) (*User, error) {
-main.go:73 func (m *MemoryStorage) List() ([]*User, error) {
-main.go:74 \tresult := make([]*User, 0, len(m.users))
-main.go:93 func (f *FileStorage) Save(user *User) error {
-main.go:99 func (f *FileStorage) Load(email string) (*User, error) {
-main.go:111 func (f *FileStorage) List() ([]*User, error) {
-main.go:128 func (r *UserRepository) AddUser(user *User) error {
-main.go:133 func (r *UserRepository) GetUser(email string) (*User, error) {
-main.go:143 func (r *UserRepository) ListUsers() ([]*User, error) {
-main.go:148 func createSampleUser() *User {
-main.go:158 func ValidateUser(user *User) error {"""
+main.go:58 func (m *MemoryStorage) Load(email string) (*User, error) {
+main.go:76 func (m *MemoryStorage) List() ([]*User, error) {
+main.go:77 \tresult := make([]*User, 0, len(m.users))
+main.go:95 func (f *FileStorage) Save(user *User) error {
+main.go:101 func (f *FileStorage) Load(email string) (*User, error) {
+main.go:113 func (f *FileStorage) List() ([]*User, error) {
+main.go:129 func (r *UserRepository) AddUser(user *User) error {
+main.go:134 func (r *UserRepository) GetUser(email string) (*User, error) {
+main.go:144 func (r *UserRepository) ListUsers() ([]*User, error) {
+main.go:149 func createSampleUser() *User {
+main.go:159 func ValidateUser(user *User) error {"""
 
     def test_find_implementations(self, workspace):
+        os.chdir(workspace)
         response = run_request("find-implementations", {
             "path": str(workspace / "main.go"),
             "workspace_root": str(workspace),
@@ -409,7 +416,7 @@ main.go:158 func ValidateUser(user *User) error {"""
 
         assert output == """\
 main.go:39 type MemoryStorage struct {
-main.go:83 type FileStorage struct {"""
+main.go:85 type FileStorage struct {"""
 
     def test_describe_hover(self, workspace):
         response = run_request("describe", {
@@ -422,14 +429,22 @@ main.go:83 type FileStorage struct {"""
 
         assert output == """\
 ```go
-type User struct {
+type User struct { // size=40 (0x28), class=48 (0x30)
 \tName  string
 \tEmail string
 \tAge   int
 }
 ```
 
-User represents a user in the system."""
+---
+
+User represents a user in the system.
+
+
+```go
+func (u *User) DisplayName() string
+func (u *User) IsAdult() bool
+```"""
 
     def test_rename(self, workspace):
         response = run_request("rename", {
@@ -443,7 +458,7 @@ User represents a user in the system."""
 
         assert output == """\
 Renamed in 1 file(s):
-  """ + str(workspace / "main.go")
+  main.go"""
 
         # Revert the rename
         run_request("rename", {
@@ -458,13 +473,13 @@ Renamed in 1 file(s):
         response = run_request("print-definition", {
             "path": str(workspace / "main.go"),
             "workspace_root": str(workspace),
-            "line": 172,
+            "line": 174,
             "column": 9,
         })
         output = format_output(response["result"], "plain")
 
         assert output == """\
-main.go:123-126
+main.go:124-126
 
 func NewUserRepository(storage Storage) *UserRepository {
 \treturn &UserRepository{storage: storage}
