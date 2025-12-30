@@ -62,6 +62,9 @@ def format_plain(data: Any) -> str:
         if "content" in data and "path" in data:
             return format_definition_content(data)
 
+        if "files" in data and "total_files" in data and "total_lines" in data:
+            return format_tree(data)
+
         if "files_modified" in data:
             files = data["files_modified"]
             return f"Modified {len(files)} file(s):\n" + "\n".join(f"  {f}" for f in files)
