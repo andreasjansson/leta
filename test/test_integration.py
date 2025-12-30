@@ -181,8 +181,8 @@ main.py:138 [Variable] found in main"""
         })
         output = format_output(response["result"], "plain")
         assert output == """\
-main.py:24 [Class] User
-main.py:78 [Class] UserRepository"""
+main.py:26 [Class] User
+main.py:80 [Class] UserRepository"""
 
     def test_grep_kind_filter(self, workspace):
         os.chdir(workspace)
