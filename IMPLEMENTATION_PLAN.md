@@ -114,6 +114,23 @@ lspcmd raw-lsp-request workspace/symbol '{"query": "Handler"}' -l typescript
 | `lspcmd declaration PATH POSITION [-n CONTEXT]` | Find declaration at position |
 | `lspcmd describe PATH POSITION` | Show hover information (type, docs) |
 
+### Diagnostics Commands
+
+| Command | Description |
+|---------|-------------|
+| `lspcmd diagnostics [PATH] [-s SEVERITY]` | Show errors/warnings for a file or workspace |
+
+When `PATH` is omitted, shows diagnostics for all files in the current workspace.
+The `-s/--severity` option filters by minimum severity level (error, warning, info, hint).
+
+Examples:
+```bash
+lspcmd diagnostics                        # All diagnostics in workspace
+lspcmd diagnostics src/main.py            # Single file
+lspcmd diagnostics -s error               # Errors only (no warnings)
+lspcmd --json diagnostics                 # JSON output
+```
+
 ### Symbol Commands
 
 | Command | Description |
