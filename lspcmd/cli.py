@@ -755,7 +755,7 @@ def grep(ctx, pattern, path, kind, exclude, docs, case_sensitive):
         all_symbols = []
         for file_path in files:
             workspace_root = get_workspace_root_for_path(file_path, config)
-            response = run_request("list-symbols", {
+            response = run_request("grep", {
                 "path": str(file_path),
                 "workspace_root": str(workspace_root),
             })
@@ -772,7 +772,7 @@ def grep(ctx, pattern, path, kind, exclude, docs, case_sensitive):
         click.echo(format_output(all_symbols, "json" if ctx.obj["json"] else "plain"))
     else:
         workspace_root = get_workspace_root_for_cwd(config)
-        response = run_request("list-symbols", {
+        response = run_request("grep", {
             "workspace_root": str(workspace_root),
         })
         result = response.get("result", [])
