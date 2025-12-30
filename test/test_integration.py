@@ -933,6 +933,11 @@ func (u *User) IsAdult() bool
 
     def test_rename(self, workspace):
         os.chdir(workspace)
+        
+        # Verify User struct exists before rename
+        original_content = (workspace / "main.go").read_text()
+        assert "type User struct" in original_content
+        
         response = run_request("rename", {
             "path": str(workspace / "main.go"),
             "workspace_root": str(workspace),
@@ -941,7 +946,14 @@ func (u *User) IsAdult() bool
             "new_name": "Person",
         })
         output = format_output(response["result"], "plain")
-        assert "Renamed in 1 file(s):" in output
+        assert output == """\
+Renamed in 1 file(s):
+  main.go"""
+
+        # Verify rename actually happened in the file
+        renamed_content = (workspace / "main.go").read_text()
+        assert "type Person struct" in renamed_content
+        assert "type User struct" not in renamed_content
 
         # Revert the rename
         run_request("rename", {
@@ -951,6 +963,11 @@ func (u *User) IsAdult() bool
             "column": 5,
             "new_name": "User",
         })
+        
+        # Verify revert worked
+        reverted_content = (workspace / "main.go").read_text()
+        assert "type User struct" in reverted_content
+        assert "type Person struct" not in reverted_content
 
     # =========================================================================
     # declaration tests (gopls doesn't support this)
