@@ -1763,12 +1763,13 @@ class TestCppIntegration:
         response = run_request("implementations", {
             "path": str(workspace / "user.hpp"),
             "workspace_root": str(workspace),
-            "line": 36,
+            "line": 37,
             "column": 6,
             "context": 0,
         })
         output = format_output(response["result"], "plain")
-        assert "MemoryStorage" in output or "FileStorage" in output
+        assert "MemoryStorage" in output
+        assert "FileStorage" in output
 
     # =========================================================================
     # describe (hover) tests
