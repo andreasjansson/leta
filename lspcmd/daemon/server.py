@@ -187,11 +187,17 @@ class DaemonServer:
         lsp_params = params.get("params", {})
         language = params.get("language", "python")
         
+        logger.info(f"_handle_raw_lsp_request: workspace_root={workspace_root}, method={lsp_method}, language={language}")
+        
         workspace = await self.session.get_or_create_workspace_for_language(language, workspace_root)
         if not workspace or not workspace.client:
             raise ValueError(f"No LSP server for language: {language}")
         
-        return await workspace.client.send_request(lsp_method, lsp_params)
+        logger.info(f"raw-lsp-request using workspace: root={workspace.root}, server={workspace.server_config.name}")
+        
+        result = await workspace.client.send_request(lsp_method, lsp_params)
+        logger.info(f"raw-lsp-request result: {result}")
+        return result
 
     async def _handle_hover(self, params: dict) -> dict:
         workspace, doc, path = await self._get_workspace_and_document(params)
