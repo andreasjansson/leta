@@ -1900,23 +1900,42 @@ src/main/java/com/example/UserRepository.java:55     public List<User> listUsers
     # move-file tests
     # =========================================================================
 
-    def test_move_file_not_supported(self, workspace):
+    def test_move_file(self, workspace):
         import click
         os.chdir(workspace)
         
         base_path = workspace / "src" / "main" / "java" / "com" / "example"
         
-        with pytest.raises(click.ClickException) as exc_info:
-            run_request("move-file", {
+        # Verify User.java exists
+        assert (base_path / "User.java").exists()
+        
+        try:
+            response = run_request("move-file", {
                 "old_path": str(base_path / "User.java"),
                 "new_path": str(base_path / "Person.java"),
                 "workspace_root": str(workspace),
             })
-        assert str(exc_info.value) == "move-file is not supported by jdtls"
-        
-        # Verify file was NOT moved
-        assert (base_path / "User.java").exists()
-        assert not (base_path / "Person.java").exists()
+            output = format_output(response["result"], "plain")
+            
+            # jdtls supports move-file
+            assert not (base_path / "User.java").exists()
+            assert (base_path / "Person.java").exists()
+            assert "Moved file" in output
+            
+            # Move file back
+            run_request("move-file", {
+                "old_path": str(base_path / "Person.java"),
+                "new_path": str(base_path / "User.java"),
+                "workspace_root": str(workspace),
+            })
+            
+            assert (base_path / "User.java").exists()
+            assert not (base_path / "Person.java").exists()
+        except click.ClickException as e:
+            # jdtls doesn't support move-file
+            assert str(e) == "move-file is not supported by jdtls"
+            assert (base_path / "User.java").exists()
+            assert not (base_path / "Person.java").exists()
 
 
 # =============================================================================
