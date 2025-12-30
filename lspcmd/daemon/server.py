@@ -662,9 +662,8 @@ class DaemonServer:
             file_sha = self._get_file_sha(file_path)
             cache_key = (str(file_path), line, column, file_sha)
             
-            cached = self._hover_cache.get(cache_key)
-            if cached is not None:
-                return cached
+            if cache_key in self._hover_cache:
+                return self._hover_cache[cache_key] or None
             
             doc = await workspace.ensure_document_open(file_path)
             result = await workspace.client.send_request(
