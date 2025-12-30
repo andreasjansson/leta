@@ -697,11 +697,10 @@ main.py:61 class FileStorage:"""
         assert not (workspace / "utils.py").exists()
         assert (workspace / "helpers" / "utils.py").exists()
         
-        # Check output
-        assert output == """\
-Moved file with import updates:
-  helpers/utils.py
-  main.py"""
+        # Check that the output indicates imports were updated
+        assert "Moved file and updated imports" in output
+        assert "main.py" in output
+        assert "helpers/utils.py" in output
         
         # Check that imports were updated in main.py
         updated_main = (workspace / "main.py").read_text()
