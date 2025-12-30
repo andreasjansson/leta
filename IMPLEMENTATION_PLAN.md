@@ -195,7 +195,7 @@ Use LINE:REGEX or LINE,COLUMN to specify which one.
 
 All commands support `--json` flag for JSON output:
 ```bash
-lspcmd --json find-definition src/main.py 42,10
+lspcmd --json definition src/main.py 42,10
 ```
 
 ## Configuration
