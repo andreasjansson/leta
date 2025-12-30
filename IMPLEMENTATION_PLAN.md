@@ -346,8 +346,9 @@ rm -rf ~/.cache/lspcmd/
 
 The daemon maintains:
 - **Workspaces**: Keyed by root path, containing per-language servers
-- **Open Documents**: Tracked with version numbers for sync
+- **Open Documents**: Tracked with version numbers for sync (closed after symbol queries to keep servers responsive)
 - **Server Capabilities**: Cached per workspace
+- **Hover Cache**: LRU cache (50k entries) for `--docs` flag, keyed by (file_path, line, column, file_sha) for automatic invalidation on file changes
 
 Multiple language servers can run simultaneously for the same workspace (e.g., pyright + gopls for a mixed Python/Go project).
 
