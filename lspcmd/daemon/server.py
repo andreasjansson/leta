@@ -612,15 +612,16 @@ class DaemonServer:
         return symbols
 
     async def _handle_fetch_symbol_docs(self, params: dict) -> list[dict]:
-        """Fetch documentation for a list of symbols."""
+        """Fetch documentation for a list of symbols in parallel."""
         symbols = params.get("symbols", [])
         workspace_root = Path(params.get("workspace_root", ".")).resolve()
         
-        for sym in symbols:
+        async def fetch_doc(sym: dict) -> None:
             sym["documentation"] = await self._get_symbol_documentation(
                 workspace_root, sym["path"], sym["line"], sym.get("column", 0)
             )
         
+        await asyncio.gather(*[fetch_doc(sym) for sym in symbols])
         return symbols
 
     async def _get_symbol_documentation(self, workspace_root: Path, rel_path: str, line: int, column: int) -> str | None:
