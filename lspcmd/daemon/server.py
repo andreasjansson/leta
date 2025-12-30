@@ -371,6 +371,48 @@ class DaemonServer:
 
         return self._format_locations(result, workspace.root, params.get("context", 0))
 
+    async def _handle_get_diagnostics(self, params: dict) -> list[dict]:
+        workspace, doc, path = await self._get_workspace_and_document(params)
+
+        await workspace.client.wait_for_service_ready()
+
+        try:
+            result = await workspace.client.send_request(
+                "textDocument/diagnostic",
+                {"textDocument": {"uri": doc.uri}},
+            )
+        except LSPResponseError as e:
+            if e.is_method_not_found():
+                raise LSPMethodNotSupported("textDocument/diagnostic", workspace.server_config.name)
+            raise
+
+        if not result or not result.get("items"):
+            return []
+
+        return self._format_diagnostics(result["items"], path, workspace.root)
+
+    def _format_diagnostics(self, items: list, path: Path, workspace_root: Path) -> list[dict]:
+        severity_names = {1: "error", 2: "warning", 3: "info", 4: "hint"}
+        rel_path = self._relative_path(path, workspace_root)
+
+        diagnostics = []
+        for item in items:
+            range_ = item["range"]
+            diag = {
+                "path": rel_path,
+                "line": range_["start"]["line"] + 1,
+                "column": range_["start"]["character"],
+                "end_line": range_["end"]["line"] + 1,
+                "end_column": range_["end"]["character"],
+                "message": item["message"],
+                "severity": severity_names.get(item.get("severity", 1), "error"),
+                "code": item.get("code"),
+                "source": item.get("source"),
+            }
+            diagnostics.append(diag)
+
+        return diagnostics
+
     async def _handle_list_code_actions(self, params: dict) -> list[dict]:
         workspace, doc, path = await self._get_workspace_and_document(params)
         line, column = self._parse_position(params)
