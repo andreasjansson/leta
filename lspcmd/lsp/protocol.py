@@ -35,6 +35,16 @@ class LSPResponseError(Exception):
         self.data = data
         super().__init__(f"LSP Error {code}: {message}")
 
+    def is_method_not_found(self) -> bool:
+        return self.code == -32601 or "not found" in self.message.lower() or "not yet implemented" in self.message.lower()
+
+
+class LSPMethodNotSupported(Exception):
+    def __init__(self, method: str, server_name: str):
+        self.method = method
+        self.server_name = server_name
+        super().__init__(f"{method} is not supported by {server_name}")
+
 
 class LanguageServerNotFound(Exception):
     def __init__(self, server_name: str, language: str, install_cmd: str | None = None):
