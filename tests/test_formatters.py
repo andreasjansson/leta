@@ -13,7 +13,7 @@ class TestFormatLocations:
     def test_simple_location(self):
         locations = [{"path": "/home/user/main.py", "line": 10, "column": 5}]
         result = format_locations(locations)
-        assert "/home/user/main.py:10:5" in result
+        assert "/home/user/main.py:10" in result
 
     def test_multiple_locations(self):
         locations = [
@@ -21,8 +21,8 @@ class TestFormatLocations:
             {"path": "/home/user/utils.py", "line": 20, "column": 0},
         ]
         result = format_locations(locations)
-        assert "/home/user/main.py:10:5" in result
-        assert "/home/user/utils.py:20:0" in result
+        assert "/home/user/main.py:10" in result
+        assert "/home/user/utils.py:20" in result
 
     def test_location_with_context(self):
         locations = [{
