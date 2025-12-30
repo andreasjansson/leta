@@ -111,35 +111,43 @@ def parse_position(position: str, file_path: Path | None = None) -> tuple[int, i
     
     Supports formats:
       - LINE,COLUMN: e.g., "42,10" -> line 42, column 10
-      - LINE,REGEX: e.g., "42,def foo" -> line 42, column at first match of "def foo"
+      - LINE:REGEX: e.g., "42:def foo" -> line 42, column at first match of "def foo"
       - REGEX: e.g., "def foo" -> search whole file for unique match
       
     LINE is 1-based, COLUMN is 0-based.
     When using REGEX, the column is the start of the first match.
     REGEX must be unique (on the line if LINE given, in the file otherwise).
     """
-    parts = position.split(",", 1)
-    
-    if len(parts) == 2:
+    # Check for LINE:REGEX format first (colon separator)
+    if ":" in position:
+        colon_idx = position.index(":")
+        line_part = position[:colon_idx]
+        regex = position[colon_idx + 1:]
         try:
-            line = int(parts[0])
+            line = int(line_part)
+            if file_path is None:
+                raise click.BadParameter(
+                    "Cannot use REGEX position format without a file path"
+                )
+            content = file_path.read_text()
             try:
-                column = int(parts[1])
-                return line, column
-            except ValueError:
-                regex = parts[1]
-                if file_path is None:
-                    raise click.BadParameter(
-                        "Cannot use REGEX position format without a file path"
-                    )
-                content = file_path.read_text()
-                try:
-                    return resolve_regex_position(content, regex, line)
-                except ValueError as e:
-                    raise click.BadParameter(str(e))
+                return resolve_regex_position(content, regex, line)
+            except ValueError as e:
+                raise click.BadParameter(str(e))
         except ValueError:
             pass
     
+    # Check for LINE,COLUMN format (comma separator, both integers)
+    if "," in position:
+        parts = position.split(",", 1)
+        try:
+            line = int(parts[0])
+            column = int(parts[1])
+            return line, column
+        except ValueError:
+            pass
+    
+    # Fall back to whole-file REGEX search
     regex = position
     if file_path is None:
         raise click.BadParameter(
