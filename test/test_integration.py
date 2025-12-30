@@ -593,10 +593,10 @@ Renamed in 1 file(s):
         assert output == "main.py:25 class User:"
 
     # =========================================================================
-    # implementations tests (not supported by pyright)
+    # implementations tests
     # =========================================================================
 
-    def test_implementations_not_supported(self, workspace):
+    def test_implementations(self, workspace):
         os.chdir(workspace)
         response = run_request("implementations", {
             "path": str(workspace / "main.py"),
@@ -606,7 +606,10 @@ Renamed in 1 file(s):
             "context": 0,
         })
         output = format_output(response["result"], "plain")
-        assert "does not support implementations" in output
+        assert output == """\
+main.py:12 class StorageProtocol(Protocol):
+main.py:46 class MemoryStorage:
+main.py:59 class FileStorage:"""
 
     # =========================================================================
     # subtypes/supertypes tests (not supported by pyright)
