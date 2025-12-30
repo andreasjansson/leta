@@ -224,6 +224,54 @@ def format_definition_content(data: dict) -> str:
     return "\n".join(lines)
 
 
+def format_tree(data: dict) -> str:
+    from pathlib import Path as P
+    
+    root = P(data["root"]).name
+    files = data["files"]
+    total_files = data["total_files"]
+    total_lines = data["total_lines"]
+    
+    if not files:
+        return f"{root}\n\n0 files, 0 lines"
+    
+    # Build tree structure: dict of path -> either file info or nested dict
+    tree: dict = {}
+    for rel_path, info in files.items():
+        parts = P(rel_path).parts
+        current = tree
+        for part in parts[:-1]:
+            if part not in current:
+                current[part] = {}
+            current = current[part]
+        current[parts[-1]] = info
+    
+    lines = [root]
+    
+    def render_tree(node: dict, prefix: str = "") -> None:
+        entries = sorted(node.keys(), key=lambda k: (isinstance(node[k], dict) and "lines" not in node[k], k))
+        for i, name in enumerate(entries):
+            is_last = i == len(entries) - 1
+            connector = "└── " if is_last else "├── "
+            child = node[name]
+            
+            if isinstance(child, dict) and "lines" in child:
+                # It's a file
+                line_count = child["lines"]
+                lines.append(f"{prefix}{connector}{name} ({line_count})")
+            else:
+                # It's a directory
+                lines.append(f"{prefix}{connector}{name}")
+                new_prefix = prefix + ("    " if is_last else "│   ")
+                render_tree(child, new_prefix)
+    
+    render_tree(tree)
+    lines.append("")
+    lines.append(f"{total_files} files, {total_lines} lines")
+    
+    return "\n".join(lines)
+
+
 def format_diagnostics(diagnostics: list[dict]) -> str:
     severity_symbols = {
         "error": "✗",
