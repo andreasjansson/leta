@@ -1766,7 +1766,7 @@ class TestMultiLanguageIntegration:
         return project
 
     def test_python_grep(self, workspace):
-        requires_pyright()
+        requires_basedpyright()
         os.chdir(workspace)
 
         run_request("grep", {
