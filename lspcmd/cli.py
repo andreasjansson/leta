@@ -472,7 +472,7 @@ def references(ctx, path, position, context):
 @click.option("-n", "--context", default=0, help="Lines of context")
 @click.pass_context
 def implementations(ctx, path, position, context):
-    """Find implementations of an interface or abstract method.
+    """Find implementations of an interface.
     
     POSITION can be LINE,COLUMN (e.g. 42,10), LINE:REGEX (e.g. 42:def foo),
     or just REGEX (e.g. def foo) to search the whole file.
