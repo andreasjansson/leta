@@ -612,31 +612,51 @@ class DaemonServer:
         return symbols
 
     async def _handle_fetch_symbol_docs(self, params: dict) -> list[dict]:
-        """Fetch documentation for a list of symbols in parallel."""
+        """Fetch documentation for a list of symbols, batched by file."""
         symbols = params.get("symbols", [])
         workspace_root = Path(params.get("workspace_root", ".")).resolve()
         
-        async def fetch_doc(sym: dict) -> None:
-            sym["documentation"] = await self._get_symbol_documentation(
-                workspace_root, sym["path"], sym["line"], sym.get("column", 0)
-            )
+        symbols_by_file: dict[str, list[dict]] = {}
+        for sym in symbols:
+            path = sym.get("path", "")
+            if path not in symbols_by_file:
+                symbols_by_file[path] = []
+            symbols_by_file[path].append(sym)
         
-        await asyncio.gather(*[fetch_doc(sym) for sym in symbols])
+        semaphore = asyncio.Semaphore(20)
+        
+        async def fetch_docs_for_file(rel_path: str, file_symbols: list[dict]) -> None:
+            file_path = workspace_root / rel_path
+            workspace = self.session.get_workspace_for_file(file_path)
+            if not workspace or not workspace.client:
+                return
+            
+            try:
+                doc = await workspace.ensure_document_open(file_path)
+            except Exception as e:
+                logger.debug(f"Failed to open {rel_path}: {e}")
+                return
+            
+            async def fetch_one(sym: dict) -> None:
+                async with semaphore:
+                    sym["documentation"] = await self._get_hover_content(
+                        workspace, doc.uri, sym["line"], sym.get("column", 0)
+                    )
+            
+            await asyncio.gather(*[fetch_one(sym) for sym in file_symbols])
+        
+        await asyncio.gather(*[
+            fetch_docs_for_file(rel_path, file_symbols)
+            for rel_path, file_symbols in symbols_by_file.items()
+        ])
         return symbols
 
-    async def _get_symbol_documentation(self, workspace_root: Path, rel_path: str, line: int, column: int) -> str | None:
-        file_path = workspace_root / rel_path
-        
-        workspace = self.session.get_workspace_for_file(file_path)
-        if not workspace or not workspace.client:
-            return None
-        
+    async def _get_hover_content(self, workspace: Workspace, uri: str, line: int, column: int) -> str | None:
         try:
-            doc = await workspace.ensure_document_open(file_path)
             result = await workspace.client.send_request(
                 "textDocument/hover",
                 {
-                    "textDocument": {"uri": doc.uri},
+                    "textDocument": {"uri": uri},
                     "position": {"line": line - 1, "character": column},
                 },
             )
@@ -655,7 +675,7 @@ class DaemonServer:
             else:
                 return str(contents) if contents else None
         except Exception as e:
-            logger.debug(f"Failed to get hover for {rel_path}:{line}: {e}")
+            logger.debug(f"Failed to get hover: {e}")
             return None
 
     async def _handle_print_definition(self, params: dict) -> dict:
