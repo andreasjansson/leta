@@ -556,6 +556,7 @@ func NewUserRepository(storage Storage) *UserRepository {
         assert output == """\
 main.go:123-127
 
+// NewUserRepository creates a new repository with the given storage.
 func NewUserRepository(storage Storage) *UserRepository {
 \treturn &UserRepository{storage: storage}
 }
