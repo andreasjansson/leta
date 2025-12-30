@@ -908,7 +908,7 @@ class DaemonServer:
 
     def _relative_path(self, path: Path, workspace_root: Path) -> str:
         try:
-            return str(path.relative_to(workspace_root))
+            return str(path.resolve().relative_to(workspace_root.resolve()))
         except ValueError:
             return str(path)
 

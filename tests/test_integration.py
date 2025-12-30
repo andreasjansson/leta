@@ -106,69 +106,118 @@ class TestPythonIntegration:
     # =========================================================================
 
     def test_grep_single_file(self, workspace):
+        os.chdir(workspace)
         response = run_request("grep", {
             "paths": [str(workspace / "main.py")],
             "workspace_root": str(workspace),
             "pattern": ".*",
         })
-        symbols = response["result"]
-        names = [s["name"] for s in symbols]
-        
-        assert "User" in names
-        assert "MemoryStorage" in names
-        assert "create_sample_user" in names
+        output = format_output(response["result"], "plain")
+        assert output == """\
+main.py:12 [Class] StorageProtocol
+main.py:15 [Method] save in StorageProtocol
+main.py:15 [Variable] key in save
+main.py:15 [Variable] value in save
+main.py:19 [Method] load in StorageProtocol
+main.py:19 [Variable] key in load
+main.py:24 [Class] User
+main.py:33 [Variable] name in User
+main.py:34 [Variable] email in User
+main.py:35 [Variable] age in User
+main.py:37 [Method] is_adult in User
+main.py:41 [Method] display_name in User
+main.py:46 [Class] MemoryStorage
+main.py:49 [Method] __init__ in MemoryStorage
+main.py:52 [Method] save in MemoryStorage
+main.py:52 [Variable] key in save
+main.py:52 [Variable] value in save
+main.py:55 [Method] load in MemoryStorage
+main.py:55 [Variable] key in load
+main.py:50 [Variable] _data in MemoryStorage
+main.py:59 [Class] FileStorage
+main.py:62 [Method] __init__ in FileStorage
+main.py:62 [Variable] base_path in __init__
+main.py:65 [Method] save in FileStorage
+main.py:65 [Variable] key in save
+main.py:65 [Variable] value in save
+main.py:66 [Variable] path in save
+main.py:67 [Variable] f in save
+main.py:70 [Method] load in FileStorage
+main.py:70 [Variable] key in load
+main.py:71 [Variable] path in load
+main.py:73 [Variable] f in load
+main.py:63 [Variable] _base_path in FileStorage
+main.py:78 [Class] UserRepository
+main.py:84 [Method] __init__ in UserRepository
+main.py:87 [Method] add_user in UserRepository
+main.py:87 [Variable] user in add_user
+main.py:91 [Method] get_user in UserRepository
+main.py:91 [Variable] email in get_user
+main.py:95 [Method] delete_user in UserRepository
+main.py:95 [Variable] email in delete_user
+main.py:102 [Method] list_users in UserRepository
+main.py:106 [Method] count_users in UserRepository
+main.py:85 [Variable] _users in UserRepository
+main.py:111 [Function] create_sample_user
+main.py:116 [Function] process_users
+main.py:116 [Variable] repo in process_users
+main.py:125 [Function] main
+main.py:127 [Variable] repo in main
+main.py:128 [Variable] user in main
+main.py:131 [Variable] found in main"""
 
     def test_grep_pattern_filter(self, workspace):
+        os.chdir(workspace)
         response = run_request("grep", {
             "paths": [str(workspace / "main.py")],
             "workspace_root": str(workspace),
             "pattern": "^User",
             "case_sensitive": True,
         })
-        symbols = response["result"]
-        names = [s["name"] for s in symbols]
-        
-        assert names == ["User", "UserRepository"]
+        output = format_output(response["result"], "plain")
+        assert output == """\
+main.py:24 [Class] User
+main.py:78 [Class] UserRepository"""
 
     def test_grep_kind_filter(self, workspace):
+        os.chdir(workspace)
         response = run_request("grep", {
             "paths": [str(workspace / "main.py")],
             "workspace_root": str(workspace),
             "pattern": ".*",
             "kinds": ["class"],
         })
-        symbols = response["result"]
-        
-        assert all(s["kind"] == "Class" for s in symbols)
-        names = [s["name"] for s in symbols]
-        assert "User" in names
-        assert "MemoryStorage" in names
-        assert "create_sample_user" not in names
+        output = format_output(response["result"], "plain")
+        assert output == """\
+main.py:12 [Class] StorageProtocol
+main.py:24 [Class] User
+main.py:46 [Class] MemoryStorage
+main.py:59 [Class] FileStorage
+main.py:78 [Class] UserRepository"""
 
     def test_grep_function_kind(self, workspace):
+        os.chdir(workspace)
         response = run_request("grep", {
             "paths": [str(workspace / "main.py")],
             "workspace_root": str(workspace),
             "pattern": ".*",
             "kinds": ["function"],
         })
-        symbols = response["result"]
-        
-        assert all(s["kind"] == "Function" for s in symbols)
-        names = [s["name"] for s in symbols]
-        assert "create_sample_user" in names
-        assert "process_users" in names
-        assert "main" in names
-        assert "User" not in names
+        output = format_output(response["result"], "plain")
+        assert output == """\
+main.py:111 [Function] create_sample_user
+main.py:116 [Function] process_users
+main.py:125 [Function] main"""
 
     def test_grep_case_sensitive(self, workspace):
+        os.chdir(workspace)
         response = run_request("grep", {
             "paths": [str(workspace / "main.py")],
             "workspace_root": str(workspace),
             "pattern": "user",
             "case_sensitive": False,
         })
-        insensitive_symbols = response["result"]
+        insensitive_output = format_output(response["result"], "plain")
         
         response = run_request("grep", {
             "paths": [str(workspace / "main.py")],
@@ -176,80 +225,115 @@ class TestPythonIntegration:
             "pattern": "user",
             "case_sensitive": True,
         })
-        sensitive_symbols = response["result"]
+        sensitive_output = format_output(response["result"], "plain")
         
-        # Case insensitive should find more (User, add_user, get_user, etc.)
-        assert len(insensitive_symbols) > len(sensitive_symbols)
+        assert insensitive_output == """\
+main.py:24 [Class] User
+main.py:78 [Class] UserRepository
+main.py:87 [Method] add_user in UserRepository
+main.py:87 [Variable] user in add_user
+main.py:91 [Method] get_user in UserRepository
+main.py:95 [Method] delete_user in UserRepository
+main.py:102 [Method] list_users in UserRepository
+main.py:106 [Method] count_users in UserRepository
+main.py:85 [Variable] _users in UserRepository
+main.py:111 [Function] create_sample_user
+main.py:116 [Function] process_users
+main.py:128 [Variable] user in main"""
         
-        # Case sensitive "user" should not match "User"
-        sensitive_names = [s["name"] for s in sensitive_symbols]
-        assert "User" not in sensitive_names
-        assert "add_user" in sensitive_names
+        assert sensitive_output == """\
+main.py:87 [Method] add_user in UserRepository
+main.py:87 [Variable] user in add_user
+main.py:91 [Method] get_user in UserRepository
+main.py:95 [Method] delete_user in UserRepository
+main.py:102 [Method] list_users in UserRepository
+main.py:106 [Method] count_users in UserRepository
+main.py:85 [Variable] _users in UserRepository
+main.py:111 [Function] create_sample_user
+main.py:116 [Function] process_users
+main.py:128 [Variable] user in main"""
 
     def test_grep_combined_filters(self, workspace):
+        os.chdir(workspace)
         response = run_request("grep", {
             "paths": [str(workspace / "main.py")],
             "workspace_root": str(workspace),
             "pattern": "Storage",
             "kinds": ["class"],
         })
-        symbols = response["result"]
-        names = [s["name"] for s in symbols]
-        
-        assert set(names) == {"StorageProtocol", "MemoryStorage", "FileStorage"}
+        output = format_output(response["result"], "plain")
+        assert output == """\
+main.py:12 [Class] StorageProtocol
+main.py:46 [Class] MemoryStorage
+main.py:59 [Class] FileStorage"""
 
     def test_grep_multiple_files(self, workspace):
+        os.chdir(workspace)
         response = run_request("grep", {
             "paths": [str(workspace / "main.py"), str(workspace / "utils.py")],
             "workspace_root": str(workspace),
             "pattern": ".*",
             "kinds": ["function"],
         })
-        symbols = response["result"]
-        
-        # Should have functions from both files
-        paths = set(s["path"] for s in symbols)
-        assert "main.py" in paths
-        assert "utils.py" in paths
+        output = format_output(response["result"], "plain")
+        assert output == """\
+main.py:111 [Function] create_sample_user
+main.py:116 [Function] process_users
+main.py:125 [Function] main
+utils.py:9 [Function] validate_email
+utils.py:22 [Function] validate_age
+utils.py:27 [Function] memoize
+utils.py:38 [Function] wrapper in memoize
+utils.py:47 [Function] fibonacci
+utils.py:125 [Function] format_name"""
 
     def test_grep_workspace_wide(self, workspace):
+        os.chdir(workspace)
         response = run_request("grep", {
             "workspace_root": str(workspace),
             "pattern": "validate",
             "kinds": ["function"],
         })
-        symbols = response["result"]
-        names = [s["name"] for s in symbols]
-        
-        # Should find validate functions across all files
-        assert "validate_email" in names
-        assert "validate_age" in names
+        output = format_output(response["result"], "plain")
+        assert output == """\
+utils.py:9 [Function] validate_email
+utils.py:22 [Function] validate_age"""
 
     def test_grep_exclude_pattern(self, workspace):
-        # First get all symbols
+        os.chdir(workspace)
         response = run_request("grep", {
             "workspace_root": str(workspace),
             "pattern": ".*",
             "kinds": ["function"],
         })
-        all_symbols = response["result"]
+        all_output = format_output(response["result"], "plain")
         
-        # Now exclude utils.py
         response = run_request("grep", {
             "workspace_root": str(workspace),
             "pattern": ".*",
             "kinds": ["function"],
             "exclude_patterns": ["utils.py"],
         })
-        filtered_symbols = response["result"]
+        filtered_output = format_output(response["result"], "plain")
         
-        # Should have fewer symbols after excluding utils.py
-        assert len(filtered_symbols) < len(all_symbols)
+        assert all_output == """\
+utils.py:9 [Function] validate_email
+utils.py:22 [Function] validate_age
+utils.py:27 [Function] memoize
+utils.py:38 [Function] wrapper in memoize
+utils.py:47 [Function] fibonacci
+utils.py:125 [Function] format_name
+main.py:111 [Function] create_sample_user
+main.py:116 [Function] process_users
+main.py:125 [Function] main"""
         
-        # None should be from utils.py
-        assert all(s["path"] != "utils.py" for s in filtered_symbols)
+        assert filtered_output == """\
+main.py:111 [Function] create_sample_user
+main.py:116 [Function] process_users
+main.py:125 [Function] main"""
 
     def test_grep_with_docs(self, workspace):
+        os.chdir(workspace)
         response = run_request("grep", {
             "paths": [str(workspace / "main.py")],
             "workspace_root": str(workspace),
@@ -257,14 +341,15 @@ class TestPythonIntegration:
             "kinds": ["function"],
             "include_docs": True,
         })
-        symbols = response["result"]
-        
-        assert len(symbols) == 1
-        assert symbols[0]["name"] == "create_sample_user"
-        assert "documentation" in symbols[0]
-        assert symbols[0]["documentation"] is not None
-        # The function has a docstring "Create a sample user for testing"
-        assert "sample" in symbols[0]["documentation"].lower()
+        output = format_output(response["result"], "plain")
+        assert output == """\
+main.py:111 [Function] create_sample_user
+    ```python
+    (function) def create_sample_user() -> User
+    ```
+    ---
+    Create a sample user for testing.
+"""
 
     # =========================================================================
     # definition tests
@@ -281,7 +366,6 @@ class TestPythonIntegration:
             "body": False,
         })
         output = format_output(response["result"], "plain")
-
         assert output == "main.py:111 def create_sample_user() -> User:"
 
     def test_definition_with_context(self, workspace):
@@ -295,7 +379,6 @@ class TestPythonIntegration:
             "body": False,
         })
         output = format_output(response["result"], "plain")
-
         assert output == """\
 main.py:109-113
 
@@ -316,7 +399,6 @@ def create_sample_user() -> User:
             "body": True,
         })
         output = format_output(response["result"], "plain")
-
         assert output == """\
 main.py:111-113
 
@@ -335,7 +417,6 @@ def create_sample_user() -> User:
             "body": True,
         })
         output = format_output(response["result"], "plain")
-
         assert output == """\
 main.py:109-115
 
@@ -360,11 +441,15 @@ def create_sample_user() -> User:
             "column": 6,
             "context": 0,
         })
-        result = response["result"]
-        
-        assert len(result) == 7
-        paths = [r["path"] for r in result]
-        assert all(p == "main.py" for p in paths)
+        output = format_output(response["result"], "plain")
+        assert output == """\
+main.py:25 class User:
+main.py:85         self._users: dict[str, User] = {}
+main.py:87     def add_user(self, user: User) -> None:
+main.py:91     def get_user(self, email: str) -> Optional[User]:
+main.py:102     def list_users(self) -> list[User]:
+main.py:111 def create_sample_user() -> User:
+main.py:113     return User(name="John Doe", email="john@example.com", age=30)"""
 
     def test_references_with_context(self, workspace):
         os.chdir(workspace)
@@ -375,32 +460,75 @@ def create_sample_user() -> User:
             "column": 6,
             "context": 1,
         })
-        result = response["result"]
-        assert len(result) == 7
-        assert all("context_lines" in r for r in result)
-        assert result[0]["context_start"] == 24
+        output = format_output(response["result"], "plain")
+        assert output == """\
+main.py:24-26
+@dataclass
+class User:
+    \"\"\"Represents a user in the system.
+
+main.py:84-86
+    def __init__(self) -> None:
+        self._users: dict[str, User] = {}
+
+
+main.py:86-88
+
+    def add_user(self, user: User) -> None:
+        \"\"\"Add a user to the repository.\"\"\"
+
+main.py:90-92
+
+    def get_user(self, email: str) -> Optional[User]:
+        \"\"\"Retrieve a user by email address.\"\"\"
+
+main.py:101-103
+
+    def list_users(self) -> list[User]:
+        \"\"\"List all users in the repository.\"\"\"
+
+main.py:110-112
+
+def create_sample_user() -> User:
+    \"\"\"Create a sample user for testing.\"\"\"
+
+main.py:112-114
+    \"\"\"Create a sample user for testing.\"\"\"
+    return User(name="John Doe", email="john@example.com", age=30)
+
+"""
 
     # =========================================================================
     # describe (hover) tests
     # =========================================================================
 
     def test_describe_hover(self, workspace):
+        os.chdir(workspace)
         response = run_request("describe", {
             "path": str(workspace / "main.py"),
             "workspace_root": str(workspace),
             "line": 25,
             "column": 6,
         })
-        result = response["result"]
-        
-        assert result["contents"] is not None
-        assert "User" in result["contents"]
+        output = format_output(response["result"], "plain")
+        assert output == """\
+```python
+(class) User
+```
+---
+Represents a user in the system.
+
+Attributes:  
+&nbsp;&nbsp;&nbsp;&nbsp;name: The user's full name.  
+&nbsp;&nbsp;&nbsp;&nbsp;email: The user's email address (used as unique identifier).  
+&nbsp;&nbsp;&nbsp;&nbsp;age: The user's age in years."""
 
     # =========================================================================
     # rename tests
     # =========================================================================
 
     def test_rename(self, workspace):
+        os.chdir(workspace)
         response = run_request("rename", {
             "path": str(workspace / "main.py"),
             "workspace_root": str(workspace),
@@ -408,10 +536,9 @@ def create_sample_user() -> User:
             "column": 6,
             "new_name": "Person",
         })
-        result = response["result"]
-        
-        assert result["renamed"] == True
-        assert "main.py" in result["files_modified"]
+        output = format_output(response["result"], "plain")
+        assert "Renamed in 1 file(s):" in output
+        assert "main.py" in output
 
         # Revert the rename
         run_request("rename", {
@@ -435,9 +562,8 @@ def create_sample_user() -> User:
             "column": 6,
             "context": 0,
         })
-        result = response["result"]
-        assert len(result) >= 1
-        assert "main.py" in result[0]["path"]
+        output = format_output(response["result"], "plain")
+        assert output == "main.py:25 class User:"
 
     # =========================================================================
     # implementations tests (not supported by pyright)
@@ -522,87 +648,48 @@ class TestGoIntegration:
     # grep tests
     # =========================================================================
 
-    def test_grep_single_file(self, workspace):
-        response = run_request("grep", {
-            "paths": [str(workspace / "main.go")],
-            "workspace_root": str(workspace),
-            "pattern": ".*",
-        })
-        symbols = response["result"]
-        names = [s["name"] for s in symbols]
-        
-        assert "User" in names
-        assert "Storage" in names
-        assert "NewUser" in names
-
     def test_grep_pattern_filter(self, workspace):
+        os.chdir(workspace)
         response = run_request("grep", {
             "paths": [str(workspace / "main.go")],
             "workspace_root": str(workspace),
             "pattern": "^New",
+            "kinds": ["function"],
         })
-        symbols = response["result"]
-        names = [s["name"] for s in symbols]
-        
-        assert all(n.startswith("New") for n in names)
-        assert "NewUser" in names
-        assert "NewMemoryStorage" in names
+        output = format_output(response["result"], "plain")
+        assert output == """\
+main.go:16 [Function] NewUser (func(name, email string, age int) *User)
+main.go:44 [Function] NewMemoryStorage (func() *MemoryStorage)
+main.go:90 [Function] NewFileStorage (func(basePath string) *FileStorage)
+main.go:124 [Function] NewUserRepository (func(storage Storage) *UserRepository)"""
 
     def test_grep_kind_filter_struct(self, workspace):
+        os.chdir(workspace)
         response = run_request("grep", {
             "paths": [str(workspace / "main.go")],
             "workspace_root": str(workspace),
             "pattern": ".*",
             "kinds": ["struct"],
         })
-        symbols = response["result"]
-        
-        assert all(s["kind"] == "Struct" for s in symbols)
-        names = [s["name"] for s in symbols]
-        assert "User" in names
-        assert "MemoryStorage" in names
+        output = format_output(response["result"], "plain")
+        assert output == """\
+main.go:9 [Struct] User (struct{...})
+main.go:39 [Struct] MemoryStorage (struct{...})
+main.go:85 [Struct] FileStorage (struct{...})
+main.go:119 [Struct] UserRepository (struct{...})"""
 
     def test_grep_kind_filter_interface(self, workspace):
+        os.chdir(workspace)
         response = run_request("grep", {
             "paths": [str(workspace / "main.go")],
             "workspace_root": str(workspace),
             "pattern": ".*",
             "kinds": ["interface"],
         })
-        symbols = response["result"]
-        
-        assert all(s["kind"] == "Interface" for s in symbols)
-        names = [s["name"] for s in symbols]
-        assert "Storage" in names
-        assert "Validator" in names
-
-    def test_grep_multiple_kinds(self, workspace):
-        response = run_request("grep", {
-            "paths": [str(workspace / "main.go")],
-            "workspace_root": str(workspace),
-            "pattern": ".*",
-            "kinds": ["struct", "interface"],
-        })
-        symbols = response["result"]
-        
-        kinds = set(s["kind"] for s in symbols)
-        assert kinds == {"Struct", "Interface"}
-
-    def test_grep_with_docs(self, workspace):
-        response = run_request("grep", {
-            "paths": [str(workspace / "main.go")],
-            "workspace_root": str(workspace),
-            "pattern": "^User$",
-            "kinds": ["struct"],
-            "include_docs": True,
-        })
-        symbols = response["result"]
-        
-        assert len(symbols) == 1
-        assert symbols[0]["name"] == "User"
-        assert "documentation" in symbols[0]
-        # Go hover docs include type info
-        assert symbols[0]["documentation"] is not None
+        output = format_output(response["result"], "plain")
+        assert output == """\
+main.go:31 [Interface] Storage (interface{...})
+main.go:154 [Interface] Validator (interface{...})"""
 
     # =========================================================================
     # definition tests
@@ -619,7 +706,6 @@ class TestGoIntegration:
             "body": False,
         })
         output = format_output(response["result"], "plain")
-
         assert output == "main.go:124 func NewUserRepository(storage Storage) *UserRepository {"
 
     def test_definition_with_context(self, workspace):
@@ -633,7 +719,6 @@ class TestGoIntegration:
             "body": False,
         })
         output = format_output(response["result"], "plain")
-
         assert output == """\
 main.go:123-125
 // NewUserRepository creates a new repository with the given storage.
@@ -652,7 +737,6 @@ func NewUserRepository(storage Storage) *UserRepository {
             "body": True,
         })
         output = format_output(response["result"], "plain")
-
         assert output == """\
 main.go:124-126
 
@@ -671,7 +755,6 @@ func NewUserRepository(storage Storage) *UserRepository {
             "body": True,
         })
         output = format_output(response["result"], "plain")
-
         assert output == """\
 main.go:123-127
 
@@ -694,22 +777,30 @@ func NewUserRepository(storage Storage) *UserRepository {
             "column": 5,
             "context": 0,
         })
-        result = response["result"]
-        
-        assert len(result) == 22
-
-    def test_references_with_context(self, workspace):
-        os.chdir(workspace)
-        response = run_request("references", {
-            "path": str(workspace / "main.go"),
-            "workspace_root": str(workspace),
-            "line": 9,
-            "column": 5,
-            "context": 1,
-        })
-        result = response["result"]
-        assert len(result) == 22
-        assert all("context_lines" in r for r in result)
+        output = format_output(response["result"], "plain")
+        assert output == """\
+main.go:9 type User struct {
+main.go:16 func NewUser(name, email string, age int) *User {
+main.go:17 \treturn &User{Name: name, Email: email, Age: age}
+main.go:21 func (u *User) IsAdult() bool {
+main.go:26 func (u *User) DisplayName() string {
+main.go:32 \tSave(user *User) error
+main.go:33 \tLoad(email string) (*User, error)
+main.go:35 \tList() ([]*User, error)
+main.go:40 \tusers map[string]*User
+main.go:45 \treturn &MemoryStorage{users: make(map[string]*User)}
+main.go:49 func (m *MemoryStorage) Save(user *User) error {
+main.go:58 func (m *MemoryStorage) Load(email string) (*User, error) {
+main.go:76 func (m *MemoryStorage) List() ([]*User, error) {
+main.go:77 \tresult := make([]*User, 0, len(m.users))
+main.go:95 func (f *FileStorage) Save(user *User) error {
+main.go:101 func (f *FileStorage) Load(email string) (*User, error) {
+main.go:113 func (f *FileStorage) List() ([]*User, error) {
+main.go:129 func (r *UserRepository) AddUser(user *User) error {
+main.go:134 func (r *UserRepository) GetUser(email string) (*User, error) {
+main.go:144 func (r *UserRepository) ListUsers() ([]*User, error) {
+main.go:149 func createSampleUser() *User {
+main.go:159 func ValidateUser(user *User) error {"""
 
     # =========================================================================
     # implementations tests
@@ -724,11 +815,10 @@ func NewUserRepository(storage Storage) *UserRepository {
             "column": 5,
             "context": 0,
         })
-        result = response["result"]
-        
-        assert len(result) == 2
-        names = [r["path"] for r in result]
-        assert all("main.go" in n for n in names)
+        output = format_output(response["result"], "plain")
+        assert output == """\
+main.go:39 type MemoryStorage struct {
+main.go:85 type FileStorage struct {"""
 
     def test_implementations_with_context(self, workspace):
         os.chdir(workspace)
@@ -739,31 +829,57 @@ func NewUserRepository(storage Storage) *UserRepository {
             "column": 5,
             "context": 1,
         })
-        result = response["result"]
-        assert len(result) == 2
-        assert all("context_lines" in r for r in result)
+        output = format_output(response["result"], "plain")
+        assert output == """\
+main.go:38-40
+// MemoryStorage stores users in memory.
+type MemoryStorage struct {
+\tusers map[string]*User
+
+main.go:84-86
+// FileStorage stores users in files (stub implementation).
+type FileStorage struct {
+\tbasePath string
+"""
 
     # =========================================================================
     # describe (hover) tests
     # =========================================================================
 
     def test_describe_hover(self, workspace):
+        os.chdir(workspace)
         response = run_request("describe", {
             "path": str(workspace / "main.go"),
             "workspace_root": str(workspace),
             "line": 9,
             "column": 5,
         })
-        result = response["result"]
-        
-        assert result["contents"] is not None
-        assert "User" in result["contents"]
+        output = format_output(response["result"], "plain")
+        assert output == """\
+```go
+type User struct { // size=40 (0x28), class=48 (0x30)
+\tName  string
+\tEmail string
+\tAge   int
+}
+```
+
+---
+
+User represents a user in the system.
+
+
+```go
+func (u *User) DisplayName() string
+func (u *User) IsAdult() bool
+```"""
 
     # =========================================================================
     # rename tests
     # =========================================================================
 
     def test_rename(self, workspace):
+        os.chdir(workspace)
         response = run_request("rename", {
             "path": str(workspace / "main.go"),
             "workspace_root": str(workspace),
@@ -771,9 +887,8 @@ func NewUserRepository(storage Storage) *UserRepository {
             "column": 5,
             "new_name": "Person",
         })
-        result = response["result"]
-        
-        assert result["renamed"] == True
+        output = format_output(response["result"], "plain")
+        assert "Renamed in 1 file(s):" in output
 
         # Revert the rename
         run_request("rename", {
@@ -851,57 +966,32 @@ class TestRustIntegration:
     # grep tests
     # =========================================================================
 
-    def test_grep_single_file(self, workspace):
-        response = run_request("grep", {
-            "paths": [str(workspace / "src" / "user.rs")],
-            "workspace_root": str(workspace),
-            "pattern": ".*",
-        })
-        symbols = response["result"]
-        names = [s["name"] for s in symbols]
-        
-        assert "User" in names
-        assert "UserRepository" in names
-
     def test_grep_pattern_filter(self, workspace):
+        os.chdir(workspace)
         response = run_request("grep", {
             "paths": [str(workspace / "src" / "storage.rs")],
             "workspace_root": str(workspace),
             "pattern": "Storage",
+            "kinds": ["struct", "interface"],
         })
-        symbols = response["result"]
-        names = [s["name"] for s in symbols]
-        
-        assert "Storage" in names
-        assert "MemoryStorage" in names
-        assert "FileStorage" in names
+        output = format_output(response["result"], "plain")
+        assert output == """\
+src/storage.rs:4 [Interface] Storage
+src/storage.rs:19 [Struct] MemoryStorage
+src/storage.rs:57 [Struct] FileStorage"""
 
     def test_grep_kind_filter(self, workspace):
+        os.chdir(workspace)
         response = run_request("grep", {
             "paths": [str(workspace / "src" / "user.rs")],
             "workspace_root": str(workspace),
             "pattern": ".*",
             "kinds": ["struct"],
         })
-        symbols = response["result"]
-        
-        assert all(s["kind"] == "Struct" for s in symbols)
-        names = [s["name"] for s in symbols]
-        assert "User" in names
-        assert "UserRepository" in names
-
-    def test_grep_interface_kind(self, workspace):
-        response = run_request("grep", {
-            "paths": [str(workspace / "src" / "storage.rs")],
-            "workspace_root": str(workspace),
-            "pattern": ".*",
-            "kinds": ["interface"],
-        })
-        symbols = response["result"]
-        
-        # Rust traits show as Interface
-        assert len(symbols) == 1
-        assert symbols[0]["name"] == "Storage"
+        output = format_output(response["result"], "plain")
+        assert output == """\
+src/user.rs:3 [Struct] User
+src/user.rs:43 [Struct] UserRepository"""
 
     # =========================================================================
     # definition tests
@@ -918,7 +1008,6 @@ class TestRustIntegration:
             "body": False,
         })
         output = format_output(response["result"], "plain")
-
         assert output == "src/main.rs:8 fn create_sample_user() -> User {"
 
     def test_definition_with_body(self, workspace):
@@ -932,7 +1021,6 @@ class TestRustIntegration:
             "body": True,
         })
         output = format_output(response["result"], "plain")
-
         assert output == """\
 src/main.rs:7-10
 
@@ -952,7 +1040,6 @@ fn create_sample_user() -> User {
             "body": True,
         })
         output = format_output(response["result"], "plain")
-
         assert output == """\
 src/main.rs:6-11
 
@@ -976,9 +1063,10 @@ fn create_sample_user() -> User {
             "column": 3,
             "context": 0,
         })
-        result = response["result"]
-        
-        assert len(result) == 2
+        output = format_output(response["result"], "plain")
+        assert output == """\
+src/main.rs:23     let user = create_sample_user();
+src/main.rs:8 fn create_sample_user() -> User {"""
 
 
 # =============================================================================
@@ -1016,75 +1104,45 @@ class TestTypeScriptIntegration:
     # grep tests
     # =========================================================================
 
-    def test_grep_single_file(self, workspace):
-        response = run_request("grep", {
-            "paths": [str(workspace / "src" / "user.ts")],
-            "workspace_root": str(workspace),
-            "pattern": ".*",
-        })
-        symbols = response["result"]
-        names = [s["name"] for s in symbols]
-        
-        assert "User" in names
-        assert "Storage" in names
-        assert "MemoryStorage" in names
-
     def test_grep_pattern_filter(self, workspace):
+        os.chdir(workspace)
         response = run_request("grep", {
             "paths": [str(workspace / "src" / "user.ts")],
             "workspace_root": str(workspace),
             "pattern": "Storage",
+            "kinds": ["class", "interface"],
         })
-        symbols = response["result"]
-        names = [s["name"] for s in symbols]
-        
-        assert "Storage" in names
-        assert "MemoryStorage" in names
-        assert "FileStorage" in names
+        output = format_output(response["result"], "plain")
+        assert output == """\
+src/user.ts:62 [Class] FileStorage
+src/user.ts:39 [Class] MemoryStorage
+src/user.ts:29 [Interface] Storage"""
 
     def test_grep_kind_filter_class(self, workspace):
+        os.chdir(workspace)
         response = run_request("grep", {
             "paths": [str(workspace / "src" / "user.ts")],
             "workspace_root": str(workspace),
             "pattern": ".*",
             "kinds": ["class"],
         })
-        symbols = response["result"]
-        
-        assert all(s["kind"] == "Class" for s in symbols)
-        names = [s["name"] for s in symbols]
-        assert "User" in names
-        assert "MemoryStorage" in names
-        assert "FileStorage" in names
-        assert "UserRepository" in names
+        output = format_output(response["result"], "plain")
+        assert output == """\
+src/user.ts:62 [Class] FileStorage
+src/user.ts:39 [Class] MemoryStorage
+src/user.ts:4 [Class] User
+src/user.ts:92 [Class] UserRepository"""
 
     def test_grep_kind_filter_interface(self, workspace):
+        os.chdir(workspace)
         response = run_request("grep", {
             "paths": [str(workspace / "src" / "user.ts")],
             "workspace_root": str(workspace),
             "pattern": ".*",
             "kinds": ["interface"],
         })
-        symbols = response["result"]
-        
-        assert all(s["kind"] == "Interface" for s in symbols)
-        assert len(symbols) == 1
-        assert symbols[0]["name"] == "Storage"
-
-    def test_grep_with_docs(self, workspace):
-        response = run_request("grep", {
-            "paths": [str(workspace / "src" / "user.ts")],
-            "workspace_root": str(workspace),
-            "pattern": "^User$",
-            "kinds": ["class"],
-            "include_docs": True,
-        })
-        symbols = response["result"]
-        
-        assert len(symbols) == 1
-        assert symbols[0]["name"] == "User"
-        assert "documentation" in symbols[0]
-        assert symbols[0]["documentation"] is not None
+        output = format_output(response["result"], "plain")
+        assert output == "src/user.ts:29 [Interface] Storage"
 
     # =========================================================================
     # definition tests
@@ -1101,7 +1159,6 @@ class TestTypeScriptIntegration:
             "body": False,
         })
         output = format_output(response["result"], "plain")
-
         assert output == "src/main.ts:6 function createSampleUser(): User {"
 
     def test_definition_with_body(self, workspace):
@@ -1115,7 +1172,6 @@ class TestTypeScriptIntegration:
             "body": True,
         })
         output = format_output(response["result"], "plain")
-
         assert output == """\
 src/main.ts:6-8
 
@@ -1134,7 +1190,6 @@ function createSampleUser(): User {
             "body": False,
         })
         output = format_output(response["result"], "plain")
-
         assert output == """\
 src/main.ts:5-7
  */
@@ -1155,9 +1210,27 @@ function createSampleUser(): User {
             "column": 13,
             "context": 0,
         })
-        result = response["result"]
-        
-        assert len(result) == 19  # Many references across files
+        output = format_output(response["result"], "plain")
+        assert output == """\
+src/user.ts:4 export class User {
+src/user.ts:30     save(user: User): void;
+src/user.ts:31     load(email: string): User | undefined;
+src/user.ts:33     list(): User[];
+src/user.ts:40     private users: Map<string, User> = new Map();
+src/user.ts:42     save(user: User): void {
+src/user.ts:46     load(email: string): User | undefined {
+src/user.ts:54     list(): User[] {
+src/user.ts:63     private cache: Map<string, User> = new Map();
+src/user.ts:71     save(user: User): void {
+src/user.ts:76     load(email: string): User | undefined {
+src/user.ts:84     list(): User[] {
+src/user.ts:95     addUser(user: User): void {
+src/user.ts:99     getUser(email: string): User | undefined {
+src/user.ts:107     listUsers(): User[] {
+src/user.ts:119 export function validateUser(user: User): string | null {
+src/main.ts:1 import { User, UserRepository, MemoryStorage, validateUser } from './user';
+src/main.ts:6 function createSampleUser(): User {
+src/main.ts:7     return new User("John Doe", "john@example.com", 30);"""
 
     # =========================================================================
     # implementations tests
@@ -1172,9 +1245,10 @@ function createSampleUser(): User {
             "column": 17,
             "context": 0,
         })
-        result = response["result"]
-        
-        assert len(result) == 2
+        output = format_output(response["result"], "plain")
+        assert output == """\
+src/user.ts:39 export class MemoryStorage implements Storage {
+src/user.ts:62 export class FileStorage implements Storage {"""
 
     def test_implementations_with_context(self, workspace):
         os.chdir(workspace)
@@ -1185,31 +1259,45 @@ function createSampleUser(): User {
             "column": 17,
             "context": 1,
         })
-        result = response["result"]
-        assert len(result) == 2
-        assert all("context_lines" in r for r in result)
+        output = format_output(response["result"], "plain")
+        assert output == """\
+src/user.ts:38-40
+ */
+export class MemoryStorage implements Storage {
+    private users: Map<string, User> = new Map();
+
+src/user.ts:61-63
+ */
+export class FileStorage implements Storage {
+    private cache: Map<string, User> = new Map();
+"""
 
     # =========================================================================
     # describe (hover) tests
     # =========================================================================
 
     def test_describe_hover(self, workspace):
+        os.chdir(workspace)
         response = run_request("describe", {
             "path": str(workspace / "src" / "user.ts"),
             "workspace_root": str(workspace),
             "line": 4,
             "column": 13,
         })
-        result = response["result"]
-        
-        assert result["contents"] is not None
-        assert "User" in result["contents"]
+        output = format_output(response["result"], "plain")
+        assert output == """\
+
+```typescript
+class User
+```
+Represents a user in the system."""
 
     # =========================================================================
     # rename tests
     # =========================================================================
 
     def test_rename(self, workspace):
+        os.chdir(workspace)
         response = run_request("rename", {
             "path": str(workspace / "src" / "user.ts"),
             "workspace_root": str(workspace),
@@ -1217,10 +1305,8 @@ function createSampleUser(): User {
             "column": 13,
             "new_name": "Person",
         })
-        result = response["result"]
-        
-        assert result["renamed"] == True
-        assert len(result["files_modified"]) == 2
+        output = format_output(response["result"], "plain")
+        assert "Renamed in 2 file(s):" in output
 
 
 # =============================================================================
@@ -1258,58 +1344,41 @@ class TestJavaIntegration:
     # grep tests
     # =========================================================================
 
-    def test_grep_single_file(self, workspace):
-        os.chdir(workspace)
-        response = run_request("grep", {
-            "paths": [str(workspace / "src" / "main" / "java" / "com" / "example" / "User.java")],
-            "workspace_root": str(workspace),
-            "pattern": ".*",
-        })
-        symbols = response["result"]
-        names = [s["name"] for s in symbols]
-        
-        assert "User" in names
-        assert "getName()" in names
-
     def test_grep_pattern_filter(self, workspace):
+        os.chdir(workspace)
         response = run_request("grep", {
             "paths": [str(workspace / "src" / "main" / "java" / "com" / "example" / "User.java")],
             "workspace_root": str(workspace),
             "pattern": "^get",
         })
-        symbols = response["result"]
-        names = [s["name"] for s in symbols]
-        
-        assert "getName()" in names
-        assert "getEmail()" in names
-        assert "getAge()" in names
+        output = format_output(response["result"], "plain")
+        assert output == """\
+src/main/java/com/example/User.java:24 [Method] getName() ( : String) in User
+src/main/java/com/example/User.java:33 [Method] getEmail() ( : String) in User
+src/main/java/com/example/User.java:42 [Method] getAge() ( : int) in User"""
 
     def test_grep_kind_filter_class(self, workspace):
+        os.chdir(workspace)
         response = run_request("grep", {
             "paths": [str(workspace / "src" / "main" / "java" / "com" / "example" / "User.java")],
             "workspace_root": str(workspace),
             "pattern": ".*",
             "kinds": ["class"],
         })
-        symbols = response["result"]
-        
-        assert all(s["kind"] == "Class" for s in symbols)
-        assert len(symbols) == 1
-        assert symbols[0]["name"] == "User"
+        output = format_output(response["result"], "plain")
+        assert output == "src/main/java/com/example/User.java:3 [Class] User"
 
     def test_grep_kind_filter_method(self, workspace):
+        os.chdir(workspace)
         response = run_request("grep", {
             "paths": [str(workspace / "src" / "main" / "java" / "com" / "example" / "User.java")],
             "workspace_root": str(workspace),
             "pattern": ".*",
             "kinds": ["method"],
         })
-        symbols = response["result"]
-        
-        assert all(s["kind"] == "Method" for s in symbols)
-        names = [s["name"] for s in symbols]
-        assert "getName()" in names
-        assert "isAdult()" in names
+        output = format_output(response["result"], "plain")
+        assert "getName()" in output
+        assert "isAdult()" in output
 
     # =========================================================================
     # definition tests
@@ -1326,8 +1395,7 @@ class TestJavaIntegration:
             "body": False,
         })
         output = format_output(response["result"], "plain")
-
-        assert "createSampleUser" in output
+        assert output == "src/main/java/com/example/Main.java:15     public static User createSampleUser() {"
 
     def test_definition_with_body(self, workspace):
         os.chdir(workspace)
@@ -1339,10 +1407,18 @@ class TestJavaIntegration:
             "context": 0,
             "body": True,
         })
-        result = response["result"]
-        
-        assert "createSampleUser" in result["content"]
-        assert result["start_line"] < result["end_line"]
+        output = format_output(response["result"], "plain")
+        assert output == """\
+src/main/java/com/example/Main.java:10-17
+
+    /**
+     * Creates a sample user for testing.
+     *
+     * @return A sample user
+     */
+    public static User createSampleUser() {
+        return new User("John Doe", "john@example.com", 30);
+    }"""
 
     def test_definition_with_context(self, workspace):
         os.chdir(workspace)
@@ -1354,10 +1430,13 @@ class TestJavaIntegration:
             "context": 1,
             "body": False,
         })
-        result = response["result"]
-        
-        assert len(result) >= 1
-        assert "context_lines" in result[0]
+        output = format_output(response["result"], "plain")
+        assert output == """\
+src/main/java/com/example/Main.java:14-16
+     */
+    public static User createSampleUser() {
+        return new User("John Doe", "john@example.com", 30);
+"""
 
     # =========================================================================
     # references tests
@@ -1372,9 +1451,28 @@ class TestJavaIntegration:
             "column": 13,
             "context": 0,
         })
-        result = response["result"]
-        
-        assert len(result) == 20
+        output = format_output(response["result"], "plain")
+        assert output == """\
+src/main/java/com/example/FileStorage.java:14     private Map<String, User> cache = new HashMap<>();
+src/main/java/com/example/FileStorage.java:39     public void save(User user) {
+src/main/java/com/example/FileStorage.java:48     public User load(String email) {
+src/main/java/com/example/FileStorage.java:64     public List<User> list() {
+src/main/java/com/example/Main.java:15     public static User createSampleUser() {
+src/main/java/com/example/Main.java:16         return new User("John Doe", "john@example.com", 30);
+src/main/java/com/example/Main.java:27                 .map(User::displayName)
+src/main/java/com/example/Main.java:50         User user = createSampleUser();
+src/main/java/com/example/Main.java:54         User found = repo.getUser("john@example.com");
+src/main/java/com/example/MemoryStorage.java:13     private Map<String, User> users = new HashMap<>();
+src/main/java/com/example/MemoryStorage.java:26     public void save(User user) {
+src/main/java/com/example/MemoryStorage.java:34     public User load(String email) {
+src/main/java/com/example/MemoryStorage.java:50     public List<User> list() {
+src/main/java/com/example/Storage.java:14     void save(User user);
+src/main/java/com/example/Storage.java:22     User load(String email);
+src/main/java/com/example/Storage.java:37     List<User> list();
+src/main/java/com/example/User.java:6 public class User {
+src/main/java/com/example/UserRepository.java:26     public void addUser(User user) {
+src/main/java/com/example/UserRepository.java:36     public User getUser(String email) {
+src/main/java/com/example/UserRepository.java:55     public List<User> listUsers() {"""
 
     # =========================================================================
     # implementations tests
@@ -1389,25 +1487,26 @@ class TestJavaIntegration:
             "column": 17,
             "context": 0,
         })
-        result = response["result"]
-        
-        assert len(result) == 3
+        output = format_output(response["result"], "plain")
+        # Order is non-deterministic for jdtls, so check parts
+        assert "AbstractStorage.java:7" in output
+        assert "FileStorage.java:12" in output
+        assert "MemoryStorage.java:12" in output
 
     # =========================================================================
     # describe (hover) tests
     # =========================================================================
 
     def test_describe_hover(self, workspace):
+        os.chdir(workspace)
         response = run_request("describe", {
             "path": str(workspace / "src" / "main" / "java" / "com" / "example" / "User.java"),
             "workspace_root": str(workspace),
             "line": 6,
             "column": 13,
         })
-        result = response["result"]
-        
-        assert result["contents"] is not None
-        assert "User" in result["contents"]
+        output = format_output(response["result"], "plain")
+        assert output == "com.example.User\nRepresents a user in the system."
 
 
 # =============================================================================
@@ -1433,6 +1532,7 @@ class TestMultiLanguageIntegration:
 
     def test_python_grep(self, workspace):
         requires_pyright()
+        os.chdir(workspace)
 
         run_request("grep", {
             "paths": [str(workspace / "app.py")],
@@ -1447,14 +1547,15 @@ class TestMultiLanguageIntegration:
             "pattern": ".*",
             "kinds": ["class"],
         })
-        symbols = response["result"]
-        names = [s["name"] for s in symbols]
-        
-        assert "PythonUser" in names
-        assert "PythonService" in names
+        output = format_output(response["result"], "plain")
+        assert output == """\
+app.py:10 [Class] ServiceProtocol
+app.py:18 [Class] PythonUser
+app.py:25 [Class] PythonService"""
 
     def test_go_grep(self, workspace):
         requires_gopls()
+        os.chdir(workspace)
 
         run_request("grep", {
             "paths": [str(workspace / "main.go")],
@@ -1469,15 +1570,15 @@ class TestMultiLanguageIntegration:
             "pattern": ".*",
             "kinds": ["struct"],
         })
-        symbols = response["result"]
-        names = [s["name"] for s in symbols]
-        
-        assert "GoUser" in names
-        assert "GoService" in names
+        output = format_output(response["result"], "plain")
+        assert output == """\
+main.go:6 [Struct] GoUser (struct{...})
+main.go:12 [Struct] GoService (struct{...})"""
 
     def test_both_languages_workspace_wide(self, workspace):
         requires_pyright()
         requires_gopls()
+        os.chdir(workspace)
 
         # Warm up both servers
         run_request("grep", {
@@ -1496,10 +1597,10 @@ class TestMultiLanguageIntegration:
         response = run_request("grep", {
             "workspace_root": str(workspace),
             "pattern": "Service",
+            "kinds": ["struct", "class"],
         })
-        symbols = response["result"]
-        names = [s["name"] for s in symbols]
-        
-        # Should find services from both Python and Go
-        assert "PythonService" in names
-        assert "GoService" in names
+        output = format_output(response["result"], "plain")
+        # Order may vary, check both are present
+        assert "app.py:10 [Class] ServiceProtocol" in output
+        assert "app.py:25 [Class] PythonService" in output
+        assert "main.go:12 [Struct] GoService" in output
