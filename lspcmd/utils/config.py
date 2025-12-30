@@ -123,15 +123,21 @@ def get_known_workspace_root(path: Path, config: dict) -> Path | None:
     path = path.resolve()
     roots = config.get("workspaces", {}).get("roots", [])
 
+    best_root = None
+    best_depth = -1
+    
     for root_str in roots:
         root = Path(root_str)
         try:
             path.relative_to(root)
-            return root
+            depth = len(root.parts)
+            if depth > best_depth:
+                best_depth = depth
+                best_root = root
         except ValueError:
             continue
 
-    return None
+    return best_root
 
 
 def add_workspace_root(root: Path, config: dict) -> None:
