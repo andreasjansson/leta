@@ -211,10 +211,16 @@ def expand_exclude_pattern(pattern: str) -> set[Path]:
     """Expand an exclude pattern to a set of paths to exclude.
     
     Same logic as expand_path_pattern but returns a set and doesn't error on no matches.
+    Directories are automatically treated as directory/** (recursive exclusion).
     """
     if "*" not in pattern and "?" not in pattern:
         path = Path(pattern).resolve()
-        return {path} if path.exists() else set()
+        if path.exists():
+            if path.is_dir():
+                matches = glob.glob(str(path / "**" / "*"), recursive=True)
+                return {Path(m).resolve() for m in matches if Path(m).is_file()}
+            return {path}
+        return set()
     
     if "/" not in pattern and not pattern.startswith("**"):
         pattern = "**/" + pattern
