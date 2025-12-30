@@ -89,6 +89,10 @@ class Workspace:
 
         # Wait for initial indexing to complete
         await self.client.wait_for_indexing(timeout=60.0)
+        
+        # For servers that do lazy indexing, pre-index all files
+        await self.ensure_workspace_indexed()
+        
         logger.info(f"Server {self.server_config.name} initialized and ready")
 
     def _get_init_options(self) -> dict[str, Any]:
