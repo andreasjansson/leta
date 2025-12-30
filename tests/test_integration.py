@@ -1861,13 +1861,14 @@ class TestZigIntegration:
         assert "MemoryStorage" in output
         assert "FileStorage" in output
 
-    def test_grep_kind_filter_struct(self, workspace):
+    def test_grep_kind_filter_constant(self, workspace):
         os.chdir(workspace)
+        # In Zig, structs are reported as constants by zls
         response = run_request("grep", {
             "paths": [str(workspace / "src" / "user.zig")],
             "workspace_root": str(workspace),
             "pattern": ".*",
-            "kinds": ["struct"],
+            "kinds": ["constant"],
         })
         output = format_output(response["result"], "plain")
         assert "User" in output
