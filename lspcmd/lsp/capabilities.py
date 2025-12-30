@@ -14,6 +14,11 @@ def get_client_capabilities() -> dict[str, Any]:
                 "symbolKind": {"valueSet": list(range(1, 27))},
             },
             "executeCommand": {"dynamicRegistration": False},
+            "fileOperations": {
+                "dynamicRegistration": False,
+                "willRename": True,
+                "didRename": True,
+            },
         },
         "textDocument": {
             "synchronization": {
