@@ -133,6 +133,7 @@ class DaemonServer:
             "find-references": self._handle_find_references,
             "find-subtypes": self._handle_find_subtypes,
             "find-supertypes": self._handle_find_supertypes,
+            "get-diagnostics": self._handle_get_diagnostics,
             "list-code-actions": self._handle_list_code_actions,
             "raw-lsp-request": self._handle_raw_lsp_request,
             "execute-code-action": self._handle_execute_code_action,
