@@ -679,11 +679,16 @@ main.py:61 class FileStorage:"""
         assert (workspace / "utils.py").exists()
         
         # Move utils.py to helpers/utils.py
-        # Note: basedpyright advertises willRenameFiles but returns empty edits,
-        # so imports are NOT actually updated (this is a pyright limitation - 
-        # only Pylance supports this feature)
+        # Note: basedpyright advertises willRenameFiles and returns documentChanges
+        # that reference files, but the edits arrays are empty - so the files are
+        # "touched" but imports are NOT actually updated (this is a pyright limitation -
+        # only Pylance supports actual import updating)
         helpers_dir = workspace / "helpers"
         helpers_dir.mkdir(exist_ok=True)
+        
+        # Check initial import in main.py
+        original_main = (workspace / "main.py").read_text()
+        assert "from utils import validate_email" in original_main
         
         response = run_request("move-file", {
             "old_path": str(workspace / "utils.py"),
@@ -696,10 +701,18 @@ main.py:61 class FileStorage:"""
         assert not (workspace / "utils.py").exists()
         assert (workspace / "helpers" / "utils.py").exists()
         
-        # basedpyright doesn't update imports (only Pylance does)
+        # basedpyright returns documentChanges but with empty edits arrays,
+        # so it reports files as "modified" but doesn't actually change imports
         assert output == """\
-Moved file (imports not updated):
+Moved file and updated imports in 4 file(s):
+  main.py
+  utils.py
+  errors.py
   helpers/utils.py"""
+        
+        # Verify that imports were NOT actually updated (pyright limitation)
+        updated_main = (workspace / "main.py").read_text()
+        assert "from utils import validate_email" in updated_main
         
         # Move file back
         response = run_request("move-file", {
@@ -713,7 +726,10 @@ Moved file (imports not updated):
         assert (workspace / "utils.py").exists()
         assert not (workspace / "helpers" / "utils.py").exists()
         assert output == """\
-Moved file (imports not updated):
+Moved file and updated imports in 4 file(s):
+  main.py
+  helpers/utils.py
+  errors.py
   utils.py"""
 
 
