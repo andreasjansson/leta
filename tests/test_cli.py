@@ -216,3 +216,41 @@ class TestCliWithDaemon:
         result = runner.invoke(cli, ["workspace", "restart", str(temp_dir)])
         # Should fail because workspace isn't initialized
         assert result.exit_code != 0 or "error" in result.output.lower() or "not" in result.output.lower()
+
+    def test_implementations_not_supported(self, python_project, isolated_config):
+        """Test that implementations returns a helpful error for Python."""
+        main_py = python_project / "main.py"
+        config = load_config()
+        add_workspace_root(python_project, config)
+
+        runner = CliRunner()
+        result = runner.invoke(cli, ["implementations", str(main_py), "6,6"])
+        # Should fail with a "not supported" error
+        assert result.exit_code == 1
+        assert "not supported" in result.output.lower() or "method not found" in result.output.lower()
+
+
+@requires_gopls
+class TestCliWithGopls:
+    @pytest.fixture(autouse=True)
+    def setup_teardown(self, isolated_config):
+        yield
+        pid_path = get_pid_path()
+
+        if is_daemon_running(pid_path):
+            runner = CliRunner()
+            runner.invoke(cli, ["daemon", "shutdown"])
+            time.sleep(0.5)
+
+    def test_implementations(self, go_project, isolated_config):
+        """Test that implementations works for Go interfaces."""
+        main_go = go_project / "main.go"
+        config = load_config()
+        add_workspace_root(go_project, config)
+
+        runner = CliRunner()
+        # Find implementations of Storage interface (line 14)
+        result = runner.invoke(cli, ["implementations", str(main_go), "14:Storage"])
+        assert result.exit_code == 0
+        assert "MemoryStorage" in result.output
+        assert "FileStorage" in result.output
