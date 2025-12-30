@@ -563,58 +563,6 @@ def diagnostics(ctx, path, severity):
     click.echo(format_output(result, "json" if ctx.obj["json"] else "plain"))
 
 
-@cli.command("list-code-actions")
-@click.argument("path", type=click.Path(exists=True))
-@click.argument("position")
-@click.pass_context
-def list_code_actions(ctx, path, position):
-    """List code actions at position.
-    
-    POSITION can be LINE,COLUMN (e.g. 42,10), LINE:REGEX (e.g. 42:def foo),
-    or just REGEX (e.g. def foo) to search the whole file.
-    """
-    path = Path(path).resolve()
-    line, column = parse_position(position, path)
-    config = load_config()
-    workspace_root = get_workspace_root_for_path(path, config)
-
-    response = run_request("list-code-actions", {
-        "path": str(path),
-        "workspace_root": str(workspace_root),
-        "line": line,
-        "column": column,
-    })
-
-    click.echo(format_output(response.get("result", response), "json" if ctx.obj["json"] else "plain"))
-
-
-@cli.command("execute-code-action")
-@click.argument("path", type=click.Path(exists=True))
-@click.argument("position")
-@click.argument("action_title")
-@click.pass_context
-def execute_code_action(ctx, path, position, action_title):
-    """Execute a code action at position.
-    
-    POSITION can be LINE,COLUMN (e.g. 42,10), LINE:REGEX (e.g. 42:def foo),
-    or just REGEX (e.g. def foo) to search the whole file.
-    """
-    path = Path(path).resolve()
-    line, column = parse_position(position, path)
-    config = load_config()
-    workspace_root = get_workspace_root_for_path(path, config)
-
-    response = run_request("execute-code-action", {
-        "path": str(path),
-        "workspace_root": str(workspace_root),
-        "line": line,
-        "column": column,
-        "action_title": action_title,
-    })
-
-    click.echo(format_output(response.get("result", response), "json" if ctx.obj["json"] else "plain"))
-
-
 @cli.command("format")
 @click.argument("path", type=click.Path(exists=True))
 @click.pass_context
