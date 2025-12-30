@@ -135,10 +135,10 @@ class TestCliCommands:
         assert "workspace init" in result.output
 
 
-@requires_pyright
 class TestCliWithDaemon:
     @pytest.fixture(autouse=True)
     def setup_teardown(self, isolated_config):
+        requires_pyright()
         yield
         pid_path = get_pid_path()
 
