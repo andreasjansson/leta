@@ -137,6 +137,29 @@ class TestPythonIntegration:
 
         await session.close_all()
 
+    @pytest.mark.asyncio
+    async def test_implementations_not_supported(self, python_project, session):
+        """Python/pyright doesn't support textDocument/implementation."""
+        from lspcmd.lsp.protocol import LSPResponseError
+
+        main_py = python_project / "main.py"
+        workspace = await session.get_or_create_workspace(main_py, python_project)
+        await workspace.ensure_document_open(main_py)
+
+        # Pyright should return an error for implementation requests
+        with pytest.raises(LSPResponseError) as exc_info:
+            await workspace.client.send_request(
+                "textDocument/implementation",
+                {
+                    "textDocument": {"uri": path_to_uri(main_py)},
+                    "position": {"line": 5, "character": 6},
+                },
+            )
+
+        assert exc_info.value.is_method_not_found()
+
+        await session.close_all()
+
 
 @requires_rust_analyzer
 class TestRustIntegration:
