@@ -147,6 +147,37 @@ class Workspace:
             )
         self.open_documents.clear()
 
+    async def ensure_workspace_indexed(self) -> None:
+        """Open and close all source files to ensure clangd indexes them."""
+        if self.client is None:
+            return
+        
+        # Only needed for clangd which does lazy indexing
+        if self.server_config.name != "clangd":
+            return
+        
+        source_extensions = {".c", ".h", ".cpp", ".hpp", ".cc", ".cxx", ".hxx"}
+        exclude_dirs = {"build", ".git", "node_modules"}
+        
+        files_to_index = []
+        for file_path in self.root.rglob("*"):
+            if not file_path.is_file():
+                continue
+            if any(part in exclude_dirs for part in file_path.parts):
+                continue
+            if file_path.suffix in source_extensions:
+                files_to_index.append(file_path)
+        
+        # Open all files to trigger indexing
+        for file_path in files_to_index:
+            await self.ensure_document_open(file_path)
+        
+        # Wait for indexing to complete
+        await self.client.wait_for_indexing(timeout=30.0)
+        
+        # Close all files to avoid memory issues
+        await self.close_all_documents()
+
     async def ensure_document_open(self, path: Path) -> OpenDocument:
         uri = path_to_uri(path)
 
