@@ -80,10 +80,10 @@ entry_points={
 
 | Command | Description |
 |---------|-------------|
-| `lspcmd init-workspace [--root PATH]` | Initialize a workspace for LSP operations |
-| `lspcmd describe-session` | Show daemon state: workspaces, servers, open documents |
-| `lspcmd restart-workspace [WORKSPACE]` | Restart language servers for a workspace |
-| `lspcmd shutdown` | Shutdown the daemon gracefully |
+| `lspcmd workspace init [--root PATH]` | Initialize a workspace for LSP operations |
+| `lspcmd workspace restart [PATH]` | Restart language servers for a workspace |
+| `lspcmd daemon info` | Show daemon state: workspaces, servers, open documents |
+| `lspcmd daemon shutdown` | Shutdown the daemon gracefully |
 | `lspcmd config` | Print config file location and contents |
 
 ### Debugging
@@ -106,7 +106,7 @@ lspcmd raw-lsp-request workspace/symbol '{"query": "Handler"}' -l typescript
 
 | Command | Description |
 |---------|-------------|
-| `lspcmd definition PATH POSITION [-n CONTEXT] [-b]` | Find definition at position (-b for full body) |
+| `lspcmd definition PATH POSITION [-n CONTEXT] [-b]` | Find definition at position (-b for full body with optional context) |
 | `lspcmd references PATH POSITION [-n CONTEXT]` | Find all references at position |
 | `lspcmd implementations PATH POSITION [-n CONTEXT]` | Find implementations of interface/abstract method (transitive) |
 | `lspcmd subtypes PATH POSITION [-n CONTEXT]` | Find direct subtypes of a type |
@@ -137,7 +137,7 @@ lspcmd --json diagnostics                 # JSON output
 |---------|-------------|
 | `lspcmd grep PATTERN [PATH] [-k KIND] [-x EXCLUDE] [-d] [-C]` | Search symbols by regex pattern |
 
-The `grep` command is the primary way to search symbols:
+The `grep` command is the primary way to search symbols. All filtering is done server-side in the daemon for performance:
 - `PATTERN`: Regex matched against symbol names (case-insensitive by default)
 - `PATH`: Optional file path or glob pattern (e.g., `*.py`, `src/**/*.go`, or bare filename like `server.py`)
 - `-k/--kind`: Filter by kind (class, function, method, variable, etc.)
@@ -199,6 +199,9 @@ lspcmd definition src/main.py "def __init__\\(self\\)"
 
 # Print full definition body
 lspcmd definition src/main.py "class UserRepository:" --body
+
+# Print full definition body with 2 lines of context
+lspcmd definition src/main.py "class UserRepository:" --body -n 2
 ```
 
 If a regex matches multiple times, you'll get a helpful error showing all locations:
@@ -217,6 +220,32 @@ All commands support `--json` flag for JSON output:
 ```bash
 lspcmd --json definition src/main.py 42,10
 ```
+
+## Daemon Methods
+
+The CLI communicates with the daemon via JSON over Unix socket. Each CLI command maps to a daemon method:
+
+| CLI Command | Daemon Method |
+|-------------|---------------|
+| `definition` | `definition` |
+| `declaration` | `declaration` |
+| `references` | `references` |
+| `implementations` | `implementations` |
+| `subtypes` | `subtypes` |
+| `supertypes` | `supertypes` |
+| `describe` | `describe` |
+| `diagnostics` (single file) | `diagnostics` |
+| `diagnostics` (workspace) | `workspace-diagnostics` |
+| `grep` | `grep` |
+| `list-code-actions` | `list-code-actions` |
+| `execute-code-action` | `execute-code-action` |
+| `format` | `format` |
+| `organize-imports` | `organize-imports` |
+| `rename` | `rename` |
+| `daemon info` | `describe-session` |
+| `daemon shutdown` | `shutdown` |
+| `workspace restart` | `restart-workspace` |
+| `raw-lsp-request` | `raw-lsp-request` |
 
 ## Configuration
 
@@ -265,9 +294,9 @@ When a command targets a file, lspcmd determines the workspace root by:
 
 Initialize a workspace with:
 ```bash
-lspcmd init-workspace --root=/path/to/project
+lspcmd workspace init --root=/path/to/project
 # or interactively:
-lspcmd init-workspace
+lspcmd workspace init
 ```
 
 ## Supported Language Servers
@@ -319,7 +348,7 @@ source .venv/bin/activate
 
 # Run lspcmd
 lspcmd --help
-lspcmd init-workspace --root=.
+lspcmd workspace init --root=.
 lspcmd grep ".*" lspcmd/cli.py -k function
 
 # Run the daemon directly (usually auto-started)
@@ -343,7 +372,7 @@ python -m pytest tests/ --cov=lspcmd --cov-report=term-missing
 # Run only unit tests (fast, no LSP servers needed)
 python -m pytest tests/ -v --ignore=tests/test_integration.py
 
-# Run integration tests (requires pyright installed)
+# Run integration tests (requires language servers installed)
 python -m pytest tests/test_integration.py -v
 ```
 
@@ -357,6 +386,7 @@ tests/
 │   ├── go_project/
 │   ├── rust_project/
 │   ├── typescript_project/
+│   ├── java_project/
 │   └── multi_language_project/
 ├── test_cli.py              # CLI command tests
 ├── test_config.py           # Configuration tests
@@ -383,7 +413,7 @@ tail -f ~/.cache/lspcmd/log/gopls.log
 
 Restart with fresh state:
 ```bash
-lspcmd shutdown
+lspcmd daemon shutdown
 rm -rf ~/.cache/lspcmd/
 ```
 
@@ -396,7 +426,7 @@ rm -rf ~/.cache/lspcmd/
 3. CLI connects via Unix socket
 4. CLI sends JSON request, waits for JSON response
 5. Daemon keeps running indefinitely, managing servers
-6. User runs `lspcmd shutdown` to stop daemon
+6. User runs `lspcmd daemon shutdown` to stop daemon
 
 ### Session State
 
