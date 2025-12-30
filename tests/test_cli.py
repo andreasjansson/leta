@@ -97,7 +97,7 @@ class TestCliCommands:
         result = runner.invoke(cli, ["--help"])
         assert result.exit_code == 0
         assert "Commands:" in result.output
-        assert "find-definition" in result.output
+        assert "definition" in result.output
         assert "workspace" in result.output
         assert "daemon" in result.output
 
