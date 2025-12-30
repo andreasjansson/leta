@@ -27,6 +27,8 @@ from .conftest import (
     requires_clangd,
     requires_zls,
     requires_lua_ls,
+    requires_solargraph,
+    requires_intelephense,
     FIXTURES_DIR,
 )
 
