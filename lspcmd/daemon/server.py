@@ -377,22 +377,22 @@ class DaemonServer:
 
         await workspace.client.wait_for_service_ready()
 
-        # Try pull diagnostics first
-        try:
-            result = await workspace.client.send_request(
-                "textDocument/diagnostic",
-                {"textDocument": {"uri": doc.uri}},
-            )
-            if result and result.get("items"):
-                return self._format_diagnostics(result["items"], path, workspace.root)
-        except LSPResponseError as e:
-            if not e.is_method_not_found():
-                raise
-            # Fall through to use stored diagnostics from publishDiagnostics
+        if workspace.client.supports_pull_diagnostics:
+            try:
+                result = await workspace.client.send_request(
+                    "textDocument/diagnostic",
+                    {"textDocument": {"uri": doc.uri}},
+                )
+                if result and result.get("items"):
+                    return self._format_diagnostics(result["items"], path, workspace.root)
+                return []
+            except LSPResponseError as e:
+                if e.is_method_not_found():
+                    workspace.client.supports_pull_diagnostics = False
+                else:
+                    raise
 
-        # Fall back to stored diagnostics (from publishDiagnostics notifications)
-        # Wait a moment to allow diagnostics to arrive
-        await asyncio.sleep(0.5)
+        # Use stored diagnostics from publishDiagnostics notifications
         stored = workspace.client.get_stored_diagnostics(doc.uri)
         if stored:
             return self._format_diagnostics(stored, path, workspace.root)
