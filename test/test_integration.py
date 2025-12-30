@@ -518,7 +518,7 @@ main.py:114-116
         response = run_request("describe", {
             "path": str(workspace / "main.py"),
             "workspace_root": str(workspace),
-            "line": 25,
+            "line": 27,
             "column": 6,
         })
         output = format_output(response["result"], "plain")
