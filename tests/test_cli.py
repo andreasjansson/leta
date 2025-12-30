@@ -229,6 +229,18 @@ class TestCliWithDaemon:
         assert result.exit_code == 1
         assert "not supported" in result.output.lower() or "method not found" in result.output.lower()
 
+    def test_subtypes_not_supported(self, python_project, isolated_config):
+        """Test that subtypes returns a helpful error for Python."""
+        main_py = python_project / "main.py"
+        config = load_config()
+        add_workspace_root(python_project, config)
+
+        runner = CliRunner()
+        result = runner.invoke(cli, ["subtypes", str(main_py), "6,6"])
+        # Should fail with a "not supported" error
+        assert result.exit_code == 1
+        assert "not supported" in result.output.lower() or "method not found" in result.output.lower()
+
 
 class TestCliWithGopls:
     @pytest.fixture(autouse=True)
