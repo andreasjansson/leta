@@ -8,6 +8,7 @@ Run with: pytest tests/test_integration.py -n auto
 
 import os
 import shutil
+import tempfile
 import time
 from pathlib import Path
 
@@ -36,9 +37,10 @@ def class_temp_dir(tmp_path_factory):
 
 @pytest.fixture(scope="class")
 def class_isolated_config(class_temp_dir):
-    cache_dir = class_temp_dir / "cache"
+    # Use /tmp for cache to avoid AF_UNIX path length limits (max ~104 chars)
+    # The socket path would be too long if we used pytest's temp dir
+    cache_dir = Path(tempfile.mkdtemp(prefix="lspcmd_test_"))
     config_dir = class_temp_dir / "config"
-    cache_dir.mkdir()
     config_dir.mkdir()
     old_cache = os.environ.get("XDG_CACHE_HOME")
     old_config = os.environ.get("XDG_CONFIG_HOME")
@@ -53,6 +55,7 @@ def class_isolated_config(class_temp_dir):
         os.environ["XDG_CONFIG_HOME"] = old_config
     else:
         os.environ.pop("XDG_CONFIG_HOME", None)
+    shutil.rmtree(cache_dir, ignore_errors=True)
 
 
 @pytest.fixture(scope="class")
