@@ -1023,18 +1023,6 @@ class DaemonServer:
 
         return symbols
 
-    async def _handle_fetch_symbol_docs(self, params: dict) -> list[dict]:
-        """Fetch documentation for a list of symbols."""
-        symbols = params.get("symbols", [])
-        workspace_root = Path(params.get("workspace_root", ".")).resolve()
-        
-        for sym in symbols:
-            sym["documentation"] = await self._get_symbol_documentation(
-                workspace_root, sym["path"], sym["line"], sym.get("column", 0)
-            )
-        
-        return symbols
-
     async def _get_symbol_documentation(self, workspace_root: Path, rel_path: str, line: int, column: int) -> str | None:
         file_path = workspace_root / rel_path
         
