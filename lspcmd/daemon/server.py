@@ -590,7 +590,7 @@ class DaemonServer:
             return {"error": f"Code action not found: {action_title}"}
 
         if action.get("edit"):
-            files_modified = await self._apply_workspace_edit(action["edit"])
+            files_modified = await self._apply_workspace_edit(action["edit"], workspace.root)
             return {"files_modified": files_modified}
 
         if action.get("command"):
@@ -603,14 +603,14 @@ class DaemonServer:
 
         return {"status": "ok"}
 
-    async def _apply_workspace_edit(self, edit: dict) -> list[str]:
+    async def _apply_workspace_edit(self, edit: dict, workspace_root: Path) -> list[str]:
         files_modified = []
 
         if edit.get("changes"):
             for uri, text_edits in edit["changes"].items():
                 file_path = uri_to_path(uri)
                 await self._apply_text_edits(file_path, text_edits)
-                files_modified.append(str(file_path))
+                files_modified.append(self._relative_path(file_path, workspace_root))
 
         if edit.get("documentChanges"):
             for change in edit["documentChanges"]:
@@ -618,20 +618,20 @@ class DaemonServer:
                 if kind == "create":
                     file_path = uri_to_path(change["uri"])
                     file_path.touch()
-                    files_modified.append(str(file_path))
+                    files_modified.append(self._relative_path(file_path, workspace_root))
                 elif kind == "rename":
                     old_path = uri_to_path(change["oldUri"])
                     new_path = uri_to_path(change["newUri"])
                     old_path.rename(new_path)
-                    files_modified.append(str(new_path))
+                    files_modified.append(self._relative_path(new_path, workspace_root))
                 elif kind == "delete":
                     file_path = uri_to_path(change["uri"])
                     file_path.unlink(missing_ok=True)
-                    files_modified.append(str(file_path))
+                    files_modified.append(self._relative_path(file_path, workspace_root))
                 elif "textDocument" in change:
                     file_path = uri_to_path(change["textDocument"]["uri"])
                     await self._apply_text_edits(file_path, change["edits"])
-                    files_modified.append(str(file_path))
+                    files_modified.append(self._relative_path(file_path, workspace_root))
 
         return files_modified
 
