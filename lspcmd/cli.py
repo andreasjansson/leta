@@ -680,25 +680,6 @@ def fetch_docs_for_symbols(symbols: list[dict], workspace_root: Path) -> list[di
     return response.get("result", symbols)
 
 
-@cli.command("restart-workspace")
-@click.argument("workspace", type=click.Path(exists=True), required=False)
-@click.pass_context
-def restart_workspace(ctx, workspace):
-    """Restart the language server for a workspace."""
-    config = load_config()
-
-    if workspace:
-        workspace_root = Path(workspace).resolve()
-    else:
-        workspace_root = get_workspace_root_for_cwd(config)
-
-    response = run_request("restart-workspace", {
-        "workspace_root": str(workspace_root),
-    })
-
-    click.echo(format_output(response.get("result", response), "json" if ctx.obj["json"] else "plain"))
-
-
 @cli.command("raw-lsp-request")
 @click.argument("method")
 @click.argument("params", required=False)
