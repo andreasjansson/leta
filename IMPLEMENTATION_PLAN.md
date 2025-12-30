@@ -122,11 +122,13 @@ lspcmd raw-lsp-request workspace/symbol '{"query": "Handler"}' -l typescript
 
 The `grep` command is the primary way to search symbols:
 - `PATTERN`: Regex matched against symbol names (case-insensitive by default)
-- `PATH`: Optional file path or glob pattern (e.g., `*.py`, `src/**/*.go`)
+- `PATH`: Optional file path or glob pattern (e.g., `*.py`, `src/**/*.go`, or bare filename like `server.py`)
 - `-k/--kind`: Filter by kind (class, function, method, variable, etc.)
 - `-x/--exclude`: Exclude files matching glob pattern
-- `-d/--docs`: Include documentation for each symbol
+- `-d/--docs`: Include documentation for each symbol (uses LRU cache for performance)
 - `-C/--case-sensitive`: Case-sensitive pattern matching
+
+Path patterns without a `/` are searched recursively (e.g., `server.py` finds `src/daemon/server.py`).
 
 Examples:
 ```bash
@@ -134,6 +136,7 @@ lspcmd grep "Test.*" "*.py" -k function      # Find test functions
 lspcmd grep "^User" -k class                  # Find classes starting with User
 lspcmd grep "Handler$" "**/*.go" -d           # Find handlers with docs
 lspcmd grep ".*" "*.go" -x "*_test.go"        # All symbols excluding tests
+lspcmd grep "." server.py                     # All symbols in any server.py file
 ```
 
 ### Code Actions
