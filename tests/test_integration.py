@@ -1069,27 +1069,27 @@ src/user.rs:43 [Struct] UserRepository"""
         response = self._run_request_with_retry("definition", {
             "path": str(workspace / "src" / "main.rs"),
             "workspace_root": str(workspace),
-            "line": 23,
+            "line": 25,
             "column": 16,
             "context": 0,
             "body": False,
         })
         output = format_output(response["result"], "plain")
-        assert output == "src/main.rs:8 fn create_sample_user() -> User {"
+        assert output == "src/main.rs:10 fn create_sample_user() -> User {"
 
     def test_definition_with_body(self, workspace):
         os.chdir(workspace)
         response = self._run_request_with_retry("definition", {
             "path": str(workspace / "src" / "main.rs"),
             "workspace_root": str(workspace),
-            "line": 23,
+            "line": 25,
             "column": 16,
             "context": 0,
             "body": True,
         })
         output = format_output(response["result"], "plain")
         assert output == """\
-src/main.rs:7-10
+src/main.rs:9-12
 
 /// Creates a sample user for testing.
 fn create_sample_user() -> User {
@@ -1101,14 +1101,14 @@ fn create_sample_user() -> User {
         response = self._run_request_with_retry("definition", {
             "path": str(workspace / "src" / "main.rs"),
             "workspace_root": str(workspace),
-            "line": 23,
+            "line": 25,
             "column": 16,
             "context": 1,
             "body": True,
         })
         output = format_output(response["result"], "plain")
         assert output == """\
-src/main.rs:6-11
+src/main.rs:8-13
 
 
 /// Creates a sample user for testing.
@@ -1126,14 +1126,14 @@ fn create_sample_user() -> User {
         response = self._run_request_with_retry("references", {
             "path": str(workspace / "src" / "main.rs"),
             "workspace_root": str(workspace),
-            "line": 8,
+            "line": 10,
             "column": 3,
             "context": 0,
         })
         output = format_output(response["result"], "plain")
         assert output == """\
-src/main.rs:23     let user = create_sample_user();
-src/main.rs:8 fn create_sample_user() -> User {"""
+src/main.rs:25     let user = create_sample_user();
+src/main.rs:10 fn create_sample_user() -> User {"""
 
     # =========================================================================
     # diagnostics tests
