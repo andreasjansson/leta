@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import signal
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -22,12 +23,38 @@ from ..lsp.types import (
 
 logger = logging.getLogger(__name__)
 
+HOVER_CACHE_SIZE = 50000
+
+
+class LRUCache:
+    def __init__(self, maxsize: int):
+        self.maxsize = maxsize
+        self.cache: dict[tuple, str] = {}
+        self.order: list[tuple] = []
+    
+    def get(self, key: tuple) -> str | None:
+        if key in self.cache:
+            self.order.remove(key)
+            self.order.append(key)
+            return self.cache[key]
+        return None
+    
+    def __setitem__(self, key: tuple, value: str) -> None:
+        if key in self.cache:
+            self.order.remove(key)
+        elif len(self.cache) >= self.maxsize:
+            oldest = self.order.pop(0)
+            del self.cache[oldest]
+        self.cache[key] = value
+        self.order.append(key)
+
 
 class DaemonServer:
     def __init__(self):
         self.session = Session()
         self.server: asyncio.Server | None = None
         self._shutdown_event = asyncio.Event()
+        self._hover_cache = LRUCache(HOVER_CACHE_SIZE)
 
     async def start(self) -> None:
         self.session.config = load_config()
