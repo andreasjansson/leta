@@ -253,17 +253,18 @@ class TestPythonIntegration:
         response = run_request("grep", {
             "paths": [str(workspace / "main.py")],
             "workspace_root": str(workspace),
-            "pattern": "^User$",
-            "kinds": ["class"],
+            "pattern": "^create_sample_user$",
+            "kinds": ["function"],
             "include_docs": True,
         })
         symbols = response["result"]
         
         assert len(symbols) == 1
-        assert symbols[0]["name"] == "User"
+        assert symbols[0]["name"] == "create_sample_user"
         assert "documentation" in symbols[0]
         assert symbols[0]["documentation"] is not None
-        assert "user" in symbols[0]["documentation"].lower()
+        # The function has a docstring "Create a sample user for testing"
+        assert "sample" in symbols[0]["documentation"].lower()
 
     # =========================================================================
     # definition tests
