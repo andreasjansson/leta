@@ -679,6 +679,9 @@ main.py:61 class FileStorage:"""
         assert (workspace / "utils.py").exists()
         
         # Move utils.py to helpers/utils.py
+        # Note: basedpyright advertises willRenameFiles but returns empty edits,
+        # so imports are NOT actually updated (this is a pyright limitation - 
+        # only Pylance supports this feature)
         helpers_dir = workspace / "helpers"
         helpers_dir.mkdir(exist_ok=True)
         
@@ -693,20 +696,25 @@ main.py:61 class FileStorage:"""
         assert not (workspace / "utils.py").exists()
         assert (workspace / "helpers" / "utils.py").exists()
         
-        # Check that the output indicates move succeeded
-        assert "Moved file" in output
-        assert "helpers/utils.py" in output
+        # basedpyright doesn't update imports (only Pylance does)
+        assert output == """\
+Moved file (imports not updated):
+  helpers/utils.py"""
         
         # Move file back
-        run_request("move-file", {
+        response = run_request("move-file", {
             "old_path": str(workspace / "helpers" / "utils.py"),
             "new_path": str(workspace / "utils.py"),
             "workspace_root": str(workspace),
         })
+        output = format_output(response["result"], "plain")
         
         # Verify file moved back
         assert (workspace / "utils.py").exists()
         assert not (workspace / "helpers" / "utils.py").exists()
+        assert output == """\
+Moved file (imports not updated):
+  utils.py"""
 
 
 # =============================================================================
