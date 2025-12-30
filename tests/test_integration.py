@@ -2375,8 +2375,7 @@ class TestPhpIntegration:
     # implementations tests
     # =========================================================================
 
-    @pytest.mark.skip(reason="intelephense implementations requires premium license")
-    def test_implementations_basic(self, workspace):
+    def test_implementations_not_supported(self, workspace):
         os.chdir(workspace)
         response = run_request("implementations", {
             "path": str(workspace / "src" / "Storage.php"),
@@ -2386,8 +2385,8 @@ class TestPhpIntegration:
             "context": 0,
         })
         output = format_output(response["result"], "plain")
-        assert "MemoryStorage" in output
-        assert "FileStorage" in output
+        assert "does not support implementations" in output
+        assert "may require a license" in output
 
     # =========================================================================
     # describe (hover) tests
