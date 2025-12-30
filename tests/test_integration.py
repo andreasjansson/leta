@@ -739,7 +739,7 @@ class TestRustIntegration:
         main_rs = rust_project / "src" / "main.rs"
         workspace = await session.get_or_create_workspace(main_rs, rust_project)
         await workspace.ensure_document_open(main_rs)
-        await wait_for_indexing(workspace, delay=3.0)
+        await wait_for_indexing(workspace, delay=5.0)
 
         content = main_rs.read_text()
         lines = content.splitlines()
@@ -749,13 +749,22 @@ class TestRustIntegration:
                 target_col = line.index("create_sample_user")
                 break
 
-        result = await workspace.client.send_request(
-            "textDocument/definition",
-            {
-                "textDocument": {"uri": path_to_uri(main_rs)},
-                "position": {"line": target_line, "character": target_col},
-            },
-        )
+        # rust-analyzer may need retries due to "content modified" during indexing
+        for attempt in range(3):
+            try:
+                result = await workspace.client.send_request(
+                    "textDocument/definition",
+                    {
+                        "textDocument": {"uri": path_to_uri(main_rs)},
+                        "position": {"line": target_line, "character": target_col},
+                    },
+                )
+                break
+            except LSPResponseError as e:
+                if "content modified" in str(e) and attempt < 2:
+                    await asyncio.sleep(2.0)
+                    continue
+                raise
 
         assert result is not None
 
