@@ -17,8 +17,11 @@ def session(isolated_config):
     return Session()
 
 
-@requires_pyright
 class TestPythonIntegration:
+    @pytest.fixture(autouse=True)
+    def check_pyright(self):
+        requires_pyright()
+
     @pytest.mark.asyncio
     async def test_initialize_server(self, python_project, session):
         main_py = python_project / "main.py"
