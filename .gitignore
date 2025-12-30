@@ -1,1 +1,4 @@
 *.greger
+
+__pycache__/
+*.egg-info/

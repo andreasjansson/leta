@@ -32,12 +32,13 @@ class LRUCache:
         self.cache: dict[tuple, str] = {}
         self.order: list[tuple] = []
     
-    def get(self, key: tuple) -> str | None:
-        if key in self.cache:
-            self.order.remove(key)
-            self.order.append(key)
-            return self.cache[key]
-        return None
+    def __contains__(self, key: tuple) -> bool:
+        return key in self.cache
+    
+    def __getitem__(self, key: tuple) -> str:
+        self.order.remove(key)
+        self.order.append(key)
+        return self.cache[key]
     
     def __setitem__(self, key: tuple, value: str) -> None:
         if key in self.cache:
