@@ -217,6 +217,7 @@ def get_server_for_language(language_id: str, config: dict | None = None) -> Ser
         "cpp": "c",
         "java": "java",
         "ruby": "ruby",
+        "php": "php",
         "elixir": "elixir",
         "haskell": "haskell",
         "ocaml": "ocaml",
