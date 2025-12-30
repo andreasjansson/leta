@@ -586,33 +586,10 @@ class DaemonServer:
             if not workspace or not workspace.client:
                 continue
 
-            result = None
-            try:
-                ws_start = time.time()
-                result = await workspace.client.send_request(
-                    "workspace/symbol",
-                    {"query": query},
-                )
-                logger.info(f"  workspace/symbol took {time.time() - ws_start:.2f}s, result={type(result).__name__}, len={len(result) if result is not None else 'None'}")
-            except LSPResponseError as e:
-                logger.info(f"  workspace/symbol error for {lang_id}: {e.message}")
-
-            if result is not None:
-                logger.info(f"  Using workspace/symbol results ({len(result)} symbols)")
-                for item in result:
-                    all_symbols.append({
-                        "name": item["name"],
-                        "kind": SymbolKind(item["kind"]).name,
-                        "path": self._relative_path(uri_to_path(item["location"]["uri"]), workspace_root),
-                        "line": item["location"]["range"]["start"]["line"] + 1,
-                        "container": item.get("containerName"),
-                    })
-            else:
-                ds_start = time.time()
-                logger.info(f"  Falling back to document symbols for {len(files)} files")
-                symbols = await self._collect_symbols_from_files(workspace, workspace_root, files)
-                logger.info(f"  document symbols fallback took {time.time() - ds_start:.2f}s, got {len(symbols)} symbols")
-                all_symbols.extend(symbols)
+            ds_start = time.time()
+            symbols = await self._collect_symbols_from_files(workspace, workspace_root, files)
+            logger.info(f"  document symbols took {time.time() - ds_start:.2f}s, got {len(symbols)} symbols")
+            all_symbols.extend(symbols)
             
             logger.info(f"  Total for {lang_id}: {time.time() - lang_start:.2f}s, cumulative symbols={len(all_symbols)}")
 
