@@ -68,7 +68,7 @@ class DaemonServer:
 
     async def _handle_client(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
         try:
-            data = await reader.read(1024 * 1024)
+            data = await reader.read()
             if not data:
                 return
 
@@ -76,6 +76,11 @@ class DaemonServer:
             response = await self._handle_request(request)
 
             writer.write(json.dumps(response).encode())
+            await writer.drain()
+        except json.JSONDecodeError as e:
+            logger.exception(f"Failed to parse client request: {e}")
+            error_response = {"error": f"Internal error: malformed request (got {len(data)} bytes). This is a bug in lspcmd."}
+            writer.write(json.dumps(error_response).encode())
             await writer.drain()
         except Exception as e:
             logger.exception(f"Error handling client: {e}")
