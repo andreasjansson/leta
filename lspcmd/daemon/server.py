@@ -459,21 +459,23 @@ class DaemonServer:
         all_diagnostics.sort(key=lambda d: (d["path"], d["line"], d["column"]))
         return all_diagnostics
 
-    def _find_workspace_files(self, workspace_root: Path, file_patterns: list[str]) -> list[Path]:
-        import fnmatch
+    def _find_all_source_files(self, workspace_root: Path) -> list[Path]:
+        source_extensions = {
+            ".py", ".pyi", ".js", ".jsx", ".ts", ".tsx", ".go", ".rs",
+            ".java", ".c", ".h", ".cpp", ".hpp", ".cc", ".cxx", ".rb",
+            ".ex", ".exs", ".hs", ".ml", ".mli", ".lua", ".zig",
+        }
+        exclude_dirs = {".git", "__pycache__", "node_modules", ".venv", "venv", 
+                       "target", "build", "dist", ".tox", ".mypy_cache", ".pytest_cache",
+                       ".eggs", "*.egg-info"}
         
         files = []
-        exclude_dirs = {".git", "__pycache__", "node_modules", ".venv", "venv", 
-                       "target", "build", "dist", ".tox", ".mypy_cache", ".pytest_cache"}
-        
         for root, dirs, filenames in os.walk(workspace_root):
-            dirs[:] = [d for d in dirs if d not in exclude_dirs]
+            dirs[:] = [d for d in dirs if d not in exclude_dirs and not d.endswith(".egg-info")]
             
             for filename in filenames:
-                for pattern in file_patterns:
-                    if fnmatch.fnmatch(filename, pattern):
-                        files.append(Path(root) / filename)
-                        break
+                if Path(filename).suffix in source_extensions:
+                    files.append(Path(root) / filename)
         
         return files
 
