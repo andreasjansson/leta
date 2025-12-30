@@ -37,6 +37,19 @@ def format_plain(data: Any) -> str:
                 return f"Renamed in {len(files)} file(s):\n" + "\n".join(f"  {f}" for f in files)
             return data.get("error", "Rename failed")
 
+        if "moved" in data:
+            if data["moved"]:
+                files = data.get("files_modified", [])
+                imports_updated = data.get("imports_updated", False)
+                msg = data.get("message", "")
+                if imports_updated:
+                    return f"Moved file and updated imports in {len(files)} file(s):\n" + "\n".join(f"  {f}" for f in files)
+                elif msg:
+                    return msg
+                else:
+                    return f"Moved file (imports not updated):\n  {files[0]}" if files else "File moved"
+            return data.get("error", "Move failed")
+
         if "restarted" in data:
             return "Workspace restarted" if data["restarted"] else "Failed to restart workspace"
 
