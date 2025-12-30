@@ -331,17 +331,17 @@ utils.py:125 [Function] format_name
 errors.py:4 [Function] undefined_variable
 errors.py:9 [Function] type_error
 errors.py:15 [Function] missing_return
-main.py:111 [Function] create_sample_user
-main.py:116 [Function] process_users
-main.py:125 [Function] main"""
+main.py:113 [Function] create_sample_user
+main.py:118 [Function] process_users
+main.py:127 [Function] main"""
         
         assert filtered_output == """\
 errors.py:4 [Function] undefined_variable
 errors.py:9 [Function] type_error
 errors.py:15 [Function] missing_return
-main.py:111 [Function] create_sample_user
-main.py:116 [Function] process_users
-main.py:125 [Function] main"""
+main.py:113 [Function] create_sample_user
+main.py:118 [Function] process_users
+main.py:127 [Function] main"""
 
     def test_grep_with_docs(self, workspace):
         os.chdir(workspace)
