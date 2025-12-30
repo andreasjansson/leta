@@ -2306,29 +2306,18 @@ class TestCppIntegration:
     # =========================================================================
 
     def test_move_file_not_supported(self, workspace):
+        import click
         os.chdir(workspace)
         
-        # clangd doesn't support workspace/willRenameFiles
-        # It will move the file but won't update any #include statements
-        response = run_request("move-file", {
-            "old_path": str(workspace / "user.hpp"),
-            "new_path": str(workspace / "person.hpp"),
-            "workspace_root": str(workspace),
-        })
-        output = format_output(response["result"], "plain")
+        with pytest.raises(click.ClickException) as exc_info:
+            run_request("move-file", {
+                "old_path": str(workspace / "user.hpp"),
+                "new_path": str(workspace / "person.hpp"),
+                "workspace_root": str(workspace),
+            })
+        assert str(exc_info.value) == "move-file is not supported by clangd"
         
-        # File should be moved
-        assert not (workspace / "user.hpp").exists()
-        assert (workspace / "person.hpp").exists()
-        assert "Moved file" in output
-        
-        # Move file back
-        run_request("move-file", {
-            "old_path": str(workspace / "person.hpp"),
-            "new_path": str(workspace / "user.hpp"),
-            "workspace_root": str(workspace),
-        })
-        
+        # Verify file was NOT moved
         assert (workspace / "user.hpp").exists()
         assert not (workspace / "person.hpp").exists()
 
