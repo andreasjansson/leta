@@ -339,21 +339,21 @@ Renamed in 1 file(s):
         })
 
     # =========================================================================
-    # declaration tests (not supported by pyright)
+    # declaration tests
     # =========================================================================
 
-    def test_declaration_not_supported(self, workspace):
-        import click
+    def test_declaration_basic(self, workspace):
         os.chdir(workspace)
-        with pytest.raises(click.ClickException) as exc_info:
-            run_request("declaration", {
-                "path": str(workspace / "main.py"),
-                "workspace_root": str(workspace),
-                "line": 25,
-                "column": 6,
-                "context": 0,
-            })
-        assert "textDocument/declaration" in str(exc_info.value)
+        response = run_request("declaration", {
+            "path": str(workspace / "main.py"),
+            "workspace_root": str(workspace),
+            "line": 25,
+            "column": 6,
+            "context": 0,
+        })
+        result = response["result"]
+        assert len(result) >= 1
+        assert "main.py" in result[0]["path"]
 
     # =========================================================================
     # implementations tests (not supported by pyright)
