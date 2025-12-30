@@ -92,22 +92,27 @@ class TestFormatCodeActions:
 
 class TestFormatSession:
     def test_empty_session(self):
-        result = format_session({"workspaces": []})
+        result = format_session({"workspaces": [], "daemon_pid": 12345})
         assert "No active workspaces" in result
+        assert "Daemon PID: 12345" in result
 
     def test_session_with_workspace(self):
         data = {
+            "daemon_pid": 12345,
             "workspaces": [{
                 "root": "/home/user/project",
                 "server": "pyright",
+                "server_pid": 67890,
                 "running": True,
                 "open_documents": ["file:///home/user/project/main.py"],
             }]
         }
         result = format_session(data)
+        assert "Daemon PID: 12345" in result
         assert "/home/user/project" in result
         assert "pyright" in result
         assert "running" in result
+        assert "PID 67890" in result
 
 
 class TestFormatOutput:
