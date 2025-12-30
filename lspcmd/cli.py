@@ -102,7 +102,7 @@ def get_workspace_root_for_cwd(config: dict) -> Path:
 
     raise click.ClickException(
         f"No workspace initialized for current directory\n"
-        f"Run: lspcmd init-workspace"
+        f"Run: lspcmd workspace init"
     )
 
 
