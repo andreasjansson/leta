@@ -601,15 +601,15 @@ Renamed in 1 file(s):
         response = run_request("implementations", {
             "path": str(workspace / "main.py"),
             "workspace_root": str(workspace),
-            "line": 12,
+            "line": 14,
             "column": 6,
             "context": 0,
         })
         output = format_output(response["result"], "plain")
         assert output == """\
-main.py:12 class StorageProtocol(Protocol):
-main.py:46 class MemoryStorage:
-main.py:59 class FileStorage:"""
+main.py:14 class StorageProtocol(Protocol):
+main.py:48 class MemoryStorage:
+main.py:61 class FileStorage:"""
 
     # =========================================================================
     # subtypes/supertypes tests (not supported by pyright)
