@@ -1280,8 +1280,10 @@ src/main.rs:10 fn create_sample_user() -> User {"""
     def test_move_file_updates_mod_declarations(self, workspace):
         os.chdir(workspace)
         
-        # Verify user.rs exists
+        # Verify user.rs exists and check initial mod declaration
         assert (workspace / "src" / "user.rs").exists()
+        original_main = (workspace / "src" / "main.rs").read_text()
+        assert "mod user;" in original_main
         
         # Rename user.rs to person.rs
         response = self._run_request_with_retry("move-file", {
@@ -1295,19 +1297,36 @@ src/main.rs:10 fn create_sample_user() -> User {"""
         assert not (workspace / "src" / "user.rs").exists()
         assert (workspace / "src" / "person.rs").exists()
         
-        # Check response indicates file was moved
-        assert "Moved file" in output
+        # Check exact output - rust-analyzer updates mod declarations
+        assert output == """\
+Moved file and updated imports in 2 file(s):
+  src/main.rs
+  src/person.rs"""
+        
+        # Check that mod declaration was updated in main.rs
+        updated_main = (workspace / "src" / "main.rs").read_text()
+        assert "mod person;" in updated_main
+        assert "mod user;" not in updated_main
         
         # Move file back
-        self._run_request_with_retry("move-file", {
+        response = self._run_request_with_retry("move-file", {
             "old_path": str(workspace / "src" / "person.rs"),
             "new_path": str(workspace / "src" / "user.rs"),
             "workspace_root": str(workspace),
         })
+        output = format_output(response["result"], "plain")
         
         # Verify file moved back
         assert (workspace / "src" / "user.rs").exists()
         assert not (workspace / "src" / "person.rs").exists()
+        
+        # Check exact output and mod declaration restored
+        assert output == """\
+Moved file and updated imports in 2 file(s):
+  src/main.rs
+  src/user.rs"""
+        restored_main = (workspace / "src" / "main.rs").read_text()
+        assert "mod user;" in restored_main
 
 
 # =============================================================================
