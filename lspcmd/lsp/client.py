@@ -37,6 +37,9 @@ class LSPClient:
         self._needs_service_ready = server_name == "jdtls"
         self._diagnostics: dict[str, list[dict]] = {}  # uri -> diagnostics
         self.supports_pull_diagnostics: bool = True  # assume yes until proven otherwise
+        self._active_progress_tokens: set[str | int] = set()
+        self._indexing_done = asyncio.Event()
+        self._indexing_done.set()  # Start as done (no indexing yet)
 
     @property
     def stdin(self) -> asyncio.StreamWriter:
