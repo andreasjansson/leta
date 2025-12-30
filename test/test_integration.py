@@ -371,27 +371,27 @@ main.py:113 [Function] create_sample_user
         response = run_request("definition", {
             "path": str(workspace / "main.py"),
             "workspace_root": str(workspace),
-            "line": 128,
+            "line": 130,
             "column": 11,
             "context": 0,
             "body": False,
         })
         output = format_output(response["result"], "plain")
-        assert output == "main.py:111 def create_sample_user() -> User:"
+        assert output == "main.py:113 def create_sample_user() -> User:"
 
     def test_definition_with_context(self, workspace):
         os.chdir(workspace)
         response = run_request("definition", {
             "path": str(workspace / "main.py"),
             "workspace_root": str(workspace),
-            "line": 128,
+            "line": 130,
             "column": 11,
             "context": 2,
             "body": False,
         })
         output = format_output(response["result"], "plain")
         assert output == """\
-main.py:109-113
+main.py:111-115
 
 
 def create_sample_user() -> User:
@@ -404,14 +404,14 @@ def create_sample_user() -> User:
         response = run_request("definition", {
             "path": str(workspace / "main.py"),
             "workspace_root": str(workspace),
-            "line": 128,
+            "line": 130,
             "column": 11,
             "context": 0,
             "body": True,
         })
         output = format_output(response["result"], "plain")
         assert output == """\
-main.py:111-113
+main.py:113-115
 
 def create_sample_user() -> User:
     \"\"\"Create a sample user for testing.\"\"\"
@@ -422,14 +422,14 @@ def create_sample_user() -> User:
         response = run_request("definition", {
             "path": str(workspace / "main.py"),
             "workspace_root": str(workspace),
-            "line": 128,
+            "line": 130,
             "column": 11,
             "context": 2,
             "body": True,
         })
         output = format_output(response["result"], "plain")
         assert output == """\
-main.py:109-115
+main.py:111-117
 
 
 
