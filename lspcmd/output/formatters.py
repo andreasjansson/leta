@@ -85,12 +85,11 @@ def format_locations(locations: list[dict]) -> str:
         line = loc["line"]
 
         if "context_lines" in loc:
-            lines.append(f"{path}:{line}")
             context_start = loc.get("context_start", line)
-            for i, context_line in enumerate(loc["context_lines"]):
-                line_num = context_start + i
-                marker = ">" if line_num == line else " "
-                lines.append(f"{marker} {line_num:4d} | {context_line}")
+            context_end = context_start + len(loc["context_lines"]) - 1
+            lines.append(f"{path}:{context_start}-{context_end}")
+            for context_line in loc["context_lines"]:
+                lines.append(context_line)
             lines.append("")
         else:
             line_content = _get_line_content(path, line)
