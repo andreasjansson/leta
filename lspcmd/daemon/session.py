@@ -172,13 +172,17 @@ class Workspace:
             if file_path.suffix in source_extensions:
                 files_to_index.append(file_path)
         
+        logger.info(f"Pre-indexing {len(files_to_index)} files for clangd: {[f.name for f in files_to_index]}")
+        
         # Open all files to trigger indexing
         for file_path in files_to_index:
+            logger.debug(f"Opening {file_path.name} for indexing")
             await self.ensure_document_open(file_path)
         
         # Wait for indexing to complete
         await self.client.wait_for_indexing(timeout=30.0)
         
+        logger.info(f"Pre-indexing complete, closing {len(self.open_documents)} documents")
         # Close all files to avoid memory issues
         await self.close_all_documents()
 
