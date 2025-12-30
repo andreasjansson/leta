@@ -235,6 +235,11 @@ class LSPClient:
 
         logger.debug(f"Received notification: {method}")
 
+        if method == "language/status" and params:
+            if params.get("type") == "ServiceReady":
+                logger.info(f"Server {self.server_name} is now ServiceReady")
+                self._service_ready.set()
+
         handler = self._notification_handlers.get(method)
         if handler:
             await handler(params)
