@@ -3098,30 +3098,19 @@ class TestPhpIntegration:
     # =========================================================================
 
     def test_move_file_not_supported(self, workspace):
+        import click
         os.chdir(workspace)
         
-        # intelephense doesn't support workspace/willRenameFiles
-        # It will move the file but won't update any use/require statements
         base_path = workspace / "src"
         
-        response = run_request("move-file", {
-            "old_path": str(base_path / "User.php"),
-            "new_path": str(base_path / "Person.php"),
-            "workspace_root": str(workspace),
-        })
-        output = format_output(response["result"], "plain")
+        with pytest.raises(click.ClickException) as exc_info:
+            run_request("move-file", {
+                "old_path": str(base_path / "User.php"),
+                "new_path": str(base_path / "Person.php"),
+                "workspace_root": str(workspace),
+            })
+        assert str(exc_info.value) == "move-file is not supported by intelephense"
         
-        # File should be moved
-        assert not (base_path / "User.php").exists()
-        assert (base_path / "Person.php").exists()
-        assert "Moved file" in output
-        
-        # Move file back
-        run_request("move-file", {
-            "old_path": str(base_path / "Person.php"),
-            "new_path": str(base_path / "User.php"),
-            "workspace_root": str(workspace),
-        })
-        
+        # Verify file was NOT moved
         assert (base_path / "User.php").exists()
         assert not (base_path / "Person.php").exists()
