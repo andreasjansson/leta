@@ -309,17 +309,22 @@ class DaemonServer:
         if result:
             symbol = self._find_symbol_at_line(result, target_line)
             if symbol:
-                start = symbol["range"]["start"]["line"]
-                end = symbol["range"]["end"]["line"]
-                if context > 0:
-                    start = max(0, start - context)
-                    end = min(len(lines) - 1, end + context)
-                return {
-                    "path": rel_path,
-                    "start_line": start + 1,
-                    "end_line": end + 1,
-                    "content": "\n".join(lines[start : end + 1]),
-                }
+                if "range" in symbol:
+                    start = symbol["range"]["start"]["line"]
+                    end = symbol["range"]["end"]["line"]
+                    if context > 0:
+                        start = max(0, start - context)
+                        end = min(len(lines) - 1, end + context)
+                    return {
+                        "path": rel_path,
+                        "start_line": start + 1,
+                        "end_line": end + 1,
+                        "content": "\n".join(lines[start : end + 1]),
+                    }
+                else:
+                    return {
+                        "error": "Language server does not provide symbol ranges (--body not supported)"
+                    }
 
         return {
             "path": rel_path,
