@@ -447,19 +447,30 @@ class DaemonServer:
                 
             await workspace.client.wait_for_service_ready()
             
+            use_pull = workspace.client.supports_pull_diagnostics
+            
             for file_path in files:
                 doc = await workspace.ensure_document_open(file_path)
                 try:
-                    result = await workspace.client.send_request(
-                        "textDocument/diagnostic",
-                        {"textDocument": {"uri": doc.uri}},
-                    )
-                    if result and result.get("items"):
-                        all_diagnostics.extend(
-                            self._format_diagnostics(result["items"], file_path, workspace_root)
+                    if use_pull:
+                        result = await workspace.client.send_request(
+                            "textDocument/diagnostic",
+                            {"textDocument": {"uri": doc.uri}},
                         )
+                        if result and result.get("items"):
+                            all_diagnostics.extend(
+                                self._format_diagnostics(result["items"], file_path, workspace_root)
+                            )
+                    else:
+                        stored = workspace.client.get_stored_diagnostics(doc.uri)
+                        if stored:
+                            all_diagnostics.extend(
+                                self._format_diagnostics(stored, file_path, workspace_root)
+                            )
                 except LSPResponseError as e:
                     if e.is_method_not_found():
+                        workspace.client.supports_pull_diagnostics = False
+                        use_pull = False
                         stored = workspace.client.get_stored_diagnostics(doc.uri)
                         if stored:
                             all_diagnostics.extend(
