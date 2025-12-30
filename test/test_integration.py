@@ -268,9 +268,9 @@ main.py:130 [Variable] user in main"""
         })
         output = format_output(response["result"], "plain")
         assert output == """\
-main.py:12 [Class] StorageProtocol
-main.py:46 [Class] MemoryStorage
-main.py:59 [Class] FileStorage"""
+main.py:14 [Class] StorageProtocol
+main.py:48 [Class] MemoryStorage
+main.py:61 [Class] FileStorage"""
 
     def test_grep_multiple_files(self, workspace):
         os.chdir(workspace)
