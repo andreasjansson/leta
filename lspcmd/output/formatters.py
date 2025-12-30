@@ -169,15 +169,25 @@ def format_code_actions(actions: list[dict]) -> str:
 
 
 def format_session(data: dict) -> str:
+    lines = []
+    
+    daemon_pid = data.get("daemon_pid")
+    if daemon_pid:
+        lines.append(f"Daemon PID: {daemon_pid}")
+    
     workspaces = data.get("workspaces", [])
     if not workspaces:
-        return "No active workspaces"
+        lines.append("No active workspaces")
+        return "\n".join(lines)
 
-    lines = ["Active workspaces:"]
+    lines.append("\nActive workspaces:")
     for ws in workspaces:
         status = "running" if ws.get("running") else "stopped"
+        server_pid = ws.get("server_pid")
+        pid_str = f", PID {server_pid}" if server_pid else ""
+        
         lines.append(f"\n  {ws['root']}")
-        lines.append(f"    Server: {ws['server']} ({status})")
+        lines.append(f"    Server: {ws['server']} ({status}{pid_str})")
         docs = ws.get("open_documents", [])
         if docs:
             lines.append(f"    Open documents ({len(docs)}):")
