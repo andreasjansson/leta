@@ -181,7 +181,9 @@ class DaemonServer:
         return {"status": "shutting_down"}
 
     async def _handle_describe_session(self, params: dict) -> dict:
-        return self.session.to_dict()
+        result = self.session.to_dict()
+        result["daemon_pid"] = os.getpid()
+        return result
 
     async def _handle_raw_lsp_request(self, params: dict) -> Any:
         workspace_root = Path(params["workspace_root"]).resolve()
