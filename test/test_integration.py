@@ -1073,6 +1073,37 @@ Renamed in 1 file(s):
                         any("convert" in line.lower() for line in lines)
         assert has_type_error, f"Expected type error in output: {output}"
 
+    # =========================================================================
+    # move-file tests
+    # =========================================================================
+
+    def test_move_file_not_supported(self, workspace):
+        os.chdir(workspace)
+        
+        # gopls doesn't support workspace/willRenameFiles for updating imports
+        # It will move the file but won't update any references
+        response = run_request("move-file", {
+            "old_path": str(workspace / "utils.go"),
+            "new_path": str(workspace / "helpers.go"),
+            "workspace_root": str(workspace),
+        })
+        output = format_output(response["result"], "plain")
+        
+        # File should be moved
+        assert not (workspace / "utils.go").exists()
+        assert (workspace / "helpers.go").exists()
+        assert "Moved file" in output
+        
+        # Move file back
+        run_request("move-file", {
+            "old_path": str(workspace / "helpers.go"),
+            "new_path": str(workspace / "utils.go"),
+            "workspace_root": str(workspace),
+        })
+        
+        assert (workspace / "utils.go").exists()
+        assert not (workspace / "helpers.go").exists()
+
 
 # =============================================================================
 # Rust Integration Tests (rust-analyzer)
