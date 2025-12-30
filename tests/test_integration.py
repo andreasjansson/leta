@@ -328,6 +328,9 @@ utils.py:27 [Function] memoize
 utils.py:38 [Function] wrapper in memoize
 utils.py:47 [Function] fibonacci
 utils.py:125 [Function] format_name
+errors.py:4 [Function] undefined_variable
+errors.py:9 [Function] type_error
+errors.py:15 [Function] missing_return
 main.py:111 [Function] create_sample_user
 main.py:116 [Function] process_users
 main.py:125 [Function] main"""
