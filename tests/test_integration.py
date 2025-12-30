@@ -270,7 +270,7 @@ Renamed in 1 file(s):
         output = format_output(response["result"], "plain")
 
         assert output == """\
-main.py:110-112
+main.py:111-113
 
 def create_sample_user() -> User:
     \"\"\"Create a sample user for testing.\"\"\"
