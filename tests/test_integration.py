@@ -575,17 +575,16 @@ Attributes:
     # =========================================================================
 
     def test_implementations_not_supported(self, workspace):
-        import click
         os.chdir(workspace)
-        with pytest.raises(click.ClickException) as exc_info:
-            run_request("implementations", {
-                "path": str(workspace / "main.py"),
-                "workspace_root": str(workspace),
-                "line": 12,
-                "column": 6,
-                "context": 0,
-            })
-        assert "textDocument/implementation" in str(exc_info.value)
+        response = run_request("implementations", {
+            "path": str(workspace / "main.py"),
+            "workspace_root": str(workspace),
+            "line": 12,
+            "column": 6,
+            "context": 0,
+        })
+        output = format_output(response["result"], "plain")
+        assert "does not support implementations" in output
 
     # =========================================================================
     # subtypes/supertypes tests (not supported by pyright)
