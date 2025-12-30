@@ -448,6 +448,7 @@ class DaemonServer:
             await workspace.client.wait_for_service_ready()
             
             supports_pull = await self._check_pull_diagnostics_support(workspace, files[0])
+            logger.info(f"Language {lang}: {len(files)} files, pull_diagnostics={supports_pull}")
             
             if supports_pull:
                 for file_path in files:
