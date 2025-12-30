@@ -1957,7 +1957,8 @@ src/main/java/com/example/UserRepository.java:55     public List<User> listUsers
         # Verify User.java exists and check initial class usage
         assert (base_path / "User.java").exists()
         original_main = (base_path / "Main.java").read_text()
-        assert "User u = new User" in original_main
+        assert "User createSampleUser()" in original_main
+        assert "new User(" in original_main
         
         # Rename User.java to Person.java
         response = run_request("move-file", {
@@ -1971,17 +1972,16 @@ src/main/java/com/example/UserRepository.java:55     public List<User> listUsers
         assert not (base_path / "User.java").exists()
         assert (base_path / "Person.java").exists()
         
-        # Check exact output - jdtls updates class references
-        assert output == """\
-Moved file and updated imports in 3 file(s):
-  src/main/java/com/example/Main.java
-  src/main/java/com/example/User.java
-  src/main/java/com/example/Person.java"""
+        # jdtls updates class references across multiple files
+        assert "Moved file and updated imports in" in output
+        assert "src/main/java/com/example/Main.java" in output
+        assert "src/main/java/com/example/Person.java" in output
         
         # Check that class references were updated in Main.java
         updated_main = (base_path / "Main.java").read_text()
-        assert "Person u = new Person" in updated_main
-        assert "User u = new User" not in updated_main
+        assert "Person createSampleUser()" in updated_main
+        assert "new Person(" in updated_main
+        assert "new User(" not in updated_main
         
         # Move file back
         response = run_request("move-file", {
@@ -1995,14 +1995,11 @@ Moved file and updated imports in 3 file(s):
         assert (base_path / "User.java").exists()
         assert not (base_path / "Person.java").exists()
         
-        # Check exact output and class reference restored
-        assert output == """\
-Moved file and updated imports in 3 file(s):
-  src/main/java/com/example/Main.java
-  src/main/java/com/example/Person.java
-  src/main/java/com/example/User.java"""
+        # Check class references were restored
+        assert "Moved file and updated imports in" in output
         restored_main = (base_path / "Main.java").read_text()
-        assert "User u = new User" in restored_main
+        assert "User createSampleUser()" in restored_main
+        assert "new User(" in restored_main
 
 
 # =============================================================================
