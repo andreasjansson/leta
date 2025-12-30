@@ -293,6 +293,18 @@ class LSPClient:
             logger.warning(f"Timeout waiting for {self.server_name} to become ServiceReady")
             return False
 
+    async def wait_for_indexing(self, timeout: float = 30.0) -> bool:
+        """Wait for all indexing/progress to complete."""
+        if self._indexing_done.is_set():
+            return True
+        try:
+            await asyncio.wait_for(self._indexing_done.wait(), timeout=timeout)
+            logger.debug(f"Server {self.server_name} finished indexing")
+            return True
+        except asyncio.TimeoutError:
+            logger.warning(f"Timeout waiting for {self.server_name} to finish indexing")
+            return False
+
     @property
     def capabilities(self) -> dict[str, Any]:
         return self._server_capabilities
