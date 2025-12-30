@@ -151,9 +151,45 @@ lspcmd grep "." server.py                     # All symbols in any server.py fil
 
 ### Position Format
 
-All position arguments use `LINE,COLUMN` format where:
+Position arguments support flexible formats:
+
+| Format | Example | Description |
+|--------|---------|-------------|
+| `LINE,COLUMN` | `42,10` | Line 42, column 10 |
+| `LINE,REGEX` | `42,def foo` | Line 42, first match of regex |
+| `REGEX` | `def foo` | First match anywhere in file |
+
+Where:
 - **LINE** is 1-based (matches editor line numbers)
 - **COLUMN** is 0-based (matches Emacs `current-column`)
+- **REGEX** must be unique (on the line if LINE given, in the file otherwise)
+
+When using REGEX, the column for the LSP request is the start of the match.
+
+Examples:
+```bash
+# Traditional line,column format
+lspcmd find-definition src/main.py 42,10
+
+# Search for unique pattern on a specific line
+lspcmd find-definition src/main.py "42,UserRepository"
+
+# Search for unique pattern in the whole file
+lspcmd find-definition src/main.py "class UserRepository:"
+
+# Regex with special characters (escaped)
+lspcmd find-definition src/main.py "def __init__\\(self\\)"
+```
+
+If a regex matches multiple times, you'll get a helpful error showing all locations:
+```
+Error: Pattern 'self' matches 15 times in file:
+  line 13: def __init__(self):
+  line 17: self._users[user.email] = user
+  line 20: return self._users.get(email)
+  ... and 12 more matches
+Use LINE,REGEX or LINE,COLUMN syntax to specify which one.
+```
 
 ### Output Format
 
