@@ -2723,6 +2723,37 @@ class TestLuaIntegration:
             has_undefined = "undefined" in output.lower() or "global" in output.lower()
             assert has_undefined, f"Expected undefined global warning in output: {output}"
 
+    # =========================================================================
+    # move-file tests
+    # =========================================================================
+
+    def test_move_file_not_supported(self, workspace):
+        os.chdir(workspace)
+        
+        # lua-language-server doesn't support workspace/willRenameFiles
+        # It will move the file but won't update any require statements
+        response = run_request("move-file", {
+            "old_path": str(workspace / "user.lua"),
+            "new_path": str(workspace / "person.lua"),
+            "workspace_root": str(workspace),
+        })
+        output = format_output(response["result"], "plain")
+        
+        # File should be moved
+        assert not (workspace / "user.lua").exists()
+        assert (workspace / "person.lua").exists()
+        assert "Moved file" in output
+        
+        # Move file back
+        run_request("move-file", {
+            "old_path": str(workspace / "person.lua"),
+            "new_path": str(workspace / "user.lua"),
+            "workspace_root": str(workspace),
+        })
+        
+        assert (workspace / "user.lua").exists()
+        assert not (workspace / "person.lua").exists()
+
 
 # =============================================================================
 # Ruby Integration Tests (solargraph)
