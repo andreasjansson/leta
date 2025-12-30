@@ -706,22 +706,21 @@ Renamed in 1 file(s):
         })
 
     # =========================================================================
-    # declaration tests (gopls supports this)
+    # declaration tests (gopls doesn't support this)
     # =========================================================================
 
-    def test_declaration_basic(self, workspace):
-        # Declaration of a local variable
+    def test_declaration_not_supported(self, workspace):
+        import click
         os.chdir(workspace)
-        response = run_request("declaration", {
-            "path": str(workspace / "main.go"),
-            "workspace_root": str(workspace),
-            "line": 175,
-            "column": 2,
-            "context": 0,
-        })
-        result = response["result"]
-        assert len(result) >= 1
-        assert "main.go" in result[0]["path"]
+        with pytest.raises(click.ClickException) as exc_info:
+            run_request("declaration", {
+                "path": str(workspace / "main.go"),
+                "workspace_root": str(workspace),
+                "line": 175,
+                "column": 2,
+                "context": 0,
+            })
+        assert "textDocument/declaration" in str(exc_info.value)
 
 
 # =============================================================================
