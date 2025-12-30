@@ -670,52 +670,61 @@ class TestTypeScriptIntegration:
         })
         output = format_output(response["result"], "plain")
 
+        # TypeScript language server returns symbols in alphabetical order
         assert output == """\
+src/user.ts:62 [Class] FileStorage
+src/user.ts:65 [Constructor] constructor in FileStorage
+src/user.ts:65 [Property] basePath in FileStorage
+src/user.ts:63 [Property] cache in FileStorage
+src/user.ts:80 [Method] delete in FileStorage
+src/user.ts:67 [Method] getBasePath in FileStorage
+src/user.ts:84 [Method] list in FileStorage
+src/user.ts:76 [Method] load in FileStorage
+src/user.ts:71 [Method] save in FileStorage
+src/user.ts:39 [Class] MemoryStorage
+src/user.ts:50 [Method] delete in MemoryStorage
+src/user.ts:54 [Method] list in MemoryStorage
+src/user.ts:46 [Method] load in MemoryStorage
+src/user.ts:42 [Method] save in MemoryStorage
+src/user.ts:40 [Property] users in MemoryStorage
+src/user.ts:29 [Interface] Storage
+src/user.ts:32 [Method] delete in Storage
+src/user.ts:33 [Method] list in Storage
+src/user.ts:31 [Method] load in Storage
+src/user.ts:30 [Method] save in Storage
 src/user.ts:4 [Class] User
 src/user.ts:5 [Constructor] constructor in User
-src/user.ts:13 [Method] isAdult in User
-src/user.ts:20 [Method] displayName in User
-src/user.ts:28 [Interface] Storage
-src/user.ts:29 [Method] save in Storage
-src/user.ts:30 [Method] load in Storage
-src/user.ts:31 [Method] delete in Storage
-src/user.ts:32 [Method] list in Storage
-src/user.ts:38 [Class] MemoryStorage
-src/user.ts:39 [Property] users in MemoryStorage
-src/user.ts:41 [Method] save in MemoryStorage
-src/user.ts:45 [Method] load in MemoryStorage
-src/user.ts:49 [Method] delete in MemoryStorage
-src/user.ts:53 [Method] list in MemoryStorage
-src/user.ts:61 [Class] FileStorage
-src/user.ts:62 [Property] cache in FileStorage
-src/user.ts:64 [Constructor] constructor in FileStorage
-src/user.ts:66 [Method] getBasePath in FileStorage
-src/user.ts:70 [Method] save in FileStorage
-src/user.ts:75 [Method] load in FileStorage
-src/user.ts:79 [Method] delete in FileStorage
-src/user.ts:83 [Method] list in FileStorage
-src/user.ts:91 [Class] UserRepository
-src/user.ts:92 [Constructor] constructor in UserRepository
-src/user.ts:94 [Method] addUser in UserRepository
-src/user.ts:98 [Method] getUser in UserRepository
-src/user.ts:102 [Method] deleteUser in UserRepository
-src/user.ts:106 [Method] listUsers in UserRepository
-src/user.ts:110 [Method] countUsers in UserRepository
-src/user.ts:118 [Function] validateUser"""
+src/user.ts:8 [Property] age in User
+src/user.ts:21 [Method] displayName in User
+src/user.ts:7 [Property] email in User
+src/user.ts:14 [Method] isAdult in User
+src/user.ts:6 [Property] name in User
+src/user.ts:92 [Class] UserRepository
+src/user.ts:93 [Constructor] constructor in UserRepository
+src/user.ts:95 [Method] addUser in UserRepository
+src/user.ts:111 [Method] countUsers in UserRepository
+src/user.ts:103 [Method] deleteUser in UserRepository
+src/user.ts:99 [Method] getUser in UserRepository
+src/user.ts:107 [Method] listUsers in UserRepository
+src/user.ts:93 [Property] storage in UserRepository
+src/user.ts:119 [Function] validateUser"""
 
     def test_find_definition(self, workspace):
+        # Line 58: "const user = createSampleUser();", column 18 is start of "createSampleUser"
+        os.chdir(workspace)
         response = run_request("find-definition", {
             "path": str(workspace / "src" / "main.ts"),
             "workspace_root": str(workspace),
-            "line": 16,
-            "column": 17,
+            "line": 58,
+            "column": 18,
             "context": 0,
         })
         output = format_output(response["result"], "plain")
 
-        assert output == "src/main.ts:3 function createSampleUser(): User {"
+        assert output == "src/main.ts:6 function createSampleUser(): User {"
 
     def test_find_references(self, workspace):
+        os.chdir(workspace)
         response = run_request("find-references", {
             "path": str(workspace / "src" / "user.ts"),
             "workspace_root": str(workspace),
@@ -727,32 +736,39 @@ src/user.ts:118 [Function] validateUser"""
 
         assert output == """\
 src/user.ts:4 export class User {
-src/user.ts:29     save(user: User): void;
-src/user.ts:30     load(email: string): User | undefined;
-src/user.ts:32     list(): User[];
-src/user.ts:41     save(user: User): void {
-src/user.ts:45     load(email: string): User | undefined {
-src/user.ts:53     list(): User[] {
-src/user.ts:70     save(user: User): void {
-src/user.ts:75     load(email: string): User | undefined {
-src/user.ts:83     list(): User[] {
-src/user.ts:118 export function validateUser(user: User): string | null {
-src/main.ts:1 import { User, MemoryStorage, UserRepository } from './user';
-src/main.ts:3 function createSampleUser(): User {"""
+src/user.ts:30     save(user: User): void;
+src/user.ts:31     load(email: string): User | undefined;
+src/user.ts:33     list(): User[];
+src/user.ts:40     private users: Map<string, User> = new Map();
+src/user.ts:42     save(user: User): void {
+src/user.ts:46     load(email: string): User | undefined {
+src/user.ts:54     list(): User[] {
+src/user.ts:63     private cache: Map<string, User> = new Map();
+src/user.ts:71     save(user: User): void {
+src/user.ts:76     load(email: string): User | undefined {
+src/user.ts:84     list(): User[] {
+src/user.ts:95     addUser(user: User): void {
+src/user.ts:99     getUser(email: string): User | undefined {
+src/user.ts:107     listUsers(): User[] {
+src/user.ts:119 export function validateUser(user: User): string | null {
+src/main.ts:1 import { User, UserRepository, MemoryStorage, validateUser } from './user';
+src/main.ts:6 function createSampleUser(): User {
+src/main.ts:7     return new User("John Doe", "john@example.com", 30);"""
 
     def test_find_implementations(self, workspace):
+        os.chdir(workspace)
         response = run_request("find-implementations", {
             "path": str(workspace / "src" / "user.ts"),
             "workspace_root": str(workspace),
-            "line": 28,
+            "line": 29,
             "column": 17,
             "context": 0,
         })
         output = format_output(response["result"], "plain")
 
         assert output == """\
-src/user.ts:38 export class MemoryStorage implements Storage {
-src/user.ts:61 export class FileStorage implements Storage {"""
+src/user.ts:39 export class MemoryStorage implements Storage {
+src/user.ts:62 export class FileStorage implements Storage {"""
 
     def test_describe_hover(self, workspace):
         response = run_request("describe", {
@@ -764,22 +780,47 @@ src/user.ts:61 export class FileStorage implements Storage {"""
         output = format_output(response["result"], "plain")
 
         assert output == """\
+
 ```typescript
 class User
 ```
 Represents a user in the system."""
 
-    def test_print_definition(self, workspace):
-        response = run_request("print-definition", {
-            "path": str(workspace / "src" / "main.ts"),
+    def test_rename(self, workspace):
+        response = run_request("rename", {
+            "path": str(workspace / "src" / "user.ts"),
             "workspace_root": str(workspace),
-            "line": 16,
-            "column": 17,
+            "line": 4,
+            "column": 13,
+            "new_name": "Person",
         })
         output = format_output(response["result"], "plain")
 
         assert output == """\
-src/main.ts:3-5
+Renamed in 2 file(s):
+  src/user.ts
+  src/main.ts"""
+
+        # Revert the rename
+        run_request("rename", {
+            "path": str(workspace / "src" / "user.ts"),
+            "workspace_root": str(workspace),
+            "line": 4,
+            "column": 13,
+            "new_name": "User",
+        })
+
+    def test_print_definition(self, workspace):
+        response = run_request("print-definition", {
+            "path": str(workspace / "src" / "main.ts"),
+            "workspace_root": str(workspace),
+            "line": 58,
+            "column": 18,
+        })
+        output = format_output(response["result"], "plain")
+
+        assert output == """\
+src/main.ts:6-8
 
 function createSampleUser(): User {
     return new User("John Doe", "john@example.com", 30);
