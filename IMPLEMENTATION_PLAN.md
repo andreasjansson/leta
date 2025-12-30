@@ -86,6 +86,22 @@ entry_points={
 | `lspcmd shutdown` | Shutdown the daemon gracefully |
 | `lspcmd config` | Print config file location and contents |
 
+### Debugging
+
+| Command | Description |
+|---------|-------------|
+| `lspcmd raw-lsp-request METHOD [PARAMS] [-l LANGUAGE]` | Send raw LSP request, get JSON response |
+
+The `raw-lsp-request` command is useful for debugging LSP server behavior:
+```bash
+# Get raw document symbols
+lspcmd raw-lsp-request textDocument/documentSymbol \
+  '{"textDocument": {"uri": "file:///path/to/file.go"}}' -l go
+
+# Query workspace symbols
+lspcmd raw-lsp-request workspace/symbol '{"query": "Handler"}' -l typescript
+```
+
 ### Navigation Commands
 
 | Command | Description |
