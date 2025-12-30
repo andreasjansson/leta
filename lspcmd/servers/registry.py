@@ -96,9 +96,19 @@ SERVERS: dict[str, list[ServerConfig]] = {
             name="solargraph",
             command=["solargraph", "stdio"],
             languages=["ruby"],
-            file_patterns=["*.rb"],
+            file_patterns=["*.rb", "*.rake", "Gemfile", "Rakefile"],
             install_cmd="gem install solargraph",
-            root_markers=["Gemfile", ".ruby-version"],
+            root_markers=["Gemfile", ".ruby-version", "Rakefile"],
+        ),
+    ],
+    "php": [
+        ServerConfig(
+            name="intelephense",
+            command=["intelephense", "--stdio"],
+            languages=["php"],
+            file_patterns=["*.php", "*.phtml"],
+            install_cmd="npm install -g intelephense",
+            root_markers=["composer.json", "composer.lock", "index.php"],
         ),
     ],
     "elixir": [
