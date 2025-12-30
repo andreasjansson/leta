@@ -28,6 +28,35 @@ class TestParsePosition:
         assert line == 1
         assert col == 0
 
+    def test_regex_requires_file_path(self):
+        with pytest.raises(Exception) as exc_info:
+            parse_position("def foo")
+        assert "without a file path" in str(exc_info.value)
+
+    def test_line_regex_format(self, python_project):
+        main_py = python_project / "main.py"
+        line, col = parse_position("6,User", main_py)
+        assert line == 6
+        assert col == 6
+
+    def test_regex_only_format(self, python_project):
+        main_py = python_project / "main.py"
+        line, col = parse_position("class User", main_py)
+        assert line == 6
+        assert col == 0
+
+    def test_regex_multiple_matches_error(self, python_project):
+        main_py = python_project / "main.py"
+        with pytest.raises(Exception) as exc_info:
+            parse_position("self", main_py)
+        assert "matches" in str(exc_info.value)
+
+    def test_regex_not_found_error(self, python_project):
+        main_py = python_project / "main.py"
+        with pytest.raises(Exception) as exc_info:
+            parse_position("xyz_nonexistent", main_py)
+        assert "not found" in str(exc_info.value)
+
 
 class TestCliCommands:
     def test_help(self):
