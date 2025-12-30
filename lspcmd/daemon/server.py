@@ -596,12 +596,16 @@ class DaemonServer:
         logger.info(f"Total workspace symbol collection: {time.time() - start_time:.2f}s, {len(all_symbols)} symbols")
         return all_symbols
 
-    async def _collect_symbols_from_files(self, workspace: Workspace, workspace_root: Path, files: list[Path]) -> list[dict]:
+    async def _collect_symbols_from_files(
+        self, workspace: Workspace, workspace_root: Path, files: list[Path], close_after: bool = True
+    ) -> list[dict]:
         symbols = []
+        opened_files = []
 
         for file_path in files:
             try:
                 doc = await workspace.ensure_document_open(file_path)
+                opened_files.append(file_path)
                 result = await workspace.client.send_request(
                     "textDocument/documentSymbol",
                     {"textDocument": {"uri": doc.uri}},
@@ -611,6 +615,10 @@ class DaemonServer:
                     self._flatten_symbols(result, rel_path, symbols)
             except Exception as e:
                 logger.warning(f"Failed to get symbols for {file_path}: {e}")
+
+        if close_after:
+            for file_path in opened_files:
+                await workspace.close_document(file_path)
 
         return symbols
 
