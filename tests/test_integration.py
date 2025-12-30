@@ -2376,12 +2376,13 @@ class TestPhpIntegration:
     # implementations tests
     # =========================================================================
 
+    @pytest.mark.skip(reason="intelephense implementations requires premium license")
     def test_implementations_basic(self, workspace):
         os.chdir(workspace)
         response = run_request("implementations", {
             "path": str(workspace / "src" / "Storage.php"),
             "workspace_root": str(workspace),
-            "line": 11,
+            "line": 10,
             "column": 10,
             "context": 0,
         })
