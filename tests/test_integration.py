@@ -968,6 +968,7 @@ src/user.ts:65 [Constructor] constructor in FileStorage
 src/user.ts:65 [Property] basePath in FileStorage
 src/user.ts:63 [Property] cache in FileStorage
 src/user.ts:80 [Method] delete in FileStorage
+src/user.ts:67 [Method] getBasePath in FileStorage
 src/user.ts:84 [Method] list in FileStorage
 src/user.ts:76 [Method] load in FileStorage
 src/user.ts:71 [Method] save in FileStorage
