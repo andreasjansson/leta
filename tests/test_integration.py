@@ -1812,3 +1812,275 @@ class TestCppIntegration:
             "column": 6,
             "new_name": "User",
         })
+
+
+# =============================================================================
+# Zig Integration Tests (zls)
+# =============================================================================
+
+
+class TestZigIntegration:
+    """Integration tests for Zig using zls."""
+
+    @pytest.fixture(autouse=True)
+    def check_zls(self):
+        requires_zls()
+
+    @pytest.fixture(scope="class")
+    def project(self, class_temp_dir):
+        src = FIXTURES_DIR / "zig_project"
+        dst = class_temp_dir / "zig_project"
+        shutil.copytree(src, dst)
+        return dst
+
+    @pytest.fixture(scope="class")
+    def workspace(self, project, class_daemon, class_isolated_config):
+        config = load_config()
+        add_workspace_root(project, config)
+        run_request("grep", {
+            "paths": [str(project / "src" / "user.zig")],
+            "workspace_root": str(project),
+            "pattern": ".*",
+        })
+        time.sleep(1.0)
+        return project
+
+    # =========================================================================
+    # grep tests
+    # =========================================================================
+
+    def test_grep_pattern_filter(self, workspace):
+        os.chdir(workspace)
+        response = run_request("grep", {
+            "paths": [str(workspace / "src" / "user.zig")],
+            "workspace_root": str(workspace),
+            "pattern": "Storage",
+        })
+        output = format_output(response["result"], "plain")
+        assert "Storage" in output
+        assert "MemoryStorage" in output
+        assert "FileStorage" in output
+
+    def test_grep_kind_filter_struct(self, workspace):
+        os.chdir(workspace)
+        response = run_request("grep", {
+            "paths": [str(workspace / "src" / "user.zig")],
+            "workspace_root": str(workspace),
+            "pattern": ".*",
+            "kinds": ["struct"],
+        })
+        output = format_output(response["result"], "plain")
+        assert "User" in output
+        assert "MemoryStorage" in output
+        assert "FileStorage" in output
+        assert "UserRepository" in output
+
+    def test_grep_kind_filter_function(self, workspace):
+        os.chdir(workspace)
+        response = run_request("grep", {
+            "paths": [str(workspace / "src" / "main.zig")],
+            "workspace_root": str(workspace),
+            "pattern": ".*",
+            "kinds": ["function"],
+        })
+        output = format_output(response["result"], "plain")
+        assert "createSampleUser" in output
+        assert "validateUser" in output
+        assert "main" in output
+
+    # =========================================================================
+    # definition tests
+    # =========================================================================
+
+    def test_definition_basic(self, workspace):
+        os.chdir(workspace)
+        response = run_request("definition", {
+            "path": str(workspace / "src" / "main.zig"),
+            "workspace_root": str(workspace),
+            "line": 13,
+            "column": 29,
+            "context": 0,
+            "body": False,
+        })
+        output = format_output(response["result"], "plain")
+        assert "createSampleUser" in output
+
+    def test_definition_with_body(self, workspace):
+        os.chdir(workspace)
+        response = run_request("definition", {
+            "path": str(workspace / "src" / "main.zig"),
+            "workspace_root": str(workspace),
+            "line": 13,
+            "column": 29,
+            "context": 0,
+            "body": True,
+        })
+        output = format_output(response["result"], "plain")
+        assert "createSampleUser" in output
+        assert "John Doe" in output
+
+    # =========================================================================
+    # references tests
+    # =========================================================================
+
+    def test_references_basic(self, workspace):
+        os.chdir(workspace)
+        response = run_request("references", {
+            "path": str(workspace / "src" / "user.zig"),
+            "workspace_root": str(workspace),
+            "line": 4,
+            "column": 11,
+            "context": 0,
+        })
+        output = format_output(response["result"], "plain")
+        assert "User" in output
+
+    # =========================================================================
+    # describe (hover) tests
+    # =========================================================================
+
+    def test_describe_hover(self, workspace):
+        os.chdir(workspace)
+        response = run_request("describe", {
+            "path": str(workspace / "src" / "user.zig"),
+            "workspace_root": str(workspace),
+            "line": 4,
+            "column": 11,
+        })
+        output = format_output(response["result"], "plain")
+        assert "User" in output
+
+
+# =============================================================================
+# Lua Integration Tests (lua-language-server)
+# =============================================================================
+
+
+class TestLuaIntegration:
+    """Integration tests for Lua using lua-language-server."""
+
+    @pytest.fixture(autouse=True)
+    def check_lua_ls(self):
+        requires_lua_ls()
+
+    @pytest.fixture(scope="class")
+    def project(self, class_temp_dir):
+        src = FIXTURES_DIR / "lua_project"
+        dst = class_temp_dir / "lua_project"
+        shutil.copytree(src, dst)
+        return dst
+
+    @pytest.fixture(scope="class")
+    def workspace(self, project, class_daemon, class_isolated_config):
+        config = load_config()
+        add_workspace_root(project, config)
+        run_request("grep", {
+            "paths": [str(project / "user.lua")],
+            "workspace_root": str(project),
+            "pattern": ".*",
+        })
+        time.sleep(1.0)
+        return project
+
+    # =========================================================================
+    # grep tests
+    # =========================================================================
+
+    def test_grep_pattern_filter(self, workspace):
+        os.chdir(workspace)
+        response = run_request("grep", {
+            "paths": [str(workspace / "user.lua")],
+            "workspace_root": str(workspace),
+            "pattern": "Storage",
+        })
+        output = format_output(response["result"], "plain")
+        assert "Storage" in output
+        assert "MemoryStorage" in output
+        assert "FileStorage" in output
+
+    def test_grep_kind_filter_function(self, workspace):
+        os.chdir(workspace)
+        response = run_request("grep", {
+            "paths": [str(workspace / "main.lua")],
+            "workspace_root": str(workspace),
+            "pattern": ".*",
+            "kinds": ["function"],
+        })
+        output = format_output(response["result"], "plain")
+        assert "createSampleUser" in output
+        assert "validateUser" in output
+        assert "processUsers" in output
+        assert "main" in output
+
+    def test_grep_kind_filter_variable(self, workspace):
+        os.chdir(workspace)
+        response = run_request("grep", {
+            "paths": [str(workspace / "user.lua")],
+            "workspace_root": str(workspace),
+            "pattern": "^User$",
+            "kinds": ["variable"],
+        })
+        output = format_output(response["result"], "plain")
+        assert "User" in output
+
+    # =========================================================================
+    # definition tests
+    # =========================================================================
+
+    def test_definition_basic(self, workspace):
+        os.chdir(workspace)
+        response = run_request("definition", {
+            "path": str(workspace / "main.lua"),
+            "workspace_root": str(workspace),
+            "line": 40,
+            "column": 23,
+            "context": 0,
+            "body": False,
+        })
+        output = format_output(response["result"], "plain")
+        assert "createSampleUser" in output
+
+    def test_definition_with_body(self, workspace):
+        os.chdir(workspace)
+        response = run_request("definition", {
+            "path": str(workspace / "main.lua"),
+            "workspace_root": str(workspace),
+            "line": 40,
+            "column": 23,
+            "context": 0,
+            "body": True,
+        })
+        output = format_output(response["result"], "plain")
+        assert "createSampleUser" in output
+        assert "John Doe" in output
+
+    # =========================================================================
+    # references tests
+    # =========================================================================
+
+    def test_references_basic(self, workspace):
+        os.chdir(workspace)
+        response = run_request("references", {
+            "path": str(workspace / "user.lua"),
+            "workspace_root": str(workspace),
+            "line": 12,
+            "column": 6,
+            "context": 0,
+        })
+        output = format_output(response["result"], "plain")
+        assert "User" in output
+
+    # =========================================================================
+    # describe (hover) tests
+    # =========================================================================
+
+    def test_describe_hover(self, workspace):
+        os.chdir(workspace)
+        response = run_request("describe", {
+            "path": str(workspace / "user.lua"),
+            "workspace_root": str(workspace),
+            "line": 12,
+            "column": 6,
+        })
+        output = format_output(response["result"], "plain")
+        assert "User" in output
