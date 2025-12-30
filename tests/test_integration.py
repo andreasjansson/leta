@@ -615,17 +615,19 @@ src/main.rs:23     let user = create_sample_user();
 src/main.rs:8 fn create_sample_user() -> User {"""
 
     def test_print_definition(self, workspace):
+        # Line 23: "let user = create_sample_user();", column 16 is start of "create_sample_user"
         response = run_request("print-definition", {
             "path": str(workspace / "src" / "main.rs"),
             "workspace_root": str(workspace),
-            "line": 10,
-            "column": 15,
+            "line": 23,
+            "column": 16,
         })
         output = format_output(response["result"], "plain")
 
         assert output == """\
-src/main.rs:15-17
+src/main.rs:7-10
 
+/// Creates a sample user for testing.
 fn create_sample_user() -> User {
     User::new("John Doe".to_string(), "john@example.com".to_string(), 30)
 }"""
