@@ -393,6 +393,8 @@ class DaemonServer:
                     raise
 
         # Use stored diagnostics from publishDiagnostics notifications
+        # Wait briefly for server to analyze and push diagnostics
+        await asyncio.sleep(0.5)
         stored = workspace.client.get_stored_diagnostics(doc.uri)
         if stored:
             return self._format_diagnostics(stored, path, workspace.root)
