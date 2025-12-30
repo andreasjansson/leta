@@ -314,7 +314,10 @@ class TestCliWithGopls:
         runner = CliRunner()
         result = runner.invoke(cli, ["implementations", str(main_go), "31:Storage"])
         assert result.exit_code == 0, f"Failed with: {result.output}"
-        assert result.output == "main.go:39\nmain.go:85\n"
+        assert result.output == """\
+main.go:39
+main.go:85
+"""
 
     def test_subtypes(self, go_project, isolated_config):
         """Test that subtypes works for Go interfaces."""
@@ -325,12 +328,11 @@ class TestCliWithGopls:
         runner = CliRunner()
         result = runner.invoke(cli, ["subtypes", str(main_go), "31:Storage"])
         assert result.exit_code == 0, f"Failed with: {result.output}"
-
-        lines = sorted(result.output.strip().split("\n"))
-        assert lines == [
-            "main.go:39 [Class] MemoryStorage (sample_project)",
-            "main.go:85 [Class] FileStorage (sample_project)",
-        ]
+        # Order may vary, so sort
+        assert sorted(result.output.strip().split("\n")) == sorted("""\
+main.go:85 [Class] FileStorage (sample_project)
+main.go:39 [Class] MemoryStorage (sample_project)
+""".strip().split("\n"))
 
     def test_supertypes(self, go_project, isolated_config):
         """Test that supertypes works for Go structs."""
@@ -341,4 +343,6 @@ class TestCliWithGopls:
         runner = CliRunner()
         result = runner.invoke(cli, ["supertypes", str(main_go), "39:MemoryStorage"])
         assert result.exit_code == 0, f"Failed with: {result.output}"
-        assert result.output == "main.go:31 [Interface] Storage (sample_project)\n"
+        assert result.output == """\
+main.go:31 [Interface] Storage (sample_project)
+"""
