@@ -57,6 +57,38 @@ class TestParsePosition:
             parse_position("xyz_nonexistent", main_py)
         assert "not found" in str(exc_info.value)
 
+    def test_line_regex_not_found_on_line(self, python_project):
+        main_py = python_project / "main.py"
+        with pytest.raises(Exception) as exc_info:
+            parse_position("1,User", main_py)
+        assert "not found on line 1" in str(exc_info.value)
+
+    def test_regex_with_special_chars(self, python_project):
+        main_py = python_project / "main.py"
+        line, col = parse_position(r"def __init__\(self\)", main_py)
+        assert line == 13
+        assert col == 4
+
+    def test_regex_finds_correct_column(self, python_project):
+        main_py = python_project / "main.py"
+        line, col = parse_position("6,name: str", main_py)
+        assert line == 6
+        assert col == 6
+
+    def test_line_column_still_works_with_file(self, python_project):
+        main_py = python_project / "main.py"
+        line, col = parse_position("10,5", main_py)
+        assert line == 10
+        assert col == 5
+
+    def test_ambiguous_match_shows_locations(self, python_project):
+        main_py = python_project / "main.py"
+        with pytest.raises(Exception) as exc_info:
+            parse_position("def", main_py)
+        error_msg = str(exc_info.value)
+        assert "matches" in error_msg
+        assert "line" in error_msg
+
 
 class TestCliCommands:
     def test_help(self):
