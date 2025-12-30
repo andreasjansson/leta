@@ -451,10 +451,10 @@ class DaemonServer:
             
             use_pull = workspace.client.supports_pull_diagnostics
             
-            for file_path in files:
-                doc = await workspace.ensure_document_open(file_path)
-                try:
-                    if use_pull:
+            if use_pull:
+                for file_path in files:
+                    doc = await workspace.ensure_document_open(file_path)
+                    try:
                         result = await workspace.client.send_request(
                             "textDocument/diagnostic",
                             {"textDocument": {"uri": doc.uri}},
@@ -463,22 +463,31 @@ class DaemonServer:
                             all_diagnostics.extend(
                                 self._format_diagnostics(result["items"], file_path, workspace_root)
                             )
-                    else:
-                        stored = workspace.client.get_stored_diagnostics(doc.uri)
-                        if stored:
-                            all_diagnostics.extend(
-                                self._format_diagnostics(stored, file_path, workspace_root)
-                            )
-                except LSPResponseError as e:
-                    if e.is_method_not_found():
-                        workspace.client.supports_pull_diagnostics = False
-                        use_pull = False
-                        stored = workspace.client.get_stored_diagnostics(doc.uri)
-                        if stored:
-                            all_diagnostics.extend(
-                                self._format_diagnostics(stored, file_path, workspace_root)
-                            )
-                finally:
+                    except LSPResponseError as e:
+                        if e.is_method_not_found():
+                            workspace.client.supports_pull_diagnostics = False
+                            use_pull = False
+                            break
+                        raise
+                    finally:
+                        await workspace.close_document(file_path)
+            
+            if not use_pull:
+                # For push diagnostics: open all files, wait, then collect
+                opened_files = []
+                for file_path in files:
+                    doc = await workspace.ensure_document_open(file_path)
+                    opened_files.append((file_path, doc))
+                
+                # Wait for server to analyze and push diagnostics
+                await asyncio.sleep(1.0)
+                
+                for file_path, doc in opened_files:
+                    stored = workspace.client.get_stored_diagnostics(doc.uri)
+                    if stored:
+                        all_diagnostics.extend(
+                            self._format_diagnostics(stored, file_path, workspace_root)
+                        )
                     await workspace.close_document(file_path)
         
         all_diagnostics.sort(key=lambda d: (d["path"], d["line"], d["column"]))
