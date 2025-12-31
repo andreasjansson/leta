@@ -433,9 +433,10 @@ def describe(ctx, symbol):
 @cli.command("definition")
 @click.argument("symbol")
 @click.option("-n", "--context", default=0, help="Lines of context around definition")
+@click.option("--head", default=200, help="Maximum lines to show (default: 200)")
 @click.pass_context
-def definition(ctx, symbol, context):
-    """Jump to the definition of a symbol. Shows the full body.
+def definition(ctx, symbol, context, head):
+    """Print the definition of a symbol. Shows the full body.
     
     \b
     SYMBOL formats:
@@ -453,6 +454,7 @@ def definition(ctx, symbol, context):
       lspcmd definition storage:MemoryStorage -n 2
     
     Use -n/--context to show surrounding lines.
+    Use --head N to limit output to N lines.
     """
     config = load_config()
     workspace_root = get_workspace_root_for_cwd(config)
@@ -468,6 +470,7 @@ def definition(ctx, symbol, context):
         "direct_location": True,
         "range_start_line": resolved.range_start_line,
         "range_end_line": resolved.range_end_line,
+        "head": head,
     })
 
     click.echo(format_output(response.get("result", response), "json" if ctx.obj["json"] else "plain"))
