@@ -39,7 +39,7 @@ def find_class_boundaries(lines: list[str]) -> dict[str, tuple[int, int]]:
         if idx + 1 < len(class_starts):
             end = class_starts[idx + 1][0] - 1
             # Walk back to skip blank lines and comment separators
-            while end > start and (lines[end].strip() == '' or lines[end].startswith('# =')):
+            while end > start and (lines[end].strip() == '' or lines[end].startswith('# ')):
                 end -= 1
             end += 1  # Include the last non-blank line
         else:
