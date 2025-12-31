@@ -1902,7 +1902,18 @@ class MCPDaemonServer:
         }
 
     def _normalize_symbol_name(self, name: str) -> str:
+        """Normalize symbol names for consistent matching.
+        
+        Handles:
+        - Java method signatures: save(User) -> save
+        - Go method receivers: (*Type).method or (Type).method -> method
+        """
+        # Java methods: name(params) -> name
         match = re.match(r"^(\w+)\([^)]*\)$", name)
+        if match:
+            return match.group(1)
+        # Go methods: (*Type).method or (Type).method -> method
+        match = re.match(r"^\(\*?\w+\)\.(\w+)$", name)
         if match:
             return match.group(1)
         return name
