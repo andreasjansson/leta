@@ -1692,9 +1692,9 @@ class TestJavaIntegration:
         })
         output = format_output(response["result"], "plain")
         assert output == """\
-src/main/java/com/example/User.java:24 [Method] getName() ( : String) in User
-src/main/java/com/example/User.java:33 [Method] getEmail() ( : String) in User
-src/main/java/com/example/User.java:42 [Method] getAge() ( : int) in User"""
+src/main/java/com/example/User.java:29 [Method] getName() ( : String) in User
+src/main/java/com/example/User.java:38 [Method] getEmail() ( : String) in User
+src/main/java/com/example/User.java:47 [Method] getAge() ( : int) in User"""
 
     def test_grep_kind_filter_class(self, workspace):
         os.chdir(workspace)
