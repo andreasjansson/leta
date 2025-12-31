@@ -434,21 +434,21 @@ def with_symbol_help(func):
     return func
 
 
-@cli.command("def")
+@cli.command("show")
 @click.argument("symbol")
 @click.option("-n", "--context", default=0, help="Lines of context around definition")
 @click.option("--head", default=200, help="Maximum lines to show (default: 200)")
 @click.pass_context
 @with_symbol_help
-def def_cmd(ctx, symbol, context, head):
+def show_cmd(ctx, symbol, context, head):
     """Print the definition of a symbol. Shows the full body.
     
     \b
     Examples:
-      lspcmd def UserRepository
-      lspcmd def UserRepository.add_user
-      lspcmd def "*.py:User"
-      lspcmd def storage:MemoryStorage -n 2
+      lspcmd show UserRepository
+      lspcmd show UserRepository.add_user
+      lspcmd show "*.py:User"
+      lspcmd show storage:MemoryStorage -n 2
     
     Use -n/--context to show surrounding lines.
     Use --head N to limit output to N lines.
@@ -468,6 +468,7 @@ def def_cmd(ctx, symbol, context, head):
         "range_start_line": resolved.range_start_line,
         "range_end_line": resolved.range_end_line,
         "head": head,
+        "symbol": symbol,
     })
 
     click.echo(format_output(response.get("result", response), "json" if ctx.obj["json"] else "plain"))
