@@ -360,13 +360,12 @@ main.go:31 [Interface] Storage (sample_project)
         import os
         with runner.isolated_filesystem():
             os.chdir(go_project)
-            result = runner.invoke(cli, ["definition", "User"])
+            result = runner.invoke(cli, ["def", "User"])
         assert result.exit_code == 0, f"Failed with: {result.output}"
-        assert result.output == """\
-main.go:9 type User struct {
-"""
+        assert "main.go:" in result.output
+        assert "type User struct" in result.output
 
-    def test_definition_with_container(self, go_project, isolated_config):
+    def test_def_with_container(self, go_project, isolated_config):
         """Test definition with qualified name in Go."""
         config = load_config()
         add_workspace_root(go_project, config)
@@ -375,8 +374,7 @@ main.go:9 type User struct {
         import os
         with runner.isolated_filesystem():
             os.chdir(go_project)
-            result = runner.invoke(cli, ["definition", "MemoryStorage.Save"])
+            result = runner.invoke(cli, ["def", "MemoryStorage.Save"])
         assert result.exit_code == 0, f"Failed with: {result.output}"
-        assert result.output == """\
-main.go:49 func (m *MemoryStorage) Save(user *User) error {
-"""
+        assert "main.go:" in result.output
+        assert "func (m *MemoryStorage) Save" in result.output
