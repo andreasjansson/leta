@@ -513,6 +513,175 @@ class MCPDaemonServer:
             })
             return json.dumps(result, indent=2)
 
+        # Internal tools for direct line/column access (used by tests and advanced users)
+        @self._mcp.tool()
+        async def _internal_definition(
+            workspace_root: str,
+            path: str,
+            line: int,
+            column: int,
+            context: int = 0,
+            body: bool = False,
+        ) -> str:
+            """Internal: Get definition at exact line/column position."""
+            result = await self._handle_definition({
+                "path": path,
+                "workspace_root": workspace_root,
+                "line": line,
+                "column": column,
+                "context": context,
+                "body": body,
+            })
+            return json.dumps(result, indent=2)
+
+        @self._mcp.tool()
+        async def _internal_hover(
+            workspace_root: str,
+            path: str,
+            line: int,
+            column: int,
+        ) -> str:
+            """Internal: Get hover info at exact line/column position."""
+            result = await self._handle_hover({
+                "path": path,
+                "workspace_root": workspace_root,
+                "line": line,
+                "column": column,
+            })
+            return json.dumps(result, indent=2)
+
+        @self._mcp.tool()
+        async def _internal_references(
+            workspace_root: str,
+            path: str,
+            line: int,
+            column: int,
+            context: int = 0,
+        ) -> str:
+            """Internal: Get references at exact line/column position."""
+            result = await self._handle_references({
+                "path": path,
+                "workspace_root": workspace_root,
+                "line": line,
+                "column": column,
+                "context": context,
+            })
+            return json.dumps(result, indent=2)
+
+        @self._mcp.tool()
+        async def _internal_implementations(
+            workspace_root: str,
+            path: str,
+            line: int,
+            column: int,
+            context: int = 0,
+        ) -> str:
+            """Internal: Get implementations at exact line/column position."""
+            result = await self._handle_implementations({
+                "path": path,
+                "workspace_root": workspace_root,
+                "line": line,
+                "column": column,
+                "context": context,
+            })
+            return json.dumps(result, indent=2)
+
+        @self._mcp.tool()
+        async def _internal_declaration(
+            workspace_root: str,
+            path: str,
+            line: int,
+            column: int,
+            context: int = 0,
+        ) -> str:
+            """Internal: Get declaration at exact line/column position."""
+            result = await self._handle_declaration({
+                "path": path,
+                "workspace_root": workspace_root,
+                "line": line,
+                "column": column,
+                "context": context,
+            })
+            return json.dumps(result, indent=2)
+
+        @self._mcp.tool()
+        async def _internal_subtypes(
+            workspace_root: str,
+            path: str,
+            line: int,
+            column: int,
+            context: int = 0,
+        ) -> str:
+            """Internal: Get subtypes at exact line/column position."""
+            try:
+                result = await self._handle_type_hierarchy_request(
+                    {
+                        "path": path,
+                        "workspace_root": workspace_root,
+                        "line": line,
+                        "column": column,
+                        "context": context,
+                    },
+                    "typeHierarchy/subtypes",
+                )
+                return json.dumps(result, indent=2)
+            except LSPMethodNotSupported as e:
+                raise ValueError(str(e))
+
+        @self._mcp.tool()
+        async def _internal_supertypes(
+            workspace_root: str,
+            path: str,
+            line: int,
+            column: int,
+            context: int = 0,
+        ) -> str:
+            """Internal: Get supertypes at exact line/column position."""
+            try:
+                result = await self._handle_type_hierarchy_request(
+                    {
+                        "path": path,
+                        "workspace_root": workspace_root,
+                        "line": line,
+                        "column": column,
+                        "context": context,
+                    },
+                    "typeHierarchy/supertypes",
+                )
+                return json.dumps(result, indent=2)
+            except LSPMethodNotSupported as e:
+                raise ValueError(str(e))
+
+        @self._mcp.tool()
+        async def _internal_rename(
+            workspace_root: str,
+            path: str,
+            line: int,
+            column: int,
+            new_name: str,
+        ) -> str:
+            """Internal: Rename symbol at exact line/column position."""
+            result = await self._handle_rename({
+                "path": path,
+                "workspace_root": workspace_root,
+                "line": line,
+                "column": column,
+                "new_name": new_name,
+            })
+            return json.dumps(result, indent=2)
+
+        @self._mcp.tool()
+        async def _internal_resolve_symbol(
+            workspace_root: str,
+            symbol_path: str,
+        ) -> str:
+            """Internal: Resolve a symbol path to location."""
+            result = await self._handle_resolve_symbol({
+                "workspace_root": workspace_root,
+                "symbol_path": symbol_path,
+            })
+            return json.dumps(result, indent=2)
+
     async def start(self, port: int = 0) -> None:
         """Start the MCP server."""
         self.session.config = load_config()
