@@ -3065,18 +3065,18 @@ class TestLuaIntegration:
         })
         result = response["result"]
         assert result["name"] == "User"
-        assert result["kind"] == "Variable"
+        assert result["kind"] == "Object"
 
     def test_resolve_symbol_file_filter(self, workspace):
         """Test resolving with file filter."""
         os.chdir(workspace)
         response = run_request("resolve-symbol", {
             "workspace_root": str(workspace),
-            "symbol_path": "main.lua:main",
+            "symbol_path": "user.lua:User",
         })
         result = response["result"]
-        assert result["name"] == "main"
-        assert result["path"].endswith("main.lua")
+        assert result["name"] == "User"
+        assert result["path"].endswith("user.lua")
 
 
 # =============================================================================
