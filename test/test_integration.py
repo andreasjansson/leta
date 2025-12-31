@@ -2843,8 +2843,8 @@ class TestZigIntegration:
             "symbol_path": "User",
         })
         result = response["result"]
-        assert "error" not in result, f"Unexpected error: {result.get('error')}"
-        assert "User" in result["name"]
+        assert result["name"] == "User"
+        assert result["kind"] == "Constant"
 
     def test_resolve_symbol_struct_method(self, workspace):
         """Test resolving Struct.method format."""
@@ -2854,8 +2854,8 @@ class TestZigIntegration:
             "symbol_path": "User.isAdult",
         })
         result = response["result"]
-        assert "error" not in result, f"Unexpected error: {result.get('error')}"
-        assert "isAdult" in result["name"]
+        assert result["name"] == "isAdult"
+        assert result["kind"] == "Function"
 
     def test_resolve_symbol_file_filter(self, workspace):
         """Test resolving with file filter."""
@@ -2865,8 +2865,8 @@ class TestZigIntegration:
             "symbol_path": "main.zig:main",
         })
         result = response["result"]
-        assert "error" not in result, f"Unexpected error: {result.get('error')}"
-        assert "main.zig" in result["path"]
+        assert result["name"] == "main"
+        assert result["path"].endswith("main.zig")
 
 
 # =============================================================================
