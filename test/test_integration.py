@@ -341,6 +341,20 @@ def _call_move_file_request(params: dict) -> dict:
     }, raise_on_error=True))
 
 
+def _call_replace_function_request(params: dict) -> dict:
+    """Call replace-function request."""
+    import asyncio
+    
+    mcp_url = ensure_daemon_running()
+    return asyncio.run(_mcp_call_tool(mcp_url, "replace_function", {
+        "workspace_root": params.get("workspace_root", ""),
+        "symbol": params.get("symbol", ""),
+        "new_contents": params.get("new_contents", ""),
+        "check_signature": params.get("check_signature", True),
+        "output_format": "json",
+    }))
+
+
 def format_output(data, output_format: str = "plain") -> str:
     """Format output for tests - with MCP we receive pre-formatted output."""
     from lspcmd.output.formatters import format_output as _format_output
