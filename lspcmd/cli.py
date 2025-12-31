@@ -125,8 +125,9 @@ def resolve_symbol(symbol_path: str, workspace_root: Path) -> tuple[Path, int, i
     Symbol path formats:
       - SymbolName              find symbol by name
       - Parent.Symbol           find symbol with parent (class.method, module.class, etc.)
-      - path:Symbol             filter by file path pattern
+      - path:Symbol             filter by file path pattern  
       - path:Parent.Symbol      combine path filter with qualified name
+      - path:line:Symbol        exact file, line number, and symbol name (for edge cases)
     
     The hierarchy follows LSP document symbol containers:
       - module.Class.method.variable
