@@ -230,8 +230,10 @@ def format_definition_content(data: dict) -> str:
     
     if data.get("truncated"):
         head = data.get("head", 200)
+        total_lines = data.get("total_lines", head)
+        symbol = data.get("symbol", "SYMBOL")
         lines.append("")
-        lines.append(f"[truncated after {head} lines, use `lspcmd definition SYMBOL --head {head * 2}` to show twice as many lines]")
+        lines.append(f"[truncated after {head} lines, use `lspcmd show \"{symbol}\" --head {total_lines}` to show the full {total_lines} lines]")
     
     return "\n".join(lines)
 
