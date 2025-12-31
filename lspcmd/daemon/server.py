@@ -1579,16 +1579,19 @@ class DaemonServer:
         1. Container.Symbol (if container is unique among matches)
         2. filename:Symbol (if filename is unique)
         3. filename:Container.Symbol (if combination is unique)  
-        4. path:line:Symbol (always unique)
+        4. filename:line:Symbol (always unique, used for overloaded methods)
+        
+        Uses normalized symbol names (e.g., 'save' instead of 'save(User)').
         """
         sym_path = sym.get("path", "")
         sym_line = sym.get("line", 0)
         sym_container = self._get_effective_container(sym)
         filename = Path(sym_path).name
+        normalized_name = self._normalize_symbol_name(target_name)
         
-        # Try Container.Symbol
+        # Try Container.Symbol (using normalized name)
         if sym_container:
-            ref = f"{sym_container}.{target_name}"
+            ref = f"{sym_container}.{normalized_name}"
             matches_with_ref = [
                 s for s in all_matches
                 if self._get_effective_container(s) == sym_container
@@ -1597,7 +1600,7 @@ class DaemonServer:
                 return ref
         
         # Try filename:Symbol
-        ref = f"{filename}:{target_name}"
+        ref = f"{filename}:{normalized_name}"
         matches_with_ref = [
             s for s in all_matches
             if Path(s.get("path", "")).name == filename
@@ -1607,7 +1610,7 @@ class DaemonServer:
         
         # Try filename:Container.Symbol
         if sym_container:
-            ref = f"{filename}:{sym_container}.{target_name}"
+            ref = f"{filename}:{sym_container}.{normalized_name}"
             matches_with_ref = [
                 s for s in all_matches
                 if Path(s.get("path", "")).name == filename
@@ -1616,8 +1619,8 @@ class DaemonServer:
             if len(matches_with_ref) == 1:
                 return ref
         
-        # Fall back to path:line:Symbol (always unique)
-        return f"{sym_path}:{sym_line}:{target_name}"
+        # Fall back to filename:line:Symbol (always unique, handles overloading)
+        return f"{filename}:{sym_line}:{normalized_name}"
     
     def _get_module_name(self, rel_path: str) -> str:
         """Extract module name from relative path (e.g., 'src/user.py' -> 'user')."""
