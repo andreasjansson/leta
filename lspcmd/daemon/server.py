@@ -1615,11 +1615,22 @@ class DaemonServer:
     def _normalize_container(self, container: str) -> str:
         """Normalize container names for consistent matching.
         
-        Handles Go receiver types like '(*MemoryStorage)' -> 'MemoryStorage'
+        Handles:
+        - Go receiver types: '(*MemoryStorage)' -> 'MemoryStorage'
+        - Rust impl blocks: 'impl MemoryStorage' -> 'MemoryStorage'
+        - Rust trait impls: 'impl Storage for MemoryStorage' -> 'MemoryStorage'
         """
         import re
         # Go method receivers: (*Type) or (Type) -> Type
         match = re.match(r'^\(\*?(\w+)\)$', container)
+        if match:
+            return match.group(1)
+        # Rust trait impl: "impl Trait for Type" or "impl Trait for Type<...>"
+        match = re.match(r'^impl\s+\w+(?:<[^>]+>)?\s+for\s+(\w+)', container)
+        if match:
+            return match.group(1)
+        # Rust impl block: "impl Type" or "impl Type<...>"
+        match = re.match(r'^impl\s+(\w+)', container)
         if match:
             return match.group(1)
         return container
