@@ -3068,6 +3068,32 @@ class TestLuaIntegration:
         assert (workspace / "user.lua").exists()
         assert not (workspace / "person.lua").exists()
 
+    # =========================================================================
+    # resolve-symbol disambiguation tests
+    # =========================================================================
+
+    def test_resolve_symbol_unique_name(self, workspace):
+        """Test resolving a unique symbol name."""
+        os.chdir(workspace)
+        response = run_request("resolve-symbol", {
+            "workspace_root": str(workspace),
+            "symbol_path": "User",
+        })
+        result = response["result"]
+        assert "error" not in result, f"Unexpected error: {result.get('error')}"
+        assert "User" in result["name"]
+
+    def test_resolve_symbol_file_filter(self, workspace):
+        """Test resolving with file filter."""
+        os.chdir(workspace)
+        response = run_request("resolve-symbol", {
+            "workspace_root": str(workspace),
+            "symbol_path": "main.lua:main",
+        })
+        result = response["result"]
+        assert "error" not in result, f"Unexpected error: {result.get('error')}"
+        assert "main.lua" in result["path"]
+
 
 # =============================================================================
 # Ruby Integration Tests (solargraph)
