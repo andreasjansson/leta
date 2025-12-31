@@ -35,16 +35,16 @@ class TestParsePosition:
 
     def test_line_regex_format(self, python_project):
         main_py = python_project / "main.py"
-        # Line 25 has "class User:"
-        line, col = parse_position("25:User", main_py)
-        assert line == 25
+        # Line 27 has "class User:"
+        line, col = parse_position("27:User", main_py)
+        assert line == 27
         assert col == 6
 
     def test_regex_only_format(self, python_project):
         main_py = python_project / "main.py"
-        # "class User:" is on line 25
+        # "class User:" is on line 27
         line, col = parse_position("class User:", main_py)
-        assert line == 25
+        assert line == 27
         assert col == 0
 
     def test_regex_multiple_matches_error(self, python_project):
@@ -67,16 +67,16 @@ class TestParsePosition:
 
     def test_regex_with_special_chars(self, python_project):
         main_py = python_project / "main.py"
-        # Match "def __init__(self)" - only one in MemoryStorage at line 49
-        line, col = parse_position("49:def __init__", main_py)
-        assert line == 49
+        # Match "def __init__(self)" - only one in MemoryStorage at line 51
+        line, col = parse_position("51:def __init__", main_py)
+        assert line == 51
         assert col == 4
 
     def test_regex_finds_correct_column(self, python_project):
         main_py = python_project / "main.py"
-        # Line 33 is "    name: str"
-        line, col = parse_position("33:name", main_py)
-        assert line == 33
+        # Line 35 is "    name: str"
+        line, col = parse_position("35:name", main_py)
+        assert line == 35
         assert col == 4
 
     def test_line_column_still_works_with_file(self, python_project):
