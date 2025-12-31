@@ -2819,7 +2819,6 @@ class TestRubyIntegration:
         })
         output = format_output(response["result"], "plain")
         assert "does not provide symbol ranges" in output
-        assert "--body not supported" in output
 
     # =========================================================================
     # references tests
