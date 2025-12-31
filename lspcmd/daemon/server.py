@@ -1390,8 +1390,6 @@ class DaemonServer:
                 
                 full_container = f"{module_name}.{sym_container_normalized}" if sym_container_normalized else module_name
                 
-                logger.info(f"resolve-symbol: checking {sym_name} container={sym_container!r} normalized={sym_container_normalized!r} module={module_name!r} full={full_container!r} want={container_str!r}")
-                
                 if sym_container_normalized == container_str:
                     matches.append(sym)
                 elif sym_container == container_str:
