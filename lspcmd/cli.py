@@ -398,16 +398,9 @@ def config(ctx):
 @cli.command("describe")
 @click.argument("symbol")
 @click.pass_context
+@with_symbol_help
 def describe(ctx, symbol):
     """Show hover information (type signature, documentation) for a symbol.
-    
-    \b
-    SYMBOL formats:
-      SymbolName            find symbol by name
-      Parent.Symbol         find symbol in parent (Class.method, module.function)
-      path:Symbol           filter by file path pattern
-      path:Parent.Symbol    combine path filter with qualified name
-      path:line:Symbol      exact file + line number + symbol (for edge cases)
     
     \b
     Examples:
@@ -435,16 +428,9 @@ def describe(ctx, symbol):
 @click.option("-n", "--context", default=0, help="Lines of context around definition")
 @click.option("--head", default=200, help="Maximum lines to show (default: 200)")
 @click.pass_context
+@with_symbol_help
 def definition(ctx, symbol, context, head):
     """Print the definition of a symbol. Shows the full body.
-    
-    \b
-    SYMBOL formats:
-      SymbolName            find symbol by name
-      Parent.Symbol         find symbol in parent (Class.method, module.function)
-      path:Symbol           filter by file path pattern
-      path:Parent.Symbol    combine path filter with qualified name
-      path:line:Symbol      exact file + line number + symbol (for edge cases)
     
     \b
     Examples:
