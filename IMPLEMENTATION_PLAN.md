@@ -171,6 +171,7 @@ lspcmd grep "." server.py                     # All symbols in any server.py fil
 | `lspcmd format PATH` | Format a file |
 | `lspcmd organize-imports PATH` | Organize imports in a file |
 | `lspcmd rename PATH POSITION NEW_NAME` | Rename symbol at position |
+| `lspcmd rename @SYMBOL NEW_NAME` | Rename symbol by name |
 | `lspcmd move-file OLD_PATH NEW_PATH` | Move/rename file and update imports |
 
 The `move-file` command uses `workspace/willRenameFiles` to ask the language server
@@ -197,6 +198,50 @@ Where:
 - **REGEX** must be unique (on the line if LINE given, in the file otherwise)
 
 When using REGEX, the column for the LSP request is the start of the match.
+
+### @Symbol Format
+
+Instead of specifying `PATH POSITION`, you can use `@SYMBOL` to look up symbols by name:
+
+| Format | Example | Description |
+|--------|---------|-------------|
+| `@Name` | `@UserRepository` | Find a symbol named "UserRepository" |
+| `@Class.method` | `@UserRepository.add_user` | Find method in class |
+| `@path:Symbol` | `@*.py:User` | Find symbol in files matching pattern |
+| `@dir:Class.method` | `@internal:Handler.serve` | Filter by directory |
+
+When a symbol is ambiguous (multiple matches), lspcmd shows all matching locations
+and suggests how to narrow down:
+
+```
+Error: Symbol 'save' is ambiguous (3 matches):
+  src/user.py:45  [Method] save in UserRepository
+  src/post.py:32  [Method] save in PostRepository
+  src/cache.py:18 [Method] save in CacheManager
+
+Try '@Container.save' to narrow down. Try 'path:Symbol' to filter by file
+```
+
+Examples:
+```bash
+# Find definition by symbol name
+lspcmd definition @UserRepository
+
+# Find definition of a method within a class
+lspcmd definition @UserRepository.add_user
+
+# Filter by file pattern
+lspcmd definition @*.py:User
+
+# Find references to a symbol
+lspcmd references @Counter.increment
+
+# Rename a symbol across the workspace
+lspcmd rename @old_function_name new_name
+
+# Get full body of a function
+lspcmd definition @create_sample_user --body
+```
 
 Examples:
 ```bash
