@@ -759,11 +759,11 @@ Moved file and updated imports in 4 file(s):
         os.chdir(workspace)
         response = run_request("resolve-symbol", {
             "workspace_root": str(workspace),
-            "symbol_path": "utils.py:validate_email",
+            "symbol_path": "main.py:User",
         })
         result = response["result"]
         assert "error" not in result, f"Unexpected error: {result.get('error')}"
-        assert "utils.py" in result["path"] or "helpers.py" in result["path"]
+        assert "main.py" in result["path"]
 
 
 # =============================================================================
