@@ -1610,35 +1610,51 @@ Represents a user in the system."""
     def test_move_file_updates_imports(self, workspace):
         os.chdir(workspace)
         
-        # Create a subdirectory to move the file into
+        # Save original state for restoration
+        user_ts_path = workspace / "src" / "user.ts"
+        main_ts_path = workspace / "src" / "main.ts"
         models_dir = workspace / "src" / "models"
-        models_dir.mkdir(exist_ok=True)
+        moved_user_ts_path = models_dir / "user.ts"
         
-        # Check initial import in main.ts
-        original_main = (workspace / "src" / "main.ts").read_text()
-        assert "from './user'" in original_main
+        original_user_ts = user_ts_path.read_text()
+        original_main_ts = main_ts_path.read_text()
         
-        # Move user.ts to models/user.ts
-        response = run_request("move-file", {
-            "old_path": str(workspace / "src" / "user.ts"),
-            "new_path": str(workspace / "src" / "models" / "user.ts"),
-            "workspace_root": str(workspace),
-        })
-        output = format_output(response["result"], "plain")
-        
-        # Verify the file was moved
-        assert not (workspace / "src" / "user.ts").exists()
-        assert (workspace / "src" / "models" / "user.ts").exists()
-        
-        # Check exact output - TypeScript updates imports
-        assert output == """\
+        try:
+            # Create a subdirectory to move the file into
+            models_dir.mkdir(exist_ok=True)
+            
+            # Check initial import in main.ts
+            assert "from './user'" in original_main_ts
+            
+            # Move user.ts to models/user.ts
+            response = run_request("move-file", {
+                "old_path": str(user_ts_path),
+                "new_path": str(moved_user_ts_path),
+                "workspace_root": str(workspace),
+            })
+            output = format_output(response["result"], "plain")
+            
+            # Verify the file was moved
+            assert not user_ts_path.exists()
+            assert moved_user_ts_path.exists()
+            
+            # Check exact output - TypeScript updates imports
+            assert output == """\
 Moved file and updated imports in 2 file(s):
   src/main.ts
   src/models/user.ts"""
-        
-        # Check that imports were updated in main.ts
-        updated_main = (workspace / "src" / "main.ts").read_text()
-        assert "from './models/user'" in updated_main
+            
+            # Check that imports were updated in main.ts
+            updated_main = main_ts_path.read_text()
+            assert "from './models/user'" in updated_main
+        finally:
+            # Always restore original state
+            if moved_user_ts_path.exists():
+                moved_user_ts_path.unlink()
+            if models_dir.exists() and not any(models_dir.iterdir()):
+                models_dir.rmdir()
+            user_ts_path.write_text(original_user_ts)
+            main_ts_path.write_text(original_main_ts)
 
 
 # =============================================================================
