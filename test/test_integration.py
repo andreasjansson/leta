@@ -125,7 +125,7 @@ main.py:17 [Variable] key in save
 main.py:17 [Variable] value in save
 main.py:21 [Method] load in StorageProtocol
 main.py:21 [Variable] key in load
-main.py:26 [Class] User
+main.py:27 [Class] User
 main.py:35 [Variable] name in User
 main.py:36 [Variable] email in User
 main.py:37 [Variable] age in User
@@ -181,7 +181,7 @@ main.py:138 [Variable] found in main"""
         })
         output = format_output(response["result"], "plain")
         assert output == """\
-main.py:26 [Class] User
+main.py:27 [Class] User
 main.py:80 [Class] UserRepository"""
 
     def test_grep_kind_filter(self, workspace):
@@ -195,7 +195,7 @@ main.py:80 [Class] UserRepository"""
         output = format_output(response["result"], "plain")
         assert output == """\
 main.py:14 [Class] StorageProtocol
-main.py:26 [Class] User
+main.py:27 [Class] User
 main.py:48 [Class] MemoryStorage
 main.py:61 [Class] FileStorage
 main.py:80 [Class] UserRepository"""
@@ -233,7 +233,7 @@ main.py:127 [Function] main"""
         sensitive_output = format_output(response["result"], "plain")
         
         assert insensitive_output == """\
-main.py:26 [Class] User
+main.py:27 [Class] User
 main.py:80 [Class] UserRepository
 main.py:89 [Method] add_user in UserRepository
 main.py:89 [Variable] user in add_user
