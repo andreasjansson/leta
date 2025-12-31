@@ -299,6 +299,26 @@ def format_tree(data: dict) -> str:
     return "\n".join(lines)
 
 
+def format_ambiguous_symbol_error(data: dict) -> str:
+    """Format an ambiguous symbol error with match details."""
+    lines = [f"Error: {data['error']}"]
+    matches = data.get("matches", [])
+    
+    for m in matches:
+        container = f" in {m['container']}" if m.get("container") else ""
+        kind = f"[{m['kind']}] " if m.get("kind") else ""
+        detail = f" ({m['detail']})" if m.get("detail") else ""
+        ref = m.get("ref", "")
+        lines.append(f"  {ref}")
+        lines.append(f"    {m['path']}:{m['line']} {kind}{m['name']}{detail}{container}")
+    
+    total = data.get("total_matches", len(matches))
+    if total > len(matches):
+        lines.append(f"  ... and {total - len(matches)} more")
+    
+    return "\n".join(lines)
+
+
 def format_diagnostics(diagnostics: list[dict]) -> str:
     severity_symbols = {
         "error": "✗",
