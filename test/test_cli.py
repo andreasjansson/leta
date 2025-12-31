@@ -351,7 +351,7 @@ main.go:39 [Class] MemoryStorage (sample_project)""".strip().split("\n"))
 main.go:31 [Interface] Storage (sample_project)
 """
 
-    def test_definition_by_symbol(self, go_project, isolated_config):
+    def test_def_by_symbol(self, go_project, isolated_config):
         """Test definition works with symbol syntax in Go."""
         config = load_config()
         add_workspace_root(go_project, config)
