@@ -628,7 +628,7 @@ class DaemonServer:
                             self._format_diagnostics(result["items"], first_file, workspace_root)
                         )
                 except (LSPResponseError, asyncio.TimeoutError) as e:
-                    if isinstance(e, LSPResponseError) and not e.is_method_not_found():
+                    if isinstance(e, LSPResponseError) and not (e.is_method_not_found() or e.is_unsupported()):
                         raise
                     workspace.client.supports_pull_diagnostics = False
                     use_pull = False
