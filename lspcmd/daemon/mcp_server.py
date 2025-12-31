@@ -1828,7 +1828,6 @@ class MCPDaemonServer:
     async def _extract_signature_from_new_contents(
         self, workspace, workspace_root: Path, original_file: Path, new_contents: str
     ) -> str | None:
-        import tempfile
         import uuid
 
         suffix = original_file.suffix
@@ -1852,6 +1851,9 @@ class MCPDaemonServer:
             if not func_symbol:
                 return None
 
+            if func_symbol.get("detail"):
+                return self._format_signature_from_detail(func_symbol)
+
             sel_range = func_symbol.get("selectionRange", func_symbol.get("range"))
             if not sel_range:
                 return None
@@ -1874,6 +1876,16 @@ class MCPDaemonServer:
         finally:
             await workspace.close_document(temp_path)
             temp_path.unlink(missing_ok=True)
+
+    def _format_signature_from_detail(self, symbol: dict) -> str:
+        """Format a signature from documentSymbol name and detail fields."""
+        name = symbol.get("name", "")
+        detail = symbol.get("detail", "")
+        if detail.startswith("func"):
+            return f"func {name}{detail[4:]}"
+        elif detail.startswith("fn"):
+            return f"fn {name}{detail[2:]}"
+        return f"{name} {detail}"
 
     def _find_first_function_symbol(self, symbols: list) -> dict | None:
         for sym in symbols:
