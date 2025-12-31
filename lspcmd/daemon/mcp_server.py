@@ -1708,6 +1708,224 @@ class MCPDaemonServer:
         files_modified = await self._apply_workspace_edit(result, workspace.root)
         return {"renamed": True, "files_modified": files_modified}
 
+    async def _handle_replace_function(self, params: dict) -> dict:
+        workspace_root = Path(params["workspace_root"]).resolve()
+        symbol = params["symbol"]
+        new_contents = params["new_contents"]
+        check_signature = params.get("check_signature", True)
+
+        resolved = await self._handle_resolve_symbol({
+            "workspace_root": str(workspace_root),
+            "symbol_path": symbol,
+        })
+        if "error" in resolved:
+            return resolved
+
+        kind = resolved.get("kind")
+        if kind not in ("Function", "Method"):
+            return {"error": f"Symbol '{symbol}' is a {kind}, not a Function or Method"}
+
+        file_path = Path(resolved["path"]).resolve()
+        line = resolved["line"]
+        range_start = resolved.get("range_start_line")
+        range_end = resolved.get("range_end_line")
+
+        if range_start is None or range_end is None:
+            return {"error": "Language server does not provide symbol ranges"}
+
+        workspace = await self.session.get_or_create_workspace(file_path, workspace_root)
+        await workspace.ensure_document_open(file_path)
+
+        if check_signature:
+            old_signature = await self._extract_function_signature(
+                workspace, file_path, line, resolved.get("column", 0)
+            )
+            if old_signature is None:
+                return {"error": "Could not extract signature from existing function"}
+
+            new_signature = await self._extract_signature_from_new_contents(
+                workspace, workspace_root, file_path, new_contents
+            )
+            if new_signature is None:
+                return {"error": "Could not extract signature from new function contents"}
+
+            if not self._signatures_match(old_signature, new_signature):
+                return {
+                    "error": "Signature mismatch",
+                    "old_signature": old_signature,
+                    "new_signature": new_signature,
+                    "hint": "Use --no-check-signature to replace anyway",
+                }
+
+        content = read_file_content(file_path)
+        lines = content.splitlines(keepends=True)
+
+        start_line_idx = range_start - 1
+        end_line_idx = range_end - 1
+
+        if start_line_idx > 0 and start_line_idx < len(lines):
+            original_line = lines[start_line_idx]
+            leading_ws = len(original_line) - len(original_line.lstrip())
+            indentation = original_line[:leading_ws]
+        else:
+            indentation = ""
+
+        new_lines = new_contents.splitlines(keepends=True)
+        if new_lines and not new_lines[-1].endswith("\n"):
+            new_lines[-1] += "\n"
+
+        if new_lines:
+            first_line = new_lines[0]
+            first_line_ws = len(first_line) - len(first_line.lstrip())
+            input_indent = first_line[:first_line_ws]
+
+            reindented = []
+            for line in new_lines:
+                if line.startswith(input_indent):
+                    reindented.append(indentation + line[first_line_ws:])
+                elif line.strip() == "":
+                    reindented.append(line)
+                else:
+                    reindented.append(indentation + line.lstrip())
+            new_lines = reindented
+
+        new_content_lines = lines[:start_line_idx] + new_lines + lines[end_line_idx + 1:]
+        new_content = "".join(new_content_lines)
+
+        file_path.write_text(new_content)
+
+        await workspace.client.send_notification(
+            "textDocument/didChange",
+            {
+                "textDocument": {"uri": path_to_uri(file_path), "version": 2},
+                "contentChanges": [{"text": new_content}],
+            },
+        )
+
+        rel_path = self._relative_path(file_path, workspace_root)
+        return {
+            "replaced": True,
+            "path": rel_path,
+            "old_range": f"{range_start}-{range_end}",
+            "new_range": f"{range_start}-{range_start + len(new_lines) - 1}",
+        }
+
+    async def _extract_function_signature(
+        self, workspace, file_path: Path, line: int, column: int
+    ) -> str | None:
+        doc = await workspace.ensure_document_open(file_path)
+        result = await workspace.client.send_request(
+            "textDocument/hover",
+            {
+                "textDocument": {"uri": doc.uri},
+                "position": {"line": line - 1, "character": column},
+            },
+        )
+        if not result:
+            return None
+        return self._parse_signature_from_hover(result)
+
+    async def _extract_signature_from_new_contents(
+        self, workspace, workspace_root: Path, original_file: Path, new_contents: str
+    ) -> str | None:
+        import tempfile
+        import uuid
+
+        suffix = original_file.suffix
+        temp_name = f"_lspcmd_temp_{uuid.uuid4().hex[:8]}{suffix}"
+        temp_path = workspace_root / temp_name
+
+        try:
+            temp_path.write_text(new_contents)
+
+            doc = await workspace.ensure_document_open(temp_path)
+
+            result = await workspace.client.send_request(
+                "textDocument/documentSymbol",
+                {"textDocument": {"uri": doc.uri}},
+            )
+
+            if not result:
+                return None
+
+            func_symbol = self._find_first_function_symbol(result)
+            if not func_symbol:
+                return None
+
+            sel_range = func_symbol.get("selectionRange", func_symbol.get("range"))
+            if not sel_range:
+                return None
+
+            hover_result = await workspace.client.send_request(
+                "textDocument/hover",
+                {
+                    "textDocument": {"uri": doc.uri},
+                    "position": {
+                        "line": sel_range["start"]["line"],
+                        "character": sel_range["start"]["character"],
+                    },
+                },
+            )
+
+            if not hover_result:
+                return None
+
+            return self._parse_signature_from_hover(hover_result)
+        finally:
+            await workspace.close_document(temp_path)
+            temp_path.unlink(missing_ok=True)
+
+    def _find_first_function_symbol(self, symbols: list) -> dict | None:
+        for sym in symbols:
+            kind = sym.get("kind")
+            if kind in (SymbolKind.Function, SymbolKind.Method):
+                return sym
+            if sym.get("children"):
+                child = self._find_first_function_symbol(sym["children"])
+                if child:
+                    return child
+        return None
+
+    def _parse_signature_from_hover(self, hover_result: dict) -> str | None:
+        contents = hover_result.get("contents")
+        if not contents:
+            return None
+
+        if isinstance(contents, dict):
+            value = contents.get("value", "")
+        elif isinstance(contents, list):
+            value = "\n".join(
+                c.get("value", str(c)) if isinstance(c, dict) else str(c)
+                for c in contents
+            )
+        else:
+            value = str(contents)
+
+        code_match = re.search(r"```\w*\n(.+?)```", value, re.DOTALL)
+        if code_match:
+            code_block = code_match.group(1).strip()
+            lines = code_block.split("\n")
+            return lines[0].strip() if lines else None
+
+        lines = value.strip().split("\n")
+        return lines[0].strip() if lines else None
+
+    def _signatures_match(self, old_sig: str, new_sig: str) -> bool:
+        old_normalized = self._normalize_signature(old_sig)
+        new_normalized = self._normalize_signature(new_sig)
+        return old_normalized == new_normalized
+
+    def _normalize_signature(self, sig: str) -> str:
+        sig = re.sub(r"^\(function\)\s*", "", sig)
+        sig = re.sub(r"^\(method\)\s*", "", sig)
+        sig = re.sub(r"^function\s+", "", sig)
+        sig = re.sub(r"^func\s+", "func ", sig)
+        sig = re.sub(r"^def\s+", "def ", sig)
+        sig = re.sub(r"^fn\s+", "fn ", sig)
+        sig = re.sub(r"\s+", " ", sig)
+        sig = sig.strip()
+        return sig
+
     async def _handle_restart_workspace(self, params: dict) -> dict:
         workspace_root = Path(params["workspace_root"]).resolve()
         servers = self.session.workspaces.get(workspace_root, {})
