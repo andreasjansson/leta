@@ -411,49 +411,21 @@ def with_symbol_help(func):
     return func
 
 
-@cli.command("describe")
-@click.argument("symbol")
-@click.pass_context
-@with_symbol_help
-def describe(ctx, symbol):
-    """Show hover information (type signature, documentation) for a symbol.
-    
-    \b
-    Examples:
-      lspcmd describe UserRepository
-      lspcmd describe UserRepository.add_user
-      lspcmd describe user:User
-      lspcmd describe "*.py:validate_email"
-    """
-    config = load_config()
-    workspace_root = get_workspace_root_for_cwd(config)
-    resolved = resolve_symbol(symbol, workspace_root)
-
-    response = run_request("describe", {
-        "path": str(resolved.path),
-        "workspace_root": str(workspace_root),
-        "line": resolved.line,
-        "column": resolved.column,
-    })
-
-    click.echo(format_output(response.get("result", response), "json" if ctx.obj["json"] else "plain"))
-
-
-@cli.command("definition")
+@cli.command("def")
 @click.argument("symbol")
 @click.option("-n", "--context", default=0, help="Lines of context around definition")
 @click.option("--head", default=200, help="Maximum lines to show (default: 200)")
 @click.pass_context
 @with_symbol_help
-def definition(ctx, symbol, context, head):
+def def_cmd(ctx, symbol, context, head):
     """Print the definition of a symbol. Shows the full body.
     
     \b
     Examples:
-      lspcmd definition UserRepository
-      lspcmd definition UserRepository.add_user
-      lspcmd definition "*.py:User"
-      lspcmd definition storage:MemoryStorage -n 2
+      lspcmd def UserRepository
+      lspcmd def UserRepository.add_user
+      lspcmd def "*.py:User"
+      lspcmd def storage:MemoryStorage -n 2
     
     Use -n/--context to show surrounding lines.
     Use --head N to limit output to N lines.
