@@ -1425,6 +1425,7 @@ class DaemonServer:
         
         matches_info = []
         for sym in matches[:10]:
+            ref = self._generate_unambiguous_ref(sym, matches, target_name)
             info = {
                 "path": sym["path"],
                 "line": sym["line"],
@@ -1432,32 +1433,63 @@ class DaemonServer:
                 "kind": sym.get("kind"),
                 "container": sym.get("container"),
                 "detail": sym.get("detail"),
+                "ref": ref,
             }
             matches_info.append(info)
-        
-        hint_parts = []
-        
-        containers = set(s.get("container") for s in matches if s.get("container"))
-        if containers and len(containers) < len(matches):
-            if len(parts) == 1:
-                hint_parts.append(f"Try 'Container.{target_name}' to narrow down")
-            else:
-                hint_parts.append("Try a more specific container path")
-        
-        paths = set(s.get("path") for s in matches)
-        if len(paths) > 1:
-            hint_parts.append("Try 'path:Symbol' to filter by file")
-        elif len(paths) == 1:
-            lines = sorted(set(s.get("line") for s in matches))
-            if len(lines) > 1:
-                hint_parts.append(f"Try 'path:line:Symbol' (lines: {', '.join(map(str, lines[:5]))})")
         
         return {
             "error": f"Symbol '{symbol_path}' is ambiguous ({len(matches)} matches)",
             "matches": matches_info,
-            "hint": ". ".join(hint_parts) if hint_parts else None,
             "total_matches": len(matches),
         }
+    
+    def _generate_unambiguous_ref(self, sym: dict, all_matches: list[dict], target_name: str) -> str:
+        """Generate an unambiguous reference string for a symbol.
+        
+        Tries in order of preference:
+        1. Container.Symbol (if container is unique among matches)
+        2. filename:Symbol (if filename is unique)
+        3. filename:Container.Symbol (if combination is unique)
+        4. path:line:Symbol (always unique)
+        """
+        sym_path = sym.get("path", "")
+        sym_line = sym.get("line", 0)
+        sym_container = sym.get("container", "")
+        sym_container_normalized = self._normalize_container(sym_container) if sym_container else ""
+        filename = Path(sym_path).name
+        
+        # Try Container.Symbol
+        if sym_container_normalized:
+            ref = f"{sym_container_normalized}.{target_name}"
+            matches_with_ref = [
+                s for s in all_matches
+                if self._normalize_container(s.get("container", "") or "") == sym_container_normalized
+            ]
+            if len(matches_with_ref) == 1:
+                return ref
+        
+        # Try filename:Symbol
+        ref = f"{filename}:{target_name}"
+        matches_with_ref = [
+            s for s in all_matches
+            if Path(s.get("path", "")).name == filename
+        ]
+        if len(matches_with_ref) == 1:
+            return ref
+        
+        # Try filename:Container.Symbol
+        if sym_container_normalized:
+            ref = f"{filename}:{sym_container_normalized}.{target_name}"
+            matches_with_ref = [
+                s for s in all_matches
+                if Path(s.get("path", "")).name == filename
+                and self._normalize_container(s.get("container", "") or "") == sym_container_normalized
+            ]
+            if len(matches_with_ref) == 1:
+                return ref
+        
+        # Fall back to path:line:Symbol (always unique)
+        return f"{sym_path}:{sym_line}:{target_name}"
     
     def _get_module_name(self, rel_path: str) -> str:
         """Extract module name from relative path (e.g., 'src/user.py' -> 'user')."""
