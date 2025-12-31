@@ -325,9 +325,10 @@ class TestCliWithGopls:
             os.chdir(go_project)
             result = runner.invoke(cli, ["implementations", "Storage"])
         assert result.exit_code == 0, f"Failed with: {result.output}"
-        # Should find MemoryStorage and FileStorage as implementations
-        assert "main.go:39" in result.output
-        assert "main.go:85" in result.output
+        # Order may vary, so sort lines
+        assert sorted(result.output.strip().split("\n")) == sorted("""\
+main.go:39 type MemoryStorage struct {
+main.go:85 type FileStorage struct {""".strip().split("\n"))
 
     def test_subtypes(self, go_project, isolated_config):
         """Test that subtypes works for Go interfaces."""
@@ -340,11 +341,10 @@ class TestCliWithGopls:
             os.chdir(go_project)
             result = runner.invoke(cli, ["subtypes", "Storage"])
         assert result.exit_code == 0, f"Failed with: {result.output}"
-        # Order may vary, so sort
+        # Order may vary, so sort lines
         assert sorted(result.output.strip().split("\n")) == sorted("""\
 main.go:85 [Class] FileStorage (sample_project)
-main.go:39 [Class] MemoryStorage (sample_project)
-""".strip().split("\n"))
+main.go:39 [Class] MemoryStorage (sample_project)""".strip().split("\n"))
 
     def test_supertypes(self, go_project, isolated_config):
         """Test that supertypes works for Go structs."""
@@ -371,8 +371,10 @@ main.go:31 [Interface] Storage (sample_project)
         with runner.isolated_filesystem():
             os.chdir(go_project)
             result = runner.invoke(cli, ["definition", "User"])
-        assert result.exit_code == 0
-        assert "main.go" in result.output
+        assert result.exit_code == 0, f"Failed with: {result.output}"
+        assert result.output == """\
+main.go:9 type User struct {
+"""
 
     def test_definition_with_container(self, go_project, isolated_config):
         """Test definition with qualified name in Go."""
@@ -385,4 +387,6 @@ main.go:31 [Interface] Storage (sample_project)
             os.chdir(go_project)
             result = runner.invoke(cli, ["definition", "MemoryStorage.Save"])
         assert result.exit_code == 0, f"Failed with: {result.output}"
-        assert "main.go" in result.output
+        assert result.output == """\
+main.go:49 func (m *MemoryStorage) Save(user *User) error {
+"""
