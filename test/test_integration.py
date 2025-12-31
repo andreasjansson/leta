@@ -2161,6 +2161,13 @@ src/main/java/com/example/UserRepository.java:55     public List<User> listUsers
     def test_resolve_symbol_ambiguous_shows_container_refs(self, workspace):
         """Test that ambiguous Java symbols show Class.method format."""
         os.chdir(workspace)
+        # First warm up the workspace with all Storage files
+        run_request("grep", {
+            "paths": [str(workspace / "src" / "main" / "java" / "com" / "example")],
+            "workspace_root": str(workspace),
+            "pattern": "save",
+        })
+        time.sleep(1.0)
         response = run_request("resolve-symbol", {
             "workspace_root": str(workspace),
             "symbol_path": "save(User)",
