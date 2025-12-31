@@ -367,5 +367,5 @@ main.go:31 [Interface] Storage (sample_project)
         with runner.isolated_filesystem():
             os.chdir(go_project)
             result = runner.invoke(cli, ["definition", "MemoryStorage.Save"])
-        assert result.exit_code == 0
+        assert result.exit_code == 0, f"Failed with: {result.output}"
         assert "main.go" in result.output
