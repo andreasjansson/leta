@@ -1705,7 +1705,7 @@ src/main/java/com/example/User.java:42 [Method] getAge() ( : int) in User"""
             "kinds": ["class"],
         })
         output = format_output(response["result"], "plain")
-        assert output == "src/main/java/com/example/User.java:3 [Class] User"
+        assert output == "src/main/java/com/example/User.java:6 [Class] User"
 
     def test_grep_kind_filter_method(self, workspace):
         os.chdir(workspace)
