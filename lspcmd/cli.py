@@ -250,6 +250,7 @@ See `lspcmd COMMAND --help` for more documentation and command-specific options.
         "diagnostics",
         "rename",
         "move-file",
+        "replace-function",
         "format",
         "organize-imports",
         "raw-lsp-request",
