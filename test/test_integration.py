@@ -2625,22 +2625,40 @@ class TestCppIntegration:
         os.chdir(workspace)
         response = run_request("resolve-symbol", {
             "workspace_root": str(workspace),
-            "symbol_path": "User",
+            "symbol_path": "UserRepository",
         })
         result = response["result"]
         assert "error" not in result, f"Unexpected error: {result.get('error')}"
-        assert "User" in result["name"]
+        assert "UserRepository" in result["name"]
 
-    def test_resolve_symbol_class_method(self, workspace):
-        """Test resolving Class::method format."""
+    def test_resolve_symbol_ambiguous_shows_container_refs(self, workspace):
+        """Test that ambiguous C++ symbols show Class.method format."""
         os.chdir(workspace)
         response = run_request("resolve-symbol", {
             "workspace_root": str(workspace),
-            "symbol_path": "User.is_adult",
+            "symbol_path": "save",
+        })
+        result = response["result"]
+        assert "error" in result
+        assert "ambiguous" in result["error"]
+        matches = result.get("matches", [])
+        refs = [m.get("ref", "") for m in matches]
+        # Should use Container.name format where possible
+        for ref in refs:
+            parts = ref.split(":")
+            if len(parts) > 1:
+                assert not parts[1].isdigit(), f"Should not use line numbers in refs: {ref}"
+
+    def test_resolve_symbol_class_method(self, workspace):
+        """Test resolving Class.method format."""
+        os.chdir(workspace)
+        response = run_request("resolve-symbol", {
+            "workspace_root": str(workspace),
+            "symbol_path": "User.isAdult",
         })
         result = response["result"]
         assert "error" not in result, f"Unexpected error: {result.get('error')}"
-        assert "is_adult" in result["name"]
+        assert "isAdult" in result["name"]
 
     def test_resolve_symbol_file_filter(self, workspace):
         """Test resolving with file filter."""
