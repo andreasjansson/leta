@@ -1775,6 +1775,7 @@ class MCPDaemonServer:
                 if old_signature and new_signature:
                     if not self._signatures_match(old_signature, new_signature):
                         file_path.write_text(original_content)
+                        backup_path.unlink(missing_ok=True)
                         if doc:
                             doc.version += 1
                             doc.content = original_content
