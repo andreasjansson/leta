@@ -1995,7 +1995,23 @@ class MCPDaemonServer:
     def _signatures_match(self, old_sig: str, new_sig: str) -> bool:
         old_normalized = self._normalize_signature(old_sig)
         new_normalized = self._normalize_signature(new_sig)
-        return old_normalized == new_normalized
+        
+        if old_normalized == new_normalized:
+            return True
+        
+        old_params = self._extract_params_only(old_normalized)
+        new_params = self._extract_params_only(new_normalized)
+        return old_params == new_params
+
+    def _extract_params_only(self, sig: str) -> str:
+        """Extract just the function name and parameters, ignoring return type.
+        
+        Return types can differ due to context (e.g., 'User' vs 'Unknown' in temp file).
+        """
+        match = re.match(r"^((?:def|func|fn|function)\s+\w+\s*\([^)]*\))", sig)
+        if match:
+            return match.group(1)
+        return sig
 
     def _normalize_signature(self, sig: str) -> str:
         sig = re.sub(r"^\(function\)\s*", "", sig)
