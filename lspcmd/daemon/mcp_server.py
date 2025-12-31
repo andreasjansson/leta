@@ -2010,6 +2010,8 @@ class MCPDaemonServer:
         sig = re.sub(r"\bcls:\s*type\[Self@\w+\]", "cls", sig)
         sig = re.sub(r"\bcls:\s*Unknown", "cls", sig)
 
+        sig = re.sub(r"\s*\(\+\d+\s*overload[s]?\)", "", sig)
+
         sig = re.sub(r"\s*,\s*", ", ", sig)
         sig = re.sub(r"\(\s+", "(", sig)
         sig = re.sub(r"\s+\)", ")", sig)
