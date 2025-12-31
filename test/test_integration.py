@@ -1431,6 +1431,61 @@ Moved file and updated imports in 3 file(s):
         assert "mod person;" in updated_main
         assert "mod user;" not in updated_main
 
+    # =========================================================================
+    # resolve-symbol disambiguation tests
+    # =========================================================================
+
+    def test_resolve_symbol_unique_name(self, workspace):
+        """Test resolving a unique symbol name."""
+        os.chdir(workspace)
+        response = self._run_request_with_retry("resolve-symbol", {
+            "workspace_root": str(workspace),
+            "symbol_path": "UserRepository",
+        })
+        result = response["result"]
+        assert "error" not in result, f"Unexpected error: {result.get('error')}"
+        assert "UserRepository" in result["name"]
+
+    def test_resolve_symbol_ambiguous_shows_container_refs(self, workspace):
+        """Test that ambiguous Rust symbols show module.name format."""
+        os.chdir(workspace)
+        response = self._run_request_with_retry("resolve-symbol", {
+            "workspace_root": str(workspace),
+            "symbol_path": "new",
+        })
+        result = response["result"]
+        assert "error" in result
+        assert "ambiguous" in result["error"]
+        matches = result.get("matches", [])
+        refs = [m.get("ref", "") for m in matches]
+        # Should use Container.name format where possible
+        for ref in refs:
+            parts = ref.split(":")
+            if len(parts) > 1:
+                assert not parts[1].isdigit(), f"Should not use line numbers in refs: {ref}"
+
+    def test_resolve_symbol_impl_method(self, workspace):
+        """Test resolving impl method with Type.method format."""
+        os.chdir(workspace)
+        response = self._run_request_with_retry("resolve-symbol", {
+            "workspace_root": str(workspace),
+            "symbol_path": "MemoryStorage.new",
+        })
+        result = response["result"]
+        assert "error" not in result, f"Unexpected error: {result.get('error')}"
+        assert "new" in result["name"]
+
+    def test_resolve_symbol_file_filter(self, workspace):
+        """Test resolving with file filter."""
+        os.chdir(workspace)
+        response = self._run_request_with_retry("resolve-symbol", {
+            "workspace_root": str(workspace),
+            "symbol_path": "storage.rs:Storage",
+        })
+        result = response["result"]
+        assert "error" not in result, f"Unexpected error: {result.get('error')}"
+        assert "storage.rs" in result["path"]
+
 
 # =============================================================================
 # TypeScript Integration Tests (typescript-language-server)
