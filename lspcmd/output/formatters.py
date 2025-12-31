@@ -216,11 +216,20 @@ def format_session(data: dict) -> str:
 
 
 def format_definition_content(data: dict) -> str:
-    lines = [
-        f"{data['path']}:{data['start_line']}-{data['end_line']}",
-        "",
-        data["content"],
-    ]
+    start = data['start_line']
+    end = data['end_line']
+    if start == end:
+        location = f"{data['path']}:{start}"
+    else:
+        location = f"{data['path']}:{start}-{end}"
+    
+    lines = [location, "", data["content"]]
+    
+    if data.get("truncated"):
+        head = data.get("head", 200)
+        lines.append("")
+        lines.append(f"[truncated after {head} lines, use `lspcmd definition SYMBOL --head {head * 2}` to show twice as many lines]")
+    
     return "\n".join(lines)
 
 
