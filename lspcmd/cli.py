@@ -8,14 +8,15 @@ import time
 from pathlib import Path
 
 import click
+import httpx
 
 from .daemon.pidfile import is_daemon_running
-from .output.formatters import format_output
 from .utils.config import (
-    get_socket_path,
     get_pid_path,
     get_config_path,
     get_log_dir,
+    get_mcp_port_path,
+    get_mcp_url,
     load_config,
     detect_workspace_root,
     get_known_workspace_root,
@@ -38,11 +39,13 @@ class OrderedGroup(click.Group):
         return commands
 
 
-def ensure_daemon_running() -> None:
+def ensure_daemon_running() -> str:
+    """Ensure daemon is running and return the MCP URL."""
     pid_path = get_pid_path()
+    mcp_url = get_mcp_url()
 
-    if is_daemon_running(pid_path):
-        return
+    if is_daemon_running(pid_path) and mcp_url:
+        return mcp_url
 
     subprocess.Popen(
         [sys.executable, "-m", "lspcmd.daemon_cli"],
@@ -50,30 +53,82 @@ def ensure_daemon_running() -> None:
         env=os.environ.copy(),
     )
 
-    socket_path = get_socket_path()
+    port_path = get_mcp_port_path()
     for _ in range(50):
-        if socket_path.exists():
-            return
+        if port_path.exists():
+            mcp_url = get_mcp_url()
+            if mcp_url:
+                return mcp_url
         time.sleep(0.1)
 
     raise click.ClickException("Failed to start daemon")
 
 
-async def send_request(method: str, params: dict) -> dict:
-    socket_path = get_socket_path()
+def call_mcp_tool(tool_name: str, arguments: dict) -> str:
+    """Call an MCP tool and return the result."""
+    mcp_url = ensure_daemon_running()
+    return asyncio.run(_call_mcp_tool_async(mcp_url, tool_name, arguments))
 
-    reader, writer = await asyncio.open_unix_connection(str(socket_path))
 
-    request = {"method": method, "params": params}
-    writer.write(json.dumps(request).encode())
-    await writer.drain()
-    writer.write_eof()
+async def _call_mcp_tool_async(mcp_url: str, tool_name: str, arguments: dict) -> str:
+    """Async implementation of MCP tool call using Streamable HTTP."""
+    async with httpx.AsyncClient(timeout=120.0) as client:
+        # Initialize session
+        init_response = await client.post(
+            mcp_url,
+            json={
+                "jsonrpc": "2.0",
+                "id": 1,
+                "method": "initialize",
+                "params": {
+                    "protocolVersion": "2024-11-05",
+                    "capabilities": {},
+                    "clientInfo": {"name": "lspcmd-cli", "version": "0.1.0"},
+                },
+            },
+        )
+        init_response.raise_for_status()
 
-    data = await reader.read()
-    writer.close()
-    await writer.wait_closed()
+        # Send initialized notification
+        await client.post(
+            mcp_url,
+            json={
+                "jsonrpc": "2.0",
+                "method": "notifications/initialized",
+            },
+        )
 
-    return json.loads(data.decode())
+        # Call the tool
+        tool_response = await client.post(
+            mcp_url,
+            json={
+                "jsonrpc": "2.0",
+                "id": 2,
+                "method": "tools/call",
+                "params": {
+                    "name": tool_name,
+                    "arguments": arguments,
+                },
+            },
+        )
+        tool_response.raise_for_status()
+
+        result = tool_response.json()
+        if "error" in result:
+            error = result["error"]
+            msg = error.get("message", str(error))
+            raise click.ClickException(msg)
+
+        # Extract text content from MCP response
+        content = result.get("result", {}).get("content", [])
+        if content and isinstance(content, list):
+            text_parts = []
+            for item in content:
+                if isinstance(item, dict) and item.get("type") == "text":
+                    text_parts.append(item.get("text", ""))
+            return "\n".join(text_parts)
+
+        return ""
 
 
 def get_daemon_log_tail(num_lines: int = 10) -> str | None:
@@ -88,36 +143,16 @@ def get_daemon_log_tail(num_lines: int = 10) -> str | None:
         return None
 
 
-def run_request(method: str, params: dict) -> dict:
-    ensure_daemon_running()
-    response = asyncio.run(send_request(method, params))
-    if "error" in response:
-        error_msg = response["error"]
-        if "Internal error" in error_msg or "internal error" in error_msg.lower():
-            log_dir = get_log_dir()
-            tail = get_daemon_log_tail(15)
-            msg_parts = [error_msg, ""]
-            if tail:
-                msg_parts.append("Recent daemon log:")
-                msg_parts.append(tail)
-                msg_parts.append("")
-            msg_parts.append(f"Full logs: {log_dir / 'daemon.log'}")
-            raise click.ClickException("\n".join(msg_parts))
-        raise click.ClickException(error_msg)
-    return response
-
-
 def get_workspace_root_for_path(path: Path, config: dict) -> Path:
     path = path.resolve()
     cwd = Path.cwd().resolve()
-    
+
     workspace_root = get_best_workspace_root(path, config, cwd=cwd)
     if workspace_root:
         return workspace_root
 
     raise click.ClickException(
-        f"No workspace initialized for {path}\n"
-        f"Run: lspcmd workspace init"
+        f"No workspace initialized for {path}\n" f"Run: lspcmd workspace init"
     )
 
 
@@ -129,88 +164,12 @@ def get_workspace_root_for_cwd(config: dict) -> Path:
         return workspace_root
 
     raise click.ClickException(
-        f"No workspace initialized for current directory\n"
-        f"Run: lspcmd workspace init"
-    )
-
-
-class ResolvedSymbol:
-    """Result of resolving a symbol path."""
-    def __init__(self, path: Path, line: int, column: int, 
-                 range_start_line: int | None = None, range_end_line: int | None = None):
-        self.path = path
-        self.line = line
-        self.column = column
-        self.range_start_line = range_start_line
-        self.range_end_line = range_end_line
-
-
-def resolve_symbol(symbol_path: str, workspace_root: Path) -> ResolvedSymbol:
-    """Resolve a symbol path to a ResolvedSymbol with location info.
-    
-    Symbol path formats:
-      - SymbolName              find symbol by name
-      - Parent.Symbol           find symbol with parent (class.method, module.class, etc.)
-      - path:Symbol             filter by file path pattern  
-      - path:Parent.Symbol      combine path filter with qualified name
-      - path:line:Symbol        exact file, line number, and symbol name (for edge cases)
-    
-    The hierarchy follows LSP document symbol containers:
-      - module.Class.method.variable
-      - module.function.variable
-    
-    Where 'module' is derived from the file name (e.g., user.py -> user).
-    
-    Returns:
-        ResolvedSymbol with path, line, column, and optionally range info
-        
-    Raises:
-        click.ClickException if symbol not found or ambiguous
-    """
-    response = run_request("resolve-symbol", {
-        "workspace_root": str(workspace_root),
-        "symbol_path": symbol_path,
-    })
-    
-    result = response.get("result", response)
-    
-    if "error" in result:
-        error_msg = result["error"]
-        matches = result.get("matches", [])
-        
-        if matches:
-            lines = [error_msg]
-            for m in matches:
-                container = f" in {m['container']}" if m.get("container") else ""
-                kind = f"[{m['kind']}] " if m.get("kind") else ""
-                detail = f" ({m['detail']})" if m.get("detail") else ""
-                ref = m.get("ref", "")
-                lines.append(f"  {ref}")
-                lines.append(f"    {m['path']}:{m['line']} {kind}{m['name']}{detail}{container}")
-            
-            total = result.get("total_matches", len(matches))
-            if total > len(matches):
-                lines.append(f"  ... and {total - len(matches)} more")
-            
-            raise click.ClickException("\n".join(lines))
-        else:
-            raise click.ClickException(error_msg)
-    
-    return ResolvedSymbol(
-        path=Path(result["path"]),
-        line=result["line"],
-        column=result.get("column", 0),
-        range_start_line=result.get("range_start_line"),
-        range_end_line=result.get("range_end_line"),
+        f"No workspace initialized for current directory\n" f"Run: lspcmd workspace init"
     )
 
 
 def expand_path_pattern(pattern: str) -> list[Path]:
-    """Expand a path pattern with glob wildcards (* and **) to matching files.
-    
-    Simple patterns without a directory (e.g. '*.go' or 'server.py') are treated as recursive.
-    Directories are automatically treated as directory/** (recursive search).
-    """
+    """Expand a path pattern with glob wildcards (* and **) to matching files."""
     if "*" not in pattern and "?" not in pattern:
         path = Path(pattern).resolve()
         if path.exists():
@@ -220,44 +179,20 @@ def expand_path_pattern(pattern: str) -> list[Path]:
                     return [Path(m).resolve() for m in sorted(matches) if Path(m).is_file()]
                 raise click.ClickException(f"No files found in directory: {pattern}")
             return [path]
-        # Bare filename without path separator - search recursively
         if "/" not in pattern:
             matches = glob.glob(f"**/{pattern}", recursive=True)
             if matches:
                 return [Path(m).resolve() for m in sorted(matches) if Path(m).is_file()]
         raise click.ClickException(f"Path not found: {pattern}")
-    
-    # Make simple patterns like "*.go" recursive (search from current dir down)
+
     if "/" not in pattern and not pattern.startswith("**"):
         pattern = "**/" + pattern
-    
+
     matches = glob.glob(pattern, recursive=True)
     if not matches:
         raise click.ClickException(f"No files match pattern: {pattern}")
-    
+
     return [Path(m).resolve() for m in sorted(matches) if Path(m).is_file()]
-
-
-def expand_exclude_pattern(pattern: str) -> set[Path]:
-    """Expand an exclude pattern to a set of paths to exclude.
-    
-    Same logic as expand_path_pattern but returns a set and doesn't error on no matches.
-    Directories are automatically treated as directory/** (recursive exclusion).
-    """
-    if "*" not in pattern and "?" not in pattern:
-        path = Path(pattern).resolve()
-        if path.exists():
-            if path.is_dir():
-                matches = glob.glob(str(path / "**" / "*"), recursive=True)
-                return {Path(m).resolve() for m in matches if Path(m).is_file()}
-            return {path}
-        return set()
-    
-    if "/" not in pattern and not pattern.startswith("**"):
-        pattern = "**/" + pattern
-    
-    matches = glob.glob(pattern, recursive=True)
-    return {Path(m).resolve() for m in matches if Path(m).is_file()}
 
 
 CLI_HELP = """\
@@ -325,8 +260,9 @@ def daemon(ctx):
 @click.pass_context
 def daemon_info(ctx):
     """Show current daemon state."""
-    response = run_request("describe-session", {})
-    click.echo(format_output(response.get("result", response), "json" if ctx.obj["json"] else "plain"))
+    output_format = "json" if ctx.obj["json"] else "plain"
+    result = call_mcp_tool("daemon_info", {"output_format": output_format})
+    click.echo(result)
 
 
 @daemon.command("shutdown")
@@ -337,8 +273,8 @@ def daemon_shutdown(ctx):
         click.echo("Daemon is not running")
         return
 
-    response = run_request("shutdown", {})
-    click.echo(format_output(response.get("result", response), "json" if ctx.obj["json"] else "plain"))
+    result = call_mcp_tool("daemon_shutdown", {})
+    click.echo(result)
 
 
 @cli.group()
@@ -397,11 +333,15 @@ def workspace_restart(ctx, path):
     else:
         workspace_root = get_workspace_root_for_cwd(config)
 
-    response = run_request("restart-workspace", {
-        "workspace_root": str(workspace_root),
-    })
-
-    click.echo(format_output(response.get("result", response), "json" if ctx.obj["json"] else "plain"))
+    output_format = "json" if ctx.obj["json"] else "plain"
+    result = call_mcp_tool(
+        "workspace_restart",
+        {
+            "workspace_root": str(workspace_root),
+            "output_format": output_format,
+        },
+    )
+    click.echo(result)
 
 
 @cli.command()
@@ -442,53 +382,32 @@ def with_symbol_help(func):
 @with_symbol_help
 def show_cmd(ctx, symbol, context, head):
     """Print the definition of a symbol. Shows the full body.
-    
+
     \b
     Examples:
       lspcmd show UserRepository
       lspcmd show UserRepository.add_user
       lspcmd show "*.py:User"
       lspcmd show storage:MemoryStorage -n 2
-    
+
     Use -n/--context to show surrounding lines.
     Use --head N to limit output to N lines.
     """
     config = load_config()
     workspace_root = get_workspace_root_for_cwd(config)
-    resolved = resolve_symbol(symbol, workspace_root)
+    output_format = "json" if ctx.obj["json"] else "plain"
 
-    response = run_request("definition", {
-        "path": str(resolved.path),
-        "workspace_root": str(workspace_root),
-        "line": resolved.line,
-        "column": resolved.column,
-        "context": context,
-        "body": True,
-        "direct_location": True,
-        "range_start_line": resolved.range_start_line,
-        "range_end_line": resolved.range_end_line,
-        "head": head,
-        "symbol": symbol,
-    })
-
-    click.echo(format_output(response.get("result", response), "json" if ctx.obj["json"] else "plain"))
-
-
-def _run_location_command(ctx, symbol: str, context: int, request_name: str):
-    """Helper for location-based commands (references, implementations, etc.)."""
-    config = load_config()
-    workspace_root = get_workspace_root_for_cwd(config)
-    resolved = resolve_symbol(symbol, workspace_root)
-
-    response = run_request(request_name, {
-        "path": str(resolved.path),
-        "workspace_root": str(workspace_root),
-        "line": resolved.line,
-        "column": resolved.column,
-        "context": context,
-    })
-
-    click.echo(format_output(response.get("result", response), "json" if ctx.obj["json"] else "plain"))
+    result = call_mcp_tool(
+        "show",
+        {
+            "workspace_root": str(workspace_root),
+            "symbol": symbol,
+            "context": context,
+            "head": head,
+            "output_format": output_format,
+        },
+    )
+    click.echo(result)
 
 
 @cli.command("declaration")
@@ -498,7 +417,20 @@ def _run_location_command(ctx, symbol: str, context: int, request_name: str):
 @with_symbol_help
 def declaration(ctx, symbol, context):
     """Find declaration of a symbol."""
-    _run_location_command(ctx, symbol, context, "declaration")
+    config = load_config()
+    workspace_root = get_workspace_root_for_cwd(config)
+    output_format = "json" if ctx.obj["json"] else "plain"
+
+    result = call_mcp_tool(
+        "declaration",
+        {
+            "workspace_root": str(workspace_root),
+            "symbol": symbol,
+            "context": context,
+            "output_format": output_format,
+        },
+    )
+    click.echo(result)
 
 
 @cli.command("ref")
@@ -508,14 +440,27 @@ def declaration(ctx, symbol, context):
 @with_symbol_help
 def ref(ctx, symbol, context):
     """Find all references to a symbol.
-    
+
     \b
     Examples:
       lspcmd ref UserRepository
       lspcmd ref UserRepository.add_user
       lspcmd ref "*.py:validate_email"
     """
-    _run_location_command(ctx, symbol, context, "references")
+    config = load_config()
+    workspace_root = get_workspace_root_for_cwd(config)
+    output_format = "json" if ctx.obj["json"] else "plain"
+
+    result = call_mcp_tool(
+        "ref",
+        {
+            "workspace_root": str(workspace_root),
+            "symbol": symbol,
+            "context": context,
+            "output_format": output_format,
+        },
+    )
+    click.echo(result)
 
 
 @cli.command("implementations")
@@ -525,13 +470,26 @@ def ref(ctx, symbol, context):
 @with_symbol_help
 def implementations(ctx, symbol, context):
     """Find implementations of an interface or abstract method.
-    
+
     \b
     Examples:
       lspcmd implementations Storage
       lspcmd implementations Storage.save
     """
-    _run_location_command(ctx, symbol, context, "implementations")
+    config = load_config()
+    workspace_root = get_workspace_root_for_cwd(config)
+    output_format = "json" if ctx.obj["json"] else "plain"
+
+    result = call_mcp_tool(
+        "implementations",
+        {
+            "workspace_root": str(workspace_root),
+            "symbol": symbol,
+            "context": context,
+            "output_format": output_format,
+        },
+    )
+    click.echo(result)
 
 
 @cli.command("subtypes")
@@ -541,11 +499,24 @@ def implementations(ctx, symbol, context):
 @with_symbol_help
 def subtypes(ctx, symbol, context):
     """Find direct subtypes of a type.
-    
+
     Returns types that directly extend/implement the given type.
     Use 'implementations' to find all implementations transitively.
     """
-    _run_location_command(ctx, symbol, context, "subtypes")
+    config = load_config()
+    workspace_root = get_workspace_root_for_cwd(config)
+    output_format = "json" if ctx.obj["json"] else "plain"
+
+    result = call_mcp_tool(
+        "subtypes",
+        {
+            "workspace_root": str(workspace_root),
+            "symbol": symbol,
+            "context": context,
+            "output_format": output_format,
+        },
+    )
+    click.echo(result)
 
 
 @cli.command("supertypes")
@@ -555,61 +526,75 @@ def subtypes(ctx, symbol, context):
 @with_symbol_help
 def supertypes(ctx, symbol, context):
     """Find direct supertypes of a type.
-    
+
     Returns types that the given type directly extends/implements.
     """
-    _run_location_command(ctx, symbol, context, "supertypes")
+    config = load_config()
+    workspace_root = get_workspace_root_for_cwd(config)
+    output_format = "json" if ctx.obj["json"] else "plain"
+
+    result = call_mcp_tool(
+        "supertypes",
+        {
+            "workspace_root": str(workspace_root),
+            "symbol": symbol,
+            "context": context,
+            "output_format": output_format,
+        },
+    )
+    click.echo(result)
 
 
 @cli.command("diagnostics")
 @click.argument("path", type=click.Path(exists=True), required=False)
-@click.option("-s", "--severity", default=None, 
-              type=click.Choice(["error", "warning", "info", "hint"]),
-              help="Filter by minimum severity level")
+@click.option(
+    "-s",
+    "--severity",
+    default=None,
+    type=click.Choice(["error", "warning", "info", "hint"]),
+    help="Filter by minimum severity level",
+)
 @click.pass_context
 def diagnostics(ctx, path, severity):
     """Show diagnostics for a file or workspace.
-    
+
     If PATH is provided, shows diagnostics for that file.
     If PATH is omitted, shows diagnostics for all files in the workspace.
-    
+
     Note: Some language servers (e.g. typescript-language-server) push
     diagnostics asynchronously. After a workspace restart or on first run,
     diagnostics may take a few seconds to become fully available.
-    
+
     Examples:
-    
+
       lspcmd diagnostics                       # all files in workspace
-    
+
       lspcmd diagnostics src/main.py           # single file
-    
+
       lspcmd diagnostics -s error              # errors only
-    
+
       lspcmd --json diagnostics                # JSON output
     """
     config = load_config()
-    
-    if path:
-        path = Path(path).resolve()
-        workspace_root = get_workspace_root_for_path(path, config)
-        response = run_request("diagnostics", {
-            "path": str(path),
-            "workspace_root": str(workspace_root),
-        })
-        result = response.get("result", [])
-    else:
-        workspace_root = get_workspace_root_for_cwd(config)
-        response = run_request("workspace-diagnostics", {
-            "workspace_root": str(workspace_root),
-        })
-        result = response.get("result", [])
-    
-    if severity:
-        severity_order = {"error": 0, "warning": 1, "info": 2, "hint": 3}
-        min_level = severity_order[severity]
-        result = [d for d in result if severity_order.get(d.get("severity", "error"), 0) <= min_level]
+    output_format = "json" if ctx.obj["json"] else "plain"
 
-    click.echo(format_output(result, "json" if ctx.obj["json"] else "plain"))
+    if path:
+        path = str(Path(path).resolve())
+        workspace_root = get_workspace_root_for_path(Path(path), config)
+    else:
+        path = None
+        workspace_root = get_workspace_root_for_cwd(config)
+
+    result = call_mcp_tool(
+        "diagnostics",
+        {
+            "workspace_root": str(workspace_root),
+            "path": path,
+            "severity": severity,
+            "output_format": output_format,
+        },
+    )
+    click.echo(result)
 
 
 @cli.command("format")
@@ -620,13 +605,17 @@ def format_buffer(ctx, path):
     path = Path(path).resolve()
     config = load_config()
     workspace_root = get_workspace_root_for_path(path, config)
+    output_format = "json" if ctx.obj["json"] else "plain"
 
-    response = run_request("format", {
-        "path": str(path),
-        "workspace_root": str(workspace_root),
-    })
-
-    click.echo(format_output(response.get("result", response), "json" if ctx.obj["json"] else "plain"))
+    result = call_mcp_tool(
+        "format_file",
+        {
+            "workspace_root": str(workspace_root),
+            "path": str(path),
+            "output_format": output_format,
+        },
+    )
+    click.echo(result)
 
 
 @cli.command("organize-imports")
@@ -637,13 +626,17 @@ def organize_imports(ctx, path):
     path = Path(path).resolve()
     config = load_config()
     workspace_root = get_workspace_root_for_path(path, config)
+    output_format = "json" if ctx.obj["json"] else "plain"
 
-    response = run_request("organize-imports", {
-        "path": str(path),
-        "workspace_root": str(workspace_root),
-    })
-
-    click.echo(format_output(response.get("result", response), "json" if ctx.obj["json"] else "plain"))
+    result = call_mcp_tool(
+        "organize_imports",
+        {
+            "workspace_root": str(workspace_root),
+            "path": str(path),
+            "output_format": output_format,
+        },
+    )
+    click.echo(result)
 
 
 @cli.command("rename")
@@ -653,7 +646,7 @@ def organize_imports(ctx, path):
 @with_symbol_help
 def rename(ctx, symbol, new_name):
     """Rename a symbol across the workspace.
-    
+
     \b
     Examples:
       lspcmd rename old_function new_function
@@ -662,17 +655,18 @@ def rename(ctx, symbol, new_name):
     """
     config = load_config()
     workspace_root = get_workspace_root_for_cwd(config)
-    resolved = resolve_symbol(symbol, workspace_root)
+    output_format = "json" if ctx.obj["json"] else "plain"
 
-    response = run_request("rename", {
-        "path": str(resolved.path),
-        "workspace_root": str(workspace_root),
-        "line": resolved.line,
-        "column": resolved.column,
-        "new_name": new_name,
-    })
-
-    click.echo(format_output(response.get("result", response), "json" if ctx.obj["json"] else "plain"))
+    result = call_mcp_tool(
+        "rename",
+        {
+            "workspace_root": str(workspace_root),
+            "symbol": symbol,
+            "new_name": new_name,
+            "output_format": output_format,
+        },
+    )
+    click.echo(result)
 
 
 @cli.command("move-file")
@@ -681,40 +675,66 @@ def rename(ctx, symbol, new_name):
 @click.pass_context
 def move_file(ctx, old_path, new_path):
     """Move/rename a file and update all imports.
-    
+
     Moves OLD_PATH to NEW_PATH and asks the language server to update
     all import statements across the workspace.
-    
+
     This uses the LSP workspace/willRenameFiles request, which is supported
     by language servers like typescript-language-server, rust-analyzer, and
     metals (Scala). Servers that don't support this will just move the file
     without updating imports.
-    
+
     Examples:
-    
+
       lspcmd move-file src/user.ts src/models/user.ts
-    
+
       lspcmd move-file lib/utils.rs lib/helpers.rs
     """
     old_path = Path(old_path).resolve()
     new_path = Path(new_path).resolve()
     config = load_config()
     workspace_root = get_workspace_root_for_path(old_path, config)
+    output_format = "json" if ctx.obj["json"] else "plain"
 
-    response = run_request("move-file", {
-        "old_path": str(old_path),
-        "new_path": str(new_path),
-        "workspace_root": str(workspace_root),
-    })
-
-    click.echo(format_output(response.get("result", response), "json" if ctx.obj["json"] else "plain"))
+    result = call_mcp_tool(
+        "move_file",
+        {
+            "workspace_root": str(workspace_root),
+            "old_path": str(old_path),
+            "new_path": str(new_path),
+            "output_format": output_format,
+        },
+    )
+    click.echo(result)
 
 
 VALID_SYMBOL_KINDS = {
-    "file", "module", "namespace", "package", "class", "method", "property",
-    "field", "constructor", "enum", "interface", "function", "variable",
-    "constant", "string", "number", "boolean", "array", "object", "key",
-    "null", "enummember", "struct", "event", "operator", "typeparameter",
+    "file",
+    "module",
+    "namespace",
+    "package",
+    "class",
+    "method",
+    "property",
+    "field",
+    "constructor",
+    "enum",
+    "interface",
+    "function",
+    "variable",
+    "constant",
+    "string",
+    "number",
+    "boolean",
+    "array",
+    "object",
+    "key",
+    "null",
+    "enummember",
+    "struct",
+    "event",
+    "operator",
+    "typeparameter",
 }
 
 
@@ -746,124 +766,145 @@ KIND_HELP = (
 @click.argument("pattern")
 @click.argument("path", required=False)
 @click.option("-k", "--kind", default="", help=KIND_HELP)
-@click.option("-x", "--exclude", multiple=True, help="Exclude files matching glob pattern or directory (repeatable)")
+@click.option(
+    "-x",
+    "--exclude",
+    multiple=True,
+    help="Exclude files matching glob pattern or directory (repeatable)",
+)
 @click.option("-d", "--docs", is_flag=True, help="Include documentation for each symbol")
 @click.option("-C", "--case-sensitive", is_flag=True, help="Case-sensitive pattern matching")
 @click.pass_context
 def grep(ctx, pattern, path, kind, exclude, docs, case_sensitive):
     """Search for symbols matching a regex pattern.
-    
+
     PATTERN is a regex matched against symbol names (case-insensitive by default).
-    
+
     PATH supports wildcards. Simple patterns like '*.go' search recursively.
     Directories are automatically expanded to include all files recursively.
-    
+
     Examples:
-    
+
       lspcmd grep "Test.*" "*.go" -k function
-    
+
       lspcmd grep "^User" -k class,struct
-    
+
       lspcmd grep "Handler$" internal -d  # search internal/ recursively
-    
+
       lspcmd grep "URL" -C  # case-sensitive
-    
+
       lspcmd grep ".*" "*.go" -x tests -x vendor  # exclude multiple directories
     """
     if " " in pattern:
         click.echo(
             f"Warning: Pattern contains a space. lspcmd grep searches symbol names, "
             f"not file contents. Use ripgrep or grep for text search.",
-            err=True
+            err=True,
         )
     config = load_config()
     kinds = parse_kinds(kind)
     exclude_patterns = list(exclude)
+    output_format = "json" if ctx.obj["json"] else "plain"
 
     if path:
         files = expand_path_pattern(path)
         if not files:
-            click.echo(format_output([], "json" if ctx.obj["json"] else "plain"))
+            click.echo("No results")
             return
         workspace_root = get_workspace_root_for_path(files[0], config)
+        paths = [str(f) for f in files]
     else:
-        files = None
+        paths = None
         workspace_root = get_workspace_root_for_cwd(config)
 
-    response = run_request("grep", {
-        "workspace_root": str(workspace_root),
-        "pattern": pattern,
-        "kinds": kinds,
-        "case_sensitive": case_sensitive,
-        "include_docs": docs,
-        "paths": [str(f) for f in files] if files else None,
-        "exclude_patterns": exclude_patterns,
-    })
-
-    click.echo(format_output(response.get("result", []), "json" if ctx.obj["json"] else "plain"))
+    result = call_mcp_tool(
+        "grep",
+        {
+            "workspace_root": str(workspace_root),
+            "pattern": pattern,
+            "kinds": kinds,
+            "case_sensitive": case_sensitive,
+            "include_docs": docs,
+            "paths": paths,
+            "exclude_patterns": exclude_patterns,
+            "output_format": output_format,
+        },
+    )
+    click.echo(result)
 
 
 @cli.command("tree")
-@click.option("-x", "--exclude", multiple=True, help="Exclude files matching glob pattern or directory (repeatable)")
+@click.option(
+    "-x",
+    "--exclude",
+    multiple=True,
+    help="Exclude files matching glob pattern or directory (repeatable)",
+)
 @click.pass_context
 def tree(ctx, exclude):
     """Show source file tree with file sizes.
-    
+
     Only includes files that have an associated language server
     (i.e., source files the LSP understands).
-    
+
     Examples:
-    
+
       lspcmd tree                       # current workspace
-    
+
       lspcmd tree -x tests -x vendor    # exclude directories
-    
+
       lspcmd --json tree                # JSON output
     """
     config = load_config()
     workspace_root = get_workspace_root_for_cwd(config)
-    
-    response = run_request("tree", {
-        "workspace_root": str(workspace_root),
-        "exclude_patterns": list(exclude),
-    })
-    
-    click.echo(format_output(response.get("result", response), "json" if ctx.obj["json"] else "plain"))
+    output_format = "json" if ctx.obj["json"] else "plain"
+
+    result = call_mcp_tool(
+        "tree",
+        {
+            "workspace_root": str(workspace_root),
+            "exclude_patterns": list(exclude),
+            "output_format": output_format,
+        },
+    )
+    click.echo(result)
 
 
 @cli.command("raw-lsp-request")
 @click.argument("method")
 @click.argument("params", required=False)
-@click.option("-l", "--language", default="python", help="Language server to use (python, go, typescript, etc.)")
+@click.option(
+    "-l", "--language", default="python", help="Language server to use (python, go, typescript, etc.)"
+)
 @click.pass_context
 def raw_lsp_request(ctx, method, params, language):
     """Send a raw LSP request (for debugging).
-    
+
     METHOD is the LSP method (e.g. textDocument/documentSymbol).
     PARAMS is optional JSON parameters for the request.
-    
+
     Examples:
-    
+
       lspcmd raw-lsp-request textDocument/documentSymbol \\
         '{"textDocument": {"uri": "file:///path/to/file.py"}}'
-    
+
       lspcmd raw-lsp-request workspace/symbol '{"query": ""}' -l go
     """
     config = load_config()
     workspace_root = get_workspace_root_for_cwd(config)
-    
-    lsp_params = {}
-    if params:
-        lsp_params = json.loads(params)
-    
-    response = run_request("raw-lsp-request", {
-        "workspace_root": str(workspace_root),
-        "method": method,
-        "params": lsp_params,
-        "language": language,
-    })
-    
-    click.echo(json.dumps(response.get("result", response), indent=2))
+
+    lsp_params = params or "{}"
+
+    result = call_mcp_tool(
+        "raw_lsp_request",
+        {
+            "workspace_root": str(workspace_root),
+            "method": method,
+            "params": lsp_params,
+            "language": language,
+        },
+    )
+    click.echo(result)
 
 
 if __name__ == "__main__":
