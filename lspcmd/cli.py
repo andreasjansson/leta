@@ -18,6 +18,7 @@ from .utils.config import (
     load_config,
     detect_workspace_root,
     get_known_workspace_root,
+    get_best_workspace_root,
     add_workspace_root,
 )
 
