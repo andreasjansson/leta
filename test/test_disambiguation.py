@@ -208,7 +208,7 @@ class TestAllRefsUnique:
     """Test that all generated refs for a match set are unique."""
 
     def setup_method(self):
-        self.server = MCPServer.__new__(MCPServer)
+        self.server = MCPDaemonServer.__new__(MCPDaemonServer)
 
     def _get_all_refs(self, matches, target_name):
         """Generate refs for all matches and return them."""
