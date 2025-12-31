@@ -1487,6 +1487,8 @@ class DaemonServer:
                 "name": sym["name"],
                 "kind": sym.get("kind"),
                 "container": sym.get("container"),
+                "range_start_line": sym.get("range_start_line"),
+                "range_end_line": sym.get("range_end_line"),
             }
         
         matches_info = []
