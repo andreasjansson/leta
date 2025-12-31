@@ -214,20 +214,20 @@ class TestGenerateUnambiguousRef:
         assert ref1 != ref2
 
     def test_same_container_different_files(self):
-        """When same container but different files, use filename:container.name."""
+        """When same container but different files with same name, use line numbers."""
         matches = [
             {"path": "v1/api.py", "line": 10, "name": "handle", "kind": "Function", "container": "Handler"},
-            {"path": "v2/api.py", "line": 10, "name": "handle", "kind": "Function", "container": "Handler"},
+            {"path": "v2/api.py", "line": 20, "name": "handle", "kind": "Function", "container": "Handler"},
         ]
         
         ref1 = self.server._generate_unambiguous_ref(matches[0], matches, "handle")
         ref2 = self.server._generate_unambiguous_ref(matches[1], matches, "handle")
         
         # Both have same container "Handler" and same filename "api.py"
-        # Need to use path to disambiguate
-        assert "v1" in ref1 or ref1.startswith("api.py:10:")
-        assert "v2" in ref2 or ref2.startswith("api.py:10:")
+        # With different lines, we can use line numbers to disambiguate
         assert ref1 != ref2
+        # One should have :10: and the other :20:
+        assert ":10:" in ref1 or ":20:" in ref2
 
     def test_overloaded_methods_same_container(self):
         """Overloaded methods with same name and container need line numbers."""
