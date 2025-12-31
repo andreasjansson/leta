@@ -1444,7 +1444,7 @@ Renamed in 1 file(s):
                 "new_path": str(workspace / "helpers.go"),
                 "workspace_root": str(workspace),
             })
-        assert "move-file is not supported by gopls" in str(exc_info.value)
+        assert str(exc_info.value) == "move-file is not supported by gopls"
         
         # Verify file was NOT moved
         assert (workspace / "utils.go").exists()
