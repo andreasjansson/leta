@@ -888,6 +888,54 @@ def tree(ctx, exclude):
     click.echo(result)
 
 
+@cli.command("replace-function")
+@click.argument("symbol")
+@click.option(
+    "--no-check-signature",
+    is_flag=True,
+    help="Skip signature validation (allow changing function signature)",
+)
+@click.pass_context
+@with_symbol_help
+def replace_function(ctx, symbol, no_check_signature):
+    """Replace a function or method body with new contents from stdin.
+
+    Reads the new function/method definition from stdin and replaces
+    the existing function with it. By default, validates that the
+    function signature matches the existing one.
+
+    \b
+    Examples:
+      echo 'def greet(): return "hi"' | lspcmd replace-function greet
+
+      cat new_impl.py | lspcmd replace-function MyClass.method
+
+      echo 'func foo() {}' | lspcmd replace-function foo --no-check-signature
+    """
+    if sys.stdin.isatty():
+        raise click.ClickException("No input provided. Pipe function contents to stdin.")
+
+    new_contents = sys.stdin.read()
+    if not new_contents.strip():
+        raise click.ClickException("Empty input. Provide the new function contents.")
+
+    config = load_config()
+    workspace_root = get_workspace_root_for_cwd(config)
+    output_format = "json" if ctx.obj["json"] else "plain"
+
+    result = call_mcp_tool(
+        "replace_function",
+        {
+            "workspace_root": str(workspace_root),
+            "symbol": symbol,
+            "new_contents": new_contents,
+            "check_signature": not no_check_signature,
+            "output_format": output_format,
+        },
+    )
+    click.echo(result)
+
+
 @cli.command("raw-lsp-request")
 @click.argument("method")
 @click.argument("params", required=False)
