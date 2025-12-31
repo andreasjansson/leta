@@ -15,7 +15,7 @@ from pathlib import Path
 
 import pytest
 
-from lspcmd.cli import call_mcp_tool, ensure_daemon_running
+from lspcmd.cli import call_mcp_tool, ensure_daemon_running, strip_mcp_error_prefix
 from lspcmd.utils.config import add_workspace_root, load_config
 
 from .conftest import (
