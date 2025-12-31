@@ -355,6 +355,7 @@ written to `~/.cache/lspcmd/mcp.port` when the daemon starts.
 | `diagnostics` | Show diagnostics for a file or workspace |
 | `rename` | Rename a symbol across the workspace |
 | `move_file` | Move/rename a file and update imports |
+| `replace_function` | Replace a function/method body with new contents |
 | `format_file` | Format a file |
 | `organize_imports` | Organize imports in a file |
 | `tree` | Show source file tree with sizes |
