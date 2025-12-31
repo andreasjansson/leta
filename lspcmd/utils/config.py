@@ -105,6 +105,10 @@ WORKSPACE_MARKERS = [
 
 
 def detect_workspace_root(path: Path) -> Path | None:
+    """Detect workspace root by walking up from path and finding workspace markers.
+    
+    Returns the deepest (closest to path) directory containing a workspace marker.
+    """
     path = path.resolve()
     if path.is_file():
         path = path.parent
@@ -120,6 +124,10 @@ def detect_workspace_root(path: Path) -> Path | None:
 
 
 def get_known_workspace_root(path: Path, config: dict) -> Path | None:
+    """Get the deepest known workspace root that contains path.
+    
+    If path is in multiple known workspaces (nested), returns the deepest one.
+    """
     path = path.resolve()
     roots = config.get("workspaces", {}).get("roots", [])
 
@@ -138,6 +146,30 @@ def get_known_workspace_root(path: Path, config: dict) -> Path | None:
             continue
 
     return best_root
+
+
+def get_best_workspace_root(path: Path, config: dict) -> Path | None:
+    """Get the best workspace root for a path, preferring deepest match.
+    
+    Priority:
+    1. Deepest known workspace root containing path
+    2. Detected workspace root (via markers like .git, go.mod, etc.)
+    3. None if no workspace found
+    
+    When both detected and known roots exist, prefers the deeper one.
+    """
+    path = path.resolve()
+    
+    detected = detect_workspace_root(path)
+    known = get_known_workspace_root(path, config)
+    
+    if detected and known:
+        # Prefer the deeper (more specific) workspace
+        if len(detected.parts) >= len(known.parts):
+            return detected
+        return known
+    
+    return detected or known
 
 
 def add_workspace_root(root: Path, config: dict) -> None:
