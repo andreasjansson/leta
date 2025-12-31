@@ -6,92 +6,11 @@ from pathlib import Path
 import pytest
 from click.testing import CliRunner
 
-from lspcmd.cli import cli, parse_position
+from lspcmd.cli import cli
 from lspcmd.daemon.pidfile import is_daemon_running
 from lspcmd.utils.config import get_pid_path, get_socket_path, add_workspace_root, load_config
 
 from .conftest import requires_basedpyright, requires_gopls
-
-
-class TestParsePosition:
-    def test_valid_position(self):
-        line, col = parse_position("10,5")
-        assert line == 10
-        assert col == 5
-
-    def test_invalid_format(self):
-        with pytest.raises(Exception):
-            parse_position("10")
-
-    def test_first_line(self):
-        line, col = parse_position("1,0")
-        assert line == 1
-        assert col == 0
-
-    def test_regex_requires_file_path(self):
-        with pytest.raises(Exception) as exc_info:
-            parse_position("def foo")
-        assert "without a file path" in str(exc_info.value)
-
-    def test_line_regex_format(self, python_project):
-        main_py = python_project / "main.py"
-        # Line 27 has "class User:"
-        line, col = parse_position("27:User", main_py)
-        assert line == 27
-        assert col == 6
-
-    def test_regex_only_format(self, python_project):
-        main_py = python_project / "main.py"
-        # "class User:" is on line 27
-        line, col = parse_position("class User:", main_py)
-        assert line == 27
-        assert col == 0
-
-    def test_regex_multiple_matches_error(self, python_project):
-        main_py = python_project / "main.py"
-        with pytest.raises(Exception) as exc_info:
-            parse_position("self", main_py)
-        assert "matches" in str(exc_info.value)
-
-    def test_regex_not_found_error(self, python_project):
-        main_py = python_project / "main.py"
-        with pytest.raises(Exception) as exc_info:
-            parse_position("xyz_nonexistent", main_py)
-        assert "not found" in str(exc_info.value)
-
-    def test_line_regex_not_found_on_line(self, python_project):
-        main_py = python_project / "main.py"
-        with pytest.raises(Exception) as exc_info:
-            parse_position("1:User", main_py)
-        assert "not found on line 1" in str(exc_info.value)
-
-    def test_regex_with_special_chars(self, python_project):
-        main_py = python_project / "main.py"
-        # Match "def __init__(self)" - only one in MemoryStorage at line 51
-        line, col = parse_position("51:def __init__", main_py)
-        assert line == 51
-        assert col == 4
-
-    def test_regex_finds_correct_column(self, python_project):
-        main_py = python_project / "main.py"
-        # Line 35 is "    name: str"
-        line, col = parse_position("35:name", main_py)
-        assert line == 35
-        assert col == 4
-
-    def test_line_column_still_works_with_file(self, python_project):
-        main_py = python_project / "main.py"
-        line, col = parse_position("10,5", main_py)
-        assert line == 10
-        assert col == 5
-
-    def test_ambiguous_match_shows_locations(self, python_project):
-        main_py = python_project / "main.py"
-        with pytest.raises(Exception) as exc_info:
-            parse_position("def", main_py)
-        error_msg = str(exc_info.value)
-        assert "matches" in error_msg
-        assert "line" in error_msg
 
 
 class TestCliCommands:
@@ -114,7 +33,7 @@ class TestCliCommands:
         runner = CliRunner()
         result = runner.invoke(cli, ["definition", "--help"])
         assert result.exit_code == 0
-        assert "LINE,COLUMN" in result.output
+        assert "SYMBOL" in result.output
         assert "--body" in result.output
 
     def test_workspace_init(self, python_project, isolated_config):
@@ -155,22 +74,74 @@ class TestCliWithDaemon:
         result = runner.invoke(cli, ["daemon", "info"])
         assert result.exit_code == 0
 
-    def test_definition(self, python_project, isolated_config):
-        main_py = python_project / "main.py"
+    def test_definition_by_symbol(self, python_project, isolated_config):
         config = load_config()
         add_workspace_root(python_project, config)
 
         runner = CliRunner()
-        result = runner.invoke(cli, ["definition", str(main_py), "36,11"])
+        import os
+        with runner.isolated_filesystem():
+            os.chdir(python_project)
+            result = runner.invoke(cli, ["definition", "User"])
         assert result.exit_code == 0
+        assert "main.py" in result.output
+
+    def test_definition_with_container(self, python_project, isolated_config):
+        config = load_config()
+        add_workspace_root(python_project, config)
+
+        runner = CliRunner()
+        import os
+        with runner.isolated_filesystem():
+            os.chdir(python_project)
+            result = runner.invoke(cli, ["definition", "MemoryStorage.save"])
+        assert result.exit_code == 0
+        assert "main.py" in result.output
+
+    def test_definition_with_path_filter(self, python_project, isolated_config):
+        config = load_config()
+        add_workspace_root(python_project, config)
+
+        runner = CliRunner()
+        import os
+        with runner.isolated_filesystem():
+            os.chdir(python_project)
+            result = runner.invoke(cli, ["definition", "main.py:User"])
+        assert result.exit_code == 0
+        assert "main.py" in result.output
+
+    def test_definition_body(self, python_project, isolated_config):
+        config = load_config()
+        add_workspace_root(python_project, config)
+
+        runner = CliRunner()
+        import os
+        with runner.isolated_filesystem():
+            os.chdir(python_project)
+            result = runner.invoke(cli, ["definition", "User", "--body"])
+        assert result.exit_code == 0
+        assert "class User" in result.output
 
     def test_describe(self, python_project, isolated_config):
-        main_py = python_project / "main.py"
         config = load_config()
         add_workspace_root(python_project, config)
 
         runner = CliRunner()
-        result = runner.invoke(cli, ["describe", str(main_py), "6,6"])
+        import os
+        with runner.isolated_filesystem():
+            os.chdir(python_project)
+            result = runner.invoke(cli, ["describe", "User"])
+        assert result.exit_code == 0
+
+    def test_references(self, python_project, isolated_config):
+        config = load_config()
+        add_workspace_root(python_project, config)
+
+        runner = CliRunner()
+        import os
+        with runner.isolated_filesystem():
+            os.chdir(python_project)
+            result = runner.invoke(cli, ["references", "User"])
         assert result.exit_code == 0
 
     def test_grep_with_file(self, python_project, isolated_config):
@@ -225,25 +196,28 @@ class TestCliWithDaemon:
         
         basedpyright now supports implementations for Protocol classes.
         """
-        main_py = python_project / "main.py"
         config = load_config()
         add_workspace_root(python_project, config)
 
         runner = CliRunner()
-        # Line 14 is "class StorageProtocol(Protocol):" - should find implementations
-        result = runner.invoke(cli, ["implementations", str(main_py), "14,6"])
+        import os
+        with runner.isolated_filesystem():
+            os.chdir(python_project)
+            result = runner.invoke(cli, ["implementations", "StorageProtocol"])
         assert result.exit_code == 0
         # Should find MemoryStorage and FileStorage as implementations
         assert "main.py" in result.output
 
     def test_subtypes_not_supported(self, python_project, isolated_config):
         """Test that subtypes returns a helpful error for Python."""
-        main_py = python_project / "main.py"
         config = load_config()
         add_workspace_root(python_project, config)
 
         runner = CliRunner()
-        result = runner.invoke(cli, ["subtypes", str(main_py), "6,6"])
+        import os
+        with runner.isolated_filesystem():
+            os.chdir(python_project)
+            result = runner.invoke(cli, ["subtypes", "User"])
         # Should fail with a "not supported" error
         assert result.exit_code == 1
         assert "not supported" in result.output.lower() or "method not found" in result.output.lower()
@@ -273,8 +247,8 @@ class TestCliWithDaemon:
 
         runner = CliRunner()
         # Run from the python_project directory
+        import os
         with runner.isolated_filesystem():
-            import os
             os.chdir(python_project)
             result = runner.invoke(cli, ["diagnostics"])
         assert result.exit_code == 0, f"Failed with: {result.output}"
@@ -296,6 +270,19 @@ class TestCliWithDaemon:
         # Should have errors but filter out warnings
         assert "error" in result.output.lower()
 
+    def test_rename(self, python_project, isolated_config):
+        """Test rename symbol."""
+        config = load_config()
+        add_workspace_root(python_project, config)
+
+        runner = CliRunner()
+        import os
+        with runner.isolated_filesystem():
+            os.chdir(python_project)
+            # Rename a function
+            result = runner.invoke(cli, ["rename", "create_sample_user", "make_sample_user"])
+        assert result.exit_code == 0
+
 
 class TestCliWithGopls:
     @pytest.fixture(autouse=True)
@@ -311,12 +298,14 @@ class TestCliWithGopls:
 
     def test_implementations(self, go_project, isolated_config):
         """Test that implementations works for Go interfaces."""
-        main_go = go_project / "main.go"
         config = load_config()
         add_workspace_root(go_project, config)
 
         runner = CliRunner()
-        result = runner.invoke(cli, ["implementations", str(main_go), "31:Storage"])
+        import os
+        with runner.isolated_filesystem():
+            os.chdir(go_project)
+            result = runner.invoke(cli, ["implementations", "Storage"])
         assert result.exit_code == 0, f"Failed with: {result.output}"
         assert result.output == """\
 main.go:39
@@ -325,12 +314,14 @@ main.go:85
 
     def test_subtypes(self, go_project, isolated_config):
         """Test that subtypes works for Go interfaces."""
-        main_go = go_project / "main.go"
         config = load_config()
         add_workspace_root(go_project, config)
 
         runner = CliRunner()
-        result = runner.invoke(cli, ["subtypes", str(main_go), "31:Storage"])
+        import os
+        with runner.isolated_filesystem():
+            os.chdir(go_project)
+            result = runner.invoke(cli, ["subtypes", "Storage"])
         assert result.exit_code == 0, f"Failed with: {result.output}"
         # Order may vary, so sort
         assert sorted(result.output.strip().split("\n")) == sorted("""\
@@ -340,13 +331,41 @@ main.go:39 [Class] MemoryStorage (sample_project)
 
     def test_supertypes(self, go_project, isolated_config):
         """Test that supertypes works for Go structs."""
-        main_go = go_project / "main.go"
         config = load_config()
         add_workspace_root(go_project, config)
 
         runner = CliRunner()
-        result = runner.invoke(cli, ["supertypes", str(main_go), "39:MemoryStorage"])
+        import os
+        with runner.isolated_filesystem():
+            os.chdir(go_project)
+            result = runner.invoke(cli, ["supertypes", "MemoryStorage"])
         assert result.exit_code == 0, f"Failed with: {result.output}"
         assert result.output == """\
 main.go:31 [Interface] Storage (sample_project)
 """
+
+    def test_definition_by_symbol(self, go_project, isolated_config):
+        """Test definition works with symbol syntax in Go."""
+        config = load_config()
+        add_workspace_root(go_project, config)
+
+        runner = CliRunner()
+        import os
+        with runner.isolated_filesystem():
+            os.chdir(go_project)
+            result = runner.invoke(cli, ["definition", "User"])
+        assert result.exit_code == 0
+        assert "main.go" in result.output
+
+    def test_definition_with_container(self, go_project, isolated_config):
+        """Test definition with qualified name in Go."""
+        config = load_config()
+        add_workspace_root(go_project, config)
+
+        runner = CliRunner()
+        import os
+        with runner.isolated_filesystem():
+            os.chdir(go_project)
+            result = runner.invoke(cli, ["definition", "MemoryStorage.Save"])
+        assert result.exit_code == 0
+        assert "main.go" in result.output
