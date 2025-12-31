@@ -1900,6 +1900,13 @@ class MCPDaemonServer:
             return f"fn {name}{detail[2:]}"
         return f"{name} {detail}"
 
+    def _wrap_contents_for_language(self, contents: str, suffix: str) -> str:
+        """Wrap function contents with necessary boilerplate for LSP to parse."""
+        if suffix == ".go":
+            if "package " not in contents:
+                return f"package _lspcmd_temp\n\n{contents}"
+        return contents
+
     def _find_first_function_symbol(self, symbols: list) -> dict | None:
         for sym in symbols:
             kind = sym.get("kind")
