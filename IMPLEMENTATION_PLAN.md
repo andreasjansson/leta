@@ -237,10 +237,10 @@ lspcmd definition src/main.py "class UserRepository:"
 lspcmd definition src/main.py "def __init__\\(self\\)"
 
 # Print full definition body
-lspcmd definition src/main.py "class UserRepository:" --body
+lspcmd def src/main.py "class UserRepository:"
 
 # Print full definition body with 2 lines of context
-lspcmd definition src/main.py "class UserRepository:" --body -n 2
+lspcmd def src/main.py "class UserRepository:" -n 2
 ```
 
 If a regex matches multiple times, you'll get a helpful error showing all locations:
@@ -257,7 +257,7 @@ Use LINE:REGEX or LINE,COLUMN to specify which one.
 
 All commands support `--json` flag for JSON output:
 ```bash
-lspcmd --json definition src/main.py 42,10
+lspcmd --json def UserRepository
 ```
 
 ## Daemon Methods
@@ -266,13 +266,12 @@ The CLI communicates with the daemon via JSON over Unix socket. Each CLI command
 
 | CLI Command | Daemon Method |
 |-------------|---------------|
-| `definition` | `definition` |
+| `def` | `definition` |
 | `declaration` | `declaration` |
-| `references` | `references` |
+| `ref` | `references` |
 | `implementations` | `implementations` |
 | `subtypes` | `subtypes` |
 | `supertypes` | `supertypes` |
-| `describe` | `describe` |
 | `diagnostics` (single file) | `diagnostics` |
 | `diagnostics` (workspace) | `workspace-diagnostics` |
 | `grep` | `grep` |
