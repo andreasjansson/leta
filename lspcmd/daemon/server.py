@@ -1403,6 +1403,8 @@ class DaemonServer:
         
         if len(matches) == 1:
             sym = matches[0]
+            logger.info(f"resolve-symbol: found {sym['name']} at {sym['path']}:{sym['line']}:{sym.get('column', 0)}")
+            logger.info(f"resolve-symbol: full symbol data: {sym}")
             return {
                 "path": str(workspace_root / sym["path"]),
                 "line": sym["line"],
