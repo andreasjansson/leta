@@ -1160,7 +1160,7 @@ src/storage.rs:58 [Struct] FileStorage"""
         output = format_output(response["result"], "plain")
         assert output == """\
 src/user.rs:3 [Struct] User
-src/user.rs:43 [Struct] UserRepository"""
+src/user.rs:44 [Struct] UserRepository"""
 
     # =========================================================================
     # definition tests
