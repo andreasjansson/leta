@@ -275,7 +275,7 @@ for all matching symbols.
 
 `lspcmd tree` is a good starting point when starting work on a project.
 
-Use `lspcmd def SYMBOL` to print the full body of a symbol. Use
+Use `lspcmd show SYMBOL` to print the full body of a symbol. Use
 `lspcmd ref SYMBOL` to find all uses of a symbol. These two (and other)
 commands accept `--context N` for surrounding lines.
 
