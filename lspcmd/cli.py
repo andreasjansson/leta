@@ -72,7 +72,11 @@ def call_mcp_tool(tool_name: str, arguments: dict) -> str:
 
 async def _call_mcp_tool_async(mcp_url: str, tool_name: str, arguments: dict) -> str:
     """Async implementation of MCP tool call using Streamable HTTP."""
-    async with httpx.AsyncClient(timeout=120.0) as client:
+    headers = {
+        "Content-Type": "application/json",
+        "Accept": "application/json, text/event-stream",
+    }
+    async with httpx.AsyncClient(timeout=120.0, headers=headers) as client:
         # Initialize session
         init_response = await client.post(
             mcp_url,
@@ -88,6 +92,11 @@ async def _call_mcp_tool_async(mcp_url: str, tool_name: str, arguments: dict) ->
             },
         )
         init_response.raise_for_status()
+        
+        # Get session ID for subsequent requests
+        session_id = init_response.headers.get("mcp-session-id")
+        if session_id:
+            client.headers["mcp-session-id"] = session_id
 
         # Send initialized notification
         await client.post(
