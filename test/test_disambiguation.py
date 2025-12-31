@@ -26,8 +26,11 @@ class TestRoundTripConsistency:
     def _resolve_ref(self, ref: str, all_symbols: list[dict]) -> list[dict]:
         """Simulate resolving a ref against a symbol list.
         
-        This must match the logic in _handle_resolve_symbol.
+        This must match the logic in _handle_resolve_symbol, including
+        module name matching (main.f matches f in main.py).
         """
+        from pathlib import Path
+        
         path_filter = None
         line_filter = None
         symbol_path = ref
@@ -35,48 +38,58 @@ class TestRoundTripConsistency:
         colon_count = ref.count(":")
         if colon_count == 2:
             path_filter, line_str, symbol_path = ref.split(":", 2)
-            line_filter = int(line_str)
+            try:
+                line_filter = int(line_str)
+            except ValueError:
+                # It's file:Container.name format
+                symbol_path = f"{line_str}:{symbol_path}"
         elif colon_count == 1:
             path_filter, symbol_path = ref.split(":", 1)
+        
+        candidates = all_symbols
+        
+        # Apply path filter (filename match)
+        if path_filter:
+            candidates = [s for s in candidates if Path(s.get("path", "")).name == path_filter]
+        
+        # Apply line filter
+        if line_filter is not None:
+            candidates = [s for s in candidates if s.get("line") == line_filter]
         
         parts = symbol_path.split(".")
         target_name = parts[-1]
         
-        # Apply path filter
-        if path_filter:
-            from pathlib import Path
-            import fnmatch
-            def matches_path(rel_path: str) -> bool:
-                if fnmatch.fnmatch(rel_path, path_filter):
-                    return True
-                if fnmatch.fnmatch(rel_path, f"**/{path_filter}"):
-                    return True
-                if "/" not in path_filter:
-                    if fnmatch.fnmatch(Path(rel_path).name, path_filter):
-                        return True
-                return False
-            all_symbols = [s for s in all_symbols if matches_path(s.get("path", ""))]
-        
-        # Apply line filter
-        if line_filter is not None:
-            all_symbols = [s for s in all_symbols if s.get("line") == line_filter]
-        
         # Match by name and container
         if len(parts) == 1:
             # Simple name - match any symbol with that name
-            return [s for s in all_symbols 
+            return [s for s in candidates 
                     if self.server._normalize_symbol_name(s.get("name", "")) == target_name]
         else:
-            # Qualified name - container must match exactly
+            # Qualified name: Container.name
             container_str = ".".join(parts[:-1])
             matches = []
-            for sym in all_symbols:
+            for sym in candidates:
                 sym_name = self.server._normalize_symbol_name(sym.get("name", ""))
                 if sym_name != target_name:
                     continue
-                sym_container = self.server._get_effective_container(sym)
-                # Container must match exactly (not module name!)
-                if sym_container == container_str:
+                
+                sym_container = sym.get("container", "") or ""
+                sym_container_normalized = self.server._normalize_container(sym_container)
+                sym_path = sym.get("path", "")
+                module_name = self.server._get_module_name(sym_path)
+                full_container = f"{module_name}.{sym_container_normalized}" if sym_container_normalized else module_name
+                
+                # Match using same logic as _handle_resolve_symbol
+                if sym_container_normalized == container_str:
+                    matches.append(sym)
+                elif sym_container == container_str:
+                    matches.append(sym)
+                elif full_container == container_str:
+                    matches.append(sym)
+                elif full_container.endswith(f".{container_str}"):
+                    matches.append(sym)
+                elif len(parts) == 2 and parts[0] == module_name:
+                    # Module name matching: main.f matches f in main.py
                     matches.append(sym)
             return matches
 
