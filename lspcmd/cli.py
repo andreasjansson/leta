@@ -825,14 +825,24 @@ def organize_imports(ctx, path):
 @click.argument("new_name", required=False)
 @click.pass_context
 def rename(ctx, path_or_symbol, position_or_new_name, new_name):
-    f"""Rename symbol at position.
+    """Rename symbol at position.
     
     \b
     Usage:
       lspcmd rename PATH POSITION NEW_NAME  # traditional file+position
       lspcmd rename @Symbol NEW_NAME        # symbol lookup
     
-    {POSITION_HELP}
+    \b
+    POSITION formats:
+      LINE,COLUMN    e.g. 42,10
+      LINE:REGEX     e.g. 42:def foo
+      REGEX          search whole file for unique match
+    
+    \b
+    @Symbol formats:
+      @SymbolName          find a symbol by name
+      @Class.method        find method in Class
+      @path:Symbol         find Symbol in files matching path
     """
     config = load_config()
     
