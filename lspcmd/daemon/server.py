@@ -24,23 +24,31 @@ from ..lsp.types import (
 logger = logging.getLogger(__name__)
 
 HOVER_CACHE_SIZE = 50000
+SYMBOL_CACHE_SIZE = 10000
 
 
 class LRUCache:
     def __init__(self, maxsize: int):
         self.maxsize = maxsize
-        self.cache: dict[tuple, str] = {}
+        self.cache: dict[tuple, Any] = {}
         self.order: list[tuple] = []
     
     def __contains__(self, key: tuple) -> bool:
         return key in self.cache
     
-    def __getitem__(self, key: tuple) -> str:
+    def get(self, key: tuple, default: Any = None) -> Any:
+        if key not in self.cache:
+            return default
         self.order.remove(key)
         self.order.append(key)
         return self.cache[key]
     
-    def __setitem__(self, key: tuple, value: str) -> None:
+    def __getitem__(self, key: tuple) -> Any:
+        self.order.remove(key)
+        self.order.append(key)
+        return self.cache[key]
+    
+    def __setitem__(self, key: tuple, value: Any) -> None:
         if key in self.cache:
             self.order.remove(key)
         elif len(self.cache) >= self.maxsize:
@@ -56,6 +64,7 @@ class DaemonServer:
         self.server: asyncio.Server | None = None
         self._shutdown_event = asyncio.Event()
         self._hover_cache = LRUCache(HOVER_CACHE_SIZE)
+        self._symbol_cache = LRUCache(SYMBOL_CACHE_SIZE)
 
     async def start(self) -> None:
         self.session.config = load_config()
