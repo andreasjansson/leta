@@ -61,9 +61,15 @@ class TestCliWithDaemon:
     @pytest.fixture(autouse=True)
     def setup_teardown(self, isolated_config):
         requires_basedpyright()
-        yield
+        # Shutdown any existing daemon before test (might be from different config)
         pid_path = get_pid_path()
-
+        if is_daemon_running(pid_path):
+            runner = CliRunner()
+            runner.invoke(cli, ["daemon", "shutdown"])
+            time.sleep(0.5)
+        yield
+        # Shutdown daemon after test
+        pid_path = get_pid_path()
         if is_daemon_running(pid_path):
             runner = CliRunner()
             runner.invoke(cli, ["daemon", "shutdown"])
