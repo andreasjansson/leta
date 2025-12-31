@@ -266,7 +266,7 @@ The CLI communicates with the daemon via JSON over Unix socket. Each CLI command
 
 | CLI Command | Daemon Method |
 |-------------|---------------|
-| `def` | `definition` |
+| `show` | `definition` |
 | `declaration` | `declaration` |
 | `ref` | `references` |
 | `implementations` | `implementations` |
