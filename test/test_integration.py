@@ -1429,26 +1429,21 @@ Moved file and updated imports in 3 file(s):
             "symbol_path": "UserRepository",
         })
         result = response["result"]
-        assert "error" not in result, f"Unexpected error: {result.get('error')}"
-        assert "UserRepository" in result["name"]
+        assert result["name"] == "UserRepository"
+        assert result["kind"] == "Struct"
 
     def test_resolve_symbol_ambiguous_shows_container_refs(self, workspace):
-        """Test that ambiguous Rust symbols show module.name format."""
+        """Test that ambiguous Rust symbols show Type.method format."""
         os.chdir(workspace)
         response = self._run_request_with_retry("resolve-symbol", {
             "workspace_root": str(workspace),
             "symbol_path": "new",
         })
         result = response["result"]
-        assert "error" in result
-        assert "ambiguous" in result["error"]
-        matches = result.get("matches", [])
-        refs = [m.get("ref", "") for m in matches]
-        # Should use Container.name format where possible
-        for ref in refs:
-            parts = ref.split(":")
-            if len(parts) > 1:
-                assert not parts[1].isdigit(), f"Should not use line numbers in refs: {ref}"
+        assert result["error"] == "Symbol 'new' is ambiguous (4 matches)"
+        assert result["total_matches"] == 4
+        refs = [m["ref"] for m in result["matches"]]
+        assert refs == ["User.new", "UserRepository.new", "MemoryStorage.new", "FileStorage.new"]
 
     def test_resolve_symbol_impl_method(self, workspace):
         """Test resolving impl method with Type.method format."""
@@ -1458,8 +1453,9 @@ Moved file and updated imports in 3 file(s):
             "symbol_path": "MemoryStorage.new",
         })
         result = response["result"]
-        assert "error" not in result, f"Unexpected error: {result.get('error')}"
-        assert "new" in result["name"]
+        assert result["name"] == "new"
+        assert result["kind"] == "Function"
+        assert result["path"].endswith("storage.rs")
 
     def test_resolve_symbol_file_filter(self, workspace):
         """Test resolving with file filter."""
@@ -1469,8 +1465,8 @@ Moved file and updated imports in 3 file(s):
             "symbol_path": "storage.rs:Storage",
         })
         result = response["result"]
-        assert "error" not in result, f"Unexpected error: {result.get('error')}"
-        assert "storage.rs" in result["path"]
+        assert result["name"] == "Storage"
+        assert result["path"].endswith("storage.rs")
 
 
 # =============================================================================
