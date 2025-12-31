@@ -1150,31 +1150,21 @@ Renamed in 1 file(s):
             "symbol_path": "User",
         })
         result = response["result"]
-        assert "error" not in result, f"Unexpected error: {result.get('error')}"
         assert result["name"] == "User"
+        assert result["kind"] == "Struct"
 
     def test_resolve_symbol_ambiguous_shows_container_refs(self, workspace):
-        """Test that ambiguous Go methods show Type.method format (not path:line:name)."""
+        """Test that ambiguous Go methods show Type.method format."""
         os.chdir(workspace)
         response = run_request("resolve-symbol", {
             "workspace_root": str(workspace),
             "symbol_path": "Save",
         })
         result = response["result"]
-        assert "error" in result
-        assert "ambiguous" in result["error"]
-        matches = result.get("matches", [])
-        refs = [m.get("ref", "") for m in matches]
-        # Go methods should show Type.method format extracted from (*Type).method names
-        assert "Storage.Save" in refs
-        assert "MemoryStorage.Save" in refs
-        assert "FileStorage.Save" in refs
-        # Should NOT use path:line:name format
-        for ref in refs:
-            parts = ref.split(":")
-            if len(parts) > 1:
-                # If there's a colon, it should be file:Symbol, not file:line:Symbol
-                assert not parts[1].isdigit(), f"Should not use line numbers in refs: {ref}"
+        assert result["error"] == "Symbol 'Save' is ambiguous (3 matches)"
+        assert result["total_matches"] == 3
+        refs = [m["ref"] for m in result["matches"]]
+        assert refs == ["Storage.Save", "MemoryStorage.Save", "FileStorage.Save"]
 
     def test_resolve_symbol_go_method_qualified(self, workspace):
         """Test that 'MemoryStorage.Save' finds '(*MemoryStorage).Save'."""
@@ -1184,20 +1174,20 @@ Renamed in 1 file(s):
             "symbol_path": "MemoryStorage.Save",
         })
         result = response["result"]
-        assert "error" not in result, f"Unexpected error: {result.get('error')}"
-        assert "main.go" in result["path"]
+        assert result["name"] == "(*MemoryStorage).Save"
         assert result["line"] == 49
+        assert result["path"].endswith("main.go")
 
     def test_resolve_symbol_value_receiver_method(self, workspace):
-        """Test resolving methods with value receivers like (User).IsAdult."""
+        """Test resolving methods with value receivers."""
         os.chdir(workspace)
         response = run_request("resolve-symbol", {
             "workspace_root": str(workspace),
             "symbol_path": "User.IsAdult",
         })
         result = response["result"]
-        assert "error" not in result, f"Unexpected error: {result.get('error')}"
-        assert result["name"] == "(u *User) IsAdult()" or "IsAdult" in result["name"]
+        assert result["name"] == "(u *User) IsAdult()"
+        assert result["kind"] == "Method"
 
     def test_resolve_symbol_file_filter(self, workspace):
         """Test resolving with file filter."""
@@ -1207,8 +1197,8 @@ Renamed in 1 file(s):
             "symbol_path": "main.go:NewUser",
         })
         result = response["result"]
-        assert "error" not in result, f"Unexpected error: {result.get('error')}"
-        assert "main.go" in result["path"]
+        assert result["name"] == "NewUser"
+        assert result["path"].endswith("main.go")
 
 
 # =============================================================================
