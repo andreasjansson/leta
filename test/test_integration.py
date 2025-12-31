@@ -118,12 +118,7 @@ def run_request(method: str, params: dict) -> dict:
     elif method == "rename":
         return _call_rename_request(params)
     elif method == "move-file":
-        mcp_args = {
-            "workspace_root": workspace_root,
-            "old_path": params.get("old_path", ""),
-            "new_path": params.get("new_path", ""),
-            "output_format": "json",
-        }
+        return _call_move_file_request(params)
     elif method == "format":
         mcp_args = {
             "workspace_root": workspace_root,
