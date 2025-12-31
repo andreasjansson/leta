@@ -1516,6 +1516,13 @@ class DaemonServer:
             suffix = " " + " ".join(error_parts) if error_parts else ""
             return {"error": f"Symbol '{symbol_path}' not found{suffix}"}
         
+        # Prefer type definitions over constructors when ambiguous
+        # (e.g., Java class User vs constructor User(String, String, int))
+        preferred_kinds = {"Class", "Struct", "Interface", "Enum", "Module", "Namespace", "Package"}
+        type_matches = [m for m in matches if m.get("kind") in preferred_kinds]
+        if len(type_matches) == 1 and len(matches) > 1:
+            matches = type_matches
+        
         if len(matches) == 1:
             sym = matches[0]
             return {
