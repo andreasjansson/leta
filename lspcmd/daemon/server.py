@@ -1393,22 +1393,14 @@ class DaemonServer:
                 logger.info(f"resolve-symbol: checking {sym_name} container={sym_container!r} normalized={sym_container_normalized!r} module={module_name!r} full={full_container!r} want={container_str!r}")
                 
                 if sym_container_normalized == container_str:
-                    logger.info(f"  -> matched via container_normalized")
                     matches.append(sym)
                 elif sym_container == container_str:
-                    logger.info(f"  -> matched via container")
                     matches.append(sym)
                 elif full_container == container_str:
-                    logger.info(f"  -> matched via full_container")
                     matches.append(sym)
                 elif full_container.endswith(f".{container_str}"):
-                    logger.info(f"  -> matched via full_container.endswith")
-                    matches.append(sym)
-                elif container_str in sym_container_normalized:
-                    logger.info(f"  -> matched via container_str in sym_container_normalized")
                     matches.append(sym)
                 elif len(container_parts) == 1 and container_parts[0] == module_name:
-                    logger.info(f"  -> matched via module_name")
                     matches.append(sym)
         
         if not matches:
