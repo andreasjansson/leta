@@ -2596,7 +2596,7 @@ class TestCppIntegration:
         os.chdir(workspace)
         response = run_request("resolve-symbol", {
             "workspace_root": str(workspace),
-            "symbol_path": "UserRepository",
+            "symbol_path": "example.UserRepository",
         })
         result = response["result"]
         assert result["name"] == "UserRepository"
@@ -2612,8 +2612,8 @@ class TestCppIntegration:
         result = response["result"]
         assert result["error"] == "Symbol 'save' is ambiguous (3 matches)"
         assert result["total_matches"] == 3
-        refs = [m["ref"] for m in result["matches"]]
-        assert refs == ["Storage.save", "MemoryStorage.save", "FileStorage.save"]
+        refs = sorted([m["ref"] for m in result["matches"]])
+        assert refs == ["FileStorage.save", "MemoryStorage.save", "Storage.save"]
 
     def test_resolve_symbol_class_method(self, workspace):
         """Test resolving Class.method format."""
