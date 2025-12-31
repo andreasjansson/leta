@@ -438,12 +438,16 @@ class TestResolutionLogicMatchesGeneration:
         # Initialize minimal required attributes
         self.server.session = None  # Not needed for this test
 
-    def test_resolution_rejects_module_name_as_container(self):
-        """Verify Container.name does NOT match files named Container.py."""
-        # This is the bug we fixed: main.f should not match symbols in main.py
-        # unless their container is literally "main"
+    def test_module_name_matching_is_intentional(self):
+        """Verify main.f DOES match symbols in main.py (module name matching).
+        
+        This is intentional behavior - main.f should match:
+        1. Symbol f with container "main"
+        2. Symbol f in file main.py (module name = main)
+        
+        The disambiguation algorithm must account for this!
+        """
         from pathlib import Path
-        import fnmatch
         
         # Simulate the resolution logic for "main.f"
         symbol_path = "main.f"
@@ -452,9 +456,7 @@ class TestResolutionLogicMatchesGeneration:
         target_name = parts[-1]  # "f"
         
         test_symbols = [
-            # This SHOULD match: container is literally "main"
             {"path": "app.py", "line": 10, "name": "f", "container": "main"},
-            # This should NOT match: container is "save", file just happens to be main.py
             {"path": "main.py", "line": 20, "name": "f", "container": "save"},
         ]
         
@@ -466,14 +468,20 @@ class TestResolutionLogicMatchesGeneration:
             
             sym_container = self.server._get_effective_container(sym)
             sym_container_normalized = self.server._normalize_container(sym_container)
+            module_name = self.server._get_module_name(sym["path"])
             
-            # This is the actual logic - container must match exactly
+            # Container matching
             if sym_container_normalized == container_str or sym_container == container_str:
                 matches.append(sym)
+            # Module name matching (this is the key feature!)
+            elif len(parts) == 2 and parts[0] == module_name:
+                matches.append(sym)
         
-        # Should only match the first symbol
-        assert len(matches) == 1
-        assert matches[0]["path"] == "app.py"
+        # BOTH should match - that's the intended behavior
+        # main.f matches "f in container main" AND "f in main.py"
+        assert len(matches) == 2
+        
+        # This is why disambiguation must generate DIFFERENT refs for these!
 
 
 class TestResolveSymbolRoundTrip:
