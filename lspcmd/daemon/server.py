@@ -385,6 +385,7 @@ class DaemonServer:
         target_line = loc["line"] - 1
         context = params.get("context", 0)
         head = params.get("head", 200)
+        symbol_name = params.get("symbol")
 
         workspace, doc, _ = await self._get_workspace_and_document({
             "path": str(file_path),
@@ -409,8 +410,8 @@ class DaemonServer:
                         start = max(0, start - context)
                         end = min(len(lines) - 1, end + context)
                     
-                    num_lines = end - start + 1
-                    truncated = num_lines > head
+                    total_lines = end - start + 1
+                    truncated = total_lines > head
                     if truncated:
                         end = start + head - 1
                     
@@ -420,7 +421,9 @@ class DaemonServer:
                         "end_line": end + 1,
                         "content": "\n".join(lines[start : end + 1]),
                         "truncated": truncated,
+                        "total_lines": total_lines,
                         "head": head,
+                        "symbol": symbol_name,
                     }
                 else:
                     return {
