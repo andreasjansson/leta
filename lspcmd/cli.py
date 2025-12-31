@@ -85,15 +85,10 @@ def run_request(method: str, params: dict) -> dict:
 
 def get_workspace_root_for_path(path: Path, config: dict) -> Path:
     path = path.resolve()
-    known_root = get_known_workspace_root(path, config)
-    if known_root:
-        return known_root
-
-    detected_root = detect_workspace_root(path)
-    if detected_root:
-        known = get_known_workspace_root(detected_root, config)
-        if known:
-            return known
+    
+    workspace_root = get_best_workspace_root(path, config)
+    if workspace_root:
+        return workspace_root
 
     raise click.ClickException(
         f"No workspace initialized for {path}\n"
@@ -104,15 +99,9 @@ def get_workspace_root_for_path(path: Path, config: dict) -> Path:
 def get_workspace_root_for_cwd(config: dict) -> Path:
     cwd = Path.cwd().resolve()
 
-    known_root = get_known_workspace_root(cwd, config)
-    if known_root:
-        return known_root
-
-    detected_root = detect_workspace_root(cwd)
-    if detected_root:
-        known = get_known_workspace_root(detected_root, config)
-        if known:
-            return known
+    workspace_root = get_best_workspace_root(cwd, config)
+    if workspace_root:
+        return workspace_root
 
     raise click.ClickException(
         f"No workspace initialized for current directory\n"
