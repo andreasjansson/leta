@@ -270,7 +270,7 @@ class TestResolveSymbolRoundTrip:
     """
 
     def setup_method(self):
-        self.server = MCPServer.__new__(MCPServer)
+        self.server = MCPDaemonServer.__new__(MCPDaemonServer)
 
     def test_container_ref_resolves(self):
         """A Container.name ref should match only that container."""
