@@ -170,9 +170,10 @@ def run_request(method: str, params: dict) -> dict:
         return {"result": result_text}
 
 
-async def _mcp_call_tool(mcp_url: str, tool_name: str, arguments: dict) -> dict:
+async def _mcp_call_tool(mcp_url: str, tool_name: str, arguments: dict, raise_on_error: bool = False) -> dict:
     """Shared helper to call an MCP tool."""
     import httpx
+    import click
     
     headers = {
         "Content-Type": "application/json",
@@ -220,9 +221,21 @@ async def _mcp_call_tool(mcp_url: str, tool_name: str, arguments: dict) -> dict:
         
         if "error" in result:
             error_msg = result["error"].get("message", str(result["error"]))
+            if raise_on_error:
+                raise click.ClickException(error_msg)
             return {"error": error_msg}
         
-        content = result.get("result", {}).get("content", [])
+        # Check if the tool returned an error (isError: true)
+        mcp_result = result.get("result", {})
+        if mcp_result.get("isError"):
+            content = mcp_result.get("content", [])
+            if content and isinstance(content, list):
+                error_msg = content[0].get("text", "Unknown error")
+                if raise_on_error:
+                    raise click.ClickException(error_msg)
+                return {"error": error_msg}
+        
+        content = mcp_result.get("content", [])
         if content and isinstance(content, list):
             text = content[0].get("text", "")
             try:
