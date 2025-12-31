@@ -85,8 +85,9 @@ def run_request(method: str, params: dict) -> dict:
 
 def get_workspace_root_for_path(path: Path, config: dict) -> Path:
     path = path.resolve()
+    cwd = Path.cwd().resolve()
     
-    workspace_root = get_best_workspace_root(path, config)
+    workspace_root = get_best_workspace_root(path, config, cwd=cwd)
     if workspace_root:
         return workspace_root
 
