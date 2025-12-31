@@ -107,12 +107,19 @@ lspcmd raw-lsp-request workspace/symbol '{"query": "Handler"}' -l typescript
 | Command | Description |
 |---------|-------------|
 | `lspcmd definition PATH POSITION [-n CONTEXT] [-b]` | Find definition at position (-b for full body with optional context) |
+| `lspcmd definition @SYMBOL [-n CONTEXT] [-b]` | Find definition by symbol name |
 | `lspcmd references PATH POSITION [-n CONTEXT]` | Find all references at position |
+| `lspcmd references @SYMBOL [-n CONTEXT]` | Find all references by symbol name |
 | `lspcmd implementations PATH POSITION [-n CONTEXT]` | Find implementations of interface/abstract method (transitive) |
+| `lspcmd implementations @SYMBOL [-n CONTEXT]` | Find implementations by symbol name |
 | `lspcmd subtypes PATH POSITION [-n CONTEXT]` | Find direct subtypes of a type |
+| `lspcmd subtypes @SYMBOL [-n CONTEXT]` | Find direct subtypes by symbol name |
 | `lspcmd supertypes PATH POSITION [-n CONTEXT]` | Find direct supertypes of a type |
+| `lspcmd supertypes @SYMBOL [-n CONTEXT]` | Find direct supertypes by symbol name |
 | `lspcmd declaration PATH POSITION [-n CONTEXT]` | Find declaration at position |
+| `lspcmd declaration @SYMBOL [-n CONTEXT]` | Find declaration by symbol name |
 | `lspcmd describe PATH POSITION` | Show hover information (type, docs) |
+| `lspcmd describe @SYMBOL` | Show hover information by symbol name |
 
 ### Diagnostics Commands
 
