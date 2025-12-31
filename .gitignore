@@ -2,3 +2,11 @@
 
 __pycache__/
 *.egg-info/
+
+TODO.md
+
+test/fixtures/java_project/.*
+test/fixtures/java_project/target
+test/fixtures/rust_project/Cargo.lock
+test/fixtures/rust_project/target/
+test/fixtures/zig_project/.*
