@@ -237,10 +237,10 @@ lspcmd definition src/main.py "class UserRepository:"
 lspcmd definition src/main.py "def __init__\\(self\\)"
 
 # Print full definition body
-lspcmd def src/main.py "class UserRepository:"
+lspcmd show src/main.py "class UserRepository:"
 
 # Print full definition body with 2 lines of context
-lspcmd def src/main.py "class UserRepository:" -n 2
+lspcmd show src/main.py "class UserRepository:" -n 2
 ```
 
 If a regex matches multiple times, you'll get a helpful error showing all locations:
