@@ -1373,20 +1373,23 @@ class DaemonServer:
                     continue
                 
                 sym_container = sym.get("container", "") or ""
+                sym_container_normalized = self._normalize_container(sym_container)
                 sym_path = sym.get("path", "")
                 module_name = self._get_module_name(sym_path)
                 
-                full_container = f"{module_name}.{sym_container}" if sym_container else module_name
+                full_container = f"{module_name}.{sym_container_normalized}" if sym_container_normalized else module_name
                 
                 container_str = ".".join(container_parts)
                 
-                if sym_container == container_str:
+                if sym_container_normalized == container_str:
+                    matches.append(sym)
+                elif sym_container == container_str:
                     matches.append(sym)
                 elif full_container == container_str:
                     matches.append(sym)
                 elif full_container.endswith(f".{container_str}"):
                     matches.append(sym)
-                elif container_str in sym_container:
+                elif container_str in sym_container_normalized:
                     matches.append(sym)
                 elif len(container_parts) == 1 and container_parts[0] == module_name:
                     matches.append(sym)
