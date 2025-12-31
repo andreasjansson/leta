@@ -1727,6 +1727,7 @@ class MCPDaemonServer:
 
         file_path = Path(resolved["path"]).resolve()
         line = resolved["line"]
+        column = resolved.get("column", 0)
         range_start = resolved.get("range_start_line")
         range_end = resolved.get("range_end_line")
 
@@ -1736,34 +1737,86 @@ class MCPDaemonServer:
         workspace = await self.session.get_or_create_workspace(file_path, workspace_root)
         await workspace.ensure_document_open(file_path)
 
-        if check_signature:
-            old_signature = await self._extract_function_signature(
-                workspace, file_path, line, resolved.get("column", 0)
+        old_signature = await self._extract_function_signature(
+            workspace, file_path, line, column
+        )
+
+        original_content = read_file_content(file_path)
+        backup_path = file_path.with_suffix(file_path.suffix + ".lspcmd.bkup")
+
+        try:
+            backup_path.write_text(original_content)
+
+            new_content, new_line_count = self._apply_function_replacement(
+                original_content, new_contents, range_start, range_end
             )
-            if old_signature is None:
-                return {"error": "Could not extract signature from existing function"}
 
-            new_signature = await self._extract_signature_from_new_contents(
-                workspace, workspace_root, file_path, new_contents
-            )
-            if new_signature is None:
-                return {"error": "Could not extract signature from new function contents"}
+            file_path.write_text(new_content)
 
-            if not self._signatures_match(old_signature, new_signature):
-                return {
-                    "error": "Signature mismatch",
-                    "old_signature": old_signature,
-                    "new_signature": new_signature,
-                    "hint": "Use --no-check-signature to replace anyway",
-                }
+            doc = workspace.open_documents.get(path_to_uri(file_path))
+            if doc:
+                doc.version += 1
+                doc.content = new_content
+                await workspace.client.send_notification(
+                    "textDocument/didChange",
+                    {
+                        "textDocument": {"uri": doc.uri, "version": doc.version},
+                        "contentChanges": [{"text": new_content}],
+                    },
+                )
 
-        content = read_file_content(file_path)
-        lines = content.splitlines(keepends=True)
+            if check_signature:
+                await asyncio.sleep(0.2)
 
+                new_signature = await self._extract_function_signature(
+                    workspace, file_path, range_start, column
+                )
+
+                if old_signature and new_signature:
+                    if not self._signatures_match(old_signature, new_signature):
+                        file_path.write_text(original_content)
+                        if doc:
+                            doc.version += 1
+                            doc.content = original_content
+                            await workspace.client.send_notification(
+                                "textDocument/didChange",
+                                {
+                                    "textDocument": {"uri": doc.uri, "version": doc.version},
+                                    "contentChanges": [{"text": original_content}],
+                                },
+                            )
+                        return {
+                            "error": "Signature mismatch",
+                            "old_signature": old_signature,
+                            "new_signature": new_signature,
+                            "hint": "Use --no-check-signature to replace anyway",
+                        }
+
+            backup_path.unlink(missing_ok=True)
+
+            rel_path = self._relative_path(file_path, workspace_root)
+            return {
+                "replaced": True,
+                "path": rel_path,
+                "old_range": f"{range_start}-{range_end}",
+                "new_range": f"{range_start}-{range_start + new_line_count - 1}",
+            }
+
+        except Exception as e:
+            if backup_path.exists():
+                file_path.write_text(backup_path.read_text())
+                backup_path.unlink()
+            raise
+
+    def _apply_function_replacement(
+        self, original_content: str, new_contents: str, range_start: int, range_end: int
+    ) -> tuple[str, int]:
+        """Replace function at given range with new contents, handling indentation."""
+        lines = original_content.splitlines(keepends=True)
         start_line_idx = range_start - 1
         end_line_idx = range_end - 1
 
-        if start_line_idx > 0 and start_line_idx < len(lines):
+        if start_line_idx >= 0 and start_line_idx < len(lines):
             original_line = lines[start_line_idx]
             leading_ws = len(original_line) - len(original_line.lstrip())
             indentation = original_line[:leading_ws]
@@ -1777,38 +1830,19 @@ class MCPDaemonServer:
         if new_lines:
             first_line = new_lines[0]
             first_line_ws = len(first_line) - len(first_line.lstrip())
-            input_indent = first_line[:first_line_ws]
 
             reindented = []
             for line in new_lines:
-                if line.startswith(input_indent):
-                    reindented.append(indentation + line[first_line_ws:])
-                elif line.strip() == "":
+                if line.strip() == "":
                     reindented.append(line)
+                elif len(line) >= first_line_ws and line[:first_line_ws].strip() == "":
+                    reindented.append(indentation + line[first_line_ws:])
                 else:
                     reindented.append(indentation + line.lstrip())
             new_lines = reindented
 
-        new_content_lines = lines[:start_line_idx] + new_lines + lines[end_line_idx + 1:]
-        new_content = "".join(new_content_lines)
-
-        file_path.write_text(new_content)
-
-        await workspace.client.send_notification(
-            "textDocument/didChange",
-            {
-                "textDocument": {"uri": path_to_uri(file_path), "version": 2},
-                "contentChanges": [{"text": new_content}],
-            },
-        )
-
-        rel_path = self._relative_path(file_path, workspace_root)
-        return {
-            "replaced": True,
-            "path": rel_path,
-            "old_range": f"{range_start}-{range_end}",
-            "new_range": f"{range_start}-{range_start + len(new_lines) - 1}",
-        }
+        result_lines = lines[:start_line_idx] + new_lines + lines[end_line_idx + 1:]
+        return "".join(result_lines), len(new_lines)
 
     async def _extract_function_signature(
         self, workspace, file_path: Path, line: int, column: int
@@ -1835,61 +1869,6 @@ class MCPDaemonServer:
             return None
         return self._parse_signature_from_hover(hover_result)
 
-    async def _extract_signature_from_new_contents(
-        self, workspace, workspace_root: Path, original_file: Path, new_contents: str
-    ) -> str | None:
-        import uuid
-
-        suffix = original_file.suffix
-        temp_name = f"_lspcmd_temp_{uuid.uuid4().hex[:8]}{suffix}"
-        temp_path = workspace_root / temp_name
-
-        try:
-            wrapped_contents = self._wrap_contents_for_language(new_contents, suffix)
-            temp_path.write_text(wrapped_contents)
-
-            doc = await workspace.ensure_document_open(temp_path)
-
-            await asyncio.sleep(0.3)
-
-            result = await workspace.client.send_request(
-                "textDocument/documentSymbol",
-                {"textDocument": {"uri": doc.uri}},
-            )
-
-            if not result:
-                return None
-
-            func_symbol = self._find_first_function_symbol(result)
-            if not func_symbol:
-                return None
-
-            if func_symbol.get("detail"):
-                return self._format_signature_from_detail(func_symbol)
-
-            sel_range = func_symbol.get("selectionRange", func_symbol.get("range"))
-            if not sel_range:
-                return None
-
-            hover_result = await workspace.client.send_request(
-                "textDocument/hover",
-                {
-                    "textDocument": {"uri": doc.uri},
-                    "position": {
-                        "line": sel_range["start"]["line"],
-                        "character": sel_range["start"]["character"],
-                    },
-                },
-            )
-
-            if not hover_result:
-                return None
-
-            return self._parse_signature_from_hover(hover_result)
-        finally:
-            await workspace.close_document(temp_path)
-            temp_path.unlink(missing_ok=True)
-
     def _format_signature_from_detail(self, symbol: dict) -> str:
         """Format a signature from documentSymbol name and detail fields."""
         name = symbol.get("name", "")
@@ -1899,13 +1878,6 @@ class MCPDaemonServer:
         elif detail.startswith("fn"):
             return f"fn {name}{detail[2:]}"
         return f"{name} {detail}"
-
-    def _wrap_contents_for_language(self, contents: str, suffix: str) -> str:
-        """Wrap function contents with necessary boilerplate for LSP to parse."""
-        if suffix == ".go":
-            if "package " not in contents:
-                return f"package _lspcmd_temp\n\n{contents}"
-        return contents
 
     def _find_first_function_symbol(self, symbols: list) -> dict | None:
         for sym in symbols:
