@@ -476,23 +476,50 @@ def describe(ctx, path, position):
 
 
 @cli.command("definition")
-@click.argument("path", type=click.Path(exists=True))
-@click.argument("position")
+@click.argument("path_or_symbol")
+@click.argument("position", required=False)
 @click.option("-n", "--context", default=0, help="Lines of context")
 @click.option("-b", "--body", is_flag=True, help="Print full definition body")
 @click.pass_context
-def definition(ctx, path, position, context, body):
+def definition(ctx, path_or_symbol, position, context, body):
     """Find definition at position.
     
-    POSITION can be LINE,COLUMN (e.g. 42,10), LINE:REGEX (e.g. 42:def foo),
-    or just REGEX (e.g. def foo) to search the whole file.
+    \b
+    Usage:
+      lspcmd definition PATH POSITION      # traditional file+position
+      lspcmd definition @Symbol            # symbol lookup
+    
+    \b
+    POSITION can be:
+      - LINE,COLUMN (e.g. 42,10)
+      - LINE:REGEX (e.g. 42:def foo)
+      - REGEX (e.g. def foo) to search the whole file
+    
+    \b
+    @Symbol syntax (symbol lookup):
+      - @SymbolName          # find a symbol by name
+      - @Class.method        # find method in Class
+      - @path:Symbol         # find Symbol in files matching path
+      - @*.py:MyClass        # find MyClass in Python files
     
     Use -b/--body to print the full definition body (for functions, classes, etc.).
     """
-    path = Path(path).resolve()
-    line, column = parse_position(position, path)
     config = load_config()
-    workspace_root = get_workspace_root_for_path(path, config)
+    
+    if is_symbol_path(path_or_symbol):
+        workspace_root = get_workspace_root_for_cwd(config)
+        path, line, column = resolve_symbol_path(path_or_symbol, workspace_root)
+    else:
+        path = Path(path_or_symbol).resolve()
+        if not path.exists():
+            raise click.ClickException(f"File not found: {path_or_symbol}")
+        if position is None:
+            raise click.ClickException(
+                "POSITION is required when using PATH.\n"
+                "Use @Symbol syntax for symbol lookup (e.g., @ClassName.method)"
+            )
+        line, column = parse_position(position, path)
+        workspace_root = get_workspace_root_for_path(path, config)
 
     response = run_request("definition", {
         "path": str(path),
