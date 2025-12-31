@@ -472,24 +472,11 @@ def definition(ctx, symbol, context, body):
     click.echo(format_output(response.get("result", response), "json" if ctx.obj["json"] else "plain"))
 
 
-def _run_location_command(ctx, path_or_symbol: str, position: str | None, context: int, request_name: str):
-    """Helper for location-based commands (definition, references, implementations, etc.)."""
+def _run_location_command(ctx, symbol: str, context: int, request_name: str):
+    """Helper for location-based commands (references, implementations, etc.)."""
     config = load_config()
-    
-    if is_symbol_path(path_or_symbol):
-        workspace_root = get_workspace_root_for_cwd(config)
-        path, line, column = resolve_symbol_path(path_or_symbol, workspace_root)
-    else:
-        path = Path(path_or_symbol).resolve()
-        if not path.exists():
-            raise click.ClickException(f"File not found: {path_or_symbol}")
-        if position is None:
-            raise click.ClickException(
-                "POSITION is required when using PATH.\n"
-                "Use @Symbol syntax for symbol lookup (e.g., @ClassName.method)"
-            )
-        line, column = parse_position(position, path)
-        workspace_root = get_workspace_root_for_path(path, config)
+    workspace_root = get_workspace_root_for_cwd(config)
+    path, line, column = resolve_symbol(symbol, workspace_root)
 
     response = run_request(request_name, {
         "path": str(path),
@@ -502,149 +489,89 @@ def _run_location_command(ctx, path_or_symbol: str, position: str | None, contex
     click.echo(format_output(response.get("result", response), "json" if ctx.obj["json"] else "plain"))
 
 
+SYMBOL_HELP = """\b
+SYMBOL formats:
+  SymbolName            find symbol by name
+  Parent.Symbol         find symbol in parent (Class.method, module.function)
+  path:Symbol           filter by file path pattern
+  path:Parent.Symbol    combine path filter with qualified name
+  path:line:Symbol      exact file + line number + symbol (for edge cases)"""
+
+
 @cli.command("declaration")
-@click.argument("path_or_symbol")
-@click.argument("position", required=False)
+@click.argument("symbol")
 @click.option("-n", "--context", default=0, help="Lines of context")
 @click.pass_context
-def declaration(ctx, path_or_symbol, position, context):
-    """Find declaration at position.
+def declaration(ctx, symbol, context):
+    f"""Find declaration of a symbol.
     
-    \b
-    Usage:
-      lspcmd declaration PATH POSITION      # traditional file+position
-      lspcmd declaration @Symbol            # symbol lookup
-    
-    \b
-    POSITION formats:
-      LINE,COLUMN    e.g. 42,10
-      LINE:REGEX     e.g. 42:def foo
-      REGEX          search whole file for unique match
-    
-    \b
-    @Symbol formats:
-      @SymbolName          find a symbol by name
-      @Class.method        find method in Class
-      @path:Symbol         find Symbol in files matching path
+    {SYMBOL_HELP}
     """
-    _run_location_command(ctx, path_or_symbol, position, context, "declaration")
+    _run_location_command(ctx, symbol, context, "declaration")
 
 
 @cli.command("references")
-@click.argument("path_or_symbol")
-@click.argument("position", required=False)
+@click.argument("symbol")
 @click.option("-n", "--context", default=0, help="Lines of context")
 @click.pass_context
-def references(ctx, path_or_symbol, position, context):
-    """Find references at position.
+def references(ctx, symbol, context):
+    f"""Find all references to a symbol.
+    
+    {SYMBOL_HELP}
     
     \b
-    Usage:
-      lspcmd references PATH POSITION       # traditional file+position
-      lspcmd references @Symbol             # symbol lookup
-    
-    \b
-    POSITION formats:
-      LINE,COLUMN    e.g. 42,10
-      LINE:REGEX     e.g. 42:def foo
-      REGEX          search whole file for unique match
-    
-    \b
-    @Symbol formats:
-      @SymbolName          find a symbol by name
-      @Class.method        find method in Class
-      @path:Symbol         find Symbol in files matching path
+    Examples:
+      lspcmd references UserRepository
+      lspcmd references UserRepository.add_user
+      lspcmd references "*.py:validate_email"
     """
-    _run_location_command(ctx, path_or_symbol, position, context, "references")
+    _run_location_command(ctx, symbol, context, "references")
 
 
 @cli.command("implementations")
-@click.argument("path_or_symbol")
-@click.argument("position", required=False)
+@click.argument("symbol")
 @click.option("-n", "--context", default=0, help="Lines of context")
 @click.pass_context
-def implementations(ctx, path_or_symbol, position, context):
-    """Find implementations of an interface or abstract method.
+def implementations(ctx, symbol, context):
+    f"""Find implementations of an interface or abstract method.
+    
+    {SYMBOL_HELP}
     
     \b
-    Usage:
-      lspcmd implementations PATH POSITION  # traditional file+position
-      lspcmd implementations @Symbol        # symbol lookup
-    
-    \b
-    POSITION formats:
-      LINE,COLUMN    e.g. 42,10
-      LINE:REGEX     e.g. 42:def foo
-      REGEX          search whole file for unique match
-    
-    \b
-    @Symbol formats:
-      @SymbolName          find a symbol by name
-      @Class.method        find method in Class
-      @path:Symbol         find Symbol in files matching path
+    Examples:
+      lspcmd implementations Storage
+      lspcmd implementations Storage.save
     """
-    _run_location_command(ctx, path_or_symbol, position, context, "implementations")
+    _run_location_command(ctx, symbol, context, "implementations")
 
 
 @cli.command("subtypes")
-@click.argument("path_or_symbol")
-@click.argument("position", required=False)
+@click.argument("symbol")
 @click.option("-n", "--context", default=0, help="Lines of context")
 @click.pass_context
-def subtypes(ctx, path_or_symbol, position, context):
-    """Find direct subtypes of a type at position.
+def subtypes(ctx, symbol, context):
+    f"""Find direct subtypes of a type.
     
-    Returns types that directly extend/implement the type at position.
+    Returns types that directly extend/implement the given type.
     Use 'implementations' to find all implementations transitively.
     
-    \b
-    Usage:
-      lspcmd subtypes PATH POSITION         # traditional file+position
-      lspcmd subtypes @Symbol               # symbol lookup
-    
-    \b
-    POSITION formats:
-      LINE,COLUMN    e.g. 42,10
-      LINE:REGEX     e.g. 42:def foo
-      REGEX          search whole file for unique match
-    
-    \b
-    @Symbol formats:
-      @SymbolName          find a symbol by name
-      @Class.method        find method in Class
-      @path:Symbol         find Symbol in files matching path
+    {SYMBOL_HELP}
     """
-    _run_location_command(ctx, path_or_symbol, position, context, "subtypes")
+    _run_location_command(ctx, symbol, context, "subtypes")
 
 
 @cli.command("supertypes")
-@click.argument("path_or_symbol")
-@click.argument("position", required=False)
+@click.argument("symbol")
 @click.option("-n", "--context", default=0, help="Lines of context")
 @click.pass_context
-def supertypes(ctx, path_or_symbol, position, context):
-    """Find direct supertypes of a type at position.
+def supertypes(ctx, symbol, context):
+    f"""Find direct supertypes of a type.
     
-    Returns types that the type at position directly extends/implements.
+    Returns types that the given type directly extends/implements.
     
-    \b
-    Usage:
-      lspcmd supertypes PATH POSITION       # traditional file+position
-      lspcmd supertypes @Symbol             # symbol lookup
-    
-    \b
-    POSITION formats:
-      LINE,COLUMN    e.g. 42,10
-      LINE:REGEX     e.g. 42:def foo
-      REGEX          search whole file for unique match
-    
-    \b
-    @Symbol formats:
-      @SymbolName          find a symbol by name
-      @Class.method        find method in Class
-      @path:Symbol         find Symbol in files matching path
+    {SYMBOL_HELP}
     """
-    _run_location_command(ctx, path_or_symbol, position, context, "supertypes")
+    _run_location_command(ctx, symbol, context, "supertypes")
 
 
 @cli.command("diagnostics")
