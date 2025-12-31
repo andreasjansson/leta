@@ -1,11 +1,12 @@
 """Integration tests for lspcmd.
 
-Tests LSP features using the actual CLI interface (run_request + format_output).
+Tests LSP features using the MCP-based CLI interface.
 Uses pytest-xdist for parallel execution to test concurrent daemon access.
 
 Run with: pytest tests/test_integration.py -n auto
 """
 
+import json
 import os
 import shutil
 import tempfile
@@ -14,8 +15,7 @@ from pathlib import Path
 
 import pytest
 
-from lspcmd.cli import run_request, ensure_daemon_running
-from lspcmd.output.formatters import format_output
+from lspcmd.cli import call_mcp_tool, ensure_daemon_running
 from lspcmd.utils.config import add_workspace_root, load_config
 
 from .conftest import (
@@ -33,6 +33,527 @@ from .conftest import (
 )
 
 os.environ["LSPCMD_REQUEST_TIMEOUT"] = "60"
+
+
+def run_request(method: str, params: dict) -> dict:
+    """Compatibility wrapper for old-style requests.
+    
+    Maps the old method names to MCP tool calls and returns
+    results in the old format for test compatibility.
+    """
+    workspace_root = params.get("workspace_root", "")
+    
+    method_mapping = {
+        "grep": "grep",
+        "definition": "show",
+        "declaration": "declaration",
+        "references": "ref",
+        "implementations": "implementations",
+        "subtypes": "subtypes",
+        "supertypes": "supertypes",
+        "diagnostics": "diagnostics",
+        "workspace-diagnostics": "diagnostics",
+        "format": "format_file",
+        "organize-imports": "organize_imports",
+        "rename": "rename",
+        "move-file": "move_file",
+        "describe-session": "daemon_info",
+        "shutdown": "daemon_shutdown",
+        "restart-workspace": "workspace_restart",
+        "raw-lsp-request": "raw_lsp_request",
+        "describe": "show",  # hover functionality
+        "tree": "tree",
+        "resolve-symbol": "_resolve_symbol",  # internal, handled specially
+    }
+    
+    tool_name = method_mapping.get(method)
+    if not tool_name:
+        raise ValueError(f"Unknown method: {method}")
+    
+    # Build MCP tool arguments from the old params format
+    if method == "grep":
+        mcp_args = {
+            "workspace_root": workspace_root,
+            "pattern": params.get("pattern", ".*"),
+            "kinds": params.get("kinds"),
+            "case_sensitive": params.get("case_sensitive", False),
+            "include_docs": params.get("include_docs", False),
+            "paths": params.get("paths"),
+            "exclude_patterns": params.get("exclude_patterns", []),
+            "output_format": "json",
+        }
+    elif method == "definition":
+        # For definition, we need to convert line/column to symbol lookup
+        # or use direct parameters if provided
+        if params.get("body", False):
+            # This is a "show" request - but we need symbol resolution first
+            # For test compatibility, we'll construct a pseudo-symbol
+            path = params.get("path", "")
+            line = params.get("line", 1)
+            mcp_args = {
+                "workspace_root": workspace_root,
+                "symbol": f"{Path(path).name}:{line}:_",  # Will be resolved
+                "context": params.get("context", 0),
+                "head": params.get("head", 200),
+                "output_format": "json",
+            }
+            # Actually we need a different approach - call the internal method
+            return _call_definition_request(params)
+        else:
+            return _call_definition_request(params)
+    elif method == "describe":
+        # Hover request - map to internal hover handler
+        return _call_hover_request(params)
+    elif method in ("declaration", "references", "implementations"):
+        return _call_location_request(method, params)
+    elif method in ("subtypes", "supertypes"):
+        return _call_type_hierarchy_request(method, params)
+    elif method in ("diagnostics", "workspace-diagnostics"):
+        mcp_args = {
+            "workspace_root": workspace_root,
+            "path": params.get("path"),
+            "severity": params.get("severity"),
+            "output_format": "json",
+        }
+    elif method == "rename":
+        return _call_rename_request(params)
+    elif method == "move-file":
+        mcp_args = {
+            "workspace_root": workspace_root,
+            "old_path": params.get("old_path", ""),
+            "new_path": params.get("new_path", ""),
+            "output_format": "json",
+        }
+    elif method == "format":
+        mcp_args = {
+            "workspace_root": workspace_root,
+            "path": params.get("path", ""),
+            "output_format": "json",
+        }
+    elif method == "organize-imports":
+        mcp_args = {
+            "workspace_root": workspace_root,
+            "path": params.get("path", ""),
+            "output_format": "json",
+        }
+    elif method == "tree":
+        mcp_args = {
+            "workspace_root": workspace_root,
+            "exclude_patterns": params.get("exclude_patterns", []),
+            "output_format": "json",
+        }
+    elif method == "describe-session":
+        mcp_args = {"output_format": "json"}
+    elif method == "shutdown":
+        mcp_args = {}
+    elif method == "restart-workspace":
+        mcp_args = {
+            "workspace_root": workspace_root,
+            "output_format": "json",
+        }
+    elif method == "raw-lsp-request":
+        mcp_args = {
+            "workspace_root": workspace_root,
+            "method": params.get("method", ""),
+            "params": json.dumps(params.get("params", {})),
+            "language": params.get("language", "python"),
+        }
+    elif method == "resolve-symbol":
+        return _call_resolve_symbol_request(params)
+    else:
+        raise ValueError(f"Unhandled method: {method}")
+    
+    result_text = call_mcp_tool(tool_name, mcp_args)
+    try:
+        return {"result": json.loads(result_text)}
+    except json.JSONDecodeError:
+        return {"result": result_text}
+
+
+def _call_definition_request(params: dict) -> dict:
+    """Call definition request directly via daemon internal method."""
+    import asyncio
+    import httpx
+    from lspcmd.utils.config import get_mcp_url
+    
+    mcp_url = ensure_daemon_running()
+    
+    # For definition requests, we need to use the raw daemon interface
+    # because the MCP "show" tool expects a symbol name, not line/column
+    # We'll use the internal daemon methods via raw LSP or a special handler
+    
+    workspace_root = params.get("workspace_root", "")
+    path = params.get("path", "")
+    line = params.get("line", 1)
+    column = params.get("column", 0)
+    context = params.get("context", 0)
+    body = params.get("body", False)
+    
+    async def do_request():
+        async with httpx.AsyncClient(timeout=120.0) as client:
+            # Initialize session
+            await client.post(
+                mcp_url,
+                json={
+                    "jsonrpc": "2.0",
+                    "id": 1,
+                    "method": "initialize",
+                    "params": {
+                        "protocolVersion": "2024-11-05",
+                        "capabilities": {},
+                        "clientInfo": {"name": "lspcmd-test", "version": "0.1.0"},
+                    },
+                },
+            )
+            await client.post(
+                mcp_url,
+                json={"jsonrpc": "2.0", "method": "notifications/initialized"},
+            )
+            
+            # For definition, we use a special internal tool
+            # We'll need to extend the MCP server to support this
+            # For now, use the grep + show approach
+            response = await client.post(
+                mcp_url,
+                json={
+                    "jsonrpc": "2.0",
+                    "id": 2,
+                    "method": "tools/call",
+                    "params": {
+                        "name": "_internal_definition",
+                        "arguments": {
+                            "workspace_root": workspace_root,
+                            "path": path,
+                            "line": line,
+                            "column": column,
+                            "context": context,
+                            "body": body,
+                        },
+                    },
+                },
+            )
+            result = response.json()
+            if "error" in result:
+                return {"error": result["error"].get("message", str(result["error"]))}
+            content = result.get("result", {}).get("content", [])
+            if content and isinstance(content, list):
+                text = content[0].get("text", "")
+                try:
+                    return {"result": json.loads(text)}
+                except json.JSONDecodeError:
+                    return {"result": text}
+            return {"result": []}
+    
+    return asyncio.run(do_request())
+
+
+def _call_hover_request(params: dict) -> dict:
+    """Call hover request directly."""
+    import asyncio
+    import httpx
+    from lspcmd.utils.config import get_mcp_url
+    
+    mcp_url = ensure_daemon_running()
+    
+    async def do_request():
+        async with httpx.AsyncClient(timeout=120.0) as client:
+            await client.post(
+                mcp_url,
+                json={
+                    "jsonrpc": "2.0",
+                    "id": 1,
+                    "method": "initialize",
+                    "params": {
+                        "protocolVersion": "2024-11-05",
+                        "capabilities": {},
+                        "clientInfo": {"name": "lspcmd-test", "version": "0.1.0"},
+                    },
+                },
+            )
+            await client.post(
+                mcp_url,
+                json={"jsonrpc": "2.0", "method": "notifications/initialized"},
+            )
+            
+            response = await client.post(
+                mcp_url,
+                json={
+                    "jsonrpc": "2.0",
+                    "id": 2,
+                    "method": "tools/call",
+                    "params": {
+                        "name": "_internal_hover",
+                        "arguments": {
+                            "workspace_root": params.get("workspace_root", ""),
+                            "path": params.get("path", ""),
+                            "line": params.get("line", 1),
+                            "column": params.get("column", 0),
+                        },
+                    },
+                },
+            )
+            result = response.json()
+            if "error" in result:
+                return {"error": result["error"].get("message", str(result["error"]))}
+            content = result.get("result", {}).get("content", [])
+            if content and isinstance(content, list):
+                text = content[0].get("text", "")
+                try:
+                    return {"result": json.loads(text)}
+                except json.JSONDecodeError:
+                    return {"result": {"contents": text}}
+            return {"result": {"contents": None}}
+    
+    return asyncio.run(do_request())
+
+
+def _call_location_request(method: str, params: dict) -> dict:
+    """Call location-based request (references, implementations, declaration)."""
+    import asyncio
+    import httpx
+    from lspcmd.utils.config import get_mcp_url
+    
+    mcp_url = ensure_daemon_running()
+    tool_name = f"_internal_{method}"
+    
+    async def do_request():
+        async with httpx.AsyncClient(timeout=120.0) as client:
+            await client.post(
+                mcp_url,
+                json={
+                    "jsonrpc": "2.0",
+                    "id": 1,
+                    "method": "initialize",
+                    "params": {
+                        "protocolVersion": "2024-11-05",
+                        "capabilities": {},
+                        "clientInfo": {"name": "lspcmd-test", "version": "0.1.0"},
+                    },
+                },
+            )
+            await client.post(
+                mcp_url,
+                json={"jsonrpc": "2.0", "method": "notifications/initialized"},
+            )
+            
+            response = await client.post(
+                mcp_url,
+                json={
+                    "jsonrpc": "2.0",
+                    "id": 2,
+                    "method": "tools/call",
+                    "params": {
+                        "name": tool_name,
+                        "arguments": {
+                            "workspace_root": params.get("workspace_root", ""),
+                            "path": params.get("path", ""),
+                            "line": params.get("line", 1),
+                            "column": params.get("column", 0),
+                            "context": params.get("context", 0),
+                        },
+                    },
+                },
+            )
+            result = response.json()
+            if "error" in result:
+                raise Exception(result["error"].get("message", str(result["error"])))
+            content = result.get("result", {}).get("content", [])
+            if content and isinstance(content, list):
+                text = content[0].get("text", "")
+                try:
+                    return {"result": json.loads(text)}
+                except json.JSONDecodeError:
+                    return {"result": text}
+            return {"result": []}
+    
+    return asyncio.run(do_request())
+
+
+def _call_type_hierarchy_request(method: str, params: dict) -> dict:
+    """Call type hierarchy request (subtypes, supertypes)."""
+    import asyncio
+    import httpx
+    from lspcmd.utils.config import get_mcp_url
+    
+    mcp_url = ensure_daemon_running()
+    tool_name = f"_internal_{method}"
+    
+    async def do_request():
+        async with httpx.AsyncClient(timeout=120.0) as client:
+            await client.post(
+                mcp_url,
+                json={
+                    "jsonrpc": "2.0",
+                    "id": 1,
+                    "method": "initialize",
+                    "params": {
+                        "protocolVersion": "2024-11-05",
+                        "capabilities": {},
+                        "clientInfo": {"name": "lspcmd-test", "version": "0.1.0"},
+                    },
+                },
+            )
+            await client.post(
+                mcp_url,
+                json={"jsonrpc": "2.0", "method": "notifications/initialized"},
+            )
+            
+            response = await client.post(
+                mcp_url,
+                json={
+                    "jsonrpc": "2.0",
+                    "id": 2,
+                    "method": "tools/call",
+                    "params": {
+                        "name": tool_name,
+                        "arguments": {
+                            "workspace_root": params.get("workspace_root", ""),
+                            "path": params.get("path", ""),
+                            "line": params.get("line", 1),
+                            "column": params.get("column", 0),
+                            "context": params.get("context", 0),
+                        },
+                    },
+                },
+            )
+            result = response.json()
+            if "error" in result:
+                raise Exception(result["error"].get("message", str(result["error"])))
+            content = result.get("result", {}).get("content", [])
+            if content and isinstance(content, list):
+                text = content[0].get("text", "")
+                try:
+                    return {"result": json.loads(text)}
+                except json.JSONDecodeError:
+                    return {"result": text}
+            return {"result": []}
+    
+    return asyncio.run(do_request())
+
+
+def _call_rename_request(params: dict) -> dict:
+    """Call rename request."""
+    import asyncio
+    import httpx
+    from lspcmd.utils.config import get_mcp_url
+    
+    mcp_url = ensure_daemon_running()
+    
+    async def do_request():
+        async with httpx.AsyncClient(timeout=120.0) as client:
+            await client.post(
+                mcp_url,
+                json={
+                    "jsonrpc": "2.0",
+                    "id": 1,
+                    "method": "initialize",
+                    "params": {
+                        "protocolVersion": "2024-11-05",
+                        "capabilities": {},
+                        "clientInfo": {"name": "lspcmd-test", "version": "0.1.0"},
+                    },
+                },
+            )
+            await client.post(
+                mcp_url,
+                json={"jsonrpc": "2.0", "method": "notifications/initialized"},
+            )
+            
+            response = await client.post(
+                mcp_url,
+                json={
+                    "jsonrpc": "2.0",
+                    "id": 2,
+                    "method": "tools/call",
+                    "params": {
+                        "name": "_internal_rename",
+                        "arguments": {
+                            "workspace_root": params.get("workspace_root", ""),
+                            "path": params.get("path", ""),
+                            "line": params.get("line", 1),
+                            "column": params.get("column", 0),
+                            "new_name": params.get("new_name", ""),
+                        },
+                    },
+                },
+            )
+            result = response.json()
+            if "error" in result:
+                raise Exception(result["error"].get("message", str(result["error"])))
+            content = result.get("result", {}).get("content", [])
+            if content and isinstance(content, list):
+                text = content[0].get("text", "")
+                try:
+                    return {"result": json.loads(text)}
+                except json.JSONDecodeError:
+                    return {"result": text}
+            return {"result": {}}
+    
+    return asyncio.run(do_request())
+
+
+def _call_resolve_symbol_request(params: dict) -> dict:
+    """Call resolve-symbol request."""
+    import asyncio
+    import httpx
+    from lspcmd.utils.config import get_mcp_url
+    
+    mcp_url = ensure_daemon_running()
+    
+    async def do_request():
+        async with httpx.AsyncClient(timeout=120.0) as client:
+            await client.post(
+                mcp_url,
+                json={
+                    "jsonrpc": "2.0",
+                    "id": 1,
+                    "method": "initialize",
+                    "params": {
+                        "protocolVersion": "2024-11-05",
+                        "capabilities": {},
+                        "clientInfo": {"name": "lspcmd-test", "version": "0.1.0"},
+                    },
+                },
+            )
+            await client.post(
+                mcp_url,
+                json={"jsonrpc": "2.0", "method": "notifications/initialized"},
+            )
+            
+            response = await client.post(
+                mcp_url,
+                json={
+                    "jsonrpc": "2.0",
+                    "id": 2,
+                    "method": "tools/call",
+                    "params": {
+                        "name": "_internal_resolve_symbol",
+                        "arguments": {
+                            "workspace_root": params.get("workspace_root", ""),
+                            "symbol_path": params.get("symbol_path", ""),
+                        },
+                    },
+                },
+            )
+            result = response.json()
+            if "error" in result:
+                raise Exception(result["error"].get("message", str(result["error"])))
+            content = result.get("result", {}).get("content", [])
+            if content and isinstance(content, list):
+                text = content[0].get("text", "")
+                try:
+                    return {"result": json.loads(text)}
+                except json.JSONDecodeError:
+                    return {"result": text}
+            return {"result": {}}
+    
+    return asyncio.run(do_request())
+
+
+def format_output(data, output_format: str = "plain") -> str:
+    """Format output for tests - with MCP we receive pre-formatted output."""
+    from lspcmd.output.formatters import format_output as _format_output
+    return _format_output(data, output_format)
 
 
 @pytest.fixture(scope="class")
