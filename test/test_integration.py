@@ -178,10 +178,6 @@ def _call_definition_request(params: dict) -> dict:
     
     mcp_url = ensure_daemon_running()
     
-    # For definition requests, we need to use the raw daemon interface
-    # because the MCP "show" tool expects a symbol name, not line/column
-    # We'll use the internal daemon methods via raw LSP or a special handler
-    
     workspace_root = params.get("workspace_root", "")
     path = params.get("path", "")
     line = params.get("line", 1)
@@ -189,8 +185,13 @@ def _call_definition_request(params: dict) -> dict:
     context = params.get("context", 0)
     body = params.get("body", False)
     
+    headers = {
+        "Content-Type": "application/json",
+        "Accept": "application/json, text/event-stream",
+    }
+    
     async def do_request():
-        async with httpx.AsyncClient(timeout=120.0) as client:
+        async with httpx.AsyncClient(timeout=120.0, headers=headers) as client:
             # Initialize session
             await client.post(
                 mcp_url,
