@@ -288,6 +288,7 @@ class DaemonServer:
         return locations
 
     async def _handle_definition(self, params: dict) -> list[dict] | dict:
+        logger.info(f"definition request: path={params.get('path')} line={params.get('line')} column={params.get('column')}")
         body = params.get("body", False)
         if body:
             return await self._handle_definition_body(params)
