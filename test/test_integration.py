@@ -1035,6 +1035,118 @@ Moved file and updated imports in 4 file(s):
         assert "from utils import validate_email" not in updated_main
 
     # =========================================================================
+    # replace-function tests
+    # =========================================================================
+
+    def test_replace_function_basic(self, workspace):
+        """Test basic function replacement with matching signature."""
+        os.chdir(workspace)
+        
+        # Get original content for later restoration
+        main_path = workspace / "main.py"
+        original = main_path.read_text()
+        
+        try:
+            response = _call_replace_function_request({
+                "workspace_root": str(workspace),
+                "symbol": "create_sample_user",
+                "new_contents": '''def create_sample_user() -> User:
+    """Create a sample user for testing."""
+    return User(name="Jane Doe", email="jane@example.com", age=25)''',
+                "check_signature": True,
+            })
+            result = response["result"]
+            assert result["replaced"] == True
+            assert result["path"] == "main.py"
+            
+            # Verify file was modified
+            updated = main_path.read_text()
+            assert 'Jane Doe' in updated
+            assert 'jane@example.com' in updated
+        finally:
+            main_path.write_text(original)
+
+    def test_replace_function_signature_mismatch(self, workspace):
+        """Test that signature mismatch is detected."""
+        os.chdir(workspace)
+        
+        response = _call_replace_function_request({
+            "workspace_root": str(workspace),
+            "symbol": "create_sample_user",
+            "new_contents": '''def create_sample_user(extra_param: str) -> User:
+    """Create a sample user for testing."""
+    return User(name="Jane Doe", email="jane@example.com", age=25)''',
+            "check_signature": True,
+        })
+        result = response["result"]
+        assert "error" in result
+        assert "Signature mismatch" in result["error"]
+
+    def test_replace_function_no_check_signature(self, workspace):
+        """Test that --no-check-signature allows signature changes."""
+        os.chdir(workspace)
+        
+        main_path = workspace / "main.py"
+        original = main_path.read_text()
+        
+        try:
+            response = _call_replace_function_request({
+                "workspace_root": str(workspace),
+                "symbol": "create_sample_user",
+                "new_contents": '''def create_sample_user(name: str = "Default") -> User:
+    """Create a sample user for testing."""
+    return User(name=name, email="default@example.com", age=30)''',
+                "check_signature": False,
+            })
+            result = response["result"]
+            assert result["replaced"] == True
+            
+            updated = main_path.read_text()
+            assert 'name: str = "Default"' in updated
+        finally:
+            main_path.write_text(original)
+
+    def test_replace_method_basic(self, workspace):
+        """Test replacing a method within a class."""
+        os.chdir(workspace)
+        
+        main_path = workspace / "main.py"
+        original = main_path.read_text()
+        
+        try:
+            response = _call_replace_function_request({
+                "workspace_root": str(workspace),
+                "symbol": "MemoryStorage.save",
+                "new_contents": '''    def save(self, key: str, value: str) -> None:
+        """Save with logging."""
+        print(f"Saving {key}")
+        self._data[key] = value''',
+                "check_signature": True,
+            })
+            result = response["result"]
+            assert result["replaced"] == True
+            
+            updated = main_path.read_text()
+            assert 'print(f"Saving {key}")' in updated
+        finally:
+            main_path.write_text(original)
+
+    def test_replace_function_non_function_error(self, workspace):
+        """Test that replacing a non-function symbol gives an error."""
+        os.chdir(workspace)
+        
+        response = _call_replace_function_request({
+            "workspace_root": str(workspace),
+            "symbol": "User",
+            "new_contents": '''class User:
+    pass''',
+            "check_signature": True,
+        })
+        result = response["result"]
+        assert "error" in result
+        assert "not a Function or Method" in result["error"]
+
+    # =========================================================================
     # resolve-symbol disambiguation tests
     # =========================================================================
 
