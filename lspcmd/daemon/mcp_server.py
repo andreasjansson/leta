@@ -1814,16 +1814,26 @@ class MCPDaemonServer:
         self, workspace, file_path: Path, line: int, column: int
     ) -> str | None:
         doc = await workspace.ensure_document_open(file_path)
-        result = await workspace.client.send_request(
+
+        symbols_result = await workspace.client.send_request(
+            "textDocument/documentSymbol",
+            {"textDocument": {"uri": doc.uri}},
+        )
+        if symbols_result:
+            symbol = self._find_symbol_at_line(symbols_result, line - 1)
+            if symbol and symbol.get("detail"):
+                return self._format_signature_from_detail(symbol)
+
+        hover_result = await workspace.client.send_request(
             "textDocument/hover",
             {
                 "textDocument": {"uri": doc.uri},
                 "position": {"line": line - 1, "character": column},
             },
         )
-        if not result:
+        if not hover_result:
             return None
-        return self._parse_signature_from_hover(result)
+        return self._parse_signature_from_hover(hover_result)
 
     async def _extract_signature_from_new_contents(
         self, workspace, workspace_root: Path, original_file: Path, new_contents: str
