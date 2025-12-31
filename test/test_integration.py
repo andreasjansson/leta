@@ -2159,7 +2159,7 @@ src/main/java/com/example/UserRepository.java:55     public List<User> listUsers
         assert result["kind"] == "Class"
 
     def test_resolve_symbol_ambiguous_shows_container_refs(self, workspace):
-        """Test that ambiguous Java symbols show Class.method format."""
+        """Test that ambiguous Java symbols show Class.method format (normalized, no params)."""
         os.chdir(workspace)
         # First warm up the workspace with all Storage files
         run_request("grep", {
@@ -2170,20 +2170,20 @@ src/main/java/com/example/UserRepository.java:55     public List<User> listUsers
         time.sleep(1.0)
         response = run_request("resolve-symbol", {
             "workspace_root": str(workspace),
-            "symbol_path": "save(User)",
+            "symbol_path": "save",
         })
         result = response["result"]
-        assert result["error"] == "Symbol 'save(User)' is ambiguous (3 matches)"
+        assert result["error"] == "Symbol 'save' is ambiguous (3 matches)"
         assert result["total_matches"] == 3
         refs = sorted([m["ref"] for m in result["matches"]])
-        assert refs == ["FileStorage.save(User)", "MemoryStorage.save(User)", "Storage.save(User)"]
+        assert refs == ["FileStorage.save", "MemoryStorage.save", "Storage.save"]
 
     def test_resolve_symbol_class_method(self, workspace):
-        """Test resolving Class.method format."""
+        """Test resolving Class.method format (without params)."""
         os.chdir(workspace)
         response = run_request("resolve-symbol", {
             "workspace_root": str(workspace),
-            "symbol_path": "MemoryStorage.save(User)",
+            "symbol_path": "MemoryStorage.save",
         })
         result = response["result"]
         assert result["name"] == "save(User)"
