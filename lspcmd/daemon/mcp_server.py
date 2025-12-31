@@ -1922,39 +1922,122 @@ class MCPDaemonServer:
     def _generate_unambiguous_ref(
         self, sym: dict, all_matches: list[dict], target_name: str
     ) -> str:
+        """Generate a minimal unambiguous reference for a symbol.
+        
+        This must produce a ref that, when resolved using the same logic as
+        _handle_resolve_symbol, returns exactly this symbol and no others.
+        
+        Tries refs in order of preference (shortest first):
+        1. Container.name - if container uniquely identifies among matches
+        2. file.py:name - if filename uniquely identifies  
+        3. file.py:Container.name - if filename+container uniquely identifies
+        4. file.py:line:name - always unique (fallback)
+        """
         sym_path = sym.get("path", "")
         sym_line = sym.get("line", 0)
         sym_container = self._get_effective_container(sym)
         filename = Path(sym_path).name
+        module_name = self._get_module_name(sym_path)
         normalized_name = self._normalize_symbol_name(target_name)
 
+        # Try Container.name - but must check it doesn't match via module name too
         if sym_container:
             ref = f"{sym_container}.{normalized_name}"
-            matches_with_ref = [
-                s for s in all_matches if self._get_effective_container(s) == sym_container
-            ]
-            if len(matches_with_ref) == 1:
+            if self._ref_resolves_uniquely(ref, sym, all_matches):
                 return ref
 
+        # Try file.py:name
         ref = f"{filename}:{normalized_name}"
-        matches_with_ref = [
-            s for s in all_matches if Path(s.get("path", "")).name == filename
-        ]
-        if len(matches_with_ref) == 1:
+        if self._ref_resolves_uniquely(ref, sym, all_matches):
             return ref
 
+        # Try file.py:Container.name
         if sym_container:
             ref = f"{filename}:{sym_container}.{normalized_name}"
-            matches_with_ref = [
-                s
-                for s in all_matches
-                if Path(s.get("path", "")).name == filename
-                and self._get_effective_container(s) == sym_container
-            ]
-            if len(matches_with_ref) == 1:
+            if self._ref_resolves_uniquely(ref, sym, all_matches):
                 return ref
 
+        # Fallback: file.py:line:name (always unique if lines differ)
         return f"{filename}:{sym_line}:{normalized_name}"
+
+    def _ref_resolves_uniquely(
+        self, ref: str, target_sym: dict, all_matches: list[dict]
+    ) -> bool:
+        """Check if a ref resolves to exactly the target symbol.
+        
+        This simulates the resolution logic in _handle_resolve_symbol to ensure
+        the generated ref will actually work when the user types it.
+        """
+        # Parse the ref
+        path_filter = None
+        symbol_path = ref
+        
+        colon_count = ref.count(":")
+        if colon_count >= 1:
+            # Could be file:name or file:line:name or file:Container.name
+            parts = ref.split(":")
+            if colon_count == 1:
+                path_filter, symbol_path = parts[0], parts[1]
+            elif colon_count == 2:
+                # Could be file:line:name or file:Container.name with line
+                path_filter = parts[0]
+                try:
+                    line_filter = int(parts[1])
+                    # It's file:line:name - only matches symbols at that line
+                    matching = [
+                        s for s in all_matches
+                        if Path(s.get("path", "")).name == path_filter
+                        and s.get("line") == line_filter
+                    ]
+                    return len(matching) == 1 and matching[0] is target_sym
+                except ValueError:
+                    # It's file:Container.name
+                    symbol_path = f"{parts[1]}:{parts[2]}" if len(parts) > 2 else parts[1]
+        
+        # Apply path filter
+        if path_filter:
+            candidates = [
+                s for s in all_matches
+                if Path(s.get("path", "")).name == path_filter
+            ]
+        else:
+            candidates = all_matches
+        
+        # Parse symbol path for container matching
+        sym_parts = symbol_path.split(".")
+        if len(sym_parts) == 1:
+            # Simple name - matches any symbol with that name in candidates
+            matching = [s for s in candidates if self._normalize_symbol_name(s.get("name", "")) == sym_parts[0]]
+        else:
+            # Qualified name: Container.name
+            container_str = ".".join(sym_parts[:-1])
+            target_name = sym_parts[-1]
+            matching = []
+            
+            for s in candidates:
+                if self._normalize_symbol_name(s.get("name", "")) != target_name:
+                    continue
+                
+                s_container = s.get("container", "") or ""
+                s_container_normalized = self._normalize_container(s_container)
+                s_path = s.get("path", "")
+                s_module = self._get_module_name(s_path)
+                full_container = f"{s_module}.{s_container_normalized}" if s_container_normalized else s_module
+                
+                # Match using same logic as _handle_resolve_symbol
+                if s_container_normalized == container_str:
+                    matching.append(s)
+                elif s_container == container_str:
+                    matching.append(s)
+                elif full_container == container_str:
+                    matching.append(s)
+                elif full_container.endswith(f".{container_str}"):
+                    matching.append(s)
+                elif len(sym_parts) == 2 and sym_parts[0] == s_module:
+                    # Module name matching: main.f matches f in main.py
+                    matching.append(s)
+        
+        return len(matching) == 1 and matching[0] is target_sym
 
     def _get_module_name(self, rel_path: str) -> str:
         path = Path(rel_path)
