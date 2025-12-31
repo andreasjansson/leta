@@ -1271,6 +1271,120 @@ class DaemonServer:
         return list(languages)
 
 
+    async def _handle_resolve_symbol(self, params: dict) -> dict:
+        """Resolve a symbol path like 'ClassName.method' to a file location.
+        
+        Symbol paths can be:
+        - 'SymbolName' - find a symbol with this name
+        - 'Class.method' - find method in Class
+        - 'package/path:Symbol' - find Symbol in files matching path pattern
+        - 'path:Class.method' - combine path filter with qualified name
+        """
+        import fnmatch
+        import re
+        
+        workspace_root = Path(params["workspace_root"]).resolve()
+        symbol_path = params["symbol_path"]
+        
+        path_filter = None
+        if ":" in symbol_path:
+            path_filter, symbol_path = symbol_path.split(":", 1)
+        
+        parts = symbol_path.split(".")
+        
+        all_symbols = await self._collect_all_workspace_symbols(workspace_root, "")
+        
+        if path_filter:
+            def matches_path(rel_path: str) -> bool:
+                if fnmatch.fnmatch(rel_path, path_filter):
+                    return True
+                if fnmatch.fnmatch(rel_path, f"**/{path_filter}"):
+                    return True
+                if fnmatch.fnmatch(rel_path, f"{path_filter}/**"):
+                    return True
+                if "/" not in path_filter:
+                    if fnmatch.fnmatch(Path(rel_path).name, path_filter):
+                        return True
+                    if path_filter in Path(rel_path).parts:
+                        return True
+                return False
+            all_symbols = [s for s in all_symbols if matches_path(s.get("path", ""))]
+        
+        if len(parts) == 1:
+            target_name = parts[0]
+            matches = [s for s in all_symbols if s.get("name") == target_name]
+        else:
+            container = ".".join(parts[:-1])
+            target_name = parts[-1]
+            
+            matches = []
+            for sym in all_symbols:
+                if sym.get("name") != target_name:
+                    continue
+                sym_container = sym.get("container", "")
+                if sym_container == container:
+                    matches.append(sym)
+                    continue
+                if container in (sym_container or ""):
+                    matches.append(sym)
+                    continue
+                if sym_container and sym_container.endswith(f".{container}"):
+                    matches.append(sym)
+                    continue
+                if len(parts) == 2:
+                    parent_name = parts[0]
+                    if sym_container == parent_name:
+                        matches.append(sym)
+        
+        if not matches:
+            if path_filter:
+                return {"error": f"Symbol '{symbol_path}' not found in files matching '{path_filter}'"}
+            return {"error": f"Symbol '{symbol_path}' not found"}
+        
+        if len(matches) == 1:
+            sym = matches[0]
+            return {
+                "path": str(workspace_root / sym["path"]),
+                "line": sym["line"],
+                "column": sym.get("column", 0),
+                "name": sym["name"],
+                "kind": sym.get("kind"),
+                "container": sym.get("container"),
+            }
+        
+        matches_info = []
+        for sym in matches[:10]:
+            info = {
+                "path": sym["path"],
+                "line": sym["line"],
+                "name": sym["name"],
+                "kind": sym.get("kind"),
+                "container": sym.get("container"),
+                "detail": sym.get("detail"),
+            }
+            matches_info.append(info)
+        
+        hint_parts = []
+        
+        containers = set(s.get("container") for s in matches if s.get("container"))
+        if containers and len(containers) < len(matches):
+            if len(parts) == 1:
+                hint_parts.append(f"Try '@Container.{target_name}' to narrow down")
+            else:
+                hint_parts.append("Try a more specific container path")
+        
+        paths = set(s.get("path") for s in matches)
+        if len(paths) > 1:
+            hint_parts.append("Try 'path:Symbol' to filter by file")
+        
+        return {
+            "error": f"Symbol '{symbol_path}' is ambiguous ({len(matches)} matches)",
+            "matches": matches_info,
+            "hint": ". ".join(hint_parts) if hint_parts else None,
+            "total_matches": len(matches),
+        }
+
+
 async def run_daemon() -> None:
     log_dir = get_log_dir()
     log_dir.mkdir(parents=True, exist_ok=True)
