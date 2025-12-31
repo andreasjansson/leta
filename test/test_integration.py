@@ -289,7 +289,7 @@ utils.py:9 [Function] validate_email
 utils.py:22 [Function] validate_age
 utils.py:27 [Function] memoize
 utils.py:38 [Function] wrapper in memoize
-utils.py:47 [Function] fibonacci
+utils.py:48 [Function] fibonacci
 utils.py:125 [Function] format_name"""
 
     def test_grep_workspace_wide(self, workspace):
@@ -326,7 +326,7 @@ utils.py:9 [Function] validate_email
 utils.py:22 [Function] validate_age
 utils.py:27 [Function] memoize
 utils.py:38 [Function] wrapper in memoize
-utils.py:47 [Function] fibonacci
+utils.py:48 [Function] fibonacci
 utils.py:125 [Function] format_name
 errors.py:4 [Function] undefined_variable
 errors.py:9 [Function] type_error
