@@ -143,6 +143,7 @@ class DaemonServer:
             "grep": self._handle_grep,
             "tree": self._handle_tree,
             "restart-workspace": self._handle_restart_workspace,
+            "resolve-symbol": self._handle_resolve_symbol,
         }
 
         handler = handlers.get(method)
