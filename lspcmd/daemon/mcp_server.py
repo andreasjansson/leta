@@ -1904,11 +1904,61 @@ class MCPDaemonServer:
         code_match = re.search(r"```\w*\n(.+?)```", value, re.DOTALL)
         if code_match:
             code_block = code_match.group(1).strip()
-            lines = code_block.split("\n")
-            return lines[0].strip() if lines else None
+            return self._extract_full_signature(code_block)
 
-        lines = value.strip().split("\n")
-        return lines[0].strip() if lines else None
+        return self._extract_full_signature(value.strip())
+
+    def _extract_full_signature(self, code_block: str) -> str | None:
+        """Extract a complete function signature from a code block.
+        
+        Handles multi-line signatures (e.g., Python functions with many parameters).
+        The signature ends at ':' for Python/TS, '{' for Go/Rust/JS, or ')' if return type follows.
+        """
+        lines = code_block.split("\n")
+        if not lines:
+            return None
+
+        signature_parts = []
+        paren_depth = 0
+        bracket_depth = 0
+        found_start = False
+
+        for line in lines:
+            stripped = line.strip()
+            if not stripped:
+                continue
+
+            if not found_start:
+                if any(kw in stripped for kw in ["def ", "func ", "fn ", "function ", "(function)", "(method)"]):
+                    found_start = True
+                elif stripped.startswith("class ") or stripped.startswith("type "):
+                    return stripped
+                else:
+                    continue
+
+            for char in stripped:
+                if char == '(':
+                    paren_depth += 1
+                elif char == ')':
+                    paren_depth -= 1
+                elif char == '[':
+                    bracket_depth += 1
+                elif char == ']':
+                    bracket_depth -= 1
+
+            signature_parts.append(stripped)
+
+            if paren_depth == 0 and bracket_depth == 0:
+                full_sig = " ".join(signature_parts)
+                colon_idx = full_sig.rfind(":")
+                brace_idx = full_sig.rfind("{")
+                if brace_idx > 0 and (colon_idx < 0 or brace_idx < colon_idx):
+                    full_sig = full_sig[:brace_idx].strip()
+                elif colon_idx > 0:
+                    pass
+                return full_sig
+
+        return " ".join(signature_parts) if signature_parts else lines[0].strip()
 
     def _signatures_match(self, old_sig: str, new_sig: str) -> bool:
         old_normalized = self._normalize_signature(old_sig)
