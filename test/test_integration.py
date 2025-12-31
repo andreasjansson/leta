@@ -1146,8 +1146,8 @@ class TestRustIntegration:
         output = format_output(response["result"], "plain")
         assert output == """\
 src/storage.rs:4 [Interface] Storage
-src/storage.rs:19 [Struct] MemoryStorage
-src/storage.rs:57 [Struct] FileStorage"""
+src/storage.rs:20 [Struct] MemoryStorage
+src/storage.rs:58 [Struct] FileStorage"""
 
     def test_grep_kind_filter(self, workspace):
         os.chdir(workspace)
