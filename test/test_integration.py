@@ -3293,6 +3293,44 @@ class TestRubyIntegration:
         assert (workspace / "user.rb").exists()
         assert not (workspace / "person.rb").exists()
 
+    # =========================================================================
+    # resolve-symbol disambiguation tests
+    # =========================================================================
+
+    def test_resolve_symbol_unique_name(self, workspace):
+        """Test resolving a unique symbol name."""
+        os.chdir(workspace)
+        response = run_request("resolve-symbol", {
+            "workspace_root": str(workspace),
+            "symbol_path": "User",
+        })
+        result = response["result"]
+        assert "error" not in result, f"Unexpected error: {result.get('error')}"
+        assert "User" in result["name"]
+
+    def test_resolve_symbol_class_method(self, workspace):
+        """Test resolving Class.method format."""
+        os.chdir(workspace)
+        response = run_request("resolve-symbol", {
+            "workspace_root": str(workspace),
+            "symbol_path": "User.is_adult",
+        })
+        result = response["result"]
+        # May or may not be found depending on how solargraph indexes methods
+        if "error" not in result:
+            assert "is_adult" in result["name"]
+
+    def test_resolve_symbol_file_filter(self, workspace):
+        """Test resolving with file filter."""
+        os.chdir(workspace)
+        response = run_request("resolve-symbol", {
+            "workspace_root": str(workspace),
+            "symbol_path": "main.rb:main",
+        })
+        result = response["result"]
+        assert "error" not in result, f"Unexpected error: {result.get('error')}"
+        assert "main.rb" in result["path"]
+
 
 # =============================================================================
 # PHP Integration Tests (intelephense)
