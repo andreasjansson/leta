@@ -82,8 +82,9 @@ class TestCppIntegration:
             "kinds": ["function"],
         })
         output = format_output(response["result"], "plain")
-        assert "createSampleUser" in output
-        assert "validateUser" in output
+        assert output == """\
+user.hpp:135 [Function] createSampleUser (User ()) in example
+user.hpp:140 [Function] validateUser (void (const User &)) in example"""
 
     def test_grep_kind_filter_method(self, workspace):
         os.chdir(workspace)
@@ -94,7 +95,124 @@ class TestCppIntegration:
             "kinds": ["method"],
         })
         output = format_output(response["result"], "plain")
-        assert "isAdult" in output
+        assert output == "user.hpp:23 [Method] isAdult (bool () const) in User"
+
+    def test_grep_case_sensitive(self, workspace):
+        os.chdir(workspace)
+        response = run_request("grep", {
+            "paths": [str(workspace / "user.hpp")],
+            "workspace_root": str(workspace),
+            "pattern": "^User$",
+            "case_sensitive": False,
+        })
+        output = format_output(response["result"], "plain")
+        assert output == """\
+user.hpp:13 [Class] User (class) in example
+user.hpp:15 [Constructor] User ((std::string, std::string, int)) in User"""
+        
+        response = run_request("grep", {
+            "paths": [str(workspace / "user.hpp")],
+            "workspace_root": str(workspace),
+            "pattern": "^user$",
+            "case_sensitive": True,
+        })
+        lowercase_output = format_output(response["result"], "plain")
+        assert lowercase_output == "No results"
+
+    def test_grep_combined_filters(self, workspace):
+        os.chdir(workspace)
+        response = run_request("grep", {
+            "paths": [str(workspace / "user.hpp")],
+            "workspace_root": str(workspace),
+            "pattern": "Storage",
+            "kinds": ["class"],
+        })
+        output = format_output(response["result"], "plain")
+        assert output == """\
+user.hpp:37 [Class] Storage (class) in example
+user.hpp:48 [Class] MemoryStorage (class) in example
+user.hpp:80 [Class] FileStorage (class) in example"""
+
+    def test_grep_multiple_files(self, workspace):
+        os.chdir(workspace)
+        response = run_request("grep", {
+            "paths": [str(workspace / "user.hpp"), str(workspace / "main.cpp")],
+            "workspace_root": str(workspace),
+            "pattern": ".*",
+            "kinds": ["function"],
+        })
+        output = format_output(response["result"], "plain")
+        assert output == """\
+user.hpp:135 [Function] createSampleUser (User ()) in example
+user.hpp:140 [Function] validateUser (void (const User &)) in example
+main.cpp:7 [Function] main (int ())"""
+
+    def test_grep_workspace_wide(self, workspace):
+        os.chdir(workspace)
+        response = run_request("grep", {
+            "workspace_root": str(workspace),
+            "pattern": "validate",
+            "case_sensitive": False,
+            "kinds": ["function"],
+        })
+        output = format_output(response["result"], "plain")
+        assert output == "user.hpp:140 [Function] validateUser (void (const User &)) in example"
+
+    def test_grep_exclude_pattern(self, workspace):
+        os.chdir(workspace)
+        response = run_request("grep", {
+            "workspace_root": str(workspace),
+            "pattern": ".*",
+            "kinds": ["function"],
+        })
+        all_output = format_output(response["result"], "plain")
+        assert all_output == """\
+user.hpp:135 [Function] createSampleUser (User ()) in example
+user.hpp:140 [Function] validateUser (void (const User &)) in example
+errors.cpp:6 [Function] undefinedVariable (int ())
+errors.cpp:11 [Function] typeError (int ())
+errors.cpp:17 [Function] missingReturn (int ())
+errors.cpp:23 [Function] twoArgs (void (int, int))
+errors.cpp:25 [Function] argumentError (void ())
+errors.cpp:30 [Function] typeConversion (void ())
+main.cpp:7 [Function] main (int ())"""
+        
+        response = run_request("grep", {
+            "workspace_root": str(workspace),
+            "pattern": ".*",
+            "kinds": ["function"],
+            "exclude_patterns": ["errors.cpp"],
+        })
+        filtered_output = format_output(response["result"], "plain")
+        assert filtered_output == """\
+user.hpp:135 [Function] createSampleUser (User ()) in example
+user.hpp:140 [Function] validateUser (void (const User &)) in example
+main.cpp:7 [Function] main (int ())"""
+
+    def test_grep_with_docs(self, workspace):
+        os.chdir(workspace)
+        response = run_request("grep", {
+            "paths": [str(workspace / "user.hpp")],
+            "workspace_root": str(workspace),
+            "pattern": "createSampleUser",
+            "kinds": ["function"],
+            "include_docs": True,
+        })
+        output = format_output(response["result"], "plain")
+        assert output == """\
+user.hpp:135 [Function] createSampleUser (User ()) in example
+    ### function `createSampleUser`  
+    
+    ---
+    → `User`  
+    Creates a sample user for testing.  
+    
+    ---
+    ```cpp
+    // In namespace example
+    inline User createSampleUser()
+    ```
+"""
 
     # =========================================================================
     # definition tests
