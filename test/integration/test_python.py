@@ -553,30 +553,28 @@ main.py:61 class FileStorage:"""
     # =========================================================================
 
     def test_subtypes_not_supported(self, workspace):
-        import click
         os.chdir(workspace)
-        with pytest.raises(click.ClickException) as exc_info:
-            run_request("subtypes", {
-                "path": str(workspace / "main.py"),
-                "workspace_root": str(workspace),
-                "line": 14,
-                "column": 6,
-                "context": 0,
-            })
-        assert "prepareTypeHierarchy" in str(exc_info.value)
+        response = run_request("subtypes", {
+            "path": str(workspace / "main.py"),
+            "workspace_root": str(workspace),
+            "line": 14,
+            "column": 6,
+            "context": 0,
+        })
+        assert "error" in response
+        assert "prepareTypeHierarchy" in response["error"]
 
     def test_supertypes_not_supported(self, workspace):
-        import click
         os.chdir(workspace)
-        with pytest.raises(click.ClickException) as exc_info:
-            run_request("supertypes", {
-                "path": str(workspace / "main.py"),
-                "workspace_root": str(workspace),
-                "line": 48,
-                "column": 6,
-                "context": 0,
-            })
-        assert "prepareTypeHierarchy" in str(exc_info.value)
+        response = run_request("supertypes", {
+            "path": str(workspace / "main.py"),
+            "workspace_root": str(workspace),
+            "line": 48,
+            "column": 6,
+            "context": 0,
+        })
+        assert "error" in response
+        assert "prepareTypeHierarchy" in response["error"]
 
     # =========================================================================
     # diagnostics tests
