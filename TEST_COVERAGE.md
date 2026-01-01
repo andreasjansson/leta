@@ -6,12 +6,12 @@
 | └ single file | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | └ pattern filter | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | └ kind filter | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| └ case sensitive | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | | | | |
-| └ combined filters | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | | | | |
-| └ multiple files | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | | | | |
-| └ workspace-wide | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | | | | |
-| └ exclude pattern | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | | | | |
-| └ with docs | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | | | | |
+| └ case sensitive | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| └ combined filters | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| └ multiple files | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| └ workspace-wide | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| └ exclude pattern | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| └ with docs | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ⚠️⁸ | ✅ |
 | **show (definition)** | | | | | | | | | | |
 | └ basic | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | └ with context | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | | | | |
@@ -46,7 +46,7 @@
 | └ unique name | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | └ ambiguous refs | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | | | | ✅ |
 | └ qualified name | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | | ⚠️⁷ | ✅ |
-| └ file filter | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | |
+| └ file filter | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 ### Legend
 - ✅ = Tested and working
@@ -62,6 +62,7 @@
 5. **Go declaration**: gopls doesn't support `textDocument/declaration`
 6. **move-file not supported**: These LSP servers don't implement `workspace/willRenameFiles`
 7. **Ruby qualified name**: Solargraph may not index instance methods with `Class.method` notation
+8. **Ruby with docs**: Solargraph's hover response position doesn't match symbol position, so docs aren't retrieved
 
 ### Multi-Language Project Tests
 There's also a `TestMultiLanguageIntegration` class that tests:
@@ -70,7 +71,7 @@ There's also a `TestMultiLanguageIntegration` class that tests:
 - Both languages workspace-wide search ✅
 
 ### Test Count Summary
-- **Total tests**: 238 (all passing)
-- **Languages with full grep coverage**: Python, Go, Rust, TypeScript, Java, C++
+- **Total tests**: 262 (all passing)
+- **Languages with full grep coverage**: Python, Go, Rust, TypeScript, Java, C++, Zig, Lua, Ruby, PHP
 - **Languages with full definition coverage**: Python, Go, Rust, TypeScript, Java, C++
 - **Languages with references context**: Python, Go, Rust, TypeScript, Java
