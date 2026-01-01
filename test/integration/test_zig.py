@@ -199,7 +199,7 @@ src/main.zig:2 [Constant] user"""
             "body": False,
         })
         output = format_output(response["result"], "plain")
-        assert output == "src/main.zig:22"
+        assert output == "src/main.zig:22 pub fn createSampleUser() user.User {"
 
     def test_definition_with_body(self, workspace):
         os.chdir(workspace)
