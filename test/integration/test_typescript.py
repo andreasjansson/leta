@@ -310,6 +310,112 @@ src/main.ts:1 import { User, UserRepository, MemoryStorage, validateUser } from 
 src/main.ts:6 function createSampleUser(): User {
 src/main.ts:7     return new User("John Doe", "john@example.com", 30);"""
 
+    def test_references_with_context(self, workspace):
+        os.chdir(workspace)
+        response = run_request("references", {
+            "path": str(workspace / "src" / "user.ts"),
+            "workspace_root": str(workspace),
+            "line": 4,
+            "column": 13,
+            "context": 1,
+        })
+        output = format_output(response["result"], "plain")
+        assert output == """\
+src/user.ts:3-5
+ */
+export class User {
+    constructor(
+
+src/user.ts:29-31
+export interface Storage {
+    save(user: User): void;
+    load(email: string): User | undefined;
+
+src/user.ts:30-32
+    save(user: User): void;
+    load(email: string): User | undefined;
+    delete(email: string): boolean;
+
+src/user.ts:32-34
+    delete(email: string): boolean;
+    list(): User[];
+}
+
+src/user.ts:39-41
+export class MemoryStorage implements Storage {
+    private users: Map<string, User> = new Map();
+
+
+src/user.ts:41-43
+
+    save(user: User): void {
+        this.users.set(user.email, user);
+
+src/user.ts:45-47
+
+    load(email: string): User | undefined {
+        return this.users.get(email);
+
+src/user.ts:53-55
+
+    list(): User[] {
+        return Array.from(this.users.values());
+
+src/user.ts:62-64
+export class FileStorage implements Storage {
+    private cache: Map<string, User> = new Map();
+
+
+src/user.ts:70-72
+
+    save(user: User): void {
+        // Stub: just cache in memory
+
+src/user.ts:75-77
+
+    load(email: string): User | undefined {
+        return this.cache.get(email);
+
+src/user.ts:83-85
+
+    list(): User[] {
+        return Array.from(this.cache.values());
+
+src/user.ts:94-96
+
+    addUser(user: User): void {
+        this.storage.save(user);
+
+src/user.ts:98-100
+
+    getUser(email: string): User | undefined {
+        return this.storage.load(email);
+
+src/user.ts:106-108
+
+    listUsers(): User[] {
+        return this.storage.list();
+
+src/user.ts:118-120
+ */
+export function validateUser(user: User): string | null {
+    if (!user.name) {
+
+src/main.ts:1-2
+import { User, UserRepository, MemoryStorage, validateUser } from './user';
+
+
+src/main.ts:5-7
+ */
+function createSampleUser(): User {
+    return new User("John Doe", "john@example.com", 30);
+
+src/main.ts:6-8
+function createSampleUser(): User {
+    return new User("John Doe", "john@example.com", 30);
+}
+"""
+
     # =========================================================================
     # implementations tests
     # =========================================================================
