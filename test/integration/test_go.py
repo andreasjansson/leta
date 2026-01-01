@@ -98,6 +98,7 @@ main.go:154 [Interface] Validator (interface{...})"""
             "case_sensitive": False,
         })
         insensitive_output = format_output(response["result"], "plain")
+        assert insensitive_output == "main.go:9 [Struct] User (struct{...})"
         
         response = run_request("grep", {
             "paths": [str(workspace / "main.go")],
@@ -106,9 +107,7 @@ main.go:154 [Interface] Validator (interface{...})"""
             "case_sensitive": True,
         })
         sensitive_output = format_output(response["result"], "plain")
-        
-        assert "[Struct] User" in insensitive_output
-        assert "[Struct] User" in sensitive_output
+        assert sensitive_output == "main.go:9 [Struct] User (struct{...})"
         
         response = run_request("grep", {
             "paths": [str(workspace / "main.go")],
@@ -141,10 +140,14 @@ main.go:85 [Struct] FileStorage (struct{...})"""
             "kinds": ["function"],
         })
         output = format_output(response["result"], "plain")
-        assert "main.go" in output
-        assert "utils.go" in output
-        assert "NewUser" in output
-        assert "NewCounter" in output
+        assert output == """\
+main.go:16 [Function] NewUser (func(name, email string, age int) *User)
+main.go:44 [Function] NewMemoryStorage (func() *MemoryStorage)
+main.go:90 [Function] NewFileStorage (func(basePath string) *FileStorage)
+main.go:124 [Function] NewUserRepository (func(storage Storage) *UserRepository)
+utils.go:31 [Function] NewCounter (func(initial int) *Counter)
+utils.go:64 [Function] NewResult (func(value T) *Result[T])
+utils.go:69 [Function] NewError (func(err error) *Result[T])"""
 
     def test_grep_workspace_wide(self, workspace):
         os.chdir(workspace)
@@ -154,9 +157,10 @@ main.go:85 [Struct] FileStorage (struct{...})"""
             "kinds": ["function"],
         })
         output = format_output(response["result"], "plain")
-        assert "ValidateEmail" in output
-        assert "ValidateAge" in output
-        assert "ValidateUser" in output
+        assert output == """\
+utils.go:9 [Function] ValidateEmail (func(email string) bool)
+utils.go:16 [Function] ValidateAge (func(age int) bool)
+main.go:159 [Function] ValidateUser (func(user *User) error)"""
 
     def test_grep_exclude_pattern(self, workspace):
         os.chdir(workspace)
@@ -166,6 +170,22 @@ main.go:85 [Struct] FileStorage (struct{...})"""
             "kinds": ["function"],
         })
         all_output = format_output(response["result"], "plain")
+        assert all_output == """\
+utils.go:9 [Function] ValidateEmail (func(email string) bool)
+utils.go:16 [Function] ValidateAge (func(age int) bool)
+utils.go:21 [Function] FormatName (func(first, last string) string)
+utils.go:31 [Function] NewCounter (func(initial int) *Counter)
+utils.go:64 [Function] NewResult (func(value T) *Result[T])
+utils.go:69 [Function] NewError (func(err error) *Result[T])
+main.go:16 [Function] NewUser (func(name, email string, age int) *User)
+main.go:44 [Function] NewMemoryStorage (func() *MemoryStorage)
+main.go:90 [Function] NewFileStorage (func(basePath string) *FileStorage)
+main.go:124 [Function] NewUserRepository (func(storage Storage) *UserRepository)
+main.go:149 [Function] createSampleUser (func() *User)
+main.go:159 [Function] ValidateUser (func(user *User) error)
+main.go:172 [Function] main (func())
+errors.go:4 [Function] ErrorFunc (func())
+errors.go:17 [Function] TypeErrorFunc (func() int)"""
         
         response = run_request("grep", {
             "workspace_root": str(workspace),
@@ -174,10 +194,16 @@ main.go:85 [Struct] FileStorage (struct{...})"""
             "exclude_patterns": ["utils.go"],
         })
         filtered_output = format_output(response["result"], "plain")
-        
-        assert "utils.go" in all_output
-        assert "utils.go" not in filtered_output
-        assert "main.go" in filtered_output
+        assert filtered_output == """\
+main.go:16 [Function] NewUser (func(name, email string, age int) *User)
+main.go:44 [Function] NewMemoryStorage (func() *MemoryStorage)
+main.go:90 [Function] NewFileStorage (func(basePath string) *FileStorage)
+main.go:124 [Function] NewUserRepository (func(storage Storage) *UserRepository)
+main.go:149 [Function] createSampleUser (func() *User)
+main.go:159 [Function] ValidateUser (func(user *User) error)
+main.go:172 [Function] main (func())
+errors.go:4 [Function] ErrorFunc (func())
+errors.go:17 [Function] TypeErrorFunc (func() int)"""
 
     def test_grep_with_docs(self, workspace):
         os.chdir(workspace)
@@ -189,8 +215,16 @@ main.go:85 [Struct] FileStorage (struct{...})"""
             "include_docs": True,
         })
         output = format_output(response["result"], "plain")
-        assert "NewUser" in output
-        assert "creates a new User instance" in output.lower() or "func NewUser" in output
+        assert output == """\
+main.go:16 [Function] NewUser (func(name, email string, age int) *User)
+    ```go
+    func NewUser(name string, email string, age int) *User
+    ```
+    
+    ---
+    
+    NewUser creates a new User instance.
+"""
 
     # =========================================================================
     # definition tests
