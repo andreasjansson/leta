@@ -291,16 +291,15 @@ class TestCppIntegration:
     # =========================================================================
 
     def test_move_file_not_supported(self, workspace):
-        import click
         os.chdir(workspace)
         
-        with pytest.raises(click.ClickException) as exc_info:
-            run_request("move-file", {
-                "old_path": str(workspace / "user.hpp"),
-                "new_path": str(workspace / "person.hpp"),
-                "workspace_root": str(workspace),
-            })
-        assert str(exc_info.value) == "move-file is not supported by clangd"
+        response = run_request("move-file", {
+            "old_path": str(workspace / "user.hpp"),
+            "new_path": str(workspace / "person.hpp"),
+            "workspace_root": str(workspace),
+        })
+        assert "error" in response
+        assert response["error"] == "move-file is not supported by clangd"
         
         # Verify file was NOT moved
         assert (workspace / "user.hpp").exists()
