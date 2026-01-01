@@ -87,7 +87,7 @@ class TestCliWithDaemon:
         result = runner.invoke(cli, ["daemon", "info"])
         assert result.exit_code == 0
 
-    def test_def_by_symbol(self, python_project, isolated_config):
+    def test_show_by_symbol(self, python_project, isolated_config):
         config = load_config()
         add_workspace_root(python_project, config)
 
@@ -95,11 +95,11 @@ class TestCliWithDaemon:
         import os
         with runner.isolated_filesystem():
             os.chdir(python_project)
-            result = runner.invoke(cli, ["def", "User"])
+            result = runner.invoke(cli, ["show", "User"])
         assert result.exit_code == 0
         assert "main.py" in result.output
 
-    def test_def_with_container(self, python_project, isolated_config):
+    def test_show_with_container(self, python_project, isolated_config):
         config = load_config()
         add_workspace_root(python_project, config)
 
@@ -107,11 +107,11 @@ class TestCliWithDaemon:
         import os
         with runner.isolated_filesystem():
             os.chdir(python_project)
-            result = runner.invoke(cli, ["def", "MemoryStorage.save"])
+            result = runner.invoke(cli, ["show", "MemoryStorage.save"])
         assert result.exit_code == 0
         assert "main.py" in result.output
 
-    def test_def_with_path_filter(self, python_project, isolated_config):
+    def test_show_with_path_filter(self, python_project, isolated_config):
         config = load_config()
         add_workspace_root(python_project, config)
 
@@ -119,11 +119,11 @@ class TestCliWithDaemon:
         import os
         with runner.isolated_filesystem():
             os.chdir(python_project)
-            result = runner.invoke(cli, ["def", "main.py:User"])
+            result = runner.invoke(cli, ["show", "main.py:User"])
         assert result.exit_code == 0
         assert "main.py" in result.output
 
-    def test_def_body(self, python_project, isolated_config):
+    def test_show_body(self, python_project, isolated_config):
         config = load_config()
         add_workspace_root(python_project, config)
 
@@ -131,7 +131,7 @@ class TestCliWithDaemon:
         import os
         with runner.isolated_filesystem():
             os.chdir(python_project)
-            result = runner.invoke(cli, ["def", "User"])
+            result = runner.invoke(cli, ["show", "User"])
         assert result.exit_code == 0
         assert "class User" in result.output
 
