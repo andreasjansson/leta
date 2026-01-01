@@ -54,9 +54,10 @@ class TestRubyIntegration:
             "kinds": ["class"],
         })
         output = format_output(response["result"], "plain")
-        assert "Storage" in output
-        assert "MemoryStorage" in output
-        assert "FileStorage" in output
+        assert output == """\
+user.rb:38 [Class] Storage
+user.rb:71 [Class] MemoryStorage
+user.rb:113 [Class] FileStorage"""
 
     def test_grep_kind_filter_class(self, workspace):
         os.chdir(workspace)
@@ -67,11 +68,12 @@ class TestRubyIntegration:
             "kinds": ["class"],
         })
         output = format_output(response["result"], "plain")
-        assert "[Class] User" in output
-        assert "[Class] Storage" in output
-        assert "[Class] MemoryStorage" in output
-        assert "[Class] FileStorage" in output
-        assert "[Class] UserRepository" in output
+        assert output == """\
+user.rb:8 [Class] User
+user.rb:38 [Class] Storage
+user.rb:71 [Class] MemoryStorage
+user.rb:113 [Class] FileStorage
+user.rb:144 [Class] UserRepository"""
 
     def test_grep_kind_filter_method(self, workspace):
         os.chdir(workspace)
@@ -95,10 +97,103 @@ class TestRubyIntegration:
             "kinds": ["function", "method"],
         })
         output = format_output(response["result"], "plain")
-        assert "create_sample_user" in output
-        assert "validate_user" in output
-        assert "process_users" in output
-        assert "main" in output
+        assert output == """\
+main.rb:8 [Method] create_sample_user
+main.rb:16 [Method] validate_user
+main.rb:26 [Method] process_users
+main.rb:31 [Method] main"""
+
+    def test_grep_case_sensitive(self, workspace):
+        os.chdir(workspace)
+        # Case-insensitive should find Storage classes
+        response = run_request("grep", {
+            "paths": [str(workspace / "user.rb")],
+            "workspace_root": str(workspace),
+            "pattern": "storage",
+            "kinds": ["class"],
+            "case_sensitive": False,
+        })
+        output = format_output(response["result"], "plain")
+        assert output == """\
+user.rb:38 [Class] Storage
+user.rb:71 [Class] MemoryStorage
+user.rb:113 [Class] FileStorage"""
+        
+        # Case-sensitive should find nothing (lowercase doesn't match)
+        response = run_request("grep", {
+            "paths": [str(workspace / "user.rb")],
+            "workspace_root": str(workspace),
+            "pattern": "storage",
+            "kinds": ["class"],
+            "case_sensitive": True,
+        })
+        output = format_output(response["result"], "plain")
+        assert output == "No results"
+
+    def test_grep_combined_filters(self, workspace):
+        os.chdir(workspace)
+        response = run_request("grep", {
+            "paths": [str(workspace / "user.rb")],
+            "workspace_root": str(workspace),
+            "pattern": "^Memory",
+            "kinds": ["class"],
+        })
+        output = format_output(response["result"], "plain")
+        assert output == "user.rb:71 [Class] MemoryStorage"
+
+    def test_grep_multiple_files(self, workspace):
+        os.chdir(workspace)
+        response = run_request("grep", {
+            "paths": [str(workspace / "user.rb"), str(workspace / "main.rb")],
+            "workspace_root": str(workspace),
+            "pattern": "User",
+            "kinds": ["class"],
+        })
+        output = format_output(response["result"], "plain")
+        assert output == """\
+user.rb:8 [Class] User
+user.rb:144 [Class] UserRepository"""
+
+    def test_grep_workspace_wide(self, workspace):
+        os.chdir(workspace)
+        all_files = [str(p) for p in workspace.glob("*.rb")]
+        response = run_request("grep", {
+            "paths": all_files,
+            "workspace_root": str(workspace),
+            "pattern": "main",
+            "kinds": ["method"],
+        })
+        output = format_output(response["result"], "plain")
+        assert output == "main.rb:31 [Method] main"
+
+    def test_grep_exclude_pattern(self, workspace):
+        os.chdir(workspace)
+        all_files = [str(p) for p in workspace.glob("*.rb")]
+        response = run_request("grep", {
+            "paths": all_files,
+            "workspace_root": str(workspace),
+            "pattern": "User",
+            "kinds": ["class"],
+            "exclude_patterns": ["errors.rb"],
+        })
+        output = format_output(response["result"], "plain")
+        assert output == """\
+user.rb:8 [Class] User
+user.rb:144 [Class] UserRepository"""
+
+    def test_grep_with_docs(self, workspace):
+        """Test grep with docs - Solargraph may not return docs due to hover position."""
+        os.chdir(workspace)
+        response = run_request("grep", {
+            "paths": [str(workspace / "user.rb")],
+            "workspace_root": str(workspace),
+            "pattern": "^User$",
+            "kinds": ["class"],
+            "include_docs": True,
+        })
+        output = format_output(response["result"], "plain")
+        # Solargraph doesn't return docs at the reported symbol position
+        assert output == "user.rb:8 [Class] User"
 
     # =========================================================================
     # definition tests
