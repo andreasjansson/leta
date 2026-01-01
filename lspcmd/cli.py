@@ -279,16 +279,48 @@ def daemon_info(ctx):
     click.echo(format_output(response["result"], output_format))
 
 
-@daemon.command("shutdown")
+@daemon.command("start")
 @click.pass_context
-def daemon_shutdown(ctx):
-    """Shutdown the lspcmd daemon."""
+def daemon_start(ctx):
+    """Start the lspcmd daemon."""
+    pid_path = get_pid_path()
+    socket_path = get_socket_path()
+
+    if is_daemon_running(pid_path) and socket_path.exists():
+        click.echo("Daemon already running")
+        return
+
+    ensure_daemon_running()
+    click.echo("Daemon started")
+
+
+@daemon.command("stop")
+@click.pass_context
+def daemon_stop(ctx):
+    """Stop the lspcmd daemon."""
     if not is_daemon_running(get_pid_path()):
         click.echo("Daemon is not running")
         return
 
     run_request("shutdown", {})
-    click.echo("Daemon shutting down")
+    click.echo("Daemon stopped")
+
+
+@daemon.command("restart")
+@click.pass_context
+def daemon_restart(ctx):
+    """Restart the lspcmd daemon."""
+    socket_path = get_socket_path()
+    
+    if is_daemon_running(get_pid_path()):
+        run_request("shutdown", {})
+        for _ in range(50):
+            if not socket_path.exists():
+                break
+            time.sleep(0.1)
+    
+    ensure_daemon_running()
+    click.echo("Daemon restarted")
 
 
 @cli.group()
