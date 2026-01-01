@@ -303,6 +303,28 @@ fn create_sample_user() -> User {
 src/main.rs:25     let user = create_sample_user();
 src/main.rs:10 fn create_sample_user() -> User {"""
 
+    def test_references_with_context(self, workspace):
+        os.chdir(workspace)
+        response = self._run_request_with_retry("references", {
+            "path": str(workspace / "src" / "main.rs"),
+            "workspace_root": str(workspace),
+            "line": 10,
+            "column": 3,
+            "context": 1,
+        })
+        output = format_output(response["result"], "plain")
+        assert output == """\
+src/main.rs:24-26
+    let mut repo = UserRepository::new(storage);
+    let user = create_sample_user();
+
+
+src/main.rs:9-11
+/// Creates a sample user for testing.
+fn create_sample_user() -> User {
+    User::new("John Doe".to_string(), "john@example.com".to_string(), 30)
+"""
+
     # =========================================================================
     # diagnostics tests
     # =========================================================================
