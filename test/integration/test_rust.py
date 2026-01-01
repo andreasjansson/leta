@@ -356,8 +356,9 @@ Renamed in 3 file(s):
   src/storage.rs"""
 
             # Verify rename happened
-            assert "pub struct Person" in user_rs.read_text()
-            assert "pub struct User" not in user_rs.read_text()
+            content = user_rs.read_text()
+            assert "pub struct Person {" in content
+            assert "pub struct User {" not in content
         finally:
             user_rs.write_text(original_user)
             main_rs.write_text(original_main)
