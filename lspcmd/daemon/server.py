@@ -85,12 +85,14 @@ class LRUCache:
 
 
 class DaemonServer:
-    def __init__(self):
+    def __init__(self, hover_cache_bytes: int | None = None, symbol_cache_bytes: int | None = None):
         self.session = Session()
         self.server: asyncio.Server | None = None
         self._shutdown_event = asyncio.Event()
-        self._hover_cache = LRUCache(HOVER_CACHE_SIZE)
-        self._symbol_cache = LRUCache(SYMBOL_CACHE_SIZE)
+        self._hover_cache_bytes = hover_cache_bytes or DEFAULT_CACHE_SIZE_BYTES
+        self._symbol_cache_bytes = symbol_cache_bytes or DEFAULT_CACHE_SIZE_BYTES
+        self._hover_cache = LRUCache(self._hover_cache_bytes)
+        self._symbol_cache = LRUCache(self._symbol_cache_bytes)
 
     async def start(self) -> None:
         self.session.config = load_config()
