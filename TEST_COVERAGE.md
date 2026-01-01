@@ -72,6 +72,7 @@ There's also a `TestMultiLanguageIntegration` class that tests:
 
 ### Test Count Summary
 - **Total tests**: 262 (all passing)
-- **Languages with full grep coverage**: Python, Go, Rust, TypeScript, Java, C++, Zig, Lua, Ruby, PHP
+- **Languages with full grep coverage**: Python, Go, Rust, TypeScript, Java, C++, Zig, Lua, Ruby, PHP (all 10 languages)
 - **Languages with full definition coverage**: Python, Go, Rust, TypeScript, Java, C++
+- **Languages with definition body support**: Python, Go, Rust, TypeScript, Java, C++, Zig, Lua, PHP (not Ruby due to Solargraph limitation)
 - **Languages with references context**: Python, Go, Rust, TypeScript, Java
