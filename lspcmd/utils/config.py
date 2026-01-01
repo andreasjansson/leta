@@ -153,45 +153,25 @@ def get_known_workspace_root(path: Path, config: dict) -> Path | None:
 def get_best_workspace_root(path: Path, config: dict, cwd: Path | None = None) -> Path | None:
     """Get the best workspace root for a path.
     
-    If cwd is provided, the workspace root must contain cwd (i.e., we won't
-    descend into nested workspaces that are deeper than cwd).
+    Only returns explicitly initialized workspace roots (from config).
+    If cwd is provided, the workspace root must contain cwd.
     
-    Priority:
-    1. Known workspace root containing the path (and cwd if provided)
-    2. Detected workspace root (via markers like .git, go.mod, etc.)
-    3. None if no workspace found
+    Returns None if no initialized workspace contains the path.
+    Use `lspcmd workspace init` to initialize a workspace.
     """
     path = path.resolve()
     if cwd:
         cwd = cwd.resolve()
     
-    detected = detect_workspace_root(path)
     known = get_known_workspace_root(path, config)
     
-    # If cwd is provided, filter out roots that don't contain cwd
-    if cwd:
-        if detected:
-            try:
-                cwd.relative_to(detected)
-            except ValueError:
-                detected = None
-        if known:
-            try:
-                cwd.relative_to(known)
-            except ValueError:
-                known = None
-        
-        # Also try detecting from cwd if file detection gave a nested workspace
-        if not detected and not known:
-            detected = detect_workspace_root(cwd)
+    if cwd and known:
+        try:
+            cwd.relative_to(known)
+        except ValueError:
+            known = None
     
-    if detected and known:
-        # Prefer the deeper (more specific) workspace
-        if len(detected.parts) >= len(known.parts):
-            return detected
-        return known
-    
-    return detected or known
+    return known
 
 
 def add_workspace_root(root: Path, config: dict) -> None:
