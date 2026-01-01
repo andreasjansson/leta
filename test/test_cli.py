@@ -8,7 +8,7 @@ from click.testing import CliRunner
 
 from lspcmd.cli import cli
 from lspcmd.daemon.pidfile import is_daemon_running
-from lspcmd.utils.config import get_pid_path, get_mcp_port_path, add_workspace_root, load_config
+from lspcmd.utils.config import get_pid_path, add_workspace_root, load_config
 
 from .conftest import requires_basedpyright, requires_gopls
 
