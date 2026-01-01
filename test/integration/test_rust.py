@@ -86,6 +86,130 @@ src/storage.rs:58 [Struct] FileStorage"""
 src/user.rs:5 [Struct] User
 src/user.rs:44 [Struct] UserRepository"""
 
+    def test_grep_case_sensitive(self, workspace):
+        os.chdir(workspace)
+        response = self._run_request_with_retry("grep", {
+            "paths": [str(workspace / "src" / "user.rs")],
+            "workspace_root": str(workspace),
+            "pattern": "^User$",
+            "case_sensitive": False,
+        })
+        output = format_output(response["result"], "plain")
+        assert output == "src/user.rs:5 [Struct] User"
+        
+        response = self._run_request_with_retry("grep", {
+            "paths": [str(workspace / "src" / "user.rs")],
+            "workspace_root": str(workspace),
+            "pattern": "^user$",
+            "case_sensitive": True,
+        })
+        lowercase_output = format_output(response["result"], "plain")
+        assert lowercase_output == "No results"
+
+    def test_grep_combined_filters(self, workspace):
+        os.chdir(workspace)
+        response = self._run_request_with_retry("grep", {
+            "paths": [str(workspace / "src" / "storage.rs")],
+            "workspace_root": str(workspace),
+            "pattern": "Storage",
+            "kinds": ["struct"],
+        })
+        output = format_output(response["result"], "plain")
+        assert output == """\
+src/storage.rs:20 [Struct] MemoryStorage
+src/storage.rs:58 [Struct] FileStorage"""
+
+    def test_grep_multiple_files(self, workspace):
+        os.chdir(workspace)
+        response = self._run_request_with_retry("grep", {
+            "paths": [str(workspace / "src" / "user.rs"), str(workspace / "src" / "storage.rs")],
+            "workspace_root": str(workspace),
+            "pattern": "^new$",
+            "kinds": ["function"],
+        })
+        output = format_output(response["result"], "plain")
+        assert output == """\
+src/user.rs:13 [Function] new (fn(name: String, email: String, age: u32) -> Self) in impl User
+src/user.rs:50 [Function] new (fn(storage: S) -> Self) in impl UserRepository<S>
+src/storage.rs:26 [Function] new (fn() -> Self) in impl MemoryStorage
+src/storage.rs:65 [Function] new (fn(base_path: String) -> Self) in impl FileStorage"""
+
+    def test_grep_workspace_wide(self, workspace):
+        os.chdir(workspace)
+        response = self._run_request_with_retry("grep", {
+            "workspace_root": str(workspace),
+            "pattern": "validate",
+            "case_sensitive": False,
+            "kinds": ["function"],
+        })
+        output = format_output(response["result"], "plain")
+        assert output == "src/user.rs:81 [Function] validate_user (fn(user: &User) -> Result<(), String>)"
+
+    def test_grep_exclude_pattern(self, workspace):
+        os.chdir(workspace)
+        response = self._run_request_with_retry("grep", {
+            "workspace_root": str(workspace),
+            "pattern": ".*",
+            "kinds": ["function"],
+        })
+        all_output = format_output(response["result"], "plain")
+        assert all_output == """\
+src/user.rs:13 [Function] new (fn(name: String, email: String, age: u32) -> Self) in impl User
+src/user.rs:50 [Function] new (fn(storage: S) -> Self) in impl UserRepository<S>
+src/user.rs:81 [Function] validate_user (fn(user: &User) -> Result<(), String>)
+src/errors.rs:4 [Function] undefined_variable (fn() -> i32)
+src/errors.rs:9 [Function] type_error (fn() -> i32)
+src/errors.rs:14 [Function] binding_error (fn())
+src/main.rs:10 [Function] create_sample_user (fn() -> User)
+src/main.rs:15 [Function] process_users (fn(repo: &UserRepository<MemoryStorage>) -> Vec<String>)
+src/main.rs:22 [Function] main (fn())
+src/storage.rs:26 [Function] new (fn() -> Self) in impl MemoryStorage
+src/storage.rs:34 [Function] default (fn() -> Self) in impl Default for MemoryStorage
+src/storage.rs:65 [Function] new (fn(base_path: String) -> Self) in impl FileStorage"""
+        
+        response = self._run_request_with_retry("grep", {
+            "workspace_root": str(workspace),
+            "pattern": ".*",
+            "kinds": ["function"],
+            "exclude_patterns": ["errors.rs"],
+        })
+        filtered_output = format_output(response["result"], "plain")
+        assert filtered_output == """\
+src/user.rs:13 [Function] new (fn(name: String, email: String, age: u32) -> Self) in impl User
+src/user.rs:50 [Function] new (fn(storage: S) -> Self) in impl UserRepository<S>
+src/user.rs:81 [Function] validate_user (fn(user: &User) -> Result<(), String>)
+src/main.rs:10 [Function] create_sample_user (fn() -> User)
+src/main.rs:15 [Function] process_users (fn(repo: &UserRepository<MemoryStorage>) -> Vec<String>)
+src/main.rs:22 [Function] main (fn())
+src/storage.rs:26 [Function] new (fn() -> Self) in impl MemoryStorage
+src/storage.rs:34 [Function] default (fn() -> Self) in impl Default for MemoryStorage
+src/storage.rs:65 [Function] new (fn(base_path: String) -> Self) in impl FileStorage"""
+
+    def test_grep_with_docs(self, workspace):
+        os.chdir(workspace)
+        response = self._run_request_with_retry("grep", {
+            "paths": [str(workspace / "src" / "main.rs")],
+            "workspace_root": str(workspace),
+            "pattern": "^create_sample_user$",
+            "kinds": ["function"],
+            "include_docs": True,
+        })
+        output = format_output(response["result"], "plain")
+        assert output == """\
+src/main.rs:10 [Function] create_sample_user (fn() -> User)
+    ```rust
+    sample_project
+    ```
+    
+    ```rust
+    fn create_sample_user() -> User
+    ```
+    
+    ---
+    
+    Creates a sample user for testing.
+"""
+
     # =========================================================================
     # definition tests
     # =========================================================================
