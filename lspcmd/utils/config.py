@@ -44,6 +44,8 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "daemon": {
         "log_level": "info",
         "request_timeout": 30,
+        "hover_cache_size": 256 * 1024 * 1024,  # 256MB
+        "symbol_cache_size": 256 * 1024 * 1024,  # 256MB
     },
     "workspaces": {
         "roots": [],
