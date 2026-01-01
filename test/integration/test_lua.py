@@ -200,7 +200,7 @@ main.lua:8 [Function] createSampleUser (function ())
             "body": False,
         })
         output = format_output(response["result"], "plain")
-        assert "createSampleUser" in output
+        assert output == "main.lua:8"
 
     def test_definition_with_body(self, workspace):
         os.chdir(workspace)
@@ -213,8 +213,12 @@ main.lua:8 [Function] createSampleUser (function ())
             "body": True,
         })
         output = format_output(response["result"], "plain")
-        assert "createSampleUser" in output
-        assert "John Doe" in output
+        assert output == """\
+main.lua:8-10
+
+local function createSampleUser()
+    return user.User.new("John Doe", "john@example.com", 30)
+end"""
 
     # =========================================================================
     # references tests
@@ -230,7 +234,7 @@ main.lua:8 [Function] createSampleUser (function ())
             "context": 0,
         })
         output = format_output(response["result"], "plain")
-        assert "User" in output
+        assert output == "user.lua:12"
 
     # =========================================================================
     # describe (hover) tests
@@ -245,7 +249,15 @@ main.lua:8 [Function] createSampleUser (function ())
             "column": 6,
         })
         output = format_output(response["result"], "plain")
-        assert "User" in output
+        assert output == """\
+```lua
+(field) User.__index: {
+    displayName: function,
+    isAdult: function,
+    new: function,
+    __index: table,
+}
+```"""
 
     # =========================================================================
     # diagnostics tests
