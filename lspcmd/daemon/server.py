@@ -188,6 +188,9 @@ class DaemonServer:
         logger.info("Shutting down daemon")
         await self.session.close_all()
 
+        self._hover_cache.close()
+        self._symbol_cache.close()
+
         if self.server:
             self.server.close()
             await self.server.wait_closed()
