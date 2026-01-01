@@ -2002,5 +2002,13 @@ async def run_daemon() -> None:
         ],
     )
 
-    daemon = DaemonServer()
+    config = load_config()
+    daemon_config = config.get("daemon", {})
+    hover_cache_bytes = daemon_config.get("hover_cache_size", DEFAULT_CACHE_SIZE_BYTES)
+    symbol_cache_bytes = daemon_config.get("symbol_cache_size", DEFAULT_CACHE_SIZE_BYTES)
+
+    daemon = DaemonServer(
+        hover_cache_bytes=hover_cache_bytes,
+        symbol_cache_bytes=symbol_cache_bytes,
+    )
     await daemon.start()
