@@ -234,7 +234,7 @@ end"""
             "context": 0,
         })
         output = format_output(response["result"], "plain")
-        assert output == "user.lua:12"
+        assert output == "user.lua:12 User.__index = User"
 
     # =========================================================================
     # describe (hover) tests
