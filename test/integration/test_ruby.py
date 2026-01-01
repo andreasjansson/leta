@@ -242,8 +242,8 @@ main.rb:8 def create_sample_user"""
         })
         output = format_output(response["result"], "plain")
         assert output == """\
-main.rb:9
-user.rb:8"""
+main.rb:9   User.new('John Doe', 'john@example.com', 30)
+user.rb:8 class User"""
 
     # =========================================================================
     # describe (hover) tests
