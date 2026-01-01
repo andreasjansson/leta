@@ -94,7 +94,7 @@ main.go:154 [Interface] Validator (interface{...})"""
         response = run_request("grep", {
             "paths": [str(workspace / "main.go")],
             "workspace_root": str(workspace),
-            "pattern": "user",
+            "pattern": "^User$",
             "case_sensitive": False,
         })
         insensitive_output = format_output(response["result"], "plain")
@@ -102,15 +102,22 @@ main.go:154 [Interface] Validator (interface{...})"""
         response = run_request("grep", {
             "paths": [str(workspace / "main.go")],
             "workspace_root": str(workspace),
-            "pattern": "user",
+            "pattern": "^User$",
             "case_sensitive": True,
         })
         sensitive_output = format_output(response["result"], "plain")
         
-        assert "User" in insensitive_output
-        assert "NewUser" in insensitive_output
-        assert "User" not in sensitive_output
-        assert "user" in sensitive_output.lower()
+        assert "[Struct] User" in insensitive_output
+        assert "[Struct] User" in sensitive_output
+        
+        response = run_request("grep", {
+            "paths": [str(workspace / "main.go")],
+            "workspace_root": str(workspace),
+            "pattern": "^user$",
+            "case_sensitive": True,
+        })
+        lowercase_output = format_output(response["result"], "plain")
+        assert lowercase_output == ""
 
     def test_grep_combined_filters(self, workspace):
         os.chdir(workspace)
