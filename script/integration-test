@@ -2,4 +2,4 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source .venv/bin/activate
-exec python -m pytest test/test_integration.py -n4 "$@"
+exec python -m pytest test/integration/ -n4 "$@"
