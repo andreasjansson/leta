@@ -700,65 +700,6 @@ def supertypes(ctx, symbol, context):
     output_result(response["result"], output_format)
 
 
-@cli.command("diagnostics")
-@click.argument("path", type=click.Path(exists=True), required=False)
-@click.option(
-    "-s",
-    "--severity",
-    default=None,
-    type=click.Choice(["error", "warning", "info", "hint"]),
-    help="Filter by minimum severity level",
-)
-@click.pass_context
-def diagnostics(ctx, path, severity):
-    """Show diagnostics for a file or workspace.
-
-    If PATH is provided, shows diagnostics for that file.
-    If PATH is omitted, shows diagnostics for all files in the workspace.
-
-    Note: Some language servers (e.g. typescript-language-server) push
-    diagnostics asynchronously. After a workspace restart or on first run,
-    diagnostics may take a few seconds to become fully available.
-
-    Examples:
-
-      lspcmd diagnostics                       # all files in workspace
-
-      lspcmd diagnostics src/main.py           # single file
-
-      lspcmd diagnostics -s error              # errors only
-
-      lspcmd --json diagnostics                # JSON output
-    """
-    config = load_config()
-
-    if path:
-        path = str(Path(path).resolve())
-        workspace_root = get_workspace_root_for_path(Path(path), config)
-        response = run_request("diagnostics", {
-            "path": path,
-            "workspace_root": str(workspace_root),
-        })
-    else:
-        workspace_root = get_workspace_root_for_cwd(config)
-        response = run_request("workspace-diagnostics", {
-            "workspace_root": str(workspace_root),
-        })
-
-    result = response["result"]
-
-    if severity:
-        severity_order = {"error": 0, "warning": 1, "info": 2, "hint": 3}
-        min_level = severity_order.get(severity, 0)
-        result = [
-            d for d in result
-            if severity_order.get(d.get("severity", "error"), 0) <= min_level
-        ]
-
-    output_format = "json" if ctx.obj["json"] else "plain"
-    output_result(result, output_format)
-
-
 @cli.command("format")
 @click.argument("path", type=click.Path(exists=True))
 @click.pass_context
