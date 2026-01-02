@@ -95,3 +95,23 @@ func (r *Result[T]) UnwrapOr(defaultValue T) T {
 	}
 	return r.value
 }
+
+// CountryCodes maps country codes to their full names.
+var CountryCodes = map[string]string{
+	"US": "United States",
+	"CA": "Canada",
+	"GB": "United Kingdom",
+	"DE": "Germany",
+	"FR": "France",
+	"JP": "Japan",
+	"AU": "Australia",
+}
+
+// DefaultPorts contains commonly used network ports.
+var DefaultPorts = []int{
+	80,
+	443,
+	8080,
+	8443,
+	3000,
+}
