@@ -78,7 +78,7 @@ async def handle_calls(ctx: HandlerContext, params: CallsParams) -> CallsResult:
             return CallsResult(
                 path=[_dict_to_call_node(item) for item in result["path"]]
             )
-        return CallsResult()
+        return CallsResult(message=result.get("message"))
 
 
 def _dict_to_call_node(d: dict) -> CallNode:
