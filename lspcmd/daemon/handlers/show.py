@@ -1,6 +1,7 @@
 """Handler for show command."""
 
 from pathlib import Path
+from typing import Union
 
 from ..rpc import ShowParams
 from ...lsp.types import (
@@ -15,7 +16,7 @@ from .base import HandlerContext, find_symbol_at_line, expand_variable_range, Lo
 
 async def handle_show(
     ctx: HandlerContext, params: ShowParams
-) -> list[LocationDict] | dict[str, object]:
+) -> Union[list[LocationDict], dict[str, object]]:
     """Handle show command, returning either locations or definition content."""
     body = params.body
 
@@ -30,7 +31,7 @@ async def handle_show(
 
 async def _handle_direct_definition(
     ctx: HandlerContext, params: ShowParams, body: bool
-) -> list[LocationDict] | dict[str, object]:
+) -> Union[list[LocationDict], dict[str, object]]:
     path = Path(params.path).resolve()
     workspace_root = Path(params.workspace_root).resolve()
     line = params.line
@@ -55,11 +56,10 @@ async def _handle_direct_definition(
                 end = expand_variable_range(lines, start)
         else:
             workspace = await ctx.session.get_or_create_workspace(path, workspace_root)
-            assert workspace.client
             doc = await workspace.ensure_document_open(path)
             result = await workspace.client.send_request(
                 "textDocument/documentSymbol",
-                DocumentSymbolParams(text_document=TextDocumentIdentifier(uri=doc.uri)),
+                DocumentSymbolParams(textDocument=TextDocumentIdentifier(uri=doc.uri)),
             )
             if result:
                 symbol = find_symbol_at_line(result, line - 1)
@@ -123,11 +123,10 @@ async def _handle_definition_body(ctx: HandlerContext, params: ShowParams) -> di
         "path": str(file_path),
         "workspace_root": params.workspace_root,
     })
-    assert workspace.client
 
     result = await workspace.client.send_request(
         "textDocument/documentSymbol",
-        DocumentSymbolParams(text_document=TextDocumentIdentifier(uri=doc.uri)),
+        DocumentSymbolParams(textDocument=TextDocumentIdentifier(uri=doc.uri)),
     )
 
     content = read_file_content(file_path)
@@ -175,14 +174,13 @@ async def _handle_location_request(
         "path": params.path,
         "workspace_root": params.workspace_root,
     })
-    assert workspace.client
     line, column = ctx.parse_position({"line": params.line, "column": params.column})
     context = params.context
 
     result = await workspace.client.send_request(
         "textDocument/definition",
         TextDocumentPositionParams(
-            text_document=TextDocumentIdentifier(uri=doc.uri),
+            textDocument=TextDocumentIdentifier(uri=doc.uri),
             position=Position(line=line, character=column),
         ),
     )
