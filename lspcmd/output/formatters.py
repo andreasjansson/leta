@@ -293,6 +293,7 @@ def format_tree(data: dict) -> str:
     files = data["files"]
     total_files = data["total_files"]
     total_bytes = data["total_bytes"]
+    total_lines = data.get("total_lines", 0)
     
     if not files:
         return "0 files, 0B"
@@ -309,6 +310,25 @@ def format_tree(data: dict) -> str:
     
     lines: list[str] = []
     
+    def format_file_info(info: dict) -> str:
+        parts = [format_size(info["size"])]
+        
+        if "lines" in info:
+            parts.append(f"{info['lines']} lines")
+        
+        if "symbols" in info:
+            symbol_order = ["class", "struct", "interface", "enum", "function", "method"]
+            symbol_parts = []
+            for kind in symbol_order:
+                count = info["symbols"].get(kind, 0)
+                if count > 0:
+                    label = kind if count == 1 else (kind + "es" if kind == "class" else kind + "s")
+                    symbol_parts.append(f"{count} {label}")
+            if symbol_parts:
+                parts.extend(symbol_parts)
+        
+        return ", ".join(parts)
+    
     def render_tree(node: dict, prefix: str = "", is_root: bool = True) -> None:
         entries = sorted(node.keys(), key=lambda k: (isinstance(node[k], dict) and "size" not in node[k], k))
         for i, name in enumerate(entries):
@@ -323,15 +343,15 @@ def format_tree(data: dict) -> str:
                 new_prefix = prefix + ("    " if is_last else "│   ")
             
             if isinstance(child, dict) and "size" in child:
-                size_str = format_size(child["size"])
-                lines.append(f"{prefix}{connector}{name} ({size_str})")
+                info_str = format_file_info(child)
+                lines.append(f"{prefix}{connector}{name} ({info_str})")
             else:
                 lines.append(f"{prefix}{connector}{name}")
                 render_tree(child, new_prefix, is_root=False)
     
     render_tree(tree)
     lines.append("")
-    lines.append(f"{total_files} files, {format_size(total_bytes)}")
+    lines.append(f"{total_files} files, {format_size(total_bytes)}, {total_lines} lines")
     
     return "\n".join(lines)
 
