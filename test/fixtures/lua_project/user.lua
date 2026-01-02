@@ -195,4 +195,23 @@ end
 
 M.UserRepository = UserRepository
 
+--- Country codes mapped to their full names.
+M.COUNTRY_CODES = {
+    US = "United States",
+    CA = "Canada",
+    GB = "United Kingdom",
+    DE = "Germany",
+    FR = "France",
+    JP = "Japan",
+    AU = "Australia",
+}
+
+--- Default configuration values.
+M.DEFAULT_CONFIG = {
+    "debug=false",
+    "timeout=30",
+    "max_retries=3",
+    "log_level=INFO",
+}
+
 return M
