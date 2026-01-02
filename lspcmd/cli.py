@@ -61,7 +61,7 @@ def ensure_daemon_running() -> None:
     raise click.ClickException("Failed to start daemon")
 
 
-async def send_request(method: str, params: dict) -> dict:
+async def send_request(method: str, params: dict[str, Any]) -> dict[str, Any]:
     socket_path = get_socket_path()
 
     reader, writer = await asyncio.open_unix_connection(str(socket_path))
