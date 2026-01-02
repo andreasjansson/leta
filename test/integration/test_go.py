@@ -853,3 +853,41 @@ Incoming calls:
 Call path:
 main.go:172 [Function] main (sample_project • main.go)
   → main.go:149 [Function] createSampleUser (sample_project • main.go)"""
+
+    def test_calls_outgoing_include_non_workspace(self, workspace):
+        """Test outgoing calls with --include-non-workspace shows stdlib calls."""
+        os.chdir(workspace)
+        response = run_request("calls", {
+            "workspace_root": str(workspace),
+            "mode": "outgoing",
+            "from_path": str(workspace / "main.go"),
+            "from_line": 26,
+            "from_column": 5,
+            "from_symbol": "DisplayName",
+            "max_depth": 1,
+            "include_non_workspace": True,
+        })
+        output = format_output(response["result"], "plain")
+        assert output == """\
+main.go:26 [Function] DisplayName (sample_project • main.go)
+
+Outgoing calls:
+  └── [Function] Sprintf (fmt • print.go)"""
+
+    def test_calls_outgoing_excludes_stdlib_by_default(self, workspace):
+        """Test outgoing calls without --include-non-workspace excludes stdlib."""
+        os.chdir(workspace)
+        response = run_request("calls", {
+            "workspace_root": str(workspace),
+            "mode": "outgoing",
+            "from_path": str(workspace / "main.go"),
+            "from_line": 26,
+            "from_column": 5,
+            "from_symbol": "DisplayName",
+            "max_depth": 1,
+        })
+        output = format_output(response["result"], "plain")
+        assert output == """\
+main.go:26 [Function] DisplayName (sample_project • main.go)
+
+Outgoing calls:"""
