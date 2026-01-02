@@ -26,11 +26,13 @@ async def handle_replace_function(
         ResolveSymbolParams(workspace_root=str(workspace_root), symbol_path=symbol),
     )
     if resolved.error:
-        raise ValueError(resolved.error)
+        return ReplaceFunctionResult(error=resolved.error)
 
     kind = resolved.kind
     if kind not in ("Function", "Method"):
-        raise ValueError(f"Symbol '{symbol}' is a {kind}, not a Function or Method")
+        return ReplaceFunctionResult(
+            error=f"Symbol '{symbol}' is a {kind}, not a Function or Method"
+        )
 
     file_path = Path(resolved.path).resolve()
     line = resolved.line
@@ -39,7 +41,9 @@ async def handle_replace_function(
     range_end = resolved.range_end_line
 
     if range_start is None or range_end is None:
-        raise ValueError("Language server does not provide symbol ranges")
+        return ReplaceFunctionResult(
+            error="Language server does not provide symbol ranges"
+        )
 
     workspace = await ctx.session.get_or_create_workspace(file_path, workspace_root)
     await workspace.ensure_document_open(file_path)
@@ -81,16 +85,18 @@ async def handle_replace_function(
 
             if new_signature is None:
                 _revert_file(file_path, original_content, backup_path, doc, workspace)
-                raise ValueError(
-                    "Could not extract signature from new content - the content may be invalid. "
-                    "Use --no-check-signature to replace anyway"
+                return ReplaceFunctionResult(
+                    error="Could not extract signature from new content - the content may be invalid",
+                    hint="Use --no-check-signature to replace anyway",
                 )
 
             if old_signature and not _signatures_match(old_signature, new_signature):
                 _revert_file(file_path, original_content, backup_path, doc, workspace)
-                raise ValueError(
-                    f"Signature mismatch: old='{old_signature}', new='{new_signature}'. "
-                    "Use --no-check-signature to replace anyway"
+                return ReplaceFunctionResult(
+                    error="Signature mismatch",
+                    old_signature=old_signature,
+                    new_signature=new_signature,
+                    hint="Use --no-check-signature to replace anyway",
                 )
 
         backup_path.unlink(missing_ok=True)
