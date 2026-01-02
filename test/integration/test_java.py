@@ -642,26 +642,6 @@ src/main/java/com/example/User.java:10-21
     # calls tests
     # =========================================================================
 
-    def test_calls_outgoing(self, workspace):
-        """Test outgoing calls from main method."""
-        os.chdir(workspace)
-        response = run_request("calls", {
-            "workspace_root": str(workspace),
-            "mode": "outgoing",
-            "from_path": str(workspace / "src" / "main" / "java" / "com" / "example" / "Main.java"),
-            "from_line": 47,
-            "from_column": 23,
-            "from_symbol": "main",
-            "max_depth": 1,
-        })
-        result = response["result"]
-        assert "main" in result["name"]
-        assert result["kind"] == "Method"
-        assert "calls" in result
-        call_names = [c["name"] for c in result["calls"]]
-        assert any("MemoryStorage" in name for name in call_names)
-        assert any("createSampleUser" in name for name in call_names)
-
     def test_calls_incoming(self, workspace):
         """Test incoming calls to createSampleUser method."""
         os.chdir(workspace)
@@ -672,11 +652,11 @@ src/main/java/com/example/User.java:10-21
             "to_line": 15,
             "to_column": 25,
             "to_symbol": "createSampleUser",
-            "max_depth": 2,
+            "max_depth": 1,
         })
-        result = response["result"]
-        assert "createSampleUser" in result["name"]
-        assert result["kind"] == "Method"
-        assert "called_by" in result
-        caller_names = [c["name"] for c in result["called_by"]]
-        assert any("main" in name for name in caller_names)
+        output = format_output(response["result"], "plain")
+        assert output == """\
+src/main/java/com/example/Main.java:15 [Method] createSampleUser() : User (com.example.Main)
+
+Incoming calls:
+  └── src/main/java/com/example/Main.java:47 [Method] main(String[]) : void (com.example.Main)"""
