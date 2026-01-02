@@ -879,3 +879,45 @@ src/main.ts:6 [Function] createSampleUser
 
 Incoming calls:
   └── src/main.ts:55 [Function] main"""
+
+    def test_calls_outgoing_include_non_workspace(self, workspace):
+        """Test outgoing calls with --include-non-workspace shows stdlib calls."""
+        os.chdir(workspace)
+        response = run_request("calls", {
+            "workspace_root": str(workspace),
+            "mode": "outgoing",
+            "from_path": str(workspace / "src" / "main.ts"),
+            "from_line": 13,
+            "from_column": 9,
+            "from_symbol": "processUsers",
+            "max_depth": 1,
+            "include_non_workspace": True,
+        })
+        output = format_output(response["result"], "plain")
+        assert output == """\
+src/main.ts:13 [Function] processUsers
+
+Outgoing calls:
+  ├── [Method] map
+  ├── src/user.ts:107 [Method] listUsers (UserRepository)
+  └── src/user.ts:21 [Method] displayName (User)"""
+
+    def test_calls_outgoing_excludes_stdlib_by_default(self, workspace):
+        """Test outgoing calls without --include-non-workspace excludes stdlib."""
+        os.chdir(workspace)
+        response = run_request("calls", {
+            "workspace_root": str(workspace),
+            "mode": "outgoing",
+            "from_path": str(workspace / "src" / "main.ts"),
+            "from_line": 13,
+            "from_column": 9,
+            "from_symbol": "processUsers",
+            "max_depth": 1,
+        })
+        output = format_output(response["result"], "plain")
+        assert output == """\
+src/main.ts:13 [Function] processUsers
+
+Outgoing calls:
+  ├── src/user.ts:107 [Method] listUsers (UserRepository)
+  └── src/user.ts:21 [Method] displayName (User)"""
