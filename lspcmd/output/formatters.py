@@ -342,7 +342,10 @@ def format_definition_content(data: dict) -> str:
         lines.append("")
         lines.append(f"[truncated after {head} lines, use `lspcmd show \"{symbol}\" --head {total_lines}` to show the full {total_lines} lines]")
     
-    return "\n".join(lines)
+    result = "\n".join(lines)
+    if not result.endswith("\n"):
+        result += "\n"
+    return result
 
 
 def format_size(size: int) -> str:
