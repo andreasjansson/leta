@@ -34,7 +34,8 @@ async def handle_move_file(
         raise ValueError(f"Destination already exists: {new_path}")
 
     workspace = await ctx.session.get_or_create_workspace(old_path, workspace_root)
-    assert workspace.client
+    if not workspace or not workspace.client:
+        raise ValueError(f"No language server available for {old_path.suffix} files")
 
     await workspace.client.wait_for_service_ready()
 
@@ -65,9 +66,7 @@ async def handle_move_file(
     try:
         workspace_edit = await workspace.client.send_request(
             "workspace/willRenameFiles",
-            RenameFilesParams(
-                files=[FileRename(old_uri=old_uri, new_uri=new_uri)]
-            ),
+            RenameFilesParams(files=[FileRename(oldUri=old_uri, newUri=new_uri)]),
         )
     except LSPResponseError as e:
         if e.is_method_not_found():
@@ -117,16 +116,16 @@ async def _apply_workspace_edit_for_move(
             await _apply_text_edits(file_path, text_edits)
             files_modified.append(ctx.relative_path(file_path, workspace_root))
 
-    if edit.document_changes:
-        for change in edit.document_changes:
+    if edit.documentChanges:
+        for change in edit.documentChanges:
             if isinstance(change, CreateFile):
                 file_path = uri_to_path(change.uri)
                 file_path.parent.mkdir(parents=True, exist_ok=True)
                 file_path.touch()
                 files_modified.append(ctx.relative_path(file_path, workspace_root))
             elif isinstance(change, RenameFile):
-                old_path = uri_to_path(change.old_uri)
-                new_path = uri_to_path(change.new_uri)
+                old_path = uri_to_path(change.oldUri)
+                new_path = uri_to_path(change.newUri)
                 if old_path == move_old_path and new_path == move_new_path:
                     file_moved = True
                 new_path.parent.mkdir(parents=True, exist_ok=True)
@@ -137,7 +136,7 @@ async def _apply_workspace_edit_for_move(
                 file_path.unlink(missing_ok=True)
                 files_modified.append(ctx.relative_path(file_path, workspace_root))
             elif isinstance(change, TextDocumentEdit):
-                file_path = uri_to_path(change.text_document.uri)
+                file_path = uri_to_path(change.textDocument.uri)
                 await _apply_text_edits(file_path, change.edits)
                 files_modified.append(ctx.relative_path(file_path, workspace_root))
 
@@ -160,7 +159,7 @@ async def _apply_text_edits(file_path: Path, edits: list[TextEdit]) -> None:
     for edit in sorted_edits:
         start = edit.range.start
         end = edit.range.end
-        new_text = edit.new_text
+        new_text = edit.newText
 
         start_line = start.line
         start_char = start.character
