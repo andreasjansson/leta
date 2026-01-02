@@ -90,7 +90,7 @@ def get_daemon_log_tail(num_lines: int = 10) -> str | None:
         return None
 
 
-def run_request(method: str, params: dict) -> dict:
+def run_request(method: str, params: dict[str, Any]) -> dict[str, Any]:
     ensure_daemon_running()
     response = asyncio.run(send_request(method, params))
     if "error" in response:
