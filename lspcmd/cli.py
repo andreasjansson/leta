@@ -138,7 +138,7 @@ def get_workspace_root_for_path(path: Path, config: dict[str, Any]) -> Path:
     )
 
 
-def get_workspace_root_for_cwd(config: dict) -> Path:
+def get_workspace_root_for_cwd(config: dict[str, Any]) -> Path:
     cwd = Path.cwd().resolve()
 
     workspace_root = get_best_workspace_root(cwd, config)
