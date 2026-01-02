@@ -299,22 +299,22 @@ class HandlerContext:
         if isinstance(result, dict):
             result = [result]
 
-        locations = []
+        locations: list[LocationDict] = []
         for item in result:
             if "targetUri" in item:
-                uri = item["targetUri"]
+                uri = str(item["targetUri"])
                 range_ = item["targetSelectionRange"]
             else:
-                uri = item["uri"]
+                uri = str(item["uri"])
                 range_ = item["range"]
 
             file_path = uri_to_path(uri)
-            start_line = range_["start"]["line"]
+            start_line = int(range_["start"]["line"])
 
-            location = {
+            location: LocationDict = {
                 "path": self.relative_path(file_path, workspace_root),
                 "line": start_line + 1,
-                "column": range_["start"]["character"],
+                "column": int(range_["start"]["character"]),
             }
 
             if context > 0 and file_path.exists():
