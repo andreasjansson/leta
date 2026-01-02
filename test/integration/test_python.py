@@ -256,7 +256,7 @@ utils.py:22 [Function] validate_age"""
             "workspace_root": str(workspace),
             "pattern": ".*",
             "kinds": ["function"],
-            "exclude_patterns": ["utils.py", "editable"],
+            "exclude_patterns": ["utils.py", "editable*"],
         })
         filtered_output = format_output(response["result"], "plain")
         
