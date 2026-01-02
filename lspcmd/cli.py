@@ -995,18 +995,29 @@ def grep(ctx, pattern, path, kind, exclude, docs, case_sensitive):
     multiple=True,
     help="Exclude files matching glob pattern or directory (repeatable)",
 )
+@click.option(
+    "-i",
+    "--include",
+    multiple=True,
+    help="Include default-excluded directories (e.g., -i .git -i node_modules)",
+)
 @click.pass_context
-def tree(ctx, exclude):
-    """Show source file tree with file sizes.
+def tree(ctx, exclude, include):
+    """Show source file tree with symbol and line counts.
 
-    Only includes files that have an associated language server
-    (i.e., source files the LSP understands).
+    Lists all files in the workspace with line counts. For files tracked by
+    language servers, also shows counts of classes, functions, methods, etc.
+
+    By default excludes common non-source directories like .git, __pycache__,
+    node_modules, etc. Use -i/--include to include them.
 
     Examples:
 
       lspcmd tree                       # current workspace
 
-      lspcmd tree -x tests -x vendor    # exclude directories
+      lspcmd tree -x tests -x vendor    # exclude additional directories
+
+      lspcmd tree -i .git               # include .git directory
 
       lspcmd --json tree                # JSON output
     """
@@ -1016,6 +1027,7 @@ def tree(ctx, exclude):
     response = run_request("tree", {
         "workspace_root": str(workspace_root),
         "exclude_patterns": list(exclude),
+        "include_patterns": list(include),
     })
     output_format = "json" if ctx.obj["json"] else "plain"
     output_result(response["result"], output_format)
