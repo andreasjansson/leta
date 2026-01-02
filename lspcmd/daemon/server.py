@@ -610,7 +610,7 @@ class DaemonServer:
 
         root = self._format_call_hierarchy_item(item, workspace_root)
         root["called_by"] = await self._expand_incoming_calls(
-            workspace, workspace_root, item, max_depth, set()
+            workspace, workspace_root, item, max_depth, set(), is_root=True
         )
         return root
 
