@@ -12,7 +12,6 @@ from .supertypes import handle_supertypes
 from .calls import handle_calls
 from .rename import handle_rename
 from .move_file import handle_move_file
-from .replace_function import handle_replace_function
 from .restart_workspace import handle_restart_workspace
 from .remove_workspace import handle_remove_workspace
 from .shutdown import handle_shutdown
