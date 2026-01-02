@@ -84,14 +84,14 @@ async def handle_replace_function(
             )
 
             if new_signature is None:
-                _revert_file(file_path, original_content, backup_path, doc, workspace)
+                await _revert_file(file_path, original_content, backup_path, doc, workspace)
                 return ReplaceFunctionResult(
                     error="Could not extract signature from new content - the content may be invalid",
                     hint="Use --no-check-signature to replace anyway",
                 )
 
             if old_signature and not _signatures_match(old_signature, new_signature):
-                _revert_file(file_path, original_content, backup_path, doc, workspace)
+                await _revert_file(file_path, original_content, backup_path, doc, workspace)
                 return ReplaceFunctionResult(
                     error="Signature mismatch",
                     old_signature=old_signature,
