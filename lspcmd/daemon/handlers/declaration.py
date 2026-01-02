@@ -1,7 +1,7 @@
 """Handler for declaration command."""
 
 from ..rpc import DeclarationParams as RPCDeclarationParams, DeclarationResult, LocationInfo
-from ...lsp.types import DeclarationParams, TextDocumentIdentifier, Position
+from ...lsp.types import TextDocumentPositionParams, TextDocumentIdentifier, Position
 from .base import HandlerContext
 
 
@@ -12,13 +12,14 @@ async def handle_declaration(
         "path": params.path,
         "workspace_root": params.workspace_root,
     })
+    assert workspace.client
     line, column = ctx.parse_position({"line": params.line, "column": params.column})
     context = params.context
 
     result = await workspace.client.send_request(
         "textDocument/declaration",
-        DeclarationParams(
-            textDocument=TextDocumentIdentifier(uri=doc.uri),
+        TextDocumentPositionParams(
+            text_document=TextDocumentIdentifier(uri=doc.uri),
             position=Position(line=line, character=column),
         ),
     )
