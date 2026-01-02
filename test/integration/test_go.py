@@ -862,14 +862,14 @@ main.go:172 [Function] main (sample_project • main.go)
             "mode": "outgoing",
             "from_path": str(workspace / "main.go"),
             "from_line": 26,
-            "from_column": 5,
+            "from_column": 16,
             "from_symbol": "DisplayName",
             "max_depth": 1,
             "include_non_workspace": True,
         })
         output = format_output(response["result"], "plain")
         assert output == """\
-main.go:26 [Function] DisplayName (sample_project • main.go)
+main.go:26 [Method] (*User).DisplayName (func() string)
 
 Outgoing calls:
   └── [Function] Sprintf (fmt • print.go)"""
@@ -882,12 +882,12 @@ Outgoing calls:
             "mode": "outgoing",
             "from_path": str(workspace / "main.go"),
             "from_line": 26,
-            "from_column": 5,
+            "from_column": 16,
             "from_symbol": "DisplayName",
             "max_depth": 1,
         })
         output = format_output(response["result"], "plain")
         assert output == """\
-main.go:26 [Function] DisplayName (sample_project • main.go)
+main.go:26 [Method] (*User).DisplayName (func() string)
 
 Outgoing calls:"""
