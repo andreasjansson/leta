@@ -691,7 +691,7 @@ class DaemonServer:
         self, workspace_root: Path,
         from_path: Path, from_line: int, from_column: int, from_symbol: str,
         to_path: Path, to_line: int, to_column: int, to_symbol: str,
-        max_depth: int
+        max_depth: int, include_non_workspace: bool = False
     ) -> dict:
         workspace = await self.session.get_or_create_workspace(from_path, workspace_root)
         if not workspace or not workspace.client:
@@ -710,7 +710,8 @@ class DaemonServer:
         to_key = (to_item.get("uri"), to_item.get("selectionRange", {}).get("start", {}).get("line"))
 
         path = await self._bfs_call_path(
-            workspace, workspace_root, from_item, to_key, max_depth
+            workspace, workspace_root, from_item, to_key, max_depth,
+            include_non_workspace
         )
 
         if not path:
@@ -728,7 +729,7 @@ class DaemonServer:
 
     async def _bfs_call_path(
         self, workspace: "Workspace", workspace_root: Path, start_item: dict,
-        target_key: tuple, max_depth: int
+        target_key: tuple, max_depth: int, include_non_workspace: bool = False
     ) -> list[dict] | None:
         from collections import deque
 
@@ -759,7 +760,11 @@ class DaemonServer:
                 if not to_item:
                     continue
 
-                item_key = (to_item.get("uri"), to_item.get("selectionRange", {}).get("start", {}).get("line"))
+                to_uri = to_item.get("uri", "")
+                if not include_non_workspace and not self._is_path_in_workspace(to_uri, workspace_root):
+                    continue
+
+                item_key = (to_uri, to_item.get("selectionRange", {}).get("start", {}).get("line"))
 
                 if item_key == target_key:
                     return path + [to_item]
