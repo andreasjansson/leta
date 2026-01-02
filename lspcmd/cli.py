@@ -245,7 +245,7 @@ for all matching symbols.
 `lspcmd files` is a good starting point when starting work on a project.
 
 Use `lspcmd show SYMBOL` to print the full body of a symbol. Use
-`lspcmd ref SYMBOL` to find all uses of a symbol. These two (and other)
+`lspcmd refs SYMBOL` to find all uses of a symbol. These two (and other)
 commands accept `--context N` for surrounding lines.
 
 See `lspcmd COMMAND --help` for more documentation and command-specific options.
@@ -259,13 +259,13 @@ See `lspcmd COMMAND --help` for more documentation and command-specific options.
         "files",
         "calls",
         "show",
-        "ref",
+        "refs",
         "implementations",
         "supertypes",
         "subtypes",
         "declaration",
         "rename",
-        "move-file",
+        "mv",
         "replace-function",
         "raw-lsp-request",
         "workspace",
@@ -1120,13 +1120,14 @@ def replace_function(ctx, symbol, no_check_signature):
 )
 @click.pass_context
 def raw_lsp_request(ctx, method, params, language):
-    """Send a raw LSP request (for debugging).
+    """Send a raw LSP request.
 
     METHOD is the LSP method (e.g. textDocument/documentSymbol).
     PARAMS is optional JSON parameters for the request.
 
     Examples:
 
+      \b
       lspcmd raw-lsp-request textDocument/documentSymbol \\
         '{"textDocument": {"uri": "file:///path/to/file.py"}}'
 
