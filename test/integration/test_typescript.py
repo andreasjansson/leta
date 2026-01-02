@@ -837,3 +837,47 @@ export const DEFAULT_CONFIG: string[] = [
     "max_retries=3",
     "log_level=INFO",
 ];"""
+
+    # =========================================================================
+    # calls tests
+    # =========================================================================
+
+    def test_calls_outgoing(self, workspace):
+        """Test outgoing calls from main function."""
+        os.chdir(workspace)
+        response = run_request("calls", {
+            "workspace_root": str(workspace),
+            "mode": "outgoing",
+            "from_path": str(workspace / "src" / "main.ts"),
+            "from_line": 55,
+            "from_column": 9,
+            "from_symbol": "main",
+            "max_depth": 1,
+        })
+        result = response["result"]
+        assert result["name"] == "main"
+        assert result["kind"] == "Function"
+        assert "calls" in result
+        call_names = [c["name"] for c in result["calls"]]
+        assert "MemoryStorage" in call_names
+        assert "UserRepository" in call_names
+        assert "createSampleUser" in call_names
+
+    def test_calls_incoming(self, workspace):
+        """Test incoming calls to createSampleUser function."""
+        os.chdir(workspace)
+        response = run_request("calls", {
+            "workspace_root": str(workspace),
+            "mode": "incoming",
+            "to_path": str(workspace / "src" / "main.ts"),
+            "to_line": 6,
+            "to_column": 9,
+            "to_symbol": "createSampleUser",
+            "max_depth": 2,
+        })
+        result = response["result"]
+        assert result["name"] == "createSampleUser"
+        assert result["kind"] == "Function"
+        assert "called_by" in result
+        caller_names = [c["name"] for c in result["called_by"]]
+        assert "main" in caller_names
