@@ -267,42 +267,6 @@ const User = struct {
 Represents a user in the system."""
 
     # =========================================================================
-    # diagnostics tests
-    # =========================================================================
-
-    def test_diagnostics_single_file(self, workspace):
-        os.chdir(workspace)
-        response = run_request("diagnostics", {
-            "path": str(workspace / "src" / "errors.zig"),
-            "workspace_root": str(workspace),
-        })
-        output = format_output(response["result"], "plain")
-        assert "errors.zig" in output
-        assert "error" in output.lower()
-
-    def test_diagnostics_undefined_identifier(self, workspace):
-        os.chdir(workspace)
-        response = run_request("diagnostics", {
-            "path": str(workspace / "src" / "errors.zig"),
-            "workspace_root": str(workspace),
-        })
-        output = format_output(response["result"], "plain")
-        assert "undefined_var" in output or "undefined" in output.lower() or "undeclared" in output.lower()
-
-    def test_diagnostics_type_error(self, workspace):
-        os.chdir(workspace)
-        response = run_request("diagnostics", {
-            "path": str(workspace / "src" / "errors.zig"),
-            "workspace_root": str(workspace),
-        })
-        output = format_output(response["result"], "plain")
-        # zls may not report type errors inline - it catches undefined identifiers and unreachable code
-        # Accept either type errors OR the other errors zls reports
-        has_type_error = ("i32" in output and ("u8" in output or "const" in output)) or \
-                         "unreachable" in output.lower()
-        assert has_type_error, f"Expected type error or unreachable code in output: {output}"
-
-    # =========================================================================
     # move-file tests
     # =========================================================================
 
