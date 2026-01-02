@@ -2,6 +2,12 @@
 
 from ..rpc import SubtypesParams, SubtypesResult, LocationInfo
 from ...lsp.protocol import LSPResponseError, LSPMethodNotSupported
+from ...lsp.types import (
+    PrepareTypeHierarchyParams,
+    TypeHierarchySubtypesParams,
+    TextDocumentIdentifier,
+    Position,
+)
 from .base import HandlerContext
 
 
@@ -20,10 +26,10 @@ async def handle_subtypes(
     try:
         prepare_result = await workspace.client.send_request(
             "textDocument/prepareTypeHierarchy",
-            {
-                "textDocument": {"uri": doc.uri},
-                "position": {"line": line, "character": column},
-            },
+            PrepareTypeHierarchyParams(
+                textDocument=TextDocumentIdentifier(uri=doc.uri),
+                position=Position(line=line, character=column),
+            ),
         )
     except LSPResponseError as e:
         if e.is_method_not_found():
@@ -39,7 +45,8 @@ async def handle_subtypes(
 
     try:
         result = await workspace.client.send_request(
-            "typeHierarchy/subtypes", {"item": item}
+            "typeHierarchy/subtypes",
+            TypeHierarchySubtypesParams(item=item),
         )
     except LSPResponseError as e:
         if e.is_method_not_found():
