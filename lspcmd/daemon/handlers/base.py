@@ -328,8 +328,11 @@ class HandlerContext:
         return locations
 
     def format_type_hierarchy_items(
-        self, result: Any, workspace_root: Path, context: int = 0
-    ) -> list[dict]:
+        self,
+        result: list[dict[str, object]] | None,
+        workspace_root: Path,
+        context: int = 0,
+    ) -> list[LocationDict]:
         if not result:
             return []
 
