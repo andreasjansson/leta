@@ -219,7 +219,15 @@ async def _extract_function_signature(
 
 
 def _format_signature_from_detail(symbol: FoundSymbol) -> str | None:
-    return None
+    name = symbol.get("name", "")
+    detail = symbol.get("detail", "")
+    if not detail:
+        return None
+    if detail.startswith("func"):
+        return f"func {name}{detail[4:]}"
+    elif detail.startswith("fn"):
+        return f"fn {name}{detail[2:]}"
+    return f"{name} {detail}"
 
 
 def _parse_signature_from_hover(hover_result: object) -> str | None:
