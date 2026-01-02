@@ -353,7 +353,8 @@ def format_definition_content(data: dict) -> str:
         lines.append(f"[truncated after {head} lines, use `lspcmd show \"{symbol}\" --head {total_lines}` to show the full {total_lines} lines]")
     
     result = "\n".join(lines)
-    if not result.endswith("\n"):
+    # Add trailing newline only when content started with newlines (context output)
+    if content.startswith("\n") and not result.endswith("\n"):
         result += "\n"
     return result
 
