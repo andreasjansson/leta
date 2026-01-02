@@ -886,6 +886,7 @@ Moved file and updated imports in 4 file(s):
             "range_end_line": 130,
             "kind": "Constant",
         })
+        assert "result" in response, f"Expected 'result' in response but got: {response}"
         output = format_output(response["result"], "plain")
         assert output == """\
 utils.py:130-138
