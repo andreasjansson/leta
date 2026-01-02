@@ -162,7 +162,7 @@ class HandlerContext:
 
     async def collect_symbols_for_paths(
         self, paths: list[Path], workspace_root: Path
-    ) -> list[dict]:
+    ) -> list[SymbolDict]:
         files_by_language: dict[str, list[Path]] = {}
         for file_path in paths:
             if not file_path.exists():
