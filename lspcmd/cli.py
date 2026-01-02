@@ -348,20 +348,6 @@ def workspace(ctx):
     pass
 
 
-def _can_prompt_user() -> bool:
-    """Check if we can interactively prompt the user.
-    
-    We need both stdin and stdout to be ttys for prompting.
-    Additionally, check TERM is set (real terminals have this),
-    which helps detect when running in bash -i -c subprocesses.
-    """
-    if not sys.stdin.isatty() or not sys.stdout.isatty():
-        return False
-    if not os.environ.get("TERM"):
-        return False
-    return True
-
-
 @workspace.command("add")
 @click.option("--root", type=click.Path(exists=True), help="Workspace root directory")
 @click.pass_context
@@ -380,7 +366,7 @@ def workspace_add(ctx, root):
         else:
             default_root = cwd
 
-        if _can_prompt_user():
+        if sys.stdin.isatty():
             workspace_root = click.prompt(
                 "Workspace root",
                 default=str(default_root),
