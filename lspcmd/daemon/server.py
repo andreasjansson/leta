@@ -65,6 +65,10 @@ class DaemonServer:
 
     async def start(self) -> None:
         self.session.config = load_config()
+        
+        removed_roots = cleanup_stale_workspace_roots(self.session.config)
+        for root in removed_roots:
+            logger.info(f"Removed stale workspace root (no longer exists): {root}")
 
         socket_path = get_socket_path()
         socket_path.parent.mkdir(parents=True, exist_ok=True)
