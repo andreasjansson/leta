@@ -137,7 +137,7 @@ class HandlerContext:
             doc = await workspace.ensure_document_open(file_path)
             result = await workspace.client.send_request(
                 "textDocument/documentSymbol",
-                DocumentSymbolParams(text_document=TextDocumentIdentifier(uri=doc.uri)),
+                DocumentSymbolParams(textDocument=TextDocumentIdentifier(uri=doc.uri)),
             )
             if result:
                 rel_path = self.relative_path(file_path, workspace_root)
