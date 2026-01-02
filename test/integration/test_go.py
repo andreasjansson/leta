@@ -155,6 +155,7 @@ utils.go:69 [Function] NewError (func(err error) *Result[T])"""
             "workspace_root": str(workspace),
             "pattern": "Validate",
             "kinds": ["function"],
+            "exclude_patterns": ["editable"],
         })
         output = format_output(response["result"], "plain")
         assert output == """\
@@ -168,6 +169,7 @@ main.go:159 [Function] ValidateUser (func(user *User) error)"""
             "workspace_root": str(workspace),
             "pattern": ".*",
             "kinds": ["function"],
+            "exclude_patterns": ["editable"],
         })
         all_output = format_output(response["result"], "plain")
         assert all_output == """\
