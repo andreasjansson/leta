@@ -17,16 +17,15 @@ async def handle_references(
         "path": params.path,
         "workspace_root": params.workspace_root,
     })
-    assert workspace.client
     line, column = ctx.parse_position({"line": params.line, "column": params.column})
     context = params.context
 
     result = await workspace.client.send_request(
         "textDocument/references",
         ReferenceParams(
-            text_document=TextDocumentIdentifier(uri=doc.uri),
+            textDocument=TextDocumentIdentifier(uri=doc.uri),
             position=Position(line=line, character=column),
-            context=ReferenceContext(include_declaration=True),
+            context=ReferenceContext(includeDeclaration=True),
         ),
     )
 
