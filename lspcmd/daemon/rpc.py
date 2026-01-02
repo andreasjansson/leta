@@ -31,6 +31,7 @@ class SymbolInfo(BaseModel):
     documentation: str | None = None
     range_start_line: int | None = None
     range_end_line: int | None = None
+    ref: str | None = None
 
 
 class LocationInfo(BaseModel):
