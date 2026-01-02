@@ -549,7 +549,7 @@ class DaemonServer:
 
     async def _expand_outgoing_calls(
         self, workspace: "Workspace", workspace_root: Path, item: dict,
-        depth: int, visited: set
+        depth: int, visited: set, is_root: bool = False
     ) -> list[dict]:
         if depth <= 0:
             return []
@@ -566,6 +566,10 @@ class DaemonServer:
             )
         except LSPResponseError as e:
             if e.is_method_not_found():
+                if is_root:
+                    raise LSPMethodNotSupported(
+                        "callHierarchy/outgoingCalls", workspace.server_config.name
+                    )
                 return []
             raise
 
