@@ -288,8 +288,16 @@ class HandlerContext:
             contents = result.contents
             if isinstance(contents, MarkupContent):
                 doc_str = contents.value
+            elif isinstance(contents, MarkedString):
+                doc_str = contents.value
             elif isinstance(contents, list):
-                doc_str = "\n".join(str(c) for c in contents)
+                parts = []
+                for c in contents:
+                    if isinstance(c, (MarkupContent, MarkedString)):
+                        parts.append(c.value)
+                    else:
+                        parts.append(str(c))
+                doc_str = "\n".join(parts)
             else:
                 doc_str = str(contents) if contents else None
 
