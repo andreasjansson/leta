@@ -1,21 +1,25 @@
 """
-This file contains functions used exclusively by replace-function tests.
-Do not use these symbols in other tests to avoid parallel test interference.
+ISOLATED TEST FILE - Used exclusively by replace-function, rename, and mv tests.
+Do NOT import this from main.py, utils.py, or other non-editable files.
+Do NOT use symbols from this file in grep, refs, calls, or other read-only tests.
 """
 
 from dataclasses import dataclass
 
 
 @dataclass
-class EditableUser:
+class EditablePerson:
+    """Editable person class for testing rename operations."""
     name: str
     email: str
-    age: int
+
+    def greet(self) -> str:
+        return f"Hello, {self.name}"
 
 
-def editable_create_user() -> EditableUser:
-    """Create an editable sample user for testing."""
-    return EditableUser(name="Original Name", email="original@example.com", age=30)
+def editable_create_sample() -> EditablePerson:
+    """Create an editable sample for testing replace-function."""
+    return EditablePerson(name="Original Name", email="original@example.com")
 
 
 def editable_validate_email(email: str) -> bool:
