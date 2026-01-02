@@ -313,12 +313,18 @@ def format_tree(data: dict) -> str:
     
     tree: dict = {}
     for rel_path, info in files.items():
+        # Handle both dict and FileInfo-like objects
+        if hasattr(info, "model_dump"):
+            info = info.model_dump()
         parts = P(rel_path).parts
         current = tree
         for part in parts[:-1]:
             if part not in current:
                 current[part] = {}
             current = current[part]
+        # Normalize the info dict - new format uses "bytes" instead of "size"
+        if "bytes" in info and "size" not in info:
+            info = {**info, "size": info["bytes"]}
         current[parts[-1]] = info
     
     lines: list[str] = []
