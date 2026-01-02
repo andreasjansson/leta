@@ -1,6 +1,6 @@
 from enum import IntEnum
-from typing import Any
-from pydantic import BaseModel
+from typing import Any, Literal
+from pydantic import BaseModel, Field
 
 
 class Position(BaseModel):
@@ -33,6 +33,10 @@ class VersionedTextDocumentIdentifier(TextDocumentIdentifier):
     version: int
 
 
+class OptionalVersionedTextDocumentIdentifier(TextDocumentIdentifier):
+    version: int | None = None
+
+
 class TextDocumentItem(BaseModel):
     uri: str
     languageId: str
@@ -50,9 +54,13 @@ class TextEdit(BaseModel):
     newText: str
 
 
+class AnnotatedTextEdit(TextEdit):
+    annotationId: str | None = None
+
+
 class TextDocumentEdit(BaseModel):
-    textDocument: VersionedTextDocumentIdentifier
-    edits: list[TextEdit]
+    textDocument: OptionalVersionedTextDocumentIdentifier
+    edits: list[TextEdit | AnnotatedTextEdit]
 
 
 class CreateFileOptions(BaseModel):
@@ -61,7 +69,7 @@ class CreateFileOptions(BaseModel):
 
 
 class CreateFile(BaseModel):
-    kind: str = "create"
+    kind: Literal["create"] = "create"
     uri: str
     options: CreateFileOptions | None = None
 
@@ -72,7 +80,7 @@ class RenameFileOptions(BaseModel):
 
 
 class RenameFile(BaseModel):
-    kind: str = "rename"
+    kind: Literal["rename"] = "rename"
     oldUri: str
     newUri: str
     options: RenameFileOptions | None = None
@@ -84,7 +92,7 @@ class DeleteFileOptions(BaseModel):
 
 
 class DeleteFile(BaseModel):
-    kind: str = "delete"
+    kind: Literal["delete"] = "delete"
     uri: str
     options: DeleteFileOptions | None = None
 
@@ -272,7 +280,7 @@ class CallHierarchyItem(BaseModel):
 
 
 class CallHierarchyIncomingCall(BaseModel):
-    from_: CallHierarchyItem
+    from_: CallHierarchyItem = Field(alias="from")
     fromRanges: list[Range]
 
     model_config = {"populate_by_name": True}
@@ -281,3 +289,78 @@ class CallHierarchyIncomingCall(BaseModel):
 class CallHierarchyOutgoingCall(BaseModel):
     to: CallHierarchyItem
     fromRanges: list[Range]
+
+
+class TypeHierarchyItem(BaseModel):
+    name: str
+    kind: int
+    uri: str
+    range: Range
+    selectionRange: Range
+    detail: str | None = None
+    tags: list[int] | None = None
+    data: Any | None = None
+
+
+class ServerCapabilities(BaseModel, extra="allow"):
+    textDocumentSync: int | dict[str, Any] | None = None
+    completionProvider: dict[str, Any] | None = None
+    hoverProvider: bool | dict[str, Any] | None = None
+    signatureHelpProvider: dict[str, Any] | None = None
+    declarationProvider: bool | dict[str, Any] | None = None
+    definitionProvider: bool | dict[str, Any] | None = None
+    typeDefinitionProvider: bool | dict[str, Any] | None = None
+    implementationProvider: bool | dict[str, Any] | None = None
+    referencesProvider: bool | dict[str, Any] | None = None
+    documentHighlightProvider: bool | dict[str, Any] | None = None
+    documentSymbolProvider: bool | dict[str, Any] | None = None
+    codeActionProvider: bool | dict[str, Any] | None = None
+    codeLensProvider: dict[str, Any] | None = None
+    documentLinkProvider: dict[str, Any] | None = None
+    colorProvider: bool | dict[str, Any] | None = None
+    documentFormattingProvider: bool | dict[str, Any] | None = None
+    documentRangeFormattingProvider: bool | dict[str, Any] | None = None
+    documentOnTypeFormattingProvider: dict[str, Any] | None = None
+    renameProvider: bool | dict[str, Any] | None = None
+    foldingRangeProvider: bool | dict[str, Any] | None = None
+    executeCommandProvider: dict[str, Any] | None = None
+    selectionRangeProvider: bool | dict[str, Any] | None = None
+    linkedEditingRangeProvider: bool | dict[str, Any] | None = None
+    callHierarchyProvider: bool | dict[str, Any] | None = None
+    semanticTokensProvider: dict[str, Any] | None = None
+    monikerProvider: bool | dict[str, Any] | None = None
+    typeHierarchyProvider: bool | dict[str, Any] | None = None
+    inlineValueProvider: bool | dict[str, Any] | None = None
+    inlayHintProvider: bool | dict[str, Any] | None = None
+    diagnosticProvider: dict[str, Any] | None = None
+    workspaceSymbolProvider: bool | dict[str, Any] | None = None
+    workspace: dict[str, Any] | None = None
+    experimental: Any | None = None
+
+
+class ServerInfo(BaseModel):
+    name: str
+    version: str | None = None
+
+
+class InitializeResult(BaseModel):
+    capabilities: ServerCapabilities
+    serverInfo: ServerInfo | None = None
+
+
+# Type aliases for LSP responses
+DefinitionResponse = Location | list[Location] | list[LocationLink] | None
+DeclarationResponse = Location | list[Location] | list[LocationLink] | None
+ReferencesResponse = list[Location] | None
+ImplementationResponse = Location | list[Location] | list[LocationLink] | None
+TypeDefinitionResponse = Location | list[Location] | list[LocationLink] | None
+HoverResponse = Hover | None
+DocumentSymbolResponse = list[DocumentSymbol] | list[SymbolInformation] | None
+RenameResponse = WorkspaceEdit | None
+PrepareCallHierarchyResponse = list[CallHierarchyItem] | None
+CallHierarchyIncomingCallsResponse = list[CallHierarchyIncomingCall] | None
+CallHierarchyOutgoingCallsResponse = list[CallHierarchyOutgoingCall] | None
+PrepareTypeHierarchyResponse = list[TypeHierarchyItem] | None
+TypeHierarchySubtypesResponse = list[TypeHierarchyItem] | None
+TypeHierarchySupertypesResponse = list[TypeHierarchyItem] | None
+WillRenameFilesResponse = WorkspaceEdit | None
