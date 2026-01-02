@@ -8,39 +8,56 @@
         (greger-buffer nil)
         (result nil))
     (unwind-protect
-        (progn
-          ;; Open the test file
-          (setq greger-buffer (find-file-noselect (expand-file-name test-file)))
-          
-          (with-current-buffer greger-buffer
-            ;; Delete final newline if present
-            (goto-char (point-max))
-            (when (eq (char-before) ?\n)
-              (delete-char -1))
-            
-            ;; Set max iterations to 1
-            (setq-local greger-max-iterations 1)
-            
-            ;; Run greger-buffer
-            (let ((greger-current-thinking-budget 1024))
-              (greger-buffer))
-            
-            ;; Wait for completion
-            (let ((timeout 120)
-                  (start-time (current-time)))
-              (while (and (not (eq (greger--get-current-status) 'idle))
-                          (< (float-time (time-subtract (current-time) start-time)) timeout))
-                (sit-for 0.5)))
-            
-            ;; Check what tool was used - search backwards for TOOL USE
-            (goto-char (point-max))
-            (if (re-search-backward "^# TOOL USE" nil t)
-                (progn
-                  (forward-line 1)
-                  (if (re-search-forward "^Name: \\(.+\\)$" nil t)
-                      (setq result (match-string 1))
-                    (setq result "unknown")))
-              (setq result "no-tool-use"))))
+        (condition-case err
+            (progn
+              ;; Open the test file
+              (setq greger-buffer (find-file-noselect (expand-file-name test-file)))
+              
+              (with-current-buffer greger-buffer
+                ;; Delete final newline if present
+                (goto-char (point-max))
+                (when (eq (char-before) ?\n)
+                  (delete-char -1))
+                
+                ;; Set max iterations to 1
+                (setq-local greger-max-iterations 1)
+                
+                ;; Run greger-buffer
+                (let ((greger-current-thinking-budget 1024))
+                  (greger-buffer))
+                
+                ;; Wait for completion (either idle or error)
+                (let ((timeout 180)
+                      (start-time (current-time)))
+                  (while (and (not (memq (greger--get-current-status) '(idle error)))
+                              (< (float-time (time-subtract (current-time) start-time)) timeout))
+                    (sit-for 0.5)))
+                
+                ;; Give a moment for buffer to update
+                (sit-for 1)
+                
+                ;; Check what tool was used - search backwards for the LAST TOOL USE
+                (goto-char (point-max))
+                (if (re-search-backward "^# TOOL USE" nil t)
+                    (progn
+                      (forward-line 1)
+                      (if (re-search-forward "^Name: \\(.+\\)$" nil t)
+                          (setq result (match-string 1))
+                        (setq result "unknown-no-name")))
+                  (setq result "no-tool-use"))))
+          (error
+           (message "Error during iteration %d: %s" iteration err)
+           ;; Still try to get result from buffer
+           (when (and greger-buffer (buffer-live-p greger-buffer))
+             (with-current-buffer greger-buffer
+               (goto-char (point-max))
+               (if (re-search-backward "^# TOOL USE" nil t)
+                   (progn
+                     (forward-line 1)
+                     (if (re-search-forward "^Name: \\(.+\\)$" nil t)
+                         (setq result (match-string 1))
+                       (setq result "unknown-no-name-after-error")))
+                 (setq result "no-tool-use-after-error"))))))
       
       ;; Cleanup - kill the buffer without saving
       (when (and greger-buffer (buffer-live-p greger-buffer))
