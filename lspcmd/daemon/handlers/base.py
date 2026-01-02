@@ -253,6 +253,8 @@ class HandlerContext:
     async def get_symbol_documentation(
         self, workspace_root: Path, rel_path: str, line: int, column: int
     ) -> str | None:
+        from ...lsp.types import Hover, MarkupContent
+
         file_path = workspace_root / rel_path
 
         workspace = self.session.get_workspace_for_file(file_path)
@@ -279,14 +281,11 @@ class HandlerContext:
                 self.hover_cache[cache_key] = ""
                 return None
 
-            contents = result.get("contents")
-            if isinstance(contents, dict):
-                doc_str = contents.get("value")
+            contents = result.contents
+            if isinstance(contents, MarkupContent):
+                doc_str = contents.value
             elif isinstance(contents, list):
-                doc_str = "\n".join(
-                    c.get("value", str(c)) if isinstance(c, dict) else str(c)
-                    for c in contents
-                )
+                doc_str = "\n".join(str(c) for c in contents)
             else:
                 doc_str = str(contents) if contents else None
 
