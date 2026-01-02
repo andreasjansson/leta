@@ -518,6 +518,7 @@ class DaemonServer:
         context = params.get("context", 0)
         head = params.get("head", 200)
         symbol_name = params.get("symbol")
+        symbol_kind = params.get("kind")
 
         rel_path = self._relative_path(path, workspace_root)
         content = read_file_content(path)
@@ -530,6 +531,11 @@ class DaemonServer:
             if range_start is not None and range_end is not None:
                 start = range_start - 1
                 end = range_end - 1
+                
+                # If LSP reports a single-line range for a constant/variable,
+                # try to expand it to include multi-line definitions
+                if start == end and symbol_kind in ("Constant", "Variable"):
+                    end = expand_variable_range(lines, start)
             else:
                 workspace = await self.session.get_or_create_workspace(path, workspace_root)
                 doc = await workspace.ensure_document_open(path)
