@@ -193,8 +193,13 @@ class MarkupContent(BaseModel):
     value: str
 
 
+class MarkedString(BaseModel):
+    language: str
+    value: str
+
+
 class Hover(BaseModel):
-    contents: MarkupContent | str | list[str]
+    contents: MarkupContent | MarkedString | str | list[MarkupContent | MarkedString | str]
     range: Range | None = None
 
 
