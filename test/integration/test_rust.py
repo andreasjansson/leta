@@ -534,3 +534,43 @@ src/main.rs:10 [Function] create_sample_user (fn create_sample_user() -> User)
 
 Incoming calls:
   └── src/main.rs:22 [Function] main (fn main())"""
+
+    def test_calls_outgoing_include_non_workspace(self, workspace):
+        """Test outgoing calls with --include-non-workspace shows stdlib calls."""
+        os.chdir(workspace)
+        response = self._run_request_with_retry("calls", {
+            "workspace_root": str(workspace),
+            "mode": "outgoing",
+            "from_path": str(workspace / "src" / "main.rs"),
+            "from_line": 10,
+            "from_column": 3,
+            "from_symbol": "create_sample_user",
+            "max_depth": 1,
+            "include_non_workspace": True,
+        })
+        output = format_output(response["result"], "plain")
+        assert output == """\
+src/main.rs:10 [Function] create_sample_user (fn create_sample_user() -> User)
+
+Outgoing calls:
+  ├── src/user.rs:13 [Function] new (pub fn new(name: String, email: String, age: u32) -> Self)
+  └── [Function] to_string (fn to_string(&self) -> String)"""
+
+    def test_calls_outgoing_excludes_stdlib_by_default(self, workspace):
+        """Test outgoing calls without --include-non-workspace excludes stdlib."""
+        os.chdir(workspace)
+        response = self._run_request_with_retry("calls", {
+            "workspace_root": str(workspace),
+            "mode": "outgoing",
+            "from_path": str(workspace / "src" / "main.rs"),
+            "from_line": 10,
+            "from_column": 3,
+            "from_symbol": "create_sample_user",
+            "max_depth": 1,
+        })
+        output = format_output(response["result"], "plain")
+        assert output == """\
+src/main.rs:10 [Function] create_sample_user (fn create_sample_user() -> User)
+
+Outgoing calls:
+  └── src/user.rs:13 [Function] new (pub fn new(name: String, email: String, age: u32) -> Self)"""
