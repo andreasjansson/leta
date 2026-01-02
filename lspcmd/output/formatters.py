@@ -471,14 +471,16 @@ def format_call_tree(data: dict) -> str:
         parts.append(f"({detail})")
     lines.append(" ".join(filter(None, parts)))
 
-    if "calls" in data and data["calls"]:
+    if "calls" in data:
         lines.append("")
         lines.append("Outgoing calls:")
-        _render_calls_tree(data["calls"], lines, "  ", is_outgoing=True)
-    elif "called_by" in data and data["called_by"]:
+        if data["calls"]:
+            _render_calls_tree(data["calls"], lines, "  ", is_outgoing=True)
+    elif "called_by" in data:
         lines.append("")
         lines.append("Incoming calls:")
-        _render_calls_tree(data["called_by"], lines, "  ", is_outgoing=False)
+        if data["called_by"]:
+            _render_calls_tree(data["called_by"], lines, "  ", is_outgoing=False)
 
     return "\n".join(lines)
 
