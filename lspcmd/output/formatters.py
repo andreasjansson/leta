@@ -421,6 +421,21 @@ def format_diagnostics(diagnostics: list[dict]) -> str:
     return "\n".join(lines)
 
 
+def _is_stdlib_path(path: str) -> bool:
+    """Detect if path is a language standard library (not third-party)."""
+    if "/typeshed-fallback/stdlib/" in path or "/typeshed/stdlib/" in path:
+        return True
+    if "/libexec/src/" in path and "/mod/" not in path:
+        return True
+    if path.endswith(".d.ts"):
+        filename = path.split("/")[-1]
+        if filename.startswith("lib."):
+            return True
+    if "/rustlib/src/rust/library/" in path:
+        return True
+    return False
+
+
 def format_call_tree(data: dict) -> str:
     lines = []
 
@@ -459,7 +474,10 @@ def _render_calls_tree(items: list[dict], lines: list[str], prefix: str, is_outg
         path = item.get("path", "")
         line = item.get("line", 0)
 
-        parts = [f"{path}:{line}", f"[{kind}]" if kind else "", name]
+        if _is_stdlib_path(path):
+            parts = [f"[{kind}]" if kind else "", name]
+        else:
+            parts = [f"{path}:{line}", f"[{kind}]" if kind else "", name]
         if detail:
             parts.append(f"({detail})")
         lines.append(f"{prefix}{connector}" + " ".join(filter(None, parts)))
