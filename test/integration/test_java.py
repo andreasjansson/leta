@@ -281,7 +281,7 @@ src/main/java/com/example/Main.java:9-18
         response = run_request("references", {
             "path": str(workspace / "src" / "main" / "java" / "com" / "example" / "User.java"),
             "workspace_root": str(workspace),
-            "line": 6,
+            "line": 9,
             "column": 13,
             "context": 0,
         })
@@ -303,7 +303,7 @@ src/main/java/com/example/MemoryStorage.java:50     public List<User> list() {
 src/main/java/com/example/Storage.java:14     void save(User user);
 src/main/java/com/example/Storage.java:22     User load(String email);
 src/main/java/com/example/Storage.java:37     List<User> list();
-src/main/java/com/example/User.java:6 public class User {
+src/main/java/com/example/User.java:9 public class User {
 src/main/java/com/example/UserRepository.java:26     public void addUser(User user) {
 src/main/java/com/example/UserRepository.java:36     public User getUser(String email) {
 src/main/java/com/example/UserRepository.java:55     public List<User> listUsers() {"""
