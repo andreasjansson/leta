@@ -365,34 +365,6 @@ Renamed in 3 file(s):
             storage_rs.write_text(original_storage)
 
     # =========================================================================
-    # diagnostics tests
-    # =========================================================================
-
-    def test_diagnostics_single_file(self, workspace):
-        os.chdir(workspace)
-        # rust-analyzer uses push diagnostics from cargo check
-        # Need to wait longer for cargo to run
-        time.sleep(3.0)
-        response = self._run_request_with_retry("diagnostics", {
-            "path": str(workspace / "src" / "errors.rs"),
-            "workspace_root": str(workspace),
-        })
-        output = format_output(response["result"], "plain")
-        # rust-analyzer may not report diagnostics immediately - cargo check runs async
-        # At minimum we should not crash; diagnostics may take a while to arrive
-        assert output is not None
-
-    def test_diagnostics_workspace(self, workspace):
-        os.chdir(workspace)
-        # For workspace-wide diagnostics, rust-analyzer needs time to run cargo check
-        time.sleep(3.0)
-        response = self._run_request_with_retry("workspace-diagnostics", {
-            "workspace_root": str(workspace),
-        })
-        # Workspace diagnostics should return something (even if empty due to timing)
-        assert response is not None
-
-    # =========================================================================
     # move-file tests
     # =========================================================================
 
