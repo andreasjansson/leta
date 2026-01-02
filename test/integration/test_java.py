@@ -133,12 +133,12 @@ src/main/java/com/example/Main.java:15 [Method] createSampleUser() ( : User) in 
 src/main/java/com/example/Main.java:25 [Method] processUsers(UserRepository) ( : List<String>) in Main
 src/main/java/com/example/Main.java:37 [Method] validateEmail(String) ( : boolean) in Main
 src/main/java/com/example/Main.java:47 [Method] main(String[]) ( : void) in Main
-src/main/java/com/example/User.java:29 [Method] getName() ( : String) in User
-src/main/java/com/example/User.java:38 [Method] getEmail() ( : String) in User
-src/main/java/com/example/User.java:47 [Method] getAge() ( : int) in User
-src/main/java/com/example/User.java:56 [Method] isAdult() ( : boolean) in User
-src/main/java/com/example/User.java:65 [Method] displayName() ( : String) in User
-src/main/java/com/example/User.java:70 [Method] toString() ( : String) in User"""
+src/main/java/com/example/User.java:54 [Method] getName() ( : String) in User
+src/main/java/com/example/User.java:63 [Method] getEmail() ( : String) in User
+src/main/java/com/example/User.java:72 [Method] getAge() ( : int) in User
+src/main/java/com/example/User.java:81 [Method] isAdult() ( : boolean) in User
+src/main/java/com/example/User.java:90 [Method] displayName() ( : String) in User
+src/main/java/com/example/User.java:95 [Method] toString() ( : String) in User"""
 
     def test_grep_workspace_wide(self, workspace):
         os.chdir(workspace)
@@ -162,7 +162,7 @@ src/main/java/com/example/User.java:70 [Method] toString() ( : String) in User""
         output = format_output(response["result"], "plain")
         assert output == """\
 src/main/java/com/example/AbstractStorage.java:7 [Class] AbstractStorage
-src/main/java/com/example/User.java:6 [Class] User
+src/main/java/com/example/User.java:9 [Class] User
 src/main/java/com/example/Main.java:8 [Class] Main
 src/main/java/com/example/UserRepository.java:9 [Class] UserRepository
 src/main/java/com/example/FileStorage.java:12 [Class] FileStorage
