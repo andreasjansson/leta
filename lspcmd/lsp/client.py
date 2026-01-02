@@ -245,13 +245,6 @@ class LSPClient:
         if method == "$/progress" and params:
             self._handle_progress(params)
 
-        if method == "textDocument/publishDiagnostics" and params:
-            uri = params.get("uri")
-            diagnostics = params.get("diagnostics", [])
-            if uri:
-                self._diagnostics[uri] = diagnostics
-                logger.debug(f"Stored {len(diagnostics)} diagnostics for {uri}")
-
         handler = self._notification_handlers.get(method)
         if handler:
             await handler(params)
