@@ -267,8 +267,6 @@ See `lspcmd COMMAND --help` for more documentation and command-specific options.
         "rename",
         "move-file",
         "replace-function",
-        "format",
-        "organize-imports",
         "raw-lsp-request",
         "workspace",
         "daemon",
