@@ -313,7 +313,7 @@ src/main/java/com/example/UserRepository.java:55     public List<User> listUsers
         response = run_request("references", {
             "path": str(workspace / "src" / "main" / "java" / "com" / "example" / "User.java"),
             "workspace_root": str(workspace),
-            "line": 6,
+            "line": 9,
             "column": 13,
             "context": 1,
         })
