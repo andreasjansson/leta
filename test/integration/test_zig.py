@@ -406,4 +406,4 @@ pub const DEFAULT_PORTS = [_]u16{
             "max_depth": 1,
         })
         output = format_output(response["result"], "plain")
-        assert output == "Error: Could not prepare call hierarchy for 'main'"
+        assert output == "Error: No callable symbol found at src/main.zig:4:7 for 'main'. The symbol may not be a function/method, or the position may be incorrect."
