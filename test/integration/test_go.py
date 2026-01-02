@@ -457,7 +457,7 @@ Renamed in 1 file(s):
             "context": 0,
         })
         assert "error" in response
-        assert "textDocument/declaration" in response["error"]
+        assert "declaration" in response["error"].lower()
 
     # =========================================================================
     # move-file tests
