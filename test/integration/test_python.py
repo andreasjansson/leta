@@ -1008,3 +1008,43 @@ main.py:127 [Function] main
         })
         output = format_output(response["result"], "plain")
         assert output == "No call path found from 'create_sample_user' to 'main' within depth 3"
+
+    def test_calls_outgoing_include_non_workspace(self, workspace):
+        """Test outgoing calls with --include-non-workspace shows stdlib calls."""
+        os.chdir(workspace)
+        response = run_request("calls", {
+            "workspace_root": str(workspace),
+            "mode": "outgoing",
+            "from_path": str(workspace / "utils.py"),
+            "from_line": 9,
+            "from_column": 4,
+            "from_symbol": "validate_email",
+            "max_depth": 1,
+            "include_non_workspace": True,
+        })
+        output = format_output(response["result"], "plain")
+        assert output == """\
+utils.py:9 [Function] validate_email
+
+Outgoing calls:
+  ├── [Class] bool
+  ├── [Function] match
+  └── [Function] match"""
+
+    def test_calls_outgoing_excludes_stdlib_by_default(self, workspace):
+        """Test outgoing calls without --include-non-workspace excludes stdlib."""
+        os.chdir(workspace)
+        response = run_request("calls", {
+            "workspace_root": str(workspace),
+            "mode": "outgoing",
+            "from_path": str(workspace / "utils.py"),
+            "from_line": 9,
+            "from_column": 4,
+            "from_symbol": "validate_email",
+            "max_depth": 1,
+        })
+        output = format_output(response["result"], "plain")
+        assert output == """\
+utils.py:9 [Function] validate_email
+
+Outgoing calls:"""
