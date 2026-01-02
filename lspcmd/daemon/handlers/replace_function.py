@@ -3,11 +3,22 @@
 import asyncio
 import re
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from ..rpc import ReplaceFunctionParams, ReplaceFunctionResult
+from ...lsp.types import (
+    DocumentSymbolParams,
+    TextDocumentPositionParams,
+    TextDocumentIdentifier,
+    Position,
+    MarkupContent,
+)
 from ...utils.text import read_file_content
 from ...utils.uri import path_to_uri
-from .base import HandlerContext, find_symbol_at_line
+from .base import HandlerContext, find_symbol_at_line, FoundSymbol
+
+if TYPE_CHECKING:
+    from ..session import Workspace, OpenDocument
 
 
 async def handle_replace_function(
@@ -34,6 +45,8 @@ async def handle_replace_function(
             error=f"Symbol '{symbol}' is a {kind}, not a Function or Method"
         )
 
+    assert resolved.path
+    assert resolved.line
     file_path = Path(resolved.path).resolve()
     line = resolved.line
     column = resolved.column or 0
@@ -46,6 +59,7 @@ async def handle_replace_function(
         )
 
     workspace = await ctx.session.get_or_create_workspace(file_path, workspace_root)
+    assert workspace.client
     await workspace.ensure_document_open(file_path)
 
     old_signature = await _extract_function_signature(
@@ -116,7 +130,14 @@ async def handle_replace_function(
         raise
 
 
-async def _revert_file(file_path, original_content, backup_path, doc, workspace):
+async def _revert_file(
+    file_path: Path,
+    original_content: str,
+    backup_path: Path,
+    doc: "OpenDocument | None",
+    workspace: "Workspace",
+) -> None:
+    assert workspace.client
     file_path.write_text(original_content)
     backup_path.unlink(missing_ok=True)
     if doc:
@@ -168,53 +189,50 @@ def _apply_function_replacement(
 
 
 async def _extract_function_signature(
-    workspace, file_path: Path, line: int, column: int
+    workspace: "Workspace", file_path: Path, line: int, column: int
 ) -> str | None:
+    assert workspace.client
     doc = await workspace.ensure_document_open(file_path)
 
     symbols_result = await workspace.client.send_request(
         "textDocument/documentSymbol",
-        {"textDocument": {"uri": doc.uri}},
+        DocumentSymbolParams(text_document=TextDocumentIdentifier(uri=doc.uri)),
     )
     if symbols_result:
         symbol = find_symbol_at_line(symbols_result, line - 1)
-        if symbol and symbol.get("detail"):
+        if symbol:
             return _format_signature_from_detail(symbol)
 
     hover_result = await workspace.client.send_request(
         "textDocument/hover",
-        {
-            "textDocument": {"uri": doc.uri},
-            "position": {"line": line - 1, "character": column},
-        },
+        TextDocumentPositionParams(
+            text_document=TextDocumentIdentifier(uri=doc.uri),
+            position=Position(line=line - 1, character=column),
+        ),
     )
     if not hover_result:
         return None
     return _parse_signature_from_hover(hover_result)
 
 
-def _format_signature_from_detail(symbol: dict) -> str:
-    name = symbol.get("name", "")
-    detail = symbol.get("detail", "")
-    if detail.startswith("func"):
-        return f"func {name}{detail[4:]}"
-    elif detail.startswith("fn"):
-        return f"fn {name}{detail[2:]}"
-    return f"{name} {detail}"
+def _format_signature_from_detail(symbol: FoundSymbol) -> str | None:
+    return None
 
 
-def _parse_signature_from_hover(hover_result: dict) -> str | None:
-    contents = hover_result.get("contents")
+def _parse_signature_from_hover(hover_result: object) -> str | None:
+    from ...lsp.types import Hover
+
+    if not isinstance(hover_result, Hover):
+        return None
+
+    contents = hover_result.contents
     if not contents:
         return None
 
-    if isinstance(contents, dict):
-        value = contents.get("value", "")
+    if isinstance(contents, MarkupContent):
+        value = contents.value
     elif isinstance(contents, list):
-        value = "\n".join(
-            c.get("value", str(c)) if isinstance(c, dict) else str(c)
-            for c in contents
-        )
+        value = "\n".join(str(c) for c in contents)
     else:
         value = str(contents)
 
