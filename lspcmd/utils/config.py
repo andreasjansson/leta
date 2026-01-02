@@ -154,24 +154,14 @@ def get_best_workspace_root(path: Path, config: dict, cwd: Path | None = None) -
     """Get the best workspace root for a path.
     
     Only returns explicitly initialized workspace roots (from config).
-    If cwd is provided, the workspace root must contain cwd.
     
     Returns None if no initialized workspace contains the path.
     Use `lspcmd workspace init` to initialize a workspace.
+    
+    The cwd parameter is ignored (kept for API compatibility).
     """
     path = path.resolve()
-    if cwd:
-        cwd = cwd.resolve()
-    
-    known = get_known_workspace_root(path, config)
-    
-    if cwd and known:
-        try:
-            cwd.relative_to(known)
-        except ValueError:
-            known = None
-    
-    return known
+    return get_known_workspace_root(path, config)
 
 
 def add_workspace_root(root: Path, config: dict) -> None:
