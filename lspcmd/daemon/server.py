@@ -21,6 +21,64 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_CACHE_SIZE_BYTES = 256 * 1024 * 1024  # 256MB
 
+
+def expand_variable_range(lines: list[str], start_line: int) -> int:
+    """Expand a single-line variable range to include full multi-line definitions.
+    
+    Some language servers (e.g., pyright) only report the variable name line,
+    not the full extent of multi-line dict/list/tuple literals. This function
+    finds the actual end by tracking bracket/brace/paren matching.
+    
+    Args:
+        lines: All lines of the file
+        start_line: The 0-indexed starting line
+        
+    Returns:
+        The 0-indexed end line (inclusive)
+    """
+    if start_line >= len(lines):
+        return start_line
+    
+    first_line = lines[start_line]
+    
+    # Count opening vs closing brackets on the first line
+    open_parens = first_line.count('(') - first_line.count(')')
+    open_brackets = first_line.count('[') - first_line.count(']')
+    open_braces = first_line.count('{') - first_line.count('}')
+    
+    # Also check for line continuation or string quotes
+    in_multiline_string = first_line.count('"""') % 2 == 1 or first_line.count("'''") % 2 == 1
+    
+    # If all brackets are balanced and no multiline string, it's a single line
+    if open_parens == 0 and open_brackets == 0 and open_braces == 0 and not in_multiline_string:
+        return start_line
+    
+    # Scan forward to find the end
+    for i in range(start_line + 1, len(lines)):
+        line = lines[i]
+        
+        if in_multiline_string:
+            if '"""' in line or "'''" in line:
+                in_multiline_string = False
+                if open_parens == 0 and open_brackets == 0 and open_braces == 0:
+                    return i
+            continue
+        
+        open_parens += line.count('(') - line.count(')')
+        open_brackets += line.count('[') - line.count(']')
+        open_braces += line.count('{') - line.count('}')
+        
+        if '"""' in line or "'''" in line:
+            if line.count('"""') % 2 == 1 or line.count("'''") % 2 == 1:
+                in_multiline_string = True
+                continue
+        
+        if open_parens <= 0 and open_brackets <= 0 and open_braces <= 0:
+            return i
+    
+    # Couldn't find matching close, return original
+    return start_line
+
 DEFAULT_EXCLUDE_DIRS = {
     ".git", "__pycache__", "node_modules", ".venv", "venv",
     "target", "build", "dist", ".tox", ".mypy_cache", ".pytest_cache",
