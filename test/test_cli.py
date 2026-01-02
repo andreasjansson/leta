@@ -61,6 +61,15 @@ class TestCliCommands:
         assert result.exit_code == 0
         assert "already added" in result.output
 
+    def test_workspace_add_nested(self, python_project, isolated_config):
+        """Test that a nested workspace can be added even if parent is a workspace."""
+        runner = CliRunner()
+        parent = python_project.parent
+        runner.invoke(cli, ["workspace", "add", "--root", str(parent)])
+        result = runner.invoke(cli, ["workspace", "add", "--root", str(python_project)])
+        assert result.exit_code == 0
+        assert "Added workspace:" in result.output
+
     def test_workspace_remove(self, python_project, isolated_config):
         runner = CliRunner()
         runner.invoke(cli, ["workspace", "add", "--root", str(python_project)])
