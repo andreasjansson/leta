@@ -12,5 +12,11 @@
   "reportMissingImports": "error",
   "reportMissingTypeStubs": false,
   "pythonVersion": "3.13",
-  "pythonPlatform": "Darwin"
+  "pythonPlatform": "Darwin",
+  "executionEnvironments": [
+    {
+      "root": ".",
+      "extraPaths": []
+    }
+  ]
 }
