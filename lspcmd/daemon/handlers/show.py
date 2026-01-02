@@ -14,7 +14,7 @@ async def handle_show(
     """Handle show command, returning either locations or definition content."""
     body = params.body
 
-    if params.range_start_line is not None:
+    if params.direct_location:
         return await _handle_direct_definition(ctx, params, body)
 
     if body:
