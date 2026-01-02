@@ -1040,7 +1040,7 @@ def grep(ctx, pattern, path, kind, exclude, docs, case_sensitive):
     output_result(response["result"], output_format)
 
 
-@cli.command("tree")
+@cli.command("files")
 @click.option(
     "-x",
     "--exclude",
@@ -1054,7 +1054,7 @@ def grep(ctx, pattern, path, kind, exclude, docs, case_sensitive):
     help="Include default-excluded directories (e.g., -i .git -i node_modules)",
 )
 @click.pass_context
-def tree(ctx, exclude, include):
+def files(ctx, exclude, include):
     """Show source file tree with symbol and line counts.
 
     Lists all files in the workspace with line counts. For files tracked by
@@ -1065,22 +1065,99 @@ def tree(ctx, exclude, include):
 
     Examples:
 
-      lspcmd tree                       # current workspace
+      lspcmd files                       # current workspace
 
-      lspcmd tree -x tests -x vendor    # exclude additional directories
+      lspcmd files -x tests -x vendor    # exclude additional directories
 
-      lspcmd tree -i .git               # include .git directory
+      lspcmd files -i .git               # include .git directory
 
-      lspcmd --json tree                # JSON output
+      lspcmd --json files                # JSON output
     """
     config = load_config()
     workspace_root = get_workspace_root_for_cwd(config)
 
-    response = run_request("tree", {
+    response = run_request("files", {
         "workspace_root": str(workspace_root),
         "exclude_patterns": list(exclude),
         "include_patterns": list(include),
     })
+    output_format = "json" if ctx.obj["json"] else "plain"
+    output_result(response["result"], output_format)
+
+
+CALLS_HELP = """\
+Show call hierarchy for a symbol.
+
+At least one of --from or --to must be specified.
+
+\b
+Modes:
+  --from SYMBOL         Show what SYMBOL calls (outgoing calls, top-down)
+  --to SYMBOL           Show what calls SYMBOL (incoming calls, bottom-up)
+  --from A --to B       Find call path from A to B
+
+Use --max-depth to limit recursion depth (default: 3).
+
+\b
+Examples:
+  lspcmd calls --from main              # what does main() call?
+  lspcmd calls --to validate_email      # what calls validate_email()?
+  lspcmd calls --from main --to save    # find path from main to save
+  lspcmd calls --from UserRepo.add --max-depth 5
+
+\b
+SYMBOL formats:
+  SymbolName            find symbol by name
+  Parent.Symbol         find symbol in parent (Class.method, module.function)
+  path:Symbol           filter by file path pattern
+"""
+
+
+@cli.command("calls", help=CALLS_HELP)
+@click.option("--from", "from_symbol", default=None, help="Starting symbol (outgoing calls)")
+@click.option("--to", "to_symbol", default=None, help="Target symbol (incoming calls)")
+@click.option("--max-depth", default=3, help="Maximum recursion depth (default: 3)")
+@click.pass_context
+def calls(ctx, from_symbol, to_symbol, max_depth):
+    if not from_symbol and not to_symbol:
+        raise click.ClickException("At least one of --from or --to must be specified")
+
+    config = load_config()
+    workspace_root = get_workspace_root_for_cwd(config)
+
+    params = {
+        "workspace_root": str(workspace_root),
+        "max_depth": max_depth,
+    }
+
+    if from_symbol and to_symbol:
+        from_resolved = resolve_symbol(from_symbol, workspace_root)
+        to_resolved = resolve_symbol(to_symbol, workspace_root)
+        params["from_path"] = str(from_resolved.path)
+        params["from_line"] = from_resolved.line
+        params["from_column"] = from_resolved.column
+        params["from_symbol"] = from_symbol
+        params["to_path"] = str(to_resolved.path)
+        params["to_line"] = to_resolved.line
+        params["to_column"] = to_resolved.column
+        params["to_symbol"] = to_symbol
+        params["mode"] = "path"
+    elif from_symbol:
+        resolved = resolve_symbol(from_symbol, workspace_root)
+        params["from_path"] = str(resolved.path)
+        params["from_line"] = resolved.line
+        params["from_column"] = resolved.column
+        params["from_symbol"] = from_symbol
+        params["mode"] = "outgoing"
+    else:
+        resolved = resolve_symbol(to_symbol, workspace_root)
+        params["to_path"] = str(resolved.path)
+        params["to_line"] = resolved.line
+        params["to_column"] = resolved.column
+        params["to_symbol"] = to_symbol
+        params["mode"] = "incoming"
+
+    response = run_request("calls", params)
     output_format = "json" if ctx.obj["json"] else "plain"
     output_result(response["result"], output_format)
 
