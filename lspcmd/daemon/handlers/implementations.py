@@ -18,8 +18,8 @@ async def handle_implementations(
     caps = workspace.client.capabilities
     if not caps.get("implementationProvider"):
         server_name = workspace.server_config.name
-        raise ValueError(
-            f"Server '{server_name}' does not support implementations (may require a license)"
+        return ImplementationsResult(
+            error=f"Server '{server_name}' does not support implementations (may require a license)"
         )
 
     try:
