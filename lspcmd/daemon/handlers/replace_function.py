@@ -97,9 +97,10 @@ async def handle_replace_function(
 
         rel_path = ctx.relative_path(file_path, workspace_root)
         return ReplaceFunctionResult(
+            replaced=True,
             path=rel_path,
-            old_range=(range_start, range_end),
-            new_range=(range_start, range_start + new_line_count - 1),
+            old_range=f"{range_start}-{range_end}",
+            new_range=f"{range_start}-{range_start + new_line_count - 1}",
         )
 
     except Exception:
