@@ -616,7 +616,7 @@ Renamed in 1 file(s):
         })
         result = response["result"]
         assert result["error"] == "Symbol 'Save' is ambiguous (4 matches)"
-        assert result["total_matches"] == 3
+        assert result["total_matches"] == 4
         refs = [m["ref"] for m in result["matches"]]
         assert refs == ["Storage.Save", "MemoryStorage.Save", "FileStorage.Save"]
 
