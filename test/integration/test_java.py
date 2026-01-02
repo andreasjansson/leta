@@ -659,4 +659,4 @@ src/main/java/com/example/User.java:10-21
 src/main/java/com/example/Main.java:15 [Method] createSampleUser() : User (com.example.Main)
 
 Incoming calls:
-  └── src/main/java/com/example/Main.java:47 [Method] main(String[]) : void (com.example.Main)"""
+  └── src/main/java/com/example/Main.java:50 [Method] main(String[]) : void (com.example.Main)"""
