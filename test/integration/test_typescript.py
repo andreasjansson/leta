@@ -139,6 +139,7 @@ src/user.ts:119 [Function] validateUser"""
             "pattern": "validate",
             "case_sensitive": False,
             "kinds": ["function"],
+            "exclude_patterns": ["editable"],
         })
         output = format_output(response["result"], "plain")
         assert output == """\
@@ -151,6 +152,7 @@ src/user.ts:119 [Function] validateUser"""
             "workspace_root": str(workspace),
             "pattern": ".*",
             "kinds": ["function"],
+            "exclude_patterns": ["editable"],
         })
         all_output = format_output(response["result"], "plain")
         assert all_output == """\
