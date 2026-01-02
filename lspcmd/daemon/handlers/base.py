@@ -311,7 +311,7 @@ class HandlerContext:
         if isinstance(result, Location):
             items = [result]
         elif isinstance(result, list):
-            items = result
+            items = list(result)  # Copy to avoid type variance issues
         else:
             items = [result]
 
