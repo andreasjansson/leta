@@ -18,7 +18,7 @@ class EditablePerson:
 
 
 def editable_create_sample() -> EditablePerson:
-    """Create an editable sample for testing replace-function."""
+    """Create an editable sample for testing."""
     return EditablePerson(name="Original Name", email="original@example.com")
 
 
