@@ -202,7 +202,7 @@ def add_workspace_root(root: Path, config: Config) -> None:
         save_config(config)
 
 
-def remove_workspace_root(root: Path, config: dict) -> bool:
+def remove_workspace_root(root: Path, config: Config) -> bool:
     """Remove a workspace root from the config.
     
     Returns True if the root was found and removed, False otherwise.
