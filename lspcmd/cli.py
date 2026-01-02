@@ -152,12 +152,14 @@ def get_workspace_root_for_cwd(config: dict) -> Path:
 
 class ResolvedSymbol:
     def __init__(self, path: Path, line: int, column: int,
-                 range_start_line: int | None = None, range_end_line: int | None = None):
+                 range_start_line: int | None = None, range_end_line: int | None = None,
+                 kind: str | None = None):
         self.path = path
         self.line = line
         self.column = column
         self.range_start_line = range_start_line
         self.range_end_line = range_end_line
+        self.kind = kind
 
 
 def resolve_symbol(symbol_path: str, workspace_root: Path) -> ResolvedSymbol:
@@ -196,6 +198,7 @@ def resolve_symbol(symbol_path: str, workspace_root: Path) -> ResolvedSymbol:
         column=result.get("column", 0),
         range_start_line=result.get("range_start_line"),
         range_end_line=result.get("range_end_line"),
+        kind=result.get("kind"),
     )
 
 
