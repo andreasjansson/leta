@@ -596,36 +596,34 @@ Moved file and updated imports in 2 file(s):
             consumer_path.write_text(original_consumer)
 
     # =========================================================================
-    # replace-function tests
+    # replace-function tests (uses isolated editable files)
     # =========================================================================
 
     def test_replace_function_basic(self, workspace):
         """Test basic function replacement with matching signature."""
         os.chdir(workspace)
         
-        # Get original content for later restoration
-        main_path = workspace / "main.py"
-        original = main_path.read_text()
+        editable_path = workspace / "editable.py"
+        original = editable_path.read_text()
         
         try:
             response = _call_replace_function_request({
                 "workspace_root": str(workspace),
-                "symbol": "create_sample_user",
-                "new_contents": '''def create_sample_user() -> User:
-    """Create a sample user for testing."""
-    return User(name="Jane Doe", email="jane@example.com", age=25)''',
+                "symbol": "editable_create_sample",
+                "new_contents": '''def editable_create_sample() -> EditablePerson:
+    """Create an editable sample for testing."""
+    return EditablePerson(name="Jane Doe", email="jane@example.com")''',
                 "check_signature": True,
             })
             result = response["result"]
             assert result["replaced"] == True
-            assert result["path"] == "main.py"
+            assert result["path"] == "editable.py"
             
-            # Verify file was modified
-            updated = main_path.read_text()
+            updated = editable_path.read_text()
             assert 'Jane Doe' in updated
             assert 'jane@example.com' in updated
         finally:
-            main_path.write_text(original)
+            editable_path.write_text(original)
 
     def test_replace_function_signature_mismatch(self, workspace):
         """Test that signature mismatch is detected."""
@@ -633,10 +631,10 @@ Moved file and updated imports in 2 file(s):
         
         response = _call_replace_function_request({
             "workspace_root": str(workspace),
-            "symbol": "create_sample_user",
-            "new_contents": '''def create_sample_user(extra_param: str) -> User:
-    """Create a sample user for testing."""
-    return User(name="Jane Doe", email="jane@example.com", age=25)''',
+            "symbol": "editable_create_sample",
+            "new_contents": '''def editable_create_sample(extra_param: str) -> EditablePerson:
+    """Create an editable sample for testing."""
+    return EditablePerson(name="Jane Doe", email="jane@example.com")''',
             "check_signature": True,
         })
         result = response["result"]
@@ -647,37 +645,37 @@ Moved file and updated imports in 2 file(s):
         """Test that --no-check-signature allows signature changes."""
         os.chdir(workspace)
         
-        main_path = workspace / "main.py"
-        original = main_path.read_text()
+        editable_path = workspace / "editable.py"
+        original = editable_path.read_text()
         
         try:
             response = _call_replace_function_request({
                 "workspace_root": str(workspace),
-                "symbol": "create_sample_user",
-                "new_contents": '''def create_sample_user(name: str = "Default") -> User:
-    """Create a sample user for testing."""
-    return User(name=name, email="default@example.com", age=30)''',
+                "symbol": "editable_create_sample",
+                "new_contents": '''def editable_create_sample(name: str = "Default") -> EditablePerson:
+    """Create an editable sample for testing."""
+    return EditablePerson(name=name, email="default@example.com")''',
                 "check_signature": False,
             })
             result = response["result"]
             assert result["replaced"] == True
             
-            updated = main_path.read_text()
+            updated = editable_path.read_text()
             assert 'name: str = "Default"' in updated
         finally:
-            main_path.write_text(original)
+            editable_path.write_text(original)
 
     def test_replace_method_basic(self, workspace):
         """Test replacing a method within a class."""
         os.chdir(workspace)
         
-        main_path = workspace / "main.py"
-        original = main_path.read_text()
+        editable_path = workspace / "editable.py"
+        original = editable_path.read_text()
         
         try:
             response = _call_replace_function_request({
                 "workspace_root": str(workspace),
-                "symbol": "MemoryStorage.save",
+                "symbol": "EditableStorage.save",
                 "new_contents": '''    def save(self, key: str, value: str) -> None:
         """Save with logging."""
         print(f"Saving {key}")
@@ -687,10 +685,10 @@ Moved file and updated imports in 2 file(s):
             result = response["result"]
             assert result["replaced"] == True
             
-            updated = main_path.read_text()
+            updated = editable_path.read_text()
             assert 'print(f"Saving {key}")' in updated
         finally:
-            main_path.write_text(original)
+            editable_path.write_text(original)
 
     def test_replace_function_non_function_error(self, workspace):
         """Test that replacing a non-function symbol gives an error."""
@@ -698,8 +696,8 @@ Moved file and updated imports in 2 file(s):
         
         response = _call_replace_function_request({
             "workspace_root": str(workspace),
-            "symbol": "User",
-            "new_contents": '''class User:
+            "symbol": "EditablePerson",
+            "new_contents": '''class EditablePerson:
     pass''',
             "check_signature": True,
         })
@@ -711,24 +709,22 @@ Moved file and updated imports in 2 file(s):
         """Test that bogus content that fails signature check reverts the file."""
         os.chdir(workspace)
         
-        main_path = workspace / "main.py"
-        original = main_path.read_text()
+        editable_path = workspace / "editable.py"
+        original = editable_path.read_text()
         
         response = _call_replace_function_request({
             "workspace_root": str(workspace),
-            "symbol": "create_sample_user",
+            "symbol": "editable_create_sample",
             "new_contents": "this is not valid python code @#$%^&*()",
             "check_signature": True,
         })
         result = response["result"]
         assert "error" in result
         
-        # Verify file was reverted
-        current = main_path.read_text()
+        current = editable_path.read_text()
         assert current == original
         
-        # Verify no backup file left behind
-        backup_path = main_path.with_suffix(".py.lspcmd.bkup")
+        backup_path = editable_path.with_suffix(".py.lspcmd.bkup")
         assert not backup_path.exists()
 
     def test_replace_function_symbol_not_found(self, workspace):
