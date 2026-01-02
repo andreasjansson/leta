@@ -229,7 +229,8 @@ class CallNode(BaseModel):
     path: str | None = None
     line: int | None = None
     column: int | None = None
-    children: list["CallNode"] = Field(default_factory=list)
+    calls: list["CallNode"] | None = None
+    called_by: list["CallNode"] | None = None
 
 
 class CallsResult(BaseModel):
