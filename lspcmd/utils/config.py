@@ -137,7 +137,7 @@ def get_known_workspace_root(path: Path, config: dict) -> Path | None:
     best_depth = -1
     
     for root_str in roots:
-        root = Path(root_str)
+        root = Path(root_str).resolve()
         try:
             path.relative_to(root)
             depth = len(root.parts)
