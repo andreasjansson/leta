@@ -198,8 +198,7 @@ class DaemonServer:
         handlers = {
             "shutdown": self._handle_shutdown,
             "describe-session": self._handle_describe_session,
-            "describe": self._handle_hover,
-            "definition": self._handle_definition,
+            "show": self._handle_show,
             "declaration": self._handle_declaration,
             "implementations": self._handle_implementations,
             "references": self._handle_references,
