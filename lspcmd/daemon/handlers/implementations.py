@@ -9,10 +9,11 @@ from .base import HandlerContext
 async def handle_implementations(
     ctx: HandlerContext, params: RPCImplementationsParams
 ) -> ImplementationsResult:
-    workspace, doc, path = await ctx.get_workspace_and_document({
+    workspace, doc, _ = await ctx.get_workspace_and_document({
         "path": params.path,
         "workspace_root": params.workspace_root,
     })
+    assert workspace.client
     line, column = ctx.parse_position({"line": params.line, "column": params.column})
     context = params.context
 
