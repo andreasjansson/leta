@@ -355,3 +355,34 @@ Represents a user in the system."""
         result = response["result"]
         assert result["name"] == "main"
         assert result["path"].endswith("main.zig")
+
+    # =========================================================================
+    # show multi-line constant tests
+    # =========================================================================
+
+    def test_show_multiline_array_constant(self, workspace):
+        """Test that show displays multi-line array constants correctly."""
+        os.chdir(workspace)
+        response = run_request("definition", {
+            "path": str(workspace / "src" / "user.zig"),
+            "workspace_root": str(workspace),
+            "line": 145,
+            "column": 10,
+            "context": 0,
+            "body": True,
+            "direct_location": True,
+            "range_start_line": 145,
+            "range_end_line": 151,
+            "kind": "Constant",
+        })
+        output = format_output(response["result"], "plain")
+        assert output == """\
+src/user.zig:145-151
+
+pub const DEFAULT_PORTS = [_]u16{
+    80,
+    443,
+    8080,
+    8443,
+    3000,
+};"""
