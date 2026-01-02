@@ -429,5 +429,4 @@ src/User.php:15-23
             "max_depth": 1,
         })
         assert "error" in response
-        assert "prepareCallHierarchy" in response["error"]
-        assert "intelephense" in response["error"]
+        assert response["error"] == "textDocument/prepareCallHierarchy is not supported by intelephense"
