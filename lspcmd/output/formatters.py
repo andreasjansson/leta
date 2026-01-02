@@ -247,12 +247,19 @@ def format_session(data: dict) -> str:
 
     lines.append("\nActive workspaces:")
     for ws in workspaces:
-        status = "running" if ws.get("running") else "stopped"
-        server_pid = ws.get("server_pid")
+        # Handle both old format (running/server) and new format (language/server_pid)
+        if "language" in ws:
+            server_name = ws["language"]
+            server_pid = ws.get("server_pid")
+            status = "running" if server_pid else "stopped"
+        else:
+            server_name = ws.get("server", "unknown")
+            status = "running" if ws.get("running") else "stopped"
+            server_pid = ws.get("server_pid")
         pid_str = f", PID {server_pid}" if server_pid else ""
         
         lines.append(f"\n  {ws['root']}")
-        lines.append(f"    Server: {ws['server']} ({status}{pid_str})")
+        lines.append(f"    Server: {server_name} ({status}{pid_str})")
         docs = ws.get("open_documents", [])
         if docs:
             lines.append(f"    Open documents ({len(docs)}):")
