@@ -470,6 +470,7 @@ class DaemonServer:
         workspace_root = Path(params["workspace_root"]).resolve()
         mode = params["mode"]
         max_depth = params.get("max_depth", 3)
+        include_non_workspace = params.get("include_non_workspace", False)
 
         if mode == "outgoing":
             path = Path(params["from_path"]).resolve()
@@ -477,7 +478,8 @@ class DaemonServer:
             column = params["from_column"]
             symbol_name = params.get("from_symbol", "")
             return await self._get_outgoing_calls_tree(
-                workspace_root, path, line, column, symbol_name, max_depth
+                workspace_root, path, line, column, symbol_name, max_depth,
+                include_non_workspace
             )
         elif mode == "incoming":
             path = Path(params["to_path"]).resolve()
@@ -485,7 +487,8 @@ class DaemonServer:
             column = params["to_column"]
             symbol_name = params.get("to_symbol", "")
             return await self._get_incoming_calls_tree(
-                workspace_root, path, line, column, symbol_name, max_depth
+                workspace_root, path, line, column, symbol_name, max_depth,
+                include_non_workspace
             )
         else:  # mode == "path"
             from_path = Path(params["from_path"]).resolve()
@@ -500,7 +503,8 @@ class DaemonServer:
                 workspace_root,
                 from_path, from_line, from_column, from_symbol,
                 to_path, to_line, to_column, to_symbol,
-                max_depth
+                max_depth,
+                include_non_workspace
             )
 
     async def _prepare_call_hierarchy(
