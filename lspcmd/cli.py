@@ -126,7 +126,7 @@ def output_result(result: Any, output_format: str) -> None:
         click.echo(formatted)
 
 
-def get_workspace_root_for_path(path: Path, config: dict[str, Any]) -> Path:
+def get_workspace_root_for_path(path: Path, config: Config) -> Path:
     path = path.resolve()
     cwd = Path.cwd().resolve()
 
