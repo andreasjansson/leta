@@ -180,7 +180,7 @@ def get_known_workspace_root(path: Path, config: Config) -> Path | None:
     return best_root
 
 
-def get_best_workspace_root(path: Path, config: dict, cwd: Path | None = None) -> Path | None:
+def get_best_workspace_root(path: Path, config: Config, cwd: Path | None = None) -> Path | None:
     """Get the best workspace root for a path.
     
     Only returns explicitly initialized workspace roots (from config).
