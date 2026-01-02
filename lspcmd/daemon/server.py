@@ -375,7 +375,7 @@ class DaemonServer:
 
         return symbols
 
-    async def _handle_tree(self, params: dict) -> dict:
+    async def _handle_files(self, params: dict) -> dict:
         workspace_root = Path(params["workspace_root"]).resolve()
         exclude_patterns = params.get("exclude_patterns", [])
         include_patterns = set(params.get("include_patterns", []))
