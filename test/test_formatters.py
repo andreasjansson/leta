@@ -9,6 +9,7 @@ from lspcmd.output.formatters import (
     format_tree,
     format_call_tree,
     format_call_path,
+    _is_stdlib_path,
 )
 
 
