@@ -206,8 +206,7 @@ class DaemonServer:
             "supertypes": self._handle_supertypes,
 
             "raw-lsp-request": self._handle_raw_lsp_request,
-            "format": self._handle_format,
-            "organize-imports": self._handle_organize_imports,
+
             "rename": self._handle_rename,
             "move-file": self._handle_move_file,
             "replace-function": self._handle_replace_function,
