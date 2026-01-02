@@ -931,44 +931,42 @@ DEFAULT_CONFIG = [
     # =========================================================================
 
     def test_calls_outgoing(self, workspace):
-        """Test outgoing calls from main function."""
+        """Test outgoing calls from create_sample_user (only calls User)."""
         os.chdir(workspace)
         response = run_request("calls", {
             "workspace_root": str(workspace),
             "mode": "outgoing",
             "from_path": str(workspace / "main.py"),
-            "from_line": 127,
+            "from_line": 113,
             "from_column": 4,
-            "from_symbol": "main",
+            "from_symbol": "create_sample_user",
             "max_depth": 1,
         })
-        result = response["result"]
-        assert result["name"] == "main"
-        assert result["kind"] == "Function"
-        assert "calls" in result
-        call_names = [c["name"] for c in result["calls"]]
-        assert "UserRepository" in call_names
-        assert "create_sample_user" in call_names
-        assert "validate_email" in call_names
+        output = format_output(response["result"], "plain")
+        assert output == """\
+main.py:113 [Function] create_sample_user
+
+Outgoing calls:
+  └── main.py:27 [Class] User"""
 
     def test_calls_incoming(self, workspace):
-        """Test incoming calls to validate_email function."""
+        """Test incoming calls to create_sample_user function."""
         os.chdir(workspace)
         response = run_request("calls", {
             "workspace_root": str(workspace),
             "mode": "incoming",
-            "to_path": str(workspace / "utils.py"),
-            "to_line": 9,
+            "to_path": str(workspace / "main.py"),
+            "to_line": 113,
             "to_column": 4,
-            "to_symbol": "validate_email",
-            "max_depth": 2,
+            "to_symbol": "create_sample_user",
+            "max_depth": 1,
         })
-        result = response["result"]
-        assert result["name"] == "validate_email"
-        assert result["kind"] == "Function"
-        assert "called_by" in result
-        caller_names = [c["name"] for c in result["called_by"]]
-        assert "main" in caller_names
+        output = format_output(response["result"], "plain")
+        assert output == """\
+main.py:113 [Function] create_sample_user
+
+Incoming calls:
+  └── main.py:127 [Function] main"""
 
     def test_calls_path_found(self, workspace):
         """Test finding call path between two functions."""
@@ -980,17 +978,17 @@ DEFAULT_CONFIG = [
             "from_line": 127,
             "from_column": 4,
             "from_symbol": "main",
-            "to_path": str(workspace / "utils.py"),
-            "to_line": 9,
+            "to_path": str(workspace / "main.py"),
+            "to_line": 113,
             "to_column": 4,
-            "to_symbol": "validate_email",
+            "to_symbol": "create_sample_user",
             "max_depth": 3,
         })
-        result = response["result"]
-        assert result["found"] == True
-        assert len(result["path"]) >= 2
-        assert result["path"][0]["name"] == "main"
-        assert result["path"][-1]["name"] == "validate_email"
+        output = format_output(response["result"], "plain")
+        assert output == """\
+Call path:
+main.py:127 [Function] main
+  → main.py:113 [Function] create_sample_user"""
 
     def test_calls_path_not_found(self, workspace):
         """Test call path when no path exists."""
@@ -998,16 +996,15 @@ DEFAULT_CONFIG = [
         response = run_request("calls", {
             "workspace_root": str(workspace),
             "mode": "path",
-            "from_path": str(workspace / "utils.py"),
-            "from_line": 9,
+            "from_path": str(workspace / "main.py"),
+            "from_line": 113,
             "from_column": 4,
-            "from_symbol": "validate_email",
+            "from_symbol": "create_sample_user",
             "to_path": str(workspace / "main.py"),
             "to_line": 127,
             "to_column": 4,
             "to_symbol": "main",
             "max_depth": 3,
         })
-        result = response["result"]
-        assert result["found"] == False
-        assert "No call path found" in result["message"]
+        output = format_output(response["result"], "plain")
+        assert output == "No call path found from 'create_sample_user' to 'main' within depth 3"
