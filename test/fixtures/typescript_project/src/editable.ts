@@ -1,15 +1,28 @@
 /**
- * This file contains functions used exclusively by replace-function tests.
- * Do not use these symbols in other tests to avoid parallel test interference.
+ * ISOLATED TEST FILE - Used exclusively by replace-function, rename, and mv tests.
+ * Do NOT import this from main.ts, user.ts, or other non-editable files.
+ * Do NOT use symbols from this file in grep, refs, calls, or other read-only tests.
  */
-
-import { User } from './user';
 
 /**
- * Creates an editable sample user for testing.
+ * Editable person class for testing rename operations.
  */
-export function editableCreateUser(): User {
-    return new User("Original Name", "original@example.com", 30);
+export class EditablePerson {
+    constructor(
+        public name: string,
+        public email: string
+    ) {}
+
+    greet(): string {
+        return `Hello, ${this.name}`;
+    }
+}
+
+/**
+ * Creates an editable sample for testing replace-function.
+ */
+export function editableCreateSample(): EditablePerson {
+    return new EditablePerson("Original Name", "original@example.com");
 }
 
 /**
