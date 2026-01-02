@@ -405,5 +405,5 @@ pub const DEFAULT_PORTS = [_]u16{
             "from_symbol": "main",
             "max_depth": 1,
         })
-        assert "error" in response
-        assert response["error"] == "Could not prepare call hierarchy for 'main'"
+        output = format_output(response["result"], "plain")
+        assert output == "Error: Could not prepare call hierarchy for 'main'"
