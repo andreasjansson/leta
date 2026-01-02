@@ -789,7 +789,7 @@ Moved file and updated imports in 2 file(s):
             "symbol_path": "save",
         })
         result = response["result"]
-        assert result["error"] == "Symbol 'save' is ambiguous (3 matches)"
+        assert result["error"] == "Symbol 'save' is ambiguous (4 matches)"
         assert result["total_matches"] == 3
         refs = [m["ref"] for m in result["matches"]]
         assert refs == ["StorageProtocol.save", "MemoryStorage.save", "FileStorage.save"]
