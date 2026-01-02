@@ -331,3 +331,62 @@ end"""
         result = response["result"]
         assert result["name"] == "User"
         assert result["path"].endswith("user.lua")
+
+    # =========================================================================
+    # show multi-line constant tests
+    # =========================================================================
+
+    def test_show_multiline_table_constant(self, workspace):
+        """Test that show displays multi-line table constants correctly."""
+        os.chdir(workspace)
+        response = run_request("definition", {
+            "path": str(workspace / "user.lua"),
+            "workspace_root": str(workspace),
+            "line": 199,
+            "column": 2,
+            "context": 0,
+            "body": True,
+            "direct_location": True,
+            "range_start_line": 199,
+            "range_end_line": 207,
+            "kind": "Object",
+        })
+        output = format_output(response["result"], "plain")
+        assert output == """\
+user.lua:199-207
+
+M.COUNTRY_CODES = {
+    US = "United States",
+    CA = "Canada",
+    GB = "United Kingdom",
+    DE = "Germany",
+    FR = "France",
+    JP = "Japan",
+    AU = "Australia",
+}"""
+
+    def test_show_multiline_array_constant(self, workspace):
+        """Test that show displays multi-line array constants correctly."""
+        os.chdir(workspace)
+        response = run_request("definition", {
+            "path": str(workspace / "user.lua"),
+            "workspace_root": str(workspace),
+            "line": 210,
+            "column": 2,
+            "context": 0,
+            "body": True,
+            "direct_location": True,
+            "range_start_line": 210,
+            "range_end_line": 215,
+            "kind": "Array",
+        })
+        output = format_output(response["result"], "plain")
+        assert output == """\
+user.lua:210-215
+
+M.DEFAULT_CONFIG = {
+    "debug=false",
+    "timeout=30",
+    "max_retries=3",
+    "log_level=INFO",
+}"""
