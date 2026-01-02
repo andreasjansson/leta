@@ -10,7 +10,24 @@ exactly the symbol we generated it for. This is tested in TestRoundTripConsisten
 """
 
 import pytest
-from lspcmd.daemon.server import DaemonServer
+from lspcmd.daemon.handlers.resolve_symbol import (
+    _normalize_symbol_name,
+    _normalize_container,
+    _get_module_name,
+    _generate_unambiguous_ref,
+    _ref_resolves_uniquely,
+    _name_matches,
+)
+
+
+class _MockServer:
+    """Mock server that provides the disambiguation functions as methods."""
+    _normalize_symbol_name = staticmethod(_normalize_symbol_name)
+    _normalize_container = staticmethod(_normalize_container)
+    _get_module_name = staticmethod(_get_module_name)
+    _generate_unambiguous_ref = staticmethod(_generate_unambiguous_ref)
+    _ref_resolves_uniquely = staticmethod(_ref_resolves_uniquely)
+    _name_matches = staticmethod(_name_matches)
 
 
 class TestRoundTripConsistency:
