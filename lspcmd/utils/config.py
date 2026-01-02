@@ -70,7 +70,7 @@ def get_log_dir() -> Path:
     return get_cache_dir() / "log"
 
 
-DEFAULT_CONFIG: dict[str, Any] = {
+DEFAULT_CONFIG: Config = {
     "daemon": {
         "log_level": "info",
         "request_timeout": 30,
