@@ -129,18 +129,18 @@ class LSPClient:
         from .types import InitializeParams, WorkspaceFolder, ClientCapabilities
 
         init_params = InitializeParams(
-            process_id=os.getpid(),
-            root_uri=self.workspace_root,
-            root_path=self.workspace_root.replace("file://", ""),
+            processId=os.getpid(),
+            rootUri=self.workspace_root,
+            rootPath=self.workspace_root.replace("file://", ""),
             capabilities=ClientCapabilities.model_validate(get_client_capabilities()),
-            workspace_folders=[
+            workspaceFolders=[
                 WorkspaceFolder(uri=self.workspace_root, name=self.workspace_root.split("/")[-1])
             ],
-            initialization_options=self.init_options if self.init_options else None,
+            initializationOptions=self.init_options if self.init_options else None,
         )
 
         result = await self.send_request("initialize", init_params)
-        self._server_capabilities = result.capabilities.model_dump(by_alias=True)
+        self._server_capabilities = result.capabilities.model_dump()
         await self.send_notification("initialized", {})
         self._initialized = True
 
