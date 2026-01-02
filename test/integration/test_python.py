@@ -235,7 +235,7 @@ utils.py:125 [Function] format_name"""
             "workspace_root": str(workspace),
             "pattern": "validate",
             "kinds": ["function"],
-            "exclude_patterns": ["editable"],
+            "exclude_patterns": ["editable*"],
         })
         output = format_output(response["result"], "plain")
         assert output == """\
@@ -248,7 +248,7 @@ utils.py:22 [Function] validate_age"""
             "workspace_root": str(workspace),
             "pattern": ".*",
             "kinds": ["function"],
-            "exclude_patterns": ["editable"],
+            "exclude_patterns": ["editable*"],
         })
         all_output = format_output(response["result"], "plain")
         
