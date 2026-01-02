@@ -537,9 +537,15 @@ def show_cmd(ctx, symbol, context, head):
       lspcmd show UserRepository.add_user
       lspcmd show "*.py:User"
       lspcmd show storage:MemoryStorage -n 2
+      lspcmd show COUNTRY_CODES           # shows full multi-line dict/object
 
     Use -n/--context to show surrounding lines.
     Use --head N to limit output to N lines.
+
+    \b
+    For constants and variables with multi-line initializers (dicts, lists,
+    objects), lspcmd automatically expands the range to show the full value,
+    even if the language server only reports the variable name's location.
     """
     config = load_config()
     workspace_root = get_workspace_root_for_cwd(config)
