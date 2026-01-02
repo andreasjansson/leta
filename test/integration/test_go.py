@@ -795,44 +795,42 @@ var DefaultPorts = []int{
     # =========================================================================
 
     def test_calls_outgoing(self, workspace):
-        """Test outgoing calls from main function."""
+        """Test outgoing calls from createSampleUser (only calls NewUser)."""
         os.chdir(workspace)
         response = run_request("calls", {
             "workspace_root": str(workspace),
             "mode": "outgoing",
             "from_path": str(workspace / "main.go"),
-            "from_line": 172,
+            "from_line": 149,
             "from_column": 5,
-            "from_symbol": "main",
+            "from_symbol": "createSampleUser",
             "max_depth": 1,
         })
-        result = response["result"]
-        assert result["name"] == "main"
-        assert result["kind"] == "Function"
-        assert "calls" in result
-        call_names = [c["name"] for c in result["calls"]]
-        assert "NewMemoryStorage" in call_names
-        assert "NewUserRepository" in call_names
-        assert "createSampleUser" in call_names
+        output = format_output(response["result"], "plain")
+        assert output == """\
+main.go:149 [Function] createSampleUser (sample_project • main.go)
+
+Outgoing calls:
+  └── main.go:16 [Function] NewUser (sample_project • main.go)"""
 
     def test_calls_incoming(self, workspace):
-        """Test incoming calls to NewUser function."""
+        """Test incoming calls to createSampleUser function."""
         os.chdir(workspace)
         response = run_request("calls", {
             "workspace_root": str(workspace),
             "mode": "incoming",
             "to_path": str(workspace / "main.go"),
-            "to_line": 16,
+            "to_line": 149,
             "to_column": 5,
-            "to_symbol": "NewUser",
-            "max_depth": 2,
+            "to_symbol": "createSampleUser",
+            "max_depth": 1,
         })
-        result = response["result"]
-        assert result["name"] == "NewUser"
-        assert result["kind"] == "Function"
-        assert "called_by" in result
-        caller_names = [c["name"] for c in result["called_by"]]
-        assert "createSampleUser" in caller_names
+        output = format_output(response["result"], "plain")
+        assert output == """\
+main.go:149 [Function] createSampleUser (sample_project • main.go)
+
+Incoming calls:
+  └── main.go:172 [Function] main (sample_project • main.go)"""
 
     def test_calls_path_found(self, workspace):
         """Test finding call path between two functions."""
@@ -845,13 +843,13 @@ var DefaultPorts = []int{
             "from_column": 5,
             "from_symbol": "main",
             "to_path": str(workspace / "main.go"),
-            "to_line": 16,
+            "to_line": 149,
             "to_column": 5,
-            "to_symbol": "NewUser",
+            "to_symbol": "createSampleUser",
             "max_depth": 3,
         })
-        result = response["result"]
-        assert result["found"] == True
-        assert len(result["path"]) >= 2
-        assert result["path"][0]["name"] == "main"
-        assert result["path"][-1]["name"] == "NewUser"
+        output = format_output(response["result"], "plain")
+        assert output == """\
+Call path:
+main.go:172 [Function] main (sample_project • main.go)
+  → main.go:149 [Function] createSampleUser (sample_project • main.go)"""
