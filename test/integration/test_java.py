@@ -37,7 +37,14 @@ class TestJavaIntegration:
             "workspace_root": str(project),
             "pattern": ".*",
         })
-        time.sleep(3.0)
+        time.sleep(5.0)
+        run_request("grep", {
+            "paths": [str(project / "src" / "main" / "java" / "com" / "example" / "Main.java")],
+            "workspace_root": str(project),
+            "pattern": "createSampleUser",
+            "kinds": ["method"],
+            "include_docs": True,
+        })
         return project
 
     # =========================================================================
