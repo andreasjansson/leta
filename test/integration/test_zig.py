@@ -366,18 +366,18 @@ Represents a user in the system."""
         response = run_request("definition", {
             "path": str(workspace / "src" / "user.zig"),
             "workspace_root": str(workspace),
-            "line": 145,
+            "line": 146,
             "column": 10,
             "context": 0,
             "body": True,
             "direct_location": True,
-            "range_start_line": 145,
-            "range_end_line": 151,
+            "range_start_line": 146,
+            "range_end_line": 152,
             "kind": "Constant",
         })
         output = format_output(response["result"], "plain")
         assert output == """\
-src/user.zig:145-151
+src/user.zig:146-152
 
 pub const DEFAULT_PORTS = [_]u16{
     80,
