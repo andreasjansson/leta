@@ -149,4 +149,24 @@ inline void validateUser(const User& user) {
     }
 }
 
+/// Default ports for various services.
+constexpr int DEFAULT_PORTS[] = {
+    80,
+    443,
+    8080,
+    8443,
+    3000,
+};
+
+/// Country codes as a list.
+constexpr const char* COUNTRY_CODES[] = {
+    "US",
+    "CA",
+    "GB",
+    "DE",
+    "FR",
+    "JP",
+    "AU",
+};
+
 } // namespace example
