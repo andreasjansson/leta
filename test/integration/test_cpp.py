@@ -501,3 +501,36 @@ inline User createSampleUser() {
         result = response["result"]
         assert result["name"] == "main"
         assert result["path"].endswith("main.cpp")
+
+    # =========================================================================
+    # show multi-line constant tests
+    # =========================================================================
+
+    def test_show_multiline_array_constant(self, workspace):
+        """Test that show displays multi-line array constants correctly."""
+        os.chdir(workspace)
+        response = run_request("definition", {
+            "path": str(workspace / "user.hpp"),
+            "workspace_root": str(workspace),
+            "line": 162,
+            "column": 22,
+            "context": 0,
+            "body": True,
+            "direct_location": True,
+            "range_start_line": 162,
+            "range_end_line": 170,
+            "kind": "Variable",
+        })
+        output = format_output(response["result"], "plain")
+        assert output == """\
+user.hpp:162-170
+
+constexpr const char* COUNTRY_CODES[] = {
+    "US",
+    "CA",
+    "GB",
+    "DE",
+    "FR",
+    "JP",
+    "AU",
+};"""
