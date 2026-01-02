@@ -204,8 +204,7 @@ class DaemonServer:
             "references": self._handle_references,
             "subtypes": self._handle_subtypes,
             "supertypes": self._handle_supertypes,
-            "diagnostics": self._handle_diagnostics,
-            "workspace-diagnostics": self._handle_workspace_diagnostics,
+
             "raw-lsp-request": self._handle_raw_lsp_request,
             "format": self._handle_format,
             "organize-imports": self._handle_organize_imports,
