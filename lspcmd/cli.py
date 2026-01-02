@@ -728,11 +728,11 @@ def rename(ctx, symbol, new_name):
     output_result(response["result"], output_format)
 
 
-@cli.command("move-file")
+@cli.command("mv")
 @click.argument("old_path", type=click.Path(exists=True))
 @click.argument("new_path", type=click.Path())
 @click.pass_context
-def move_file(ctx, old_path, new_path):
+def mv(ctx, old_path, new_path):
     """Move/rename a file and update all imports.
 
     Moves OLD_PATH to NEW_PATH and asks the language server to update
@@ -745,9 +745,9 @@ def move_file(ctx, old_path, new_path):
 
     Examples:
 
-      lspcmd move-file src/user.ts src/models/user.ts
+      lspcmd mv src/user.ts src/models/user.ts
 
-      lspcmd move-file lib/utils.rs lib/helpers.rs
+      lspcmd mv lib/utils.rs lib/helpers.rs
     """
     old_path = Path(old_path).resolve()
     new_path = Path(new_path).resolve()
