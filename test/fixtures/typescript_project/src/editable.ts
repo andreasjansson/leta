@@ -19,7 +19,7 @@ export class EditablePerson {
 }
 
 /**
- * Creates an editable sample for testing replace-function.
+ * Creates an editable sample for testing.
  */
 export function editableCreateSample(): EditablePerson {
     return new EditablePerson("Original Name", "original@example.com");
