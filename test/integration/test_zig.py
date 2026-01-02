@@ -388,3 +388,22 @@ pub const DEFAULT_PORTS = [_]u16{
     8443,
     3000,
 };"""
+
+    # =========================================================================
+    # calls tests (zls does not support call hierarchy)
+    # =========================================================================
+
+    def test_calls_not_supported(self, workspace):
+        """Test that calls returns proper error for zls (returns null for prepare)."""
+        os.chdir(workspace)
+        response = run_request("calls", {
+            "workspace_root": str(workspace),
+            "mode": "outgoing",
+            "from_path": str(workspace / "src" / "main.zig"),
+            "from_line": 4,
+            "from_column": 7,
+            "from_symbol": "main",
+            "max_depth": 1,
+        })
+        assert "error" in response
+        assert response["error"] == "Could not prepare call hierarchy for 'main'"
