@@ -399,10 +399,10 @@ src/main/java/com/example/Storage.java:36-38
     List<User> list();
 }
 
-src/main/java/com/example/User.java:5-7
+src/main/java/com/example/User.java:8-10
  */
 public class User {
-    private String name;
+    /**
 
 src/main/java/com/example/UserRepository.java:25-27
      */
