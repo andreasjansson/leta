@@ -110,7 +110,7 @@ class HandlerContext:
 
     async def get_file_symbols_cached(
         self, workspace: Workspace, workspace_root: Path, file_path: Path
-    ) -> list[dict]:
+    ) -> list[SymbolDict]:
         file_sha = self.get_file_sha(file_path)
         cache_key = (str(file_path), str(workspace_root), file_sha)
 
