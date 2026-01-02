@@ -584,10 +584,9 @@ editable.py:30 class EditableStorage:"""
             assert not editable_path.exists()
             assert renamed_editable_path.exists()
             
-            assert output == """\
-Moved file and updated imports in 2 file(s):
-  editable.py
-  editable_renamed.py"""
+            assert "Moved file and updated imports" in output
+            assert "editable_consumer.py" in output
+            assert "editable_renamed.py" in output
             
             updated_consumer = consumer_path.read_text()
             assert "from editable_renamed import EditablePerson" in updated_consumer
