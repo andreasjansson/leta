@@ -462,7 +462,10 @@ class HandlerContext:
 
 
 def flatten_symbols(
-    items: list, file_path: str, output: list, container: str | None = None
+    items: list[dict[str, object]],
+    file_path: str,
+    output: list[SymbolDict],
+    container: str | None = None,
 ) -> None:
     for item in items:
         if "location" in item:
