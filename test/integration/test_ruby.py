@@ -73,7 +73,7 @@ user.rb:8 [Class] User
 user.rb:38 [Class] Storage
 user.rb:71 [Class] MemoryStorage
 user.rb:113 [Class] FileStorage
-user.rb:144 [Class] UserRepository"""
+user.rb:163 [Class] UserRepository"""
 
     def test_grep_kind_filter_method(self, workspace):
         os.chdir(workspace)
