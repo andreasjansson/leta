@@ -88,9 +88,9 @@ class TestPhpIntegration:
         })
         output = format_output(response["result"], "plain")
         assert output == """\
-src/User.php:30 [Method] getName in User
-src/User.php:40 [Method] getEmail in User
-src/User.php:50 [Method] getAge in User"""
+src/User.php:53 [Method] getName in User
+src/User.php:63 [Method] getEmail in User
+src/User.php:73 [Method] getAge in User"""
 
     def test_grep_case_sensitive(self, workspace):
         os.chdir(workspace)
