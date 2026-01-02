@@ -73,6 +73,18 @@ def format_plain(data: Any) -> str:
                     return f"Moved file (imports not updated):\n  {files[0]}" if files else "File moved"
             return data.get("error", "Move failed")
 
+        # New format: old_range/new_range are tuples
+        if "old_range" in data and "new_range" in data and "path" in data:
+            path = data["path"]
+            old_range = data["old_range"]
+            new_range = data["new_range"]
+            # Handle both tuple and string formats
+            if isinstance(old_range, (list, tuple)):
+                old_range = f"{old_range[0]}-{old_range[1]}"
+                new_range = f"{new_range[0]}-{new_range[1]}"
+            return f"Replaced function in {path} (lines {old_range} -> {new_range})"
+
+        # Old format: replaced flag
         if "replaced" in data:
             if data["replaced"]:
                 path = data.get("path", "")
