@@ -195,7 +195,7 @@ src/main/java/com/example/Main.java:15 [Method] createSampleUser() ( : User) in 
 
     def test_definition_basic(self, workspace):
         os.chdir(workspace)
-        response = run_request("definition", {
+        response = run_request("show", {
             "path": str(workspace / "src" / "main" / "java" / "com" / "example" / "Main.java"),
             "workspace_root": str(workspace),
             "line": 50,
@@ -208,7 +208,7 @@ src/main/java/com/example/Main.java:15 [Method] createSampleUser() ( : User) in 
 
     def test_definition_with_body(self, workspace):
         os.chdir(workspace)
-        response = run_request("definition", {
+        response = run_request("show", {
             "path": str(workspace / "src" / "main" / "java" / "com" / "example" / "Main.java"),
             "workspace_root": str(workspace),
             "line": 50,
@@ -231,7 +231,7 @@ src/main/java/com/example/Main.java:10-17
 
     def test_definition_with_context(self, workspace):
         os.chdir(workspace)
-        response = run_request("definition", {
+        response = run_request("show", {
             "path": str(workspace / "src" / "main" / "java" / "com" / "example" / "Main.java"),
             "workspace_root": str(workspace),
             "line": 50,
@@ -249,7 +249,7 @@ src/main/java/com/example/Main.java:14-16
 
     def test_definition_with_body_and_context(self, workspace):
         os.chdir(workspace)
-        response = run_request("definition", {
+        response = run_request("show", {
             "path": str(workspace / "src" / "main" / "java" / "com" / "example" / "Main.java"),
             "workspace_root": str(workspace),
             "line": 50,
@@ -576,7 +576,7 @@ src/main/java/com/example/UserRepository.java:54-56
     def test_show_multiline_map_constant(self, workspace):
         """Test that show displays multi-line Map constants correctly."""
         os.chdir(workspace)
-        response = run_request("definition", {
+        response = run_request("show", {
             "path": str(workspace / "src" / "main" / "java" / "com" / "example" / "User.java"),
             "workspace_root": str(workspace),
             "line": 13,

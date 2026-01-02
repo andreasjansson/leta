@@ -192,7 +192,7 @@ src/main.zig:2 [Constant] user"""
 
     def test_definition_basic(self, workspace):
         os.chdir(workspace)
-        response = run_request("definition", {
+        response = run_request("show", {
             "path": str(workspace / "src" / "main.zig"),
             "workspace_root": str(workspace),
             "line": 12,
@@ -205,7 +205,7 @@ src/main.zig:2 [Constant] user"""
 
     def test_definition_with_body(self, workspace):
         os.chdir(workspace)
-        response = run_request("definition", {
+        response = run_request("show", {
             "path": str(workspace / "src" / "main.zig"),
             "workspace_root": str(workspace),
             "line": 12,
@@ -329,7 +329,7 @@ Represents a user in the system."""
     def test_show_multiline_array_constant(self, workspace):
         """Test that show displays multi-line array constants correctly."""
         os.chdir(workspace)
-        response = run_request("definition", {
+        response = run_request("show", {
             "path": str(workspace / "src" / "user.zig"),
             "workspace_root": str(workspace),
             "line": 146,

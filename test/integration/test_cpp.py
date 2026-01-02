@@ -220,7 +220,7 @@ user.hpp:135 [Function] createSampleUser (User ()) in example
 
     def test_definition_basic(self, workspace):
         os.chdir(workspace)
-        response = run_request("definition", {
+        response = run_request("show", {
             "path": str(workspace / "main.cpp"),
             "workspace_root": str(workspace),
             "line": 11,
@@ -233,7 +233,7 @@ user.hpp:135 [Function] createSampleUser (User ()) in example
 
     def test_definition_with_body(self, workspace):
         os.chdir(workspace)
-        response = run_request("definition", {
+        response = run_request("show", {
             "path": str(workspace / "main.cpp"),
             "workspace_root": str(workspace),
             "line": 11,
@@ -251,7 +251,7 @@ inline User createSampleUser() {
 
     def test_definition_with_context(self, workspace):
         os.chdir(workspace)
-        response = run_request("definition", {
+        response = run_request("show", {
             "path": str(workspace / "main.cpp"),
             "workspace_root": str(workspace),
             "line": 11,
@@ -269,7 +269,7 @@ inline User createSampleUser() {
 
     def test_definition_with_body_and_context(self, workspace):
         os.chdir(workspace)
-        response = run_request("definition", {
+        response = run_request("show", {
             "path": str(workspace / "main.cpp"),
             "workspace_root": str(workspace),
             "line": 11,
@@ -476,7 +476,7 @@ inline User createSampleUser() {
     def test_show_multiline_array_constant(self, workspace):
         """Test that show displays multi-line array constants correctly."""
         os.chdir(workspace)
-        response = run_request("definition", {
+        response = run_request("show", {
             "path": str(workspace / "user.hpp"),
             "workspace_root": str(workspace),
             "line": 162,

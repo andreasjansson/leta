@@ -232,7 +232,7 @@ main.go:16 [Function] NewUser (func(name, email string, age int) *User)
 
     def test_definition_basic(self, workspace):
         os.chdir(workspace)
-        response = run_request("definition", {
+        response = run_request("show", {
             "path": str(workspace / "main.go"),
             "workspace_root": str(workspace),
             "line": 174,
@@ -245,7 +245,7 @@ main.go:16 [Function] NewUser (func(name, email string, age int) *User)
 
     def test_definition_with_context(self, workspace):
         os.chdir(workspace)
-        response = run_request("definition", {
+        response = run_request("show", {
             "path": str(workspace / "main.go"),
             "workspace_root": str(workspace),
             "line": 174,
@@ -263,7 +263,7 @@ func NewUserRepository(storage Storage) *UserRepository {
 
     def test_definition_with_body(self, workspace):
         os.chdir(workspace)
-        response = run_request("definition", {
+        response = run_request("show", {
             "path": str(workspace / "main.go"),
             "workspace_root": str(workspace),
             "line": 174,
@@ -281,7 +281,7 @@ func NewUserRepository(storage Storage) *UserRepository {
 
     def test_definition_with_body_and_context(self, workspace):
         os.chdir(workspace)
-        response = run_request("definition", {
+        response = run_request("show", {
             "path": str(workspace / "main.go"),
             "workspace_root": str(workspace),
             "line": 174,
@@ -701,7 +701,7 @@ Renamed in 1 file(s):
     def test_show_multiline_map_variable(self, workspace):
         """Test that show displays multi-line map variables correctly."""
         os.chdir(workspace)
-        response = run_request("definition", {
+        response = run_request("show", {
             "path": str(workspace / "utils.go"),
             "workspace_root": str(workspace),
             "line": 100,
@@ -730,7 +730,7 @@ var CountryCodes = map[string]string{
     def test_show_multiline_slice_variable(self, workspace):
         """Test that show displays multi-line slice variables correctly."""
         os.chdir(workspace)
-        response = run_request("definition", {
+        response = run_request("show", {
             "path": str(workspace / "utils.go"),
             "workspace_root": str(workspace),
             "line": 111,

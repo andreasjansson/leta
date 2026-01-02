@@ -305,7 +305,7 @@ main.py:113 [Function] create_sample_user
 
     def test_definition_basic(self, workspace):
         os.chdir(workspace)
-        response = run_request("definition", {
+        response = run_request("show", {
             "path": str(workspace / "main.py"),
             "workspace_root": str(workspace),
             "line": 130,
@@ -318,7 +318,7 @@ main.py:113 [Function] create_sample_user
 
     def test_definition_with_context(self, workspace):
         os.chdir(workspace)
-        response = run_request("definition", {
+        response = run_request("show", {
             "path": str(workspace / "main.py"),
             "workspace_root": str(workspace),
             "line": 130,
@@ -338,7 +338,7 @@ def create_sample_user() -> User:
 
     def test_definition_with_body(self, workspace):
         os.chdir(workspace)
-        response = run_request("definition", {
+        response = run_request("show", {
             "path": str(workspace / "main.py"),
             "workspace_root": str(workspace),
             "line": 130,
@@ -356,7 +356,7 @@ def create_sample_user() -> User:
 
     def test_definition_with_body_and_context(self, workspace):
         os.chdir(workspace)
-        response = run_request("definition", {
+        response = run_request("show", {
             "path": str(workspace / "main.py"),
             "workspace_root": str(workspace),
             "line": 130,
@@ -856,7 +856,7 @@ Moved file and updated imports in 4 file(s):
     def test_show_multiline_dict_constant(self, workspace):
         """Test that show expands multi-line dict constants correctly."""
         os.chdir(workspace)
-        response = run_request("definition", {
+        response = run_request("show", {
             "path": str(workspace / "utils.py"),
             "workspace_root": str(workspace),
             "line": 130,
@@ -885,7 +885,7 @@ COUNTRY_CODES = {
     def test_show_multiline_list_constant(self, workspace):
         """Test that show expands multi-line list constants correctly."""
         os.chdir(workspace)
-        response = run_request("definition", {
+        response = run_request("show", {
             "path": str(workspace / "utils.py"),
             "workspace_root": str(workspace),
             "line": 140,

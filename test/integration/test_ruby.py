@@ -201,7 +201,7 @@ user.rb:163 [Class] UserRepository"""
 
     def test_definition_basic(self, workspace):
         os.chdir(workspace)
-        response = run_request("definition", {
+        response = run_request("show", {
             "path": str(workspace / "main.rb"),
             "workspace_root": str(workspace),
             "line": 35,
@@ -216,7 +216,7 @@ main.rb:8 def create_sample_user"""
 
     def test_definition_with_body_not_supported(self, workspace):
         os.chdir(workspace)
-        response = run_request("definition", {
+        response = run_request("show", {
             "path": str(workspace / "main.rb"),
             "workspace_root": str(workspace),
             "line": 35,
@@ -328,7 +328,7 @@ Represents a user in the system."""
     def test_show_multiline_hash_constant(self, workspace):
         """Test that show displays multi-line Hash constants correctly."""
         os.chdir(workspace)
-        response = run_request("definition", {
+        response = run_request("show", {
             "path": str(workspace / "user.rb"),
             "workspace_root": str(workspace),
             "line": 144,
@@ -357,7 +357,7 @@ COUNTRY_CODES = {
     def test_show_multiline_array_constant(self, workspace):
         """Test that show displays multi-line Array constants correctly."""
         os.chdir(workspace)
-        response = run_request("definition", {
+        response = run_request("show", {
             "path": str(workspace / "user.rb"),
             "workspace_root": str(workspace),
             "line": 155,

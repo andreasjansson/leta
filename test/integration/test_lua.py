@@ -191,7 +191,7 @@ main.lua:8 [Function] createSampleUser (function ())
 
     def test_definition_basic(self, workspace):
         os.chdir(workspace)
-        response = run_request("definition", {
+        response = run_request("show", {
             "path": str(workspace / "main.lua"),
             "workspace_root": str(workspace),
             "line": 40,
@@ -204,7 +204,7 @@ main.lua:8 [Function] createSampleUser (function ())
 
     def test_definition_with_body(self, workspace):
         os.chdir(workspace)
-        response = run_request("definition", {
+        response = run_request("show", {
             "path": str(workspace / "main.lua"),
             "workspace_root": str(workspace),
             "line": 40,
@@ -311,7 +311,7 @@ end"""
     def test_show_multiline_table_constant(self, workspace):
         """Test that show displays multi-line table constants correctly."""
         os.chdir(workspace)
-        response = run_request("definition", {
+        response = run_request("show", {
             "path": str(workspace / "user.lua"),
             "workspace_root": str(workspace),
             "line": 199,
@@ -340,7 +340,7 @@ M.COUNTRY_CODES = {
     def test_show_multiline_array_constant(self, workspace):
         """Test that show displays multi-line array constants correctly."""
         os.chdir(workspace)
-        response = run_request("definition", {
+        response = run_request("show", {
             "path": str(workspace / "user.lua"),
             "workspace_root": str(workspace),
             "line": 210,

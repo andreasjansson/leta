@@ -208,7 +208,7 @@ src/main.ts:6 [Function] createSampleUser
 
     def test_definition_basic(self, workspace):
         os.chdir(workspace)
-        response = run_request("definition", {
+        response = run_request("show", {
             "path": str(workspace / "src" / "main.ts"),
             "workspace_root": str(workspace),
             "line": 58,
@@ -221,7 +221,7 @@ src/main.ts:6 [Function] createSampleUser
 
     def test_definition_with_body(self, workspace):
         os.chdir(workspace)
-        response = run_request("definition", {
+        response = run_request("show", {
             "path": str(workspace / "src" / "main.ts"),
             "workspace_root": str(workspace),
             "line": 58,
@@ -239,7 +239,7 @@ function createSampleUser(): User {
 
     def test_definition_with_context(self, workspace):
         os.chdir(workspace)
-        response = run_request("definition", {
+        response = run_request("show", {
             "path": str(workspace / "src" / "main.ts"),
             "workspace_root": str(workspace),
             "line": 58,
@@ -257,7 +257,7 @@ function createSampleUser(): User {
 
     def test_definition_with_body_and_context(self, workspace):
         os.chdir(workspace)
-        response = run_request("definition", {
+        response = run_request("show", {
             "path": str(workspace / "src" / "main.ts"),
             "workspace_root": str(workspace),
             "line": 58,
@@ -753,7 +753,7 @@ Moved file and updated imports in 2 file(s):
     def test_show_multiline_object_constant(self, workspace):
         """Test that show displays multi-line object constants correctly."""
         os.chdir(workspace)
-        response = run_request("definition", {
+        response = run_request("show", {
             "path": str(workspace / "src" / "user.ts"),
             "workspace_root": str(workspace),
             "line": 135,
@@ -782,7 +782,7 @@ export const COUNTRY_CODES: Record<string, string> = {
     def test_show_multiline_array_constant(self, workspace):
         """Test that show displays multi-line array constants correctly."""
         os.chdir(workspace)
-        response = run_request("definition", {
+        response = run_request("show", {
             "path": str(workspace / "src" / "user.ts"),
             "workspace_root": str(workspace),
             "line": 148,

@@ -257,9 +257,9 @@ See `lspcmd COMMAND --help` for more documentation and command-specific options.
     commands_order=[
         "grep",
         "files",
-        "calls",
         "show",
         "refs",
+        "calls",
         "implementations",
         "supertypes",
         "subtypes",
