@@ -128,6 +128,10 @@ def format_plain(data: Any) -> str:
 
         if "calls" in data or "called_by" in data:
             return format_call_tree(data)
+        
+        # New format: CallsResult with root
+        if "root" in data and data["root"]:
+            return format_call_tree(data["root"])
 
         if "found" in data and ("path" in data or "from" in data):
             return format_call_path(data)
