@@ -2,10 +2,28 @@ import asyncio
 import logging
 import os
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, Literal, overload
 
 from .protocol import encode_message, read_message, LSPProtocolError, LSPResponseError
 from .capabilities import get_client_capabilities
+from .types import (
+    InitializeResult,
+    DefinitionResponse,
+    DeclarationResponse,
+    ReferencesResponse,
+    ImplementationResponse,
+    TypeDefinitionResponse,
+    HoverResponse,
+    DocumentSymbolResponse,
+    RenameResponse,
+    PrepareCallHierarchyResponse,
+    CallHierarchyIncomingCallsResponse,
+    CallHierarchyOutgoingCallsResponse,
+    PrepareTypeHierarchyResponse,
+    TypeHierarchySubtypesResponse,
+    TypeHierarchySupertypesResponse,
+    WillRenameFilesResponse,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -28,16 +46,16 @@ class LSPClient:
         self.log_file = log_file
         self._request_id = 0
         self._pending_requests: dict[int, asyncio.Future[Any]] = {}
-        self._reader_task: asyncio.Task | None = None
+        self._reader_task: asyncio.Task[None] | None = None
         self._initialized = False
         self._server_capabilities: dict[str, Any] = {}
-        self._notification_handlers: dict[str, Callable] = {}
+        self._notification_handlers: dict[str, Callable[..., Any]] = {}
         self._log_handle: Any | None = None
         self._service_ready = asyncio.Event()
         self._needs_service_ready = server_name == "jdtls"
         self._active_progress_tokens: set[str | int] = set()
         self._indexing_done = asyncio.Event()
-        self._indexing_done.set()  # Start as done (no indexing yet)
+        self._indexing_done.set()
 
     @property
     def stdin(self) -> asyncio.StreamWriter:
@@ -61,6 +79,7 @@ class LSPClient:
     async def _drain_stderr(self) -> None:
         try:
             while True:
+                assert self.process.stderr is not None
                 data = await self.process.stderr.read(4096)
                 if not data:
                     break
@@ -99,7 +118,6 @@ class LSPClient:
                 self.process.kill()
 
     async def _initialize(self) -> None:
-        import os
         init_params = {
             "processId": os.getpid(),
             "rootUri": self.workspace_root,
@@ -111,17 +129,166 @@ class LSPClient:
         }
         if self.init_options:
             init_params["initializationOptions"] = self.init_options
-        
+
         result = await self.send_request("initialize", init_params)
-        self._server_capabilities = result.get("capabilities", {})
+        self._server_capabilities = result.capabilities.model_dump(by_alias=True)
         await self.send_notification("initialized", {})
         self._initialized = True
 
-    async def send_request(self, method: str, params: dict | list | None, timeout: float | None = None) -> Any:
+    @overload
+    async def send_request(
+        self,
+        method: Literal["initialize"],
+        params: dict[str, Any] | None,
+        timeout: float | None = None,
+    ) -> InitializeResult: ...
+
+    @overload
+    async def send_request(
+        self,
+        method: Literal["shutdown"],
+        params: None,
+        timeout: float | None = None,
+    ) -> None: ...
+
+    @overload
+    async def send_request(
+        self,
+        method: Literal["textDocument/definition"],
+        params: dict[str, Any],
+        timeout: float | None = None,
+    ) -> DefinitionResponse: ...
+
+    @overload
+    async def send_request(
+        self,
+        method: Literal["textDocument/declaration"],
+        params: dict[str, Any],
+        timeout: float | None = None,
+    ) -> DeclarationResponse: ...
+
+    @overload
+    async def send_request(
+        self,
+        method: Literal["textDocument/references"],
+        params: dict[str, Any],
+        timeout: float | None = None,
+    ) -> ReferencesResponse: ...
+
+    @overload
+    async def send_request(
+        self,
+        method: Literal["textDocument/implementation"],
+        params: dict[str, Any],
+        timeout: float | None = None,
+    ) -> ImplementationResponse: ...
+
+    @overload
+    async def send_request(
+        self,
+        method: Literal["textDocument/typeDefinition"],
+        params: dict[str, Any],
+        timeout: float | None = None,
+    ) -> TypeDefinitionResponse: ...
+
+    @overload
+    async def send_request(
+        self,
+        method: Literal["textDocument/hover"],
+        params: dict[str, Any],
+        timeout: float | None = None,
+    ) -> HoverResponse: ...
+
+    @overload
+    async def send_request(
+        self,
+        method: Literal["textDocument/documentSymbol"],
+        params: dict[str, Any],
+        timeout: float | None = None,
+    ) -> DocumentSymbolResponse: ...
+
+    @overload
+    async def send_request(
+        self,
+        method: Literal["textDocument/rename"],
+        params: dict[str, Any],
+        timeout: float | None = None,
+    ) -> RenameResponse: ...
+
+    @overload
+    async def send_request(
+        self,
+        method: Literal["textDocument/prepareCallHierarchy"],
+        params: dict[str, Any],
+        timeout: float | None = None,
+    ) -> PrepareCallHierarchyResponse: ...
+
+    @overload
+    async def send_request(
+        self,
+        method: Literal["callHierarchy/incomingCalls"],
+        params: dict[str, Any],
+        timeout: float | None = None,
+    ) -> CallHierarchyIncomingCallsResponse: ...
+
+    @overload
+    async def send_request(
+        self,
+        method: Literal["callHierarchy/outgoingCalls"],
+        params: dict[str, Any],
+        timeout: float | None = None,
+    ) -> CallHierarchyOutgoingCallsResponse: ...
+
+    @overload
+    async def send_request(
+        self,
+        method: Literal["textDocument/prepareTypeHierarchy"],
+        params: dict[str, Any],
+        timeout: float | None = None,
+    ) -> PrepareTypeHierarchyResponse: ...
+
+    @overload
+    async def send_request(
+        self,
+        method: Literal["typeHierarchy/subtypes"],
+        params: dict[str, Any],
+        timeout: float | None = None,
+    ) -> TypeHierarchySubtypesResponse: ...
+
+    @overload
+    async def send_request(
+        self,
+        method: Literal["typeHierarchy/supertypes"],
+        params: dict[str, Any],
+        timeout: float | None = None,
+    ) -> TypeHierarchySupertypesResponse: ...
+
+    @overload
+    async def send_request(
+        self,
+        method: Literal["workspace/willRenameFiles"],
+        params: dict[str, Any],
+        timeout: float | None = None,
+    ) -> WillRenameFilesResponse: ...
+
+    @overload
+    async def send_request(
+        self,
+        method: str,
+        params: dict[str, Any] | list[Any] | None,
+        timeout: float | None = None,
+    ) -> Any: ...
+
+    async def send_request(
+        self,
+        method: str,
+        params: dict[str, Any] | list[Any] | None,
+        timeout: float | None = None,
+    ) -> Any:
         self._request_id += 1
         request_id = self._request_id
 
-        message = {"jsonrpc": "2.0", "id": request_id, "method": method}
+        message: dict[str, Any] = {"jsonrpc": "2.0", "id": request_id, "method": method}
         if params is not None:
             message["params"] = params
 
@@ -135,13 +302,15 @@ class LSPClient:
         await self.stdin.drain()
 
         try:
-            return await asyncio.wait_for(future, timeout=timeout or REQUEST_TIMEOUT)
+            raw_result = await asyncio.wait_for(future, timeout=timeout or REQUEST_TIMEOUT)
         except asyncio.TimeoutError:
             self._pending_requests.pop(request_id, None)
             raise LSPResponseError(-1, f"Request {method} timed out after {timeout or REQUEST_TIMEOUT}s")
 
-    async def send_notification(self, method: str, params: dict | list | None) -> None:
-        message = {"jsonrpc": "2.0", "method": method}
+        return _parse_response(method, raw_result)
+
+    async def send_notification(self, method: str, params: dict[str, Any] | list[Any] | None) -> None:
+        message: dict[str, Any] = {"jsonrpc": "2.0", "method": method}
         if params is not None:
             message["params"] = params
 
@@ -205,7 +374,7 @@ class LSPClient:
         logger.debug(f"Received server request: {method} (id={request_id})")
 
         result: Any = None
-        error: dict | None = None
+        error: dict[str, Any] | None = None
 
         if method == "workspace/configuration":
             result = [{}] * len(message.get("params", {}).get("items", []))
@@ -218,7 +387,7 @@ class LSPClient:
         else:
             error = {"code": -32601, "message": f"Method not found: {method}"}
 
-        response = {"jsonrpc": "2.0", "id": request_id}
+        response: dict[str, Any] = {"jsonrpc": "2.0", "id": request_id}
         if error:
             response["error"] = error
         else:
@@ -261,11 +430,11 @@ class LSPClient:
             self._active_progress_tokens.discard(token)
             if not self._active_progress_tokens:
                 self._indexing_done.set()
-                logger.debug(f"All progress complete, server ready")
+                logger.debug("All progress complete, server ready")
             else:
                 logger.debug(f"Progress end: {token}, {len(self._active_progress_tokens)} remaining")
 
-    def on_notification(self, method: str, handler: Callable) -> None:
+    def on_notification(self, method: str, handler: Callable[..., Any]) -> None:
         self._notification_handlers[method] = handler
 
     async def wait_for_service_ready(self, timeout: float = 30.0) -> bool:
@@ -281,7 +450,6 @@ class LSPClient:
             return False
 
     async def wait_for_indexing(self, timeout: float = 30.0) -> bool:
-        """Wait for all indexing/progress to complete."""
         if self._indexing_done.is_set():
             return True
         try:
@@ -295,3 +463,92 @@ class LSPClient:
     @property
     def capabilities(self) -> dict[str, Any]:
         return self._server_capabilities
+
+
+def _parse_response(method: str, raw_result: Any) -> Any:
+    from .types import (
+        InitializeResult,
+        Location,
+        LocationLink,
+        Hover,
+        DocumentSymbol,
+        SymbolInformation,
+        WorkspaceEdit,
+        CallHierarchyItem,
+        CallHierarchyIncomingCall,
+        CallHierarchyOutgoingCall,
+        TypeHierarchyItem,
+    )
+
+    if raw_result is None:
+        return None
+
+    if method == "initialize":
+        return InitializeResult.model_validate(raw_result)
+
+    if method == "shutdown":
+        return None
+
+    if method in (
+        "textDocument/definition",
+        "textDocument/declaration",
+        "textDocument/implementation",
+        "textDocument/typeDefinition",
+    ):
+        if isinstance(raw_result, list):
+            if not raw_result:
+                return []
+            if "targetUri" in raw_result[0]:
+                return [LocationLink.model_validate(item) for item in raw_result]
+            return [Location.model_validate(item) for item in raw_result]
+        return Location.model_validate(raw_result)
+
+    if method == "textDocument/references":
+        if isinstance(raw_result, list):
+            return [Location.model_validate(item) for item in raw_result]
+        return None
+
+    if method == "textDocument/hover":
+        return Hover.model_validate(raw_result)
+
+    if method == "textDocument/documentSymbol":
+        if isinstance(raw_result, list):
+            if not raw_result:
+                return []
+            if "location" in raw_result[0]:
+                return [SymbolInformation.model_validate(item) for item in raw_result]
+            return [DocumentSymbol.model_validate(item) for item in raw_result]
+        return None
+
+    if method == "textDocument/rename":
+        return WorkspaceEdit.model_validate(raw_result)
+
+    if method == "textDocument/prepareCallHierarchy":
+        if isinstance(raw_result, list):
+            return [CallHierarchyItem.model_validate(item) for item in raw_result]
+        return None
+
+    if method == "callHierarchy/incomingCalls":
+        if isinstance(raw_result, list):
+            return [CallHierarchyIncomingCall.model_validate(item) for item in raw_result]
+        return None
+
+    if method == "callHierarchy/outgoingCalls":
+        if isinstance(raw_result, list):
+            return [CallHierarchyOutgoingCall.model_validate(item) for item in raw_result]
+        return None
+
+    if method == "textDocument/prepareTypeHierarchy":
+        if isinstance(raw_result, list):
+            return [TypeHierarchyItem.model_validate(item) for item in raw_result]
+        return None
+
+    if method in ("typeHierarchy/subtypes", "typeHierarchy/supertypes"):
+        if isinstance(raw_result, list):
+            return [TypeHierarchyItem.model_validate(item) for item in raw_result]
+        return None
+
+    if method == "workspace/willRenameFiles":
+        return WorkspaceEdit.model_validate(raw_result)
+
+    return raw_result
