@@ -216,7 +216,7 @@ def remove_workspace_root(root: Path, config: Config) -> bool:
     return False
 
 
-def cleanup_stale_workspace_roots(config: dict) -> list[str]:
+def cleanup_stale_workspace_roots(config: Config) -> list[str]:
     """Remove workspace roots that no longer exist on disk.
     
     Returns list of removed roots.
