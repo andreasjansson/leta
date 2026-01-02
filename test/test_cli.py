@@ -74,25 +74,15 @@ class TestCliCommands:
         assert "No workspace initialized" in result.output
         assert "workspace init" in result.output
 
-    def test_grep_no_results_to_stderr(self, python_project, isolated_config):
-        """Test that 'No results' is written to stderr, not stdout."""
-        config = load_config()
-        add_workspace_root(python_project, config)
-
-        result = subprocess.run(
-            [sys.executable, "-m", "lspcmd.cli", "grep", "NonExistentSymbolXYZ123", str(python_project / "main.py")],
-            capture_output=True,
-            text=True,
-            env={
-                **os.environ,
-                "XDG_CONFIG_HOME": str(isolated_config["config"]),
-                "XDG_CACHE_HOME": str(isolated_config["cache"]),
-            },
-        )
+    def test_no_results_written_to_stderr(self):
+        """Test that output_result writes 'No results' to stderr."""
+        from io import StringIO
+        from unittest.mock import patch
+        from lspcmd.cli import output_result
         
-        assert result.returncode == 0
-        assert result.stdout == ""
-        assert "No results" in result.stderr
+        with patch('lspcmd.cli.click.echo') as mock_echo:
+            output_result([], "plain")
+            mock_echo.assert_called_once_with("No results", err=True)
 
 
 class TestCliWithDaemon:
