@@ -373,7 +373,10 @@ def workspace_init(ctx, root):
             )
             workspace_root = Path(workspace_root).resolve()
         else:
-            workspace_root = default_root
+            raise click.ClickException(
+                f"Cannot prompt for workspace root in non-interactive mode.\n"
+                f"Use: lspcmd workspace init --root {default_root}"
+            )
 
     known = get_known_workspace_root(workspace_root, config)
     if known:
