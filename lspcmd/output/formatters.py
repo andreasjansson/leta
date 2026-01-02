@@ -467,7 +467,7 @@ def _is_stdlib_path(path: str) -> bool:
     return False
 
 
-def format_call_tree(data: dict) -> str:
+def format_call_tree(data: dict, is_outgoing: bool = True) -> str:
     lines = []
 
     name = data.get("name", "")
@@ -481,14 +481,17 @@ def format_call_tree(data: dict) -> str:
         parts.append(f"({detail})")
     lines.append(" ".join(filter(None, parts)))
 
-    if "calls" in data:
+    # Handle old format (calls/called_by) and new format (children)
+    children = data.get("calls") or data.get("called_by") or data.get("children") or []
+    
+    if children:
         lines.append("")
-        lines.append("Outgoing calls:")
-        _render_calls_tree(data.get("calls", []), lines, "  ", is_outgoing=True)
-    elif "called_by" in data:
-        lines.append("")
-        lines.append("Incoming calls:")
-        _render_calls_tree(data.get("called_by", []), lines, "  ", is_outgoing=False)
+        if "calls" in data or is_outgoing:
+            lines.append("Outgoing calls:")
+            _render_calls_tree(children, lines, "  ", is_outgoing=True)
+        else:
+            lines.append("Incoming calls:")
+            _render_calls_tree(children, lines, "  ", is_outgoing=False)
 
     return "\n".join(lines)
 
