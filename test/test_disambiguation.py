@@ -17,6 +17,7 @@ from lspcmd.daemon.handlers.resolve_symbol import (
     _generate_unambiguous_ref,
     _ref_resolves_uniquely,
     _name_matches,
+    _get_effective_container,
 )
 
 
@@ -28,6 +29,7 @@ class _MockServer:
     _generate_unambiguous_ref = staticmethod(_generate_unambiguous_ref)
     _ref_resolves_uniquely = staticmethod(_ref_resolves_uniquely)
     _name_matches = staticmethod(_name_matches)
+    _get_effective_container = staticmethod(_get_effective_container)
 
 
 class TestRoundTripConsistency:
