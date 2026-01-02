@@ -420,7 +420,7 @@ type FileStorage struct {
                 "path": str(editable_path),
                 "workspace_root": str(workspace),
                 "line": 9,
-                "column": 5,
+                "column": 6,
                 "new_name": "RenamedPerson",
             })
             output = format_output(response["result"], "plain")
