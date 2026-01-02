@@ -7,21 +7,37 @@ from typing import Any, Callable, Literal, overload
 from .protocol import encode_message, read_message, LSPProtocolError, LSPResponseError
 from .capabilities import get_client_capabilities
 from .types import (
+    InitializeParams,
     InitializeResult,
+    DefinitionParams,
     DefinitionResponse,
+    DeclarationParams,
     DeclarationResponse,
+    ReferenceParams,
     ReferencesResponse,
+    ImplementationParams,
     ImplementationResponse,
+    TypeDefinitionParams,
     TypeDefinitionResponse,
+    HoverParams,
     HoverResponse,
+    DocumentSymbolParams,
     DocumentSymbolResponse,
-    RenameResponse,
+    RenameParams,
+    RenameResponseType,
+    PrepareCallHierarchyParams,
     PrepareCallHierarchyResponse,
+    CallHierarchyIncomingCallsParams,
     CallHierarchyIncomingCallsResponse,
+    CallHierarchyOutgoingCallsParams,
     CallHierarchyOutgoingCallsResponse,
+    PrepareTypeHierarchyParams,
     PrepareTypeHierarchyResponse,
+    TypeHierarchySubtypesParams,
     TypeHierarchySubtypesResponse,
+    TypeHierarchySupertypesParams,
     TypeHierarchySupertypesResponse,
+    RenameFilesParams,
     WillRenameFilesResponse,
 )
 
@@ -118,17 +134,18 @@ class LSPClient:
                 self.process.kill()
 
     async def _initialize(self) -> None:
-        init_params = {
-            "processId": os.getpid(),
-            "rootUri": self.workspace_root,
-            "rootPath": self.workspace_root.replace("file://", ""),
-            "capabilities": get_client_capabilities(),
-            "workspaceFolders": [
-                {"uri": self.workspace_root, "name": self.workspace_root.split("/")[-1]}
+        from .types import InitializeParams, WorkspaceFolder, ClientCapabilities
+
+        init_params = InitializeParams(
+            processId=os.getpid(),
+            rootUri=self.workspace_root,
+            rootPath=self.workspace_root.replace("file://", ""),
+            capabilities=ClientCapabilities.model_validate(get_client_capabilities()),
+            workspaceFolders=[
+                WorkspaceFolder(uri=self.workspace_root, name=self.workspace_root.split("/")[-1])
             ],
-        }
-        if self.init_options:
-            init_params["initializationOptions"] = self.init_options
+            initializationOptions=self.init_options if self.init_options else None,
+        )
 
         result = await self.send_request("initialize", init_params)
         self._server_capabilities = result.capabilities.model_dump(by_alias=True)
@@ -139,7 +156,7 @@ class LSPClient:
     async def send_request(
         self,
         method: Literal["initialize"],
-        params: dict[str, Any] | None,
+        params: InitializeParams,
         timeout: float | None = None,
     ) -> InitializeResult: ...
 
@@ -155,7 +172,7 @@ class LSPClient:
     async def send_request(
         self,
         method: Literal["textDocument/definition"],
-        params: dict[str, Any],
+        params: DefinitionParams,
         timeout: float | None = None,
     ) -> DefinitionResponse: ...
 
@@ -163,7 +180,7 @@ class LSPClient:
     async def send_request(
         self,
         method: Literal["textDocument/declaration"],
-        params: dict[str, Any],
+        params: DeclarationParams,
         timeout: float | None = None,
     ) -> DeclarationResponse: ...
 
@@ -171,7 +188,7 @@ class LSPClient:
     async def send_request(
         self,
         method: Literal["textDocument/references"],
-        params: dict[str, Any],
+        params: ReferenceParams,
         timeout: float | None = None,
     ) -> ReferencesResponse: ...
 
@@ -179,7 +196,7 @@ class LSPClient:
     async def send_request(
         self,
         method: Literal["textDocument/implementation"],
-        params: dict[str, Any],
+        params: ImplementationParams,
         timeout: float | None = None,
     ) -> ImplementationResponse: ...
 
@@ -187,7 +204,7 @@ class LSPClient:
     async def send_request(
         self,
         method: Literal["textDocument/typeDefinition"],
-        params: dict[str, Any],
+        params: TypeDefinitionParams,
         timeout: float | None = None,
     ) -> TypeDefinitionResponse: ...
 
@@ -195,7 +212,7 @@ class LSPClient:
     async def send_request(
         self,
         method: Literal["textDocument/hover"],
-        params: dict[str, Any],
+        params: HoverParams,
         timeout: float | None = None,
     ) -> HoverResponse: ...
 
@@ -203,7 +220,7 @@ class LSPClient:
     async def send_request(
         self,
         method: Literal["textDocument/documentSymbol"],
-        params: dict[str, Any],
+        params: DocumentSymbolParams,
         timeout: float | None = None,
     ) -> DocumentSymbolResponse: ...
 
@@ -211,15 +228,15 @@ class LSPClient:
     async def send_request(
         self,
         method: Literal["textDocument/rename"],
-        params: dict[str, Any],
+        params: RenameParams,
         timeout: float | None = None,
-    ) -> RenameResponse: ...
+    ) -> RenameResponseType: ...
 
     @overload
     async def send_request(
         self,
         method: Literal["textDocument/prepareCallHierarchy"],
-        params: dict[str, Any],
+        params: PrepareCallHierarchyParams,
         timeout: float | None = None,
     ) -> PrepareCallHierarchyResponse: ...
 
@@ -227,7 +244,7 @@ class LSPClient:
     async def send_request(
         self,
         method: Literal["callHierarchy/incomingCalls"],
-        params: dict[str, Any],
+        params: CallHierarchyIncomingCallsParams,
         timeout: float | None = None,
     ) -> CallHierarchyIncomingCallsResponse: ...
 
@@ -235,7 +252,7 @@ class LSPClient:
     async def send_request(
         self,
         method: Literal["callHierarchy/outgoingCalls"],
-        params: dict[str, Any],
+        params: CallHierarchyOutgoingCallsParams,
         timeout: float | None = None,
     ) -> CallHierarchyOutgoingCallsResponse: ...
 
@@ -243,7 +260,7 @@ class LSPClient:
     async def send_request(
         self,
         method: Literal["textDocument/prepareTypeHierarchy"],
-        params: dict[str, Any],
+        params: PrepareTypeHierarchyParams,
         timeout: float | None = None,
     ) -> PrepareTypeHierarchyResponse: ...
 
@@ -251,7 +268,7 @@ class LSPClient:
     async def send_request(
         self,
         method: Literal["typeHierarchy/subtypes"],
-        params: dict[str, Any],
+        params: TypeHierarchySubtypesParams,
         timeout: float | None = None,
     ) -> TypeHierarchySubtypesResponse: ...
 
@@ -259,7 +276,7 @@ class LSPClient:
     async def send_request(
         self,
         method: Literal["typeHierarchy/supertypes"],
-        params: dict[str, Any],
+        params: TypeHierarchySupertypesParams,
         timeout: float | None = None,
     ) -> TypeHierarchySupertypesResponse: ...
 
@@ -267,7 +284,7 @@ class LSPClient:
     async def send_request(
         self,
         method: Literal["workspace/willRenameFiles"],
-        params: dict[str, Any],
+        params: RenameFilesParams,
         timeout: float | None = None,
     ) -> WillRenameFilesResponse: ...
 
@@ -275,29 +292,39 @@ class LSPClient:
     async def send_request(
         self,
         method: str,
-        params: dict[str, Any] | list[Any] | None,
+        params: Any,
         timeout: float | None = None,
     ) -> Any: ...
 
     async def send_request(
         self,
         method: str,
-        params: dict[str, Any] | list[Any] | None,
+        params: Any,
         timeout: float | None = None,
     ) -> Any:
+        from pydantic import BaseModel
+
         self._request_id += 1
         request_id = self._request_id
 
+        params_dict: dict[str, Any] | list[Any] | None
+        if params is None:
+            params_dict = None
+        elif isinstance(params, BaseModel):
+            params_dict = params.model_dump(by_alias=True, exclude_none=True)
+        else:
+            params_dict = params
+
         message: dict[str, Any] = {"jsonrpc": "2.0", "id": request_id, "method": method}
-        if params is not None:
-            message["params"] = params
+        if params_dict is not None:
+            message["params"] = params_dict
 
         loop = asyncio.get_running_loop()
         future: asyncio.Future[Any] = loop.create_future()
         self._pending_requests[request_id] = future
 
         encoded = encode_message(message)
-        logger.debug(f"LSP REQUEST [{request_id}] {method}: {params}")
+        logger.debug(f"LSP REQUEST [{request_id}] {method}: {params_dict}")
         self.stdin.write(encoded)
         await self.stdin.drain()
 
