@@ -558,6 +558,7 @@ def show_cmd(ctx, symbol, context, head):
         "range_end_line": resolved.range_end_line,
         "head": head,
         "symbol": symbol,
+        "kind": resolved.kind,
     })
     output_format = "json" if ctx.obj["json"] else "plain"
     output_result(response["result"], output_format)
