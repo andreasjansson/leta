@@ -6,24 +6,6 @@ from typing import TypeVar, Callable, Generic
 T = TypeVar("T")
 
 
-COUNTRY_CODES = {
-    "US": "United States",
-    "CA": "Canada",
-    "GB": "United Kingdom",
-    "DE": "Germany",
-    "FR": "France",
-    "JP": "Japan",
-    "AU": "Australia",
-}
-
-DEFAULT_CONFIG = [
-    "debug=false",
-    "timeout=30",
-    "max_retries=3",
-    "log_level=INFO",
-]
-
-
 def validate_email(email: str) -> bool:
     """Validate an email address format.
     
