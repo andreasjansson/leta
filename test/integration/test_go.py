@@ -456,8 +456,9 @@ Renamed in 1 file(s):
             "column": 2,
             "context": 0,
         })
-        assert "error" in response
-        assert "declaration" in response["error"].lower()
+        assert response == {
+            "error": 'LSP error: JSON RPC method not found: "Declaration" not yet implemented'
+        }
 
     # =========================================================================
     # move-file tests
