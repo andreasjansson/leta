@@ -304,13 +304,14 @@ class ResolveSymbolParams(BaseModel):
 
 
 class ResolveSymbolResult(BaseModel):
-    path: str
-    line: int
-    column: int
+    # Success fields (all optional in case of error)
+    path: str | None = None
+    line: int | None = None
+    column: int | None = None
     kind: str | None = None
     range_start_line: int | None = None
     range_end_line: int | None = None
-    # For disambiguation errors
+    # Error fields
     error: str | None = None
     matches: list[SymbolInfo] | None = None
     total: int | None = None
