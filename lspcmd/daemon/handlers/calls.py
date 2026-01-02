@@ -82,11 +82,12 @@ async def handle_calls(ctx: HandlerContext, params: CallsParams) -> CallsResult:
 
 
 def _dict_to_call_node(d: dict) -> CallNode:
-    children = []
+    calls = None
+    called_by = None
     if "calls" in d:
-        children = [_dict_to_call_node(c) for c in d["calls"]]
+        calls = [_dict_to_call_node(c) for c in d["calls"]]
     elif "called_by" in d:
-        children = [_dict_to_call_node(c) for c in d["called_by"]]
+        called_by = [_dict_to_call_node(c) for c in d["called_by"]]
     return CallNode(
         name=d.get("name", ""),
         kind=d.get("kind"),
@@ -94,7 +95,8 @@ def _dict_to_call_node(d: dict) -> CallNode:
         path=d.get("path"),
         line=d.get("line"),
         column=d.get("column"),
-        children=children,
+        calls=calls,
+        called_by=called_by,
     )
 
 
