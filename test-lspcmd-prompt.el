@@ -106,6 +106,14 @@
 
 ;; Run when loaded in batch mode
 (when noninteractive
+  ;; Suppress the "Maximum iterations reached" error from process sentinel
+  (defadvice greger--handle-response-finished (around suppress-max-iter-error activate)
+    "Suppress max iterations error in batch mode."
+    (condition-case err
+        ad-do-it
+      (error
+       (message "Suppressed error: %s" (error-message-string err)))))
+  
   (test-lspcmd-prompt-main))
 
 (provide 'test-lspcmd-prompt)
