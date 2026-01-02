@@ -194,7 +194,7 @@ def get_best_workspace_root(path: Path, config: Config, cwd: Path | None = None)
     return get_known_workspace_root(path, config)
 
 
-def add_workspace_root(root: Path, config: dict) -> None:
+def add_workspace_root(root: Path, config: Config) -> None:
     roots = config.setdefault("workspaces", {}).setdefault("roots", [])
     root_str = str(root.resolve())
     if root_str not in roots:
