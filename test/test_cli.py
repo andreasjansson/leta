@@ -61,6 +61,19 @@ class TestCliCommands:
         assert result.exit_code == 0
         assert "already added" in result.output
 
+    def test_workspace_remove(self, python_project, isolated_config):
+        runner = CliRunner()
+        runner.invoke(cli, ["workspace", "add", "--root", str(python_project)])
+        result = runner.invoke(cli, ["workspace", "remove", str(python_project)])
+        assert result.exit_code == 0
+        assert "Removed workspace:" in result.output
+
+    def test_workspace_remove_not_found(self, python_project, isolated_config):
+        runner = CliRunner()
+        result = runner.invoke(cli, ["workspace", "remove", str(python_project)])
+        assert result.exit_code == 1
+        assert "Workspace not found" in result.output
+
     def test_grep_no_workspace(self, isolated_config, temp_dir):
         runner = CliRunner()
         import os
