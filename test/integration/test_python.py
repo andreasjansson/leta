@@ -866,3 +866,62 @@ Moved file and updated imports in 4 file(s):
         assert result["name"] == "User"
         assert result["line"] == 27
         assert result["path"].endswith("main.py")
+
+    # =========================================================================
+    # show multi-line constant/variable tests
+    # =========================================================================
+
+    def test_show_multiline_dict_constant(self, workspace):
+        """Test that show expands multi-line dict constants correctly."""
+        os.chdir(workspace)
+        response = run_request("definition", {
+            "path": str(workspace / "utils.py"),
+            "workspace_root": str(workspace),
+            "line": 130,
+            "column": 0,
+            "context": 0,
+            "body": True,
+            "direct_location": True,
+            "range_start_line": 130,
+            "range_end_line": 130,
+            "kind": "Constant",
+        })
+        output = format_output(response["result"], "plain")
+        assert output == """\
+utils.py:130-138
+
+COUNTRY_CODES = {
+    "US": "United States",
+    "CA": "Canada",
+    "GB": "United Kingdom",
+    "DE": "Germany",
+    "FR": "France",
+    "JP": "Japan",
+    "AU": "Australia",
+}"""
+
+    def test_show_multiline_list_constant(self, workspace):
+        """Test that show expands multi-line list constants correctly."""
+        os.chdir(workspace)
+        response = run_request("definition", {
+            "path": str(workspace / "utils.py"),
+            "workspace_root": str(workspace),
+            "line": 140,
+            "column": 0,
+            "context": 0,
+            "body": True,
+            "direct_location": True,
+            "range_start_line": 140,
+            "range_end_line": 140,
+            "kind": "Constant",
+        })
+        output = format_output(response["result"], "plain")
+        assert output == """\
+utils.py:140-145
+
+DEFAULT_CONFIG = [
+    "debug=false",
+    "timeout=30",
+    "max_retries=3",
+    "log_level=INFO",
+]"""
