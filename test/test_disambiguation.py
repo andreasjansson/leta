@@ -38,7 +38,7 @@ class TestRoundTripConsistency:
     """
 
     def setup_method(self):
-        self.server = DaemonServer.__new__(DaemonServer)
+        self.server = _MockServer()
 
     def _resolve_ref(self, ref: str, all_symbols: list[dict]) -> list[dict]:
         """Simulate resolving a ref against a symbol list.
@@ -198,7 +198,7 @@ class TestGenerateUnambiguousRef:
     def setup_method(self):
         # Create a minimal server instance just to test the methods
         # We'll call the methods directly without starting the server
-        self.server = DaemonServer.__new__(DaemonServer)
+        self.server = _MockServer()
 
     def test_unique_container_sufficient(self):
         """When container.name is unique, use that."""
@@ -391,7 +391,7 @@ class TestAllRefsUnique:
     """Test that all generated refs for a match set are unique."""
 
     def setup_method(self):
-        self.server = DaemonServer.__new__(DaemonServer)
+        self.server = _MockServer()
 
     def _get_all_refs(self, matches, target_name):
         """Generate refs for all matches and return them."""
@@ -452,7 +452,7 @@ class TestResolutionLogicMatchesGeneration:
     """
 
     def setup_method(self):
-        self.server = DaemonServer.__new__(DaemonServer)
+        self.server = _MockServer()
         # Initialize minimal required attributes
         self.server.session = None  # Not needed for this test
 
@@ -506,7 +506,7 @@ class TestNormalizeSymbolName:
     """Tests for _normalize_symbol_name - extracts base name from decorated names."""
 
     def setup_method(self):
-        self.server = DaemonServer.__new__(DaemonServer)
+        self.server = _MockServer()
 
     def test_simple_name_unchanged(self):
         assert self.server._normalize_symbol_name("save") == "save"
@@ -541,7 +541,7 @@ class TestGetEffectiveContainer:
     """Tests for _get_effective_container - extracts container from symbol."""
 
     def setup_method(self):
-        self.server = DaemonServer.__new__(DaemonServer)
+        self.server = _MockServer()
 
     def test_explicit_container(self):
         """When container field is set, use it."""
@@ -580,7 +580,7 @@ class TestRefResolvesUniquely:
     """Tests for _ref_resolves_uniquely - the core disambiguation check."""
 
     def setup_method(self):
-        self.server = DaemonServer.__new__(DaemonServer)
+        self.server = _MockServer()
 
     def test_container_ref_unique(self):
         """Container.name ref is unique when containers differ."""
@@ -641,7 +641,7 @@ class TestDisambiguationPreferenceOrder:
     """Test that disambiguation prefers shorter refs."""
 
     def setup_method(self):
-        self.server = DaemonServer.__new__(DaemonServer)
+        self.server = _MockServer()
 
     def test_prefers_container_over_filename(self):
         """When container is unique, prefer Container.name over file.py:name."""
@@ -685,7 +685,7 @@ class TestModuleNameCollisionHandling:
     """Test the specific bug: container name colliding with module name."""
 
     def setup_method(self):
-        self.server = DaemonServer.__new__(DaemonServer)
+        self.server = _MockServer()
 
     def test_avoids_ambiguous_container_ref(self):
         """When Container.name would match via module too, use file.py:name."""
@@ -747,7 +747,7 @@ class TestGoMethodDisambiguation:
     """Test disambiguation for Go-style methods with receivers."""
 
     def setup_method(self):
-        self.server = DaemonServer.__new__(DaemonServer)
+        self.server = _MockServer()
 
     def test_go_methods_use_receiver_type(self):
         """Go methods (*Type).Method should disambiguate using Type."""
@@ -795,7 +795,7 @@ class TestJavaMethodDisambiguation:
     """Test disambiguation for Java-style methods with signatures."""
 
     def setup_method(self):
-        self.server = DaemonServer.__new__(DaemonServer)
+        self.server = _MockServer()
 
     def test_java_overloaded_methods(self):
         """Java overloaded methods with different signatures."""
@@ -833,7 +833,7 @@ class TestResolveSymbolRoundTrip:
     """
 
     def setup_method(self):
-        self.server = DaemonServer.__new__(DaemonServer)
+        self.server = _MockServer()
 
     def test_container_ref_resolves(self):
         """A Container.name ref should match only that container."""
