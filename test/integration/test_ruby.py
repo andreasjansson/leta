@@ -406,3 +406,23 @@ DEFAULT_CONFIG = [
   'max_retries=3',
   'log_level=INFO'
 ].freeze"""
+
+    # =========================================================================
+    # calls tests (solargraph does not support call hierarchy)
+    # =========================================================================
+
+    def test_calls_not_supported(self, workspace):
+        """Test that calls returns proper error for solargraph."""
+        os.chdir(workspace)
+        response = run_request("calls", {
+            "workspace_root": str(workspace),
+            "mode": "outgoing",
+            "from_path": str(workspace / "main.rb"),
+            "from_line": 37,
+            "from_column": 4,
+            "from_symbol": "main",
+            "max_depth": 1,
+        })
+        assert "error" in response
+        assert "prepareCallHierarchy" in response["error"]
+        assert "solargraph" in response["error"]
