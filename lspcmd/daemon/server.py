@@ -2283,7 +2283,7 @@ class DaemonServer:
         self, workspace: Workspace, workspace_root: Path, file_path: Path
     ) -> list[dict]:
         file_sha = self._get_file_sha(file_path)
-        cache_key = (str(file_path), file_sha)
+        cache_key = (str(file_path), str(workspace_root), file_sha)
 
         cached = self._symbol_cache.get(cache_key)
         if cached is not None:
