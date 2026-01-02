@@ -233,7 +233,7 @@ CLI_HELP = """\
 lspcmd is a command line LSP client. It can quickly search for symbols across
 large code bases with regular expressions, print full function and method bodies,
 find references, implementations, subtypes, etc. It also has refactoring tools,
-like renaming symbols across the entire code base or formatting files.
+like renaming symbols across the entire code base.
 
 `lspcmd grep` can be much better than naive text search tools when you want to
 understand a code base. Note that `lspcmd grep` only exposes symbols that are
