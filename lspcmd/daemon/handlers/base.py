@@ -336,21 +336,22 @@ class HandlerContext:
         if not result:
             return []
 
-        locations = []
+        locations: list[LocationDict] = []
         for item in result:
-            uri = item["uri"]
+            uri = str(item["uri"])
             range_ = item.get("selectionRange", item.get("range"))
 
             file_path = uri_to_path(uri)
-            start_line = range_["start"]["line"]
+            start_line = int(range_["start"]["line"])
 
-            location = {
+            kind_val = item.get("kind")
+            location: LocationDict = {
                 "path": self.relative_path(file_path, workspace_root),
                 "line": start_line + 1,
-                "column": range_["start"]["character"],
-                "name": item.get("name"),
-                "kind": SymbolKind(item.get("kind", 0)).name if item.get("kind") else None,
-                "detail": item.get("detail"),
+                "column": int(range_["start"]["character"]),
+                "name": str(item.get("name", "")),
+                "kind": SymbolKind(int(kind_val)).name if kind_val else None,
+                "detail": str(item.get("detail")) if item.get("detail") else None,
             }
 
             if context > 0 and file_path.exists():
