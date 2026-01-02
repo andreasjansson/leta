@@ -23,9 +23,9 @@ async def handle_references(
     result = await workspace.client.send_request(
         "textDocument/references",
         ReferenceParams(
-            textDocument=TextDocumentIdentifier(uri=doc.uri),
+            text_document=TextDocumentIdentifier(uri=doc.uri),
             position=Position(line=line, character=column),
-            context=ReferenceContext(includeDeclaration=True),
+            context=ReferenceContext(include_declaration=True),
         ),
     )
 
