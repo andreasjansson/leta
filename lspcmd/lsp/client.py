@@ -140,7 +140,7 @@ class LSPClient:
         )
 
         result = await self.send_request("initialize", init_params)
-        self._server_capabilities = result.capabilities.model_dump(by_alias=True)
+        self._server_capabilities = result.capabilities.model_dump(by_alias=False)
         await self.send_notification("initialized", {})
         self._initialized = True
 
