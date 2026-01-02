@@ -92,6 +92,12 @@ def format_plain(data: Any) -> str:
         if "files" in data and "total_files" in data and "total_bytes" in data:
             return format_tree(data)
 
+        if "calls" in data or "called_by" in data:
+            return format_call_tree(data)
+
+        if "found" in data and ("path" in data or "from" in data):
+            return format_call_path(data)
+
         if "files_modified" in data:
             files = data["files_modified"]
             return f"Modified {len(files)} file(s):\n" + "\n".join(f"  {f}" for f in files)
