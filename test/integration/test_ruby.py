@@ -152,7 +152,7 @@ user.rb:113 [Class] FileStorage"""
         output = format_output(response["result"], "plain")
         assert output == """\
 user.rb:8 [Class] User
-user.rb:144 [Class] UserRepository"""
+user.rb:163 [Class] UserRepository"""
 
     def test_grep_workspace_wide(self, workspace):
         os.chdir(workspace)
