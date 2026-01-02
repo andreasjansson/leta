@@ -552,8 +552,7 @@ constexpr const char* COUNTRY_CODES[] = {
             "max_depth": 1,
         })
         assert "error" in response
-        assert "outgoingCalls" in response["error"]
-        assert "clangd" in response["error"]
+        assert response["error"] == "callHierarchy/outgoingCalls is not supported by clangd"
 
     def test_calls_incoming(self, workspace):
         """Test incoming calls to createSampleUser function."""
@@ -565,11 +564,11 @@ constexpr const char* COUNTRY_CODES[] = {
             "to_line": 135,
             "to_column": 5,
             "to_symbol": "createSampleUser",
-            "max_depth": 2,
+            "max_depth": 1,
         })
-        result = response["result"]
-        assert result["name"] == "createSampleUser"
-        assert result["kind"] == "Function"
-        assert "called_by" in result
-        caller_names = [c["name"] for c in result["called_by"]]
-        assert "main" in caller_names
+        output = format_output(response["result"], "plain")
+        assert output == """\
+user.hpp:135 [Function] createSampleUser
+
+Incoming calls:
+  └── main.cpp:7 [Function] main"""
