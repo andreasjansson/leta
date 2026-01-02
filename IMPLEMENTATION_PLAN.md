@@ -216,36 +216,6 @@ lspcmd grep "." server.py                     # All symbols in any server.py fil
 | `lspcmd organize-imports PATH` | Organize imports in a file |
 | `lspcmd rename SYMBOL NEW_NAME` | Rename symbol across the workspace |
 | `lspcmd move-file OLD_PATH NEW_PATH` | Move/rename file and update imports |
-| `echo CONTENT \| lspcmd replace-function SYMBOL` | Replace function/method body |
-
-The `replace-function` command reads new function contents from stdin and replaces
-the existing function/method. By default, it validates that the function signature
-matches (name and parameters). Use `--no-check-signature` to allow signature changes.
-
-The command:
-1. Resolves the symbol (same as `lspcmd show`)
-2. Verifies it's a Function or Method
-3. Creates a backup of the file (`.lspcmd.bkup`)
-4. Replaces the function in the file
-5. Asks the LSP server for the new signature via hover
-6. If signature check fails, reverts to the backup
-7. Cleans up the backup file
-
-Examples:
-```bash
-# Replace a function with matching signature
-echo 'def greet(name: str) -> str:
-    return f"Hi, {name}!"' | lspcmd replace-function greet
-
-# Replace a method in a class
-echo '    def save(self, key: str, value: str) -> None:
-        self._data[key] = value' | lspcmd replace-function MyClass.save
-
-# Allow signature changes
-echo 'func NewUser(name string) *User {
-    return &User{Name: name}
-}' | lspcmd replace-function NewUser --no-check-signature
-```
 
 The `move-file` command uses `workspace/willRenameFiles` to ask the language server
 to update all import statements across the workspace. Supported by:
