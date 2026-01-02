@@ -5,10 +5,15 @@ import logging
 import os
 import re
 import signal
+from collections import deque
 from pathlib import Path
 from typing import Any
 
 from .session import Session, Workspace
+
+# Type alias for JSON-like dict structures used throughout LSP
+JsonValue = str | int | float | bool | None | list["JsonValue"] | dict[str, "JsonValue"]
+JsonDict = dict[str, Any]
 from .pidfile import write_pid, remove_pid
 from ..cache import LMDBCache
 from ..lsp.protocol import LSPResponseError, LSPMethodNotSupported, LanguageServerNotFound
