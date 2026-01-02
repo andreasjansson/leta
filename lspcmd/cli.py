@@ -13,6 +13,7 @@ import click
 from .daemon.pidfile import is_daemon_running
 from .output.formatters import format_output
 from .utils.config import (
+    Config,
     get_socket_path,
     get_pid_path,
     get_config_path,
