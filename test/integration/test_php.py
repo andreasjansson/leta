@@ -378,3 +378,36 @@ src/Main.php:17 [Method] createSampleUser (static) in Main
         result = response["result"]
         assert result["name"] == "User"
         assert result["path"].endswith("User.php")
+
+    # =========================================================================
+    # show multi-line constant tests
+    # =========================================================================
+
+    def test_show_multiline_array_constant(self, workspace):
+        """Test that show displays multi-line array constants correctly."""
+        os.chdir(workspace)
+        response = run_request("definition", {
+            "path": str(workspace / "src" / "User.php"),
+            "workspace_root": str(workspace),
+            "line": 15,
+            "column": 17,
+            "context": 0,
+            "body": True,
+            "direct_location": True,
+            "range_start_line": 15,
+            "range_end_line": 23,
+            "kind": "Constant",
+        })
+        output = format_output(response["result"], "plain")
+        assert output == """\
+src/User.php:15-23
+
+    public const COUNTRY_CODES = [
+        'US' => 'United States',
+        'CA' => 'Canada',
+        'GB' => 'United Kingdom',
+        'DE' => 'Germany',
+        'FR' => 'France',
+        'JP' => 'Japan',
+        'AU' => 'Australia',
+    ];"""
