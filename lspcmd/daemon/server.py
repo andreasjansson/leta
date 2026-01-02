@@ -283,7 +283,7 @@ class DaemonServer:
         }
         return result
 
-    async def _handle_raw_lsp_request(self, params: dict) -> Any:
+    async def _handle_raw_lsp_request(self, params: JsonDict) -> Any:
         workspace_root = Path(params["workspace_root"]).resolve()
         lsp_method = params["method"]
         lsp_params = params.get("params", {})
