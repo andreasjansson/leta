@@ -125,3 +125,21 @@ class Result(Generic[T]):
 def format_name(first: str, last: str) -> str:
     """Format a full name from first and last names."""
     return f"{first} {last}"
+
+
+COUNTRY_CODES = {
+    "US": "United States",
+    "CA": "Canada",
+    "GB": "United Kingdom",
+    "DE": "Germany",
+    "FR": "France",
+    "JP": "Japan",
+    "AU": "Australia",
+}
+
+DEFAULT_CONFIG = [
+    "debug=false",
+    "timeout=30",
+    "max_retries=3",
+    "log_level=INFO",
+]
