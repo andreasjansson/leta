@@ -474,63 +474,73 @@ class HandlerContext:
 
 
 def flatten_symbols(
-    items: list[dict[str, object]],
+    items: list[DocumentSymbol] | list[SymbolInformation],
     file_path: str,
     output: list[SymbolDict],
     container: str | None = None,
 ) -> None:
     for item in items:
-        if "location" in item:
-            loc_range = item["location"]["range"]
+        if isinstance(item, SymbolInformation):
+            loc_range = item.location.range
             output.append(
                 {
-                    "name": item["name"],
-                    "kind": SymbolKind(item["kind"]).name,
+                    "name": item.name,
+                    "kind": SymbolKind(item.kind).name,
                     "path": file_path,
-                    "line": loc_range["start"]["line"] + 1,
-                    "column": loc_range["start"]["character"],
-                    "container": item.get("containerName"),
-                    "range_start_line": loc_range["start"]["line"] + 1,
-                    "range_end_line": loc_range["end"]["line"] + 1,
+                    "line": loc_range.start.line + 1,
+                    "column": loc_range.start.character,
+                    "container": item.containerName,
+                    "range_start_line": loc_range.start.line + 1,
+                    "range_end_line": loc_range.end.line + 1,
                 }
             )
         else:
-            sel_range = item.get("selectionRange", item["range"])
-            full_range = item["range"]
+            sel_range = item.selectionRange
+            full_range = item.range
             output.append(
                 {
-                    "name": item["name"],
-                    "kind": SymbolKind(item["kind"]).name,
+                    "name": item.name,
+                    "kind": SymbolKind(item.kind).name,
                     "path": file_path,
-                    "line": sel_range["start"]["line"] + 1,
-                    "column": sel_range["start"]["character"],
+                    "line": sel_range.start.line + 1,
+                    "column": sel_range.start.character,
                     "container": container,
-                    "detail": item.get("detail"),
-                    "range_start_line": full_range["start"]["line"] + 1,
-                    "range_end_line": full_range["end"]["line"] + 1,
+                    "detail": item.detail,
+                    "range_start_line": full_range.start.line + 1,
+                    "range_end_line": full_range.end.line + 1,
                 }
             )
-            if item.get("children"):
-                flatten_symbols(item["children"], file_path, output, item["name"])
+            if item.children:
+                flatten_symbols(item.children, file_path, output, item.name)
+
+
+class FoundSymbol(TypedDict):
+    range_start: int
+    range_end: int
+    children: list[DocumentSymbol] | None
 
 
 def find_symbol_at_line(
-    symbols: list[dict[str, object]], line: int
-) -> dict[str, object] | None:
+    symbols: list[DocumentSymbol] | list[SymbolInformation], line: int
+) -> FoundSymbol | None:
     for sym in symbols:
-        if "range" in sym:
-            start = sym["range"]["start"]["line"]
-            end = sym["range"]["end"]["line"]
+        if isinstance(sym, DocumentSymbol):
+            start = sym.range.start.line
+            end = sym.range.end.line
             if start <= line <= end:
-                if sym.get("children"):
-                    child = find_symbol_at_line(sym["children"], line)
+                if sym.children:
+                    child = find_symbol_at_line(sym.children, line)
                     if child:
                         return child
-                return sym
-        elif "location" in sym:
-            sym_line = sym["location"]["range"]["start"]["line"]
+                return {"range_start": start, "range_end": end, "children": sym.children}
+        else:
+            sym_line = sym.location.range.start.line
             if sym_line == line:
-                return sym
+                return {
+                    "range_start": sym_line,
+                    "range_end": sym.location.range.end.line,
+                    "children": None,
+                }
     return None
 
 
