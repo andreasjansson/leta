@@ -5,26 +5,6 @@ import (
 	"strings"
 )
 
-// CountryCodes maps country codes to their full names.
-var CountryCodes = map[string]string{
-	"US": "United States",
-	"CA": "Canada",
-	"GB": "United Kingdom",
-	"DE": "Germany",
-	"FR": "France",
-	"JP": "Japan",
-	"AU": "Australia",
-}
-
-// DefaultPorts contains commonly used network ports.
-var DefaultPorts = []int{
-	80,
-	443,
-	8080,
-	8443,
-	3000,
-}
-
 // ValidateEmail checks if an email address has valid format.
 func ValidateEmail(email string) bool {
 	pattern := `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
