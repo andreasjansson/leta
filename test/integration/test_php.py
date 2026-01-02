@@ -138,11 +138,11 @@ src/Main.php:17 [Method] createSampleUser (static) in Main
 src/Main.php:28 [Method] validateUser (static) in Main
 src/Main.php:47 [Method] processUsers (static) in Main
 src/Main.php:58 [Method] run (static) in Main
-src/User.php:30 [Method] getName in User
-src/User.php:40 [Method] getEmail in User
-src/User.php:50 [Method] getAge in User
-src/User.php:60 [Method] isAdult in User
-src/User.php:70 [Method] displayName in User"""
+src/User.php:53 [Method] getName in User
+src/User.php:63 [Method] getEmail in User
+src/User.php:73 [Method] getAge in User
+src/User.php:83 [Method] isAdult in User
+src/User.php:93 [Method] displayName in User"""
 
     def test_grep_workspace_wide(self, workspace):
         os.chdir(workspace)
