@@ -839,7 +839,7 @@ class DaemonServer:
 
         return result
 
-    async def _handle_definition(self, params: dict) -> list[dict] | dict:
+    async def _handle_show(self, params: dict) -> list[dict] | dict:
         body = params.get("body", False)
 
         if params.get("direct_location"):
