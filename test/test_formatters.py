@@ -116,6 +116,112 @@ class TestFormatSession:
         assert "PID 67890" in result
 
 
+class TestFormatTree:
+    def test_simple_tree(self):
+        data = {
+            "root": "/home/user/project",
+            "files": {
+                "main.py": {"size": 1024, "lines": 50},
+                "utils.py": {"size": 512, "lines": 25},
+            },
+            "total_files": 2,
+            "total_bytes": 1536,
+            "total_lines": 75,
+        }
+        result = format_tree(data)
+        assert result == """main.py (1.0KB, 50 lines)
+utils.py (512B, 25 lines)
+
+2 files, 1.5KB, 75 lines"""
+
+    def test_tree_with_symbols(self):
+        data = {
+            "root": "/home/user/project",
+            "files": {
+                "main.py": {
+                    "size": 1024,
+                    "lines": 50,
+                    "symbols": {"class": 2, "function": 3, "method": 5},
+                },
+            },
+            "total_files": 1,
+            "total_bytes": 1024,
+            "total_lines": 50,
+        }
+        result = format_tree(data)
+        assert result == """main.py (1.0KB, 50 lines, 2 classes, 3 functions, 5 methods)
+
+1 files, 1.0KB, 50 lines"""
+
+    def test_tree_with_nested_directories(self):
+        data = {
+            "root": "/home/user/project",
+            "files": {
+                "main.py": {"size": 100, "lines": 10},
+                "src/utils.py": {"size": 200, "lines": 20},
+                "src/lib/helper.py": {"size": 300, "lines": 30},
+            },
+            "total_files": 3,
+            "total_bytes": 600,
+            "total_lines": 60,
+        }
+        result = format_tree(data)
+        assert result == """main.py (100B, 10 lines)
+src
+├── utils.py (200B, 20 lines)
+└── lib
+    └── helper.py (300B, 30 lines)
+
+3 files, 600B, 60 lines"""
+
+    def test_tree_binary_file_no_lines(self):
+        data = {
+            "root": "/home/user/project",
+            "files": {
+                "main.py": {"size": 1024, "lines": 50},
+                "logo.png": {"size": 2048},
+            },
+            "total_files": 2,
+            "total_bytes": 3072,
+            "total_lines": 50,
+        }
+        result = format_tree(data)
+        assert result == """logo.png (2.0KB)
+main.py (1.0KB, 50 lines)
+
+2 files, 3.0KB, 50 lines"""
+
+    def test_tree_empty(self):
+        data = {
+            "root": "/home/user/project",
+            "files": {},
+            "total_files": 0,
+            "total_bytes": 0,
+            "total_lines": 0,
+        }
+        result = format_tree(data)
+        assert result == "0 files, 0B"
+
+    def test_tree_single_symbol_singular(self):
+        data = {
+            "root": "/home/user/project",
+            "files": {
+                "main.py": {
+                    "size": 512,
+                    "lines": 25,
+                    "symbols": {"class": 1, "function": 1, "method": 1},
+                },
+            },
+            "total_files": 1,
+            "total_bytes": 512,
+            "total_lines": 25,
+        }
+        result = format_tree(data)
+        assert result == """main.py (512B, 25 lines, 1 class, 1 function, 1 method)
+
+1 files, 512B, 25 lines"""
+
+
 class TestFormatOutput:
     def test_json_output(self):
         data = {"key": "value"}
