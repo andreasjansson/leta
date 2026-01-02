@@ -327,6 +327,30 @@ class TestCliWithDaemon:
             result = runner.invoke(cli, ["rename", "create_sample_user", "make_sample_user"])
         assert result.exit_code == 0
 
+    def test_workspace_remove_stops_servers(self, python_project, isolated_config):
+        """Test that workspace remove stops the language servers."""
+        config = load_config()
+        add_workspace_root(python_project, config)
+        main_py = python_project / "main.py"
+
+        runner = CliRunner()
+        # Do a grep to start the language server
+        runner.invoke(cli, ["grep", ".*", str(main_py)])
+
+        # Verify daemon has the workspace
+        result = runner.invoke(cli, ["daemon", "info"])
+        assert str(python_project) in result.output
+
+        # Remove the workspace
+        result = runner.invoke(cli, ["workspace", "remove", str(python_project)])
+        assert result.exit_code == 0
+        assert "Removed workspace:" in result.output
+        assert "Stopped servers:" in result.output
+
+        # Verify workspace is gone from daemon
+        result = runner.invoke(cli, ["daemon", "info"])
+        assert str(python_project) not in result.output
+
 
 class TestCliWithGopls:
     @pytest.fixture(autouse=True)
