@@ -1,12 +1,12 @@
 """Handler for declaration command."""
 
-from ..rpc import DeclarationParams, DeclarationResult, LocationInfo
-from ...lsp.protocol import LSPResponseError, LSPMethodNotSupported
+from ..rpc import DeclarationParams as RPCDeclarationParams, DeclarationResult, LocationInfo
+from ...lsp.types import DeclarationParams, TextDocumentIdentifier, Position
 from .base import HandlerContext
 
 
 async def handle_declaration(
-    ctx: HandlerContext, params: DeclarationParams
+    ctx: HandlerContext, params: RPCDeclarationParams
 ) -> DeclarationResult:
     workspace, doc, path = await ctx.get_workspace_and_document({
         "path": params.path,
@@ -15,20 +15,13 @@ async def handle_declaration(
     line, column = ctx.parse_position({"line": params.line, "column": params.column})
     context = params.context
 
-    try:
-        result = await workspace.client.send_request(
-            "textDocument/declaration",
-            {
-                "textDocument": {"uri": doc.uri},
-                "position": {"line": line, "character": column},
-            },
-        )
-    except LSPResponseError as e:
-        if e.is_method_not_found():
-            raise LSPMethodNotSupported(
-                "textDocument/declaration", workspace.server_config.name
-            )
-        raise
+    result = await workspace.client.send_request(
+        "textDocument/declaration",
+        DeclarationParams(
+            textDocument=TextDocumentIdentifier(uri=doc.uri),
+            position=Position(line=line, character=column),
+        ),
+    )
 
     locations = ctx.format_locations(result, workspace.root, context)
     return DeclarationResult(
