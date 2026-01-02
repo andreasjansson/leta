@@ -555,7 +555,10 @@ class DaemonServer:
     def _is_path_in_workspace(self, uri: str, workspace_root: Path) -> bool:
         file_path = uri_to_path(uri)
         try:
-            file_path.relative_to(workspace_root)
+            rel_path = file_path.relative_to(workspace_root)
+            excluded_dirs = {".venv", "venv", "node_modules", "vendor", ".git", "__pycache__", "target", "build", "dist"}
+            if any(part in excluded_dirs for part in rel_path.parts):
+                return False
             return True
         except ValueError:
             return False
