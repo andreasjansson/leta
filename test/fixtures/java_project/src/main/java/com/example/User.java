@@ -1,9 +1,34 @@
 package com.example;
 
+import java.util.Map;
+import java.util.List;
+
 /**
  * Represents a user in the system.
  */
 public class User {
+    /**
+     * Country codes mapped to their full names.
+     */
+    public static final Map<String, String> COUNTRY_CODES = Map.of(
+        "US", "United States",
+        "CA", "Canada",
+        "GB", "United Kingdom",
+        "DE", "Germany",
+        "FR", "France",
+        "JP", "Japan",
+        "AU", "Australia"
+    );
+
+    /**
+     * Default configuration values.
+     */
+    public static final List<String> DEFAULT_CONFIG = List.of(
+        "debug=false",
+        "timeout=30",
+        "max_retries=3",
+        "log_level=INFO"
+    );
     private String name;
     private String email;
     private int age;
