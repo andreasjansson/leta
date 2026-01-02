@@ -74,7 +74,9 @@ src/user.zig:4 [Constant] User
 src/user.zig:31 [Constant] Storage
 src/user.zig:51 [Constant] MemoryStorage
 src/user.zig:85 [Constant] FileStorage
-src/user.zig:113 [Constant] UserRepository"""
+src/user.zig:113 [Constant] UserRepository
+src/user.zig:146 [Constant] DEFAULT_PORTS
+src/user.zig:155 [Constant] COUNTRY_CODES"""
 
     def test_grep_kind_filter_function(self, workspace):
         os.chdir(workspace)
