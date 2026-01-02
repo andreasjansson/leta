@@ -469,34 +469,34 @@ Renamed in 1 file(s):
         assert not (workspace / "helpers.go").exists()
 
     # =========================================================================
-    # replace-function tests
+    # replace-function tests (uses isolated editable files)
     # =========================================================================
 
     def test_replace_function_basic(self, workspace):
         """Test basic function replacement with matching signature."""
         os.chdir(workspace)
         
-        main_path = workspace / "main.go"
-        original = main_path.read_text()
+        editable_path = workspace / "editable.go"
+        original = editable_path.read_text()
         
         try:
             response = _call_replace_function_request({
                 "workspace_root": str(workspace),
-                "symbol": "NewUser",
-                "new_contents": '''func NewUser(name, email string, age int) *User {
+                "symbol": "NewEditablePerson",
+                "new_contents": '''func NewEditablePerson(name, email string) *EditablePerson {
 	// Updated implementation
-	return &User{Name: name, Email: email, Age: age}
+	return &EditablePerson{Name: name, Email: email}
 }''',
                 "check_signature": True,
             })
             result = response["result"]
             assert result["replaced"] == True
-            assert result["path"] == "main.go"
+            assert result["path"] == "editable.go"
             
-            updated = main_path.read_text()
+            updated = editable_path.read_text()
             assert '// Updated implementation' in updated
         finally:
-            main_path.write_text(original)
+            editable_path.write_text(original)
 
     def test_replace_function_signature_mismatch(self, workspace):
         """Test that signature mismatch is detected."""
@@ -504,9 +504,9 @@ Renamed in 1 file(s):
         
         response = _call_replace_function_request({
             "workspace_root": str(workspace),
-            "symbol": "NewUser",
-            "new_contents": '''func NewUser(name string) *User {
-	return &User{Name: name, Email: "", Age: 0}
+            "symbol": "NewEditablePerson",
+            "new_contents": '''func NewEditablePerson(name string) *EditablePerson {
+	return &EditablePerson{Name: name, Email: ""}
 }''',
             "check_signature": True,
         })
@@ -518,25 +518,25 @@ Renamed in 1 file(s):
         """Test that check_signature=False allows signature changes."""
         os.chdir(workspace)
         
-        main_path = workspace / "main.go"
-        original = main_path.read_text()
+        editable_path = workspace / "editable.go"
+        original = editable_path.read_text()
         
         try:
             response = _call_replace_function_request({
                 "workspace_root": str(workspace),
-                "symbol": "NewUser",
-                "new_contents": '''func NewUser(name string) *User {
-	return &User{Name: name, Email: "default@example.com", Age: 0}
+                "symbol": "NewEditablePerson",
+                "new_contents": '''func NewEditablePerson(name string) *EditablePerson {
+	return &EditablePerson{Name: name, Email: "default@example.com"}
 }''',
                 "check_signature": False,
             })
             result = response["result"]
             assert result["replaced"] == True
             
-            updated = main_path.read_text()
-            assert 'func NewUser(name string)' in updated
+            updated = editable_path.read_text()
+            assert 'func NewEditablePerson(name string)' in updated
         finally:
-            main_path.write_text(original)
+            editable_path.write_text(original)
 
     def test_replace_function_non_function_error(self, workspace):
         """Test that replacing a non-function symbol gives an error."""
@@ -544,8 +544,8 @@ Renamed in 1 file(s):
         
         response = _call_replace_function_request({
             "workspace_root": str(workspace),
-            "symbol": "User",
-            "new_contents": '''type User struct {
+            "symbol": "EditablePerson",
+            "new_contents": '''type EditablePerson struct {
 	Name string
 }''',
             "check_signature": True,
@@ -558,24 +558,22 @@ Renamed in 1 file(s):
         """Test that bogus content that fails signature check reverts the file."""
         os.chdir(workspace)
         
-        main_path = workspace / "main.go"
-        original = main_path.read_text()
+        editable_path = workspace / "editable.go"
+        original = editable_path.read_text()
         
         response = _call_replace_function_request({
             "workspace_root": str(workspace),
-            "symbol": "NewUser",
+            "symbol": "NewEditablePerson",
             "new_contents": "this is not valid go code @#$%^&*()",
             "check_signature": True,
         })
         result = response["result"]
         assert "error" in result
         
-        # Verify file was reverted
-        current = main_path.read_text()
+        current = editable_path.read_text()
         assert current == original
         
-        # Verify no backup file left behind
-        backup_path = main_path.with_suffix(".go.lspcmd.bkup")
+        backup_path = editable_path.with_suffix(".go.lspcmd.bkup")
         assert not backup_path.exists()
 
     def test_replace_function_symbol_not_found(self, workspace):
