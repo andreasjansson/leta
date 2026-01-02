@@ -1,26 +1,8 @@
 {
   "include": ["lspcmd"],
-  "exclude": ["**/__pycache__", ".venv", "lspcmd.egg-info"],
-
+  "exclude": ["**/__pycache__", ".venv", "lspcmd.egg-info", "test"],
   "reportMissingImports": "error",
   "reportMissingTypeStubs": false,
-  "reportMissingTypeArgument": false,
-  "reportExplicitAny": false,
-  "reportUnknownParameterType": false,
-  "reportUnknownVariableType": false,
-  "reportUnknownMemberType": false,
-  "reportUnknownArgumentType": false,
-  "reportUnknownLambdaType": false,
-  "reportUnannotatedClassAttribute": false,
-  "reportImplicitStringConcatenation": false,
-  "reportImplicitOverride": false,
-  "reportMissingParameterType": false,
-  "reportUnusedCallResult": false,
-  "reportUnusedParameter": false,
-  "reportUnusedVariable": false,
-  "reportUnusedImport": "warning",
-  "reportAny": false,
-
   "pythonVersion": "3.13",
   "pythonPlatform": "Darwin"
 }
