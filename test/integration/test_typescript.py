@@ -8,7 +8,6 @@ from lspcmd.utils.config import add_workspace_root, load_config
 
 from .conftest import (
     FIXTURES_DIR,
-    _call_replace_function_request,
     format_output,
     requires_typescript_lsp,
     run_request,
