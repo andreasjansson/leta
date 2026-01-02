@@ -139,7 +139,7 @@ async def handle_resolve_symbol(
             line=sym.get("line", 0),
             column=sym.get("column", 0),
             container=sym.get("container"),
-            detail=f"Use: {ref}",
+            ref=ref,
         ))
 
     return ResolveSymbolResult(
