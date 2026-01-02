@@ -38,7 +38,7 @@ class LocationInfo(BaseModel):
     path: str
     line: int
     column: int = 0
-    context: list[str] | None = None
+    context_lines: list[str] | None = None
     context_start: int | None = None
     # For type hierarchy results
     name: str | None = None
