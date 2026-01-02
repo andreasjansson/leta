@@ -318,8 +318,8 @@ class HandlerContext:
         locations: list[LocationDict] = []
         for item in items:
             if isinstance(item, LocationLink):
-                uri = item.target_uri
-                range_ = item.target_selection_range
+                uri = item.targetUri
+                range_ = item.targetSelectionRange
             else:
                 uri = item.uri
                 range_ = item.range
@@ -355,7 +355,7 @@ class HandlerContext:
         locations: list[LocationDict] = []
         for item in result:
             uri = item.uri
-            range_ = item.selection_range
+            range_ = item.selectionRange
 
             file_path = uri_to_path(uri)
             start_line = range_.start.line
