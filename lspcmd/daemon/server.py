@@ -370,13 +370,21 @@ class DaemonServer:
             rel_path = self._relative_path(file_path, workspace_root)
             try:
                 size = file_path.stat().st_size
-                content = file_path.read_text(errors="replace")
-                lines = content.count("\n") + (1 if content and not content.endswith("\n") else 0)
             except Exception:
                 size = 0
-                lines = 0
 
-            file_info: dict[str, Any] = {"size": size, "lines": lines}
+            is_binary = file_path.suffix.lower() in BINARY_EXTENSIONS
+            lines = 0
+            if not is_binary:
+                try:
+                    content = file_path.read_text(errors="replace")
+                    lines = content.count("\n") + (1 if content and not content.endswith("\n") else 0)
+                except Exception:
+                    pass
+
+            file_info: dict[str, Any] = {"size": size}
+            if not is_binary:
+                file_info["lines"] = lines
             
             if file_path in symbol_counts_by_file:
                 file_info["symbols"] = symbol_counts_by_file[file_path]
