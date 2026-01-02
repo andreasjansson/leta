@@ -10,7 +10,15 @@ from pathlib import Path
 from typing import TYPE_CHECKING, TypedDict
 
 from ...cache import LMDBCache
-from ...lsp.types import SymbolKind
+from ...lsp.types import (
+    SymbolKind,
+    Location,
+    LocationLink,
+    TypeHierarchyItem,
+    DocumentSymbol,
+    SymbolInformation,
+    DefinitionResponse,
+)
 from ...utils.text import get_language_id, read_file_content, get_lines_around
 from ...utils.uri import uri_to_path
 
