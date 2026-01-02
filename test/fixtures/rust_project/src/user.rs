@@ -87,3 +87,12 @@ pub fn validate_user(user: &User) -> Result<(), String> {
     }
     Ok(())
 }
+
+/// Default ports for various services.
+pub const DEFAULT_PORTS: [u16; 5] = [
+    80,
+    443,
+    8080,
+    8443,
+    3000,
+];
