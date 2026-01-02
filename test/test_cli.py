@@ -194,7 +194,7 @@ class TestCliWithDaemon:
         import os
         with runner.isolated_filesystem():
             os.chdir(python_project)
-            result = runner.invoke(cli, ["ref", "User"])
+            result = runner.invoke(cli, ["refs", "User"])
         assert result.exit_code == 0
 
     def test_grep_with_file(self, python_project, isolated_config):
