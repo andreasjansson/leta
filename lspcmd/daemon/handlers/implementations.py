@@ -1,0 +1,43 @@
+"""Handler for implementations command."""
+
+from ..rpc import ImplementationsParams, ImplementationsResult, LocationInfo
+from ...lsp.protocol import LSPResponseError, LSPMethodNotSupported
+from .base import HandlerContext
+
+
+async def handle_implementations(
+    ctx: HandlerContext, params: ImplementationsParams
+) -> ImplementationsResult:
+    workspace, doc, path = await ctx.get_workspace_and_document({
+        "path": params.path,
+        "workspace_root": params.workspace_root,
+    })
+    line, column = ctx.parse_position({"line": params.line, "column": params.column})
+    context = params.context
+
+    caps = workspace.client.capabilities
+    if not caps.get("implementationProvider"):
+        server_name = workspace.server_config.name
+        raise ValueError(
+            f"Server '{server_name}' does not support implementations (may require a license)"
+        )
+
+    try:
+        result = await workspace.client.send_request(
+            "textDocument/implementation",
+            {
+                "textDocument": {"uri": doc.uri},
+                "position": {"line": line, "character": column},
+            },
+        )
+    except LSPResponseError as e:
+        if e.is_method_not_found():
+            raise LSPMethodNotSupported(
+                "textDocument/implementation", workspace.server_config.name
+            )
+        raise
+
+    locations = ctx.format_locations(result, workspace.root, context)
+    return ImplementationsResult(
+        locations=[LocationInfo(**loc) for loc in locations]
+    )
