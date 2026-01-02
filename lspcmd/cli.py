@@ -108,6 +108,22 @@ def run_request(method: str, params: dict) -> dict:
     return response
 
 
+def output_result(result: Any, output_format: str) -> None:
+    """Output a result, writing errors/warnings/empty results to stderr."""
+    if isinstance(result, dict):
+        if "warning" in result:
+            click.echo(f"Warning: {result['warning']}", err=True)
+            return
+    
+    if isinstance(result, list) and not result:
+        click.echo("No results", err=True)
+        return
+    
+    formatted = format_output(result, output_format)
+    if formatted:
+        click.echo(formatted)
+
+
 def get_workspace_root_for_path(path: Path, config: dict) -> Path:
     path = path.resolve()
     cwd = Path.cwd().resolve()
