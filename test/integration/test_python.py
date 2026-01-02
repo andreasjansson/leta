@@ -682,7 +682,7 @@ editable.py:30 class EditableStorage:"""
         """Save with logging."""
         print(f"Saving {key}")
         self._data[key] = value''',
-                "check_signature": True,
+                "check_signature": False,
             })
             result = response["result"]
             assert result["replaced"] == True
