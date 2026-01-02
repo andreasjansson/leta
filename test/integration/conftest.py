@@ -50,16 +50,10 @@ def run_request(method: str, params: dict, raise_on_error: bool = False) -> dict
         raise_on_error: If True, re-raise click.ClickException instead of returning error dict
     """
     try:
-        result = cli_run_request(method, params)
-        if "result" not in result and "error" in result:
-            import sys
-            print(f"DEBUG: Got top-level error for {method}: {result['error']}", file=sys.stderr)
-        return result
+        return cli_run_request(method, params)
     except click.ClickException as e:
         if raise_on_error:
             raise
-        import sys
-        print(f"DEBUG: ClickException for {method}: {e.message}", file=sys.stderr)
         return {"error": str(e.message)}
 
 
