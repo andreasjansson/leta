@@ -193,7 +193,7 @@ errors.go:17 [Function] TypeErrorFunc (func() int)"""
             "workspace_root": str(workspace),
             "pattern": ".*",
             "kinds": ["function"],
-            "exclude_patterns": ["utils.go"],
+            "exclude_patterns": ["utils.go", "editable*"],
         })
         filtered_output = format_output(response["result"], "plain")
         assert filtered_output == """\
