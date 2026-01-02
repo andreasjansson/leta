@@ -293,7 +293,7 @@ def daemon_info(ctx):
     """Show current daemon state."""
     response = run_request("describe-session", {})
     output_format = "json" if ctx.obj["json"] else "plain"
-    click.echo(format_output(response["result"], output_format))
+    output_result(response["result"], output_format)
 
 
 @daemon.command("start")
@@ -400,7 +400,7 @@ def workspace_restart(ctx, path):
         "workspace_root": str(workspace_root),
     })
     output_format = "json" if ctx.obj["json"] else "plain"
-    click.echo(format_output(response["result"], output_format))
+    output_result(response["result"], output_format)
 
 
 @cli.command()
@@ -511,7 +511,7 @@ def show_cmd(ctx, symbol, context, head):
         "symbol": symbol,
     })
     output_format = "json" if ctx.obj["json"] else "plain"
-    click.echo(format_output(response["result"], output_format))
+    output_result(response["result"], output_format)
 
 
 @cli.command("declaration")
@@ -534,7 +534,7 @@ def declaration(ctx, symbol, context):
         "context": context,
     })
     output_format = "json" if ctx.obj["json"] else "plain"
-    click.echo(format_output(response["result"], output_format))
+    output_result(response["result"], output_format)
 
 
 @cli.command("ref")
@@ -564,7 +564,7 @@ def ref(ctx, symbol, context):
         "context": context,
     })
     output_format = "json" if ctx.obj["json"] else "plain"
-    click.echo(format_output(response["result"], output_format))
+    output_result(response["result"], output_format)
 
 
 @cli.command("implementations")
@@ -593,7 +593,7 @@ def implementations(ctx, symbol, context):
         "context": context,
     })
     output_format = "json" if ctx.obj["json"] else "plain"
-    click.echo(format_output(response["result"], output_format))
+    output_result(response["result"], output_format)
 
 
 @cli.command("subtypes")
@@ -620,7 +620,7 @@ def subtypes(ctx, symbol, context):
         "context": context,
     })
     output_format = "json" if ctx.obj["json"] else "plain"
-    click.echo(format_output(response["result"], output_format))
+    output_result(response["result"], output_format)
 
 
 @cli.command("supertypes")
@@ -646,7 +646,7 @@ def supertypes(ctx, symbol, context):
         "context": context,
     })
     output_format = "json" if ctx.obj["json"] else "plain"
-    click.echo(format_output(response["result"], output_format))
+    output_result(response["result"], output_format)
 
 
 @cli.command("diagnostics")
@@ -705,7 +705,7 @@ def diagnostics(ctx, path, severity):
         ]
 
     output_format = "json" if ctx.obj["json"] else "plain"
-    click.echo(format_output(result, output_format))
+    output_result(result, output_format)
 
 
 @cli.command("format")
@@ -722,7 +722,7 @@ def format_buffer(ctx, path):
         "workspace_root": str(workspace_root),
     })
     output_format = "json" if ctx.obj["json"] else "plain"
-    click.echo(format_output(response["result"], output_format))
+    output_result(response["result"], output_format)
 
 
 @cli.command("organize-imports")
@@ -739,7 +739,7 @@ def organize_imports(ctx, path):
         "workspace_root": str(workspace_root),
     })
     output_format = "json" if ctx.obj["json"] else "plain"
-    click.echo(format_output(response["result"], output_format))
+    output_result(response["result"], output_format)
 
 
 @cli.command("rename")
@@ -769,7 +769,7 @@ def rename(ctx, symbol, new_name):
         "new_name": new_name,
     })
     output_format = "json" if ctx.obj["json"] else "plain"
-    click.echo(format_output(response["result"], output_format))
+    output_result(response["result"], output_format)
 
 
 @cli.command("move-file")
@@ -804,7 +804,7 @@ def move_file(ctx, old_path, new_path):
         "workspace_root": str(workspace_root),
     })
     output_format = "json" if ctx.obj["json"] else "plain"
-    click.echo(format_output(response["result"], output_format))
+    output_result(response["result"], output_format)
 
 
 VALID_SYMBOL_KINDS = {
@@ -985,7 +985,7 @@ def grep(ctx, pattern, path, kind, exclude, docs, case_sensitive):
         "exclude_patterns": exclude_patterns,
     })
     output_format = "json" if ctx.obj["json"] else "plain"
-    click.echo(format_output(response["result"], output_format))
+    output_result(response["result"], output_format)
 
 
 @cli.command("tree")
@@ -1018,7 +1018,7 @@ def tree(ctx, exclude):
         "exclude_patterns": list(exclude),
     })
     output_format = "json" if ctx.obj["json"] else "plain"
-    click.echo(format_output(response["result"], output_format))
+    output_result(response["result"], output_format)
 
 
 @cli.command("replace-function")
@@ -1062,7 +1062,7 @@ def replace_function(ctx, symbol, no_check_signature):
         "check_signature": not no_check_signature,
     })
     output_format = "json" if ctx.obj["json"] else "plain"
-    click.echo(format_output(response["result"], output_format))
+    output_result(response["result"], output_format)
 
 
 @cli.command("raw-lsp-request")
