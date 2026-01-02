@@ -121,6 +121,9 @@ def format_plain(data: Any) -> str:
             return format_session(data)
 
         if "content" in data and "path" in data:
+            # Single line without body - format as location with content
+            if data.get("start_line") == data.get("end_line") and "\n" not in data.get("content", ""):
+                return f"{data['path']}:{data['start_line']} {data['content']}"
             return format_definition_content(data)
 
         if "files" in data and "total_files" in data and "total_bytes" in data:
