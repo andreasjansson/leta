@@ -601,3 +601,39 @@ src/main/java/com/example/UserRepository.java:54-56
         result = response["result"]
         assert result["name"] == "Main"
         assert result["path"].endswith("Main.java")
+
+    # =========================================================================
+    # show multi-line constant tests
+    # =========================================================================
+
+    def test_show_multiline_map_constant(self, workspace):
+        """Test that show displays multi-line Map constants correctly."""
+        os.chdir(workspace)
+        response = run_request("definition", {
+            "path": str(workspace / "src" / "main" / "java" / "com" / "example" / "User.java"),
+            "workspace_root": str(workspace),
+            "line": 13,
+            "column": 44,
+            "context": 0,
+            "body": True,
+            "direct_location": True,
+            "range_start_line": 10,
+            "range_end_line": 21,
+            "kind": "Constant",
+        })
+        output = format_output(response["result"], "plain")
+        assert output == """\
+src/main/java/com/example/User.java:10-21
+
+    /**
+     * Country codes mapped to their full names.
+     */
+    public static final Map<String, String> COUNTRY_CODES = Map.of(
+        "US", "United States",
+        "CA", "Canada",
+        "GB", "United Kingdom",
+        "DE", "Germany",
+        "FR", "France",
+        "JP", "Japan",
+        "AU", "Australia"
+    );"""
