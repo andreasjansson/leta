@@ -484,8 +484,9 @@ def workspace_restart(ctx: click.Context, path: str | None) -> None:
 
 @cli.command()
 @click.pass_context
-def config(ctx):
+def config(ctx: click.Context) -> None:
     """Print config file location and contents."""
+    _ = ctx
     config_path = get_config_path()
     click.echo(f"Config file: {config_path}")
     click.echo()
@@ -498,7 +499,7 @@ def config(ctx):
 
 @cli.command("help-all")
 @click.pass_context
-def help_all(ctx):
+def help_all(ctx: click.Context) -> None:
     """Print help for all commands."""
     click.echo("=" * 70)
     click.echo("LETA - Command Line LSP Client")
@@ -513,7 +514,7 @@ def help_all(ctx):
     click.echo("COMMAND DETAILS")
     click.echo("=" * 70)
     
-    def print_command_help(cmd, name, prefix=""):
+    def print_command_help(cmd: click.Command, name: str, prefix: str = "") -> None:
         full_name = f"{prefix}{name}" if prefix else name
         click.echo()
         click.echo("-" * 70)
@@ -527,13 +528,15 @@ def help_all(ctx):
         if isinstance(cmd, click.Group):
             for subname in cmd.list_commands(cmd_ctx):
                 subcmd = cmd.get_command(cmd_ctx, subname)
-                print_command_help(subcmd, subname, prefix=f"{full_name} ")
+                if subcmd:
+                    print_command_help(subcmd, subname, prefix=f"{full_name} ")
     
     for name in cli.list_commands(ctx):
         if name == "help-all":
             continue
         cmd = cli.get_command(ctx, name)
-        print_command_help(cmd, name)
+        if cmd:
+            print_command_help(cmd, name)
 
 
 SYMBOL_FORMATS = """\b
