@@ -209,7 +209,15 @@ async def _get_outgoing_calls_tree(
                   "The symbol may not be a function/method, or the position may be incorrect."
         )
 
-    root: CallTreeResult = CallTreeResult(**_format_call_hierarchy_item(item, workspace_root, ctx))
+    formatted = _format_call_hierarchy_item(item, workspace_root, ctx)
+    root: CallTreeResult = CallTreeResult(
+        name=formatted["name"],
+        kind=formatted.get("kind"),
+        detail=formatted.get("detail"),
+        path=formatted["path"],
+        line=formatted["line"],
+        column=formatted["column"],
+    )
     root["calls"] = await _expand_outgoing_calls(
         ctx, workspace, workspace_root, item, max_depth, set(),
         include_non_workspace, is_root=True
