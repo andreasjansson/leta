@@ -21,15 +21,18 @@ if TYPE_CHECKING:
     from ..session import Workspace
 
 
-class FormattedCallItem(TypedDict, total=False):
+class FormattedCallItem(TypedDict):
     name: str
     kind: str | None
     detail: str | None
     path: str
     line: int
     column: int
-    calls: list["FormattedCallItem"]
-    called_by: list["FormattedCallItem"]
+
+
+class FormattedCallItemWithCalls(FormattedCallItem, total=False):
+    calls: list["FormattedCallItemWithCalls"]
+    called_by: list["FormattedCallItemWithCalls"]
     from_ranges: list[dict[str, int]]
     call_sites: list[dict[str, int]]
 
