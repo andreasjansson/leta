@@ -220,7 +220,7 @@ class Workspace:
 class Session:
     # Nested dict: workspace_root -> server_name -> Workspace
     workspaces: dict[Path, dict[str, Workspace]] = field(default_factory=dict)
-    config: dict = field(default_factory=dict)
+    config: Config = field(default_factory=lambda: Config())
 
     async def get_or_create_workspace(self, file_path: Path, workspace_root: Path) -> Workspace:
         workspace_root = workspace_root.resolve()
