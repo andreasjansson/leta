@@ -16,13 +16,27 @@ After loading this skill, **lspcmd should be your DEFAULT tool for code explorat
 | If you're about to... | STOP! Instead use... |
 |----------------------|---------------------|
 | Use `read-file` to view a function/class you know the name of | `lspcmd show <symbol_name>` |
+| Use `read-file` with specific start and end line ranges in order to view a specific function | `lspcmd show <symbol_name>` |
+| Use `read-file` to "browse" or "understand" a file | `lspcmd grep ".*" path/to/file -k function` to list functions, or `lspcmd show <symbol>` |
 | Use ripgrep-like tools to find where a function is defined | `lspcmd grep "<function_name>" -k function` |
-| Use ripgrep-like tools to find usages of a symbol | `lspcmd refs <symbol_name>` |
+| Use ripgrep-like tools to find usages/references of a symbol | `lspcmd refs <symbol_name>` |
+| Use ripgrep-like tools to find code related to a concept (e.g. "billing") | `lspcmd grep "<concept>" -k function` |
 | Use `list-directory` to explore project structure | `lspcmd files` |
 | Manually search for interface implementations | `lspcmd implementations <interface>` |
 | Grep for function calls to trace code flow | `lspcmd calls --to/--from <function>` |
 
+**The Golden Rule:** If you know the symbol name, **always** use lspcmd. Only use ripgrep when searching for things that aren't symbols (string literals, comments, config values).
+
 **DON'T fall back to old habits.** If you know a symbol name, use lspcmd.
+
+### ⚠️ Anti-pattern: "Browsing" Files
+
+**Don't** read a whole file just "to understand it" or "see the context." This is a common mistake.
+
+If you're tempted to do this, ask yourself: *What symbol am I actually looking for?* Then use:
+- `lspcmd show <symbol>` if you know the symbol name
+- `lspcmd grep ".*" path/to/file -k function` to see what functions exist in a file
+- `lspcmd refs <symbol>` to find where something is used
 
 ## When to Use lspcmd vs ripgrep-like tools
 
