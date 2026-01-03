@@ -192,28 +192,46 @@ def format_code_actions(actions: list[dict[str, object]]) -> str:
     return "\n".join(lines)
 
 
-def format_locations(locations: list[LocationInfo]) -> str:
-    return _format_locations(locations)
+def format_locations(locations: list[LocationInfo] | list[dict[str, object]]) -> str:
+    typed_locations = [
+        loc if isinstance(loc, LocationInfo) else LocationInfo.model_validate(loc)
+        for loc in locations
+    ]
+    return _format_locations(typed_locations)
 
 
-def format_symbols(symbols: list[SymbolInfo]) -> str:
-    return _format_symbols(symbols)
+def format_symbols(symbols: list[SymbolInfo] | list[dict[str, object]]) -> str:
+    typed_symbols = [
+        sym if isinstance(sym, SymbolInfo) else SymbolInfo.model_validate(sym)
+        for sym in symbols
+    ]
+    return _format_symbols(typed_symbols)
 
 
-def format_session(result: DescribeSessionResult) -> str:
+def format_session(result: DescribeSessionResult | dict[str, object]) -> str:
+    if isinstance(result, dict):
+        result = DescribeSessionResult.model_validate(result)
     return _format_session(result)
 
 
-def format_tree(result: FilesResult) -> str:
+def format_tree(result: FilesResult | dict[str, object]) -> str:
+    if isinstance(result, dict):
+        result = FilesResult.model_validate(result)
     return _format_tree(result)
 
 
-def format_call_tree(node: CallNode) -> str:
+def format_call_tree(node: CallNode | dict[str, object]) -> str:
+    if isinstance(node, dict):
+        node = CallNode.model_validate(node)
     return _format_call_tree(node)
 
 
-def format_call_path(path: list[CallNode]) -> str:
-    return _format_call_path(path)
+def format_call_path(path: list[CallNode] | list[dict[str, object]]) -> str:
+    typed_path = [
+        node if isinstance(node, CallNode) else CallNode.model_validate(node)
+        for node in path
+    ]
+    return _format_call_path(typed_path)
 
 
 @singledispatch
