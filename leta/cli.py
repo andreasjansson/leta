@@ -829,7 +829,7 @@ def rename(ctx: click.Context, symbol: str, new_name: str) -> None:
 
     resolved = resolve_symbol(symbol, workspace_root)
 
-    response = run_request(
+    result = make_request(
         "rename",
         {
             "path": str(resolved.path),
@@ -838,9 +838,10 @@ def rename(ctx: click.Context, symbol: str, new_name: str) -> None:
             "column": resolved.column,
             "new_name": new_name,
         },
+        RenameResult,
     )
     output_format = "json" if cast(CliContext, ctx.obj)["json"] else "plain"
-    output_result(response["result"], output_format)
+    output_result(result, output_format)
 
 
 @cli.command("mv")
