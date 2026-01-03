@@ -206,7 +206,7 @@ class HandlerContext:
         return all_symbols
 
     async def collect_all_workspace_symbols(
-        self, workspace_root: Path, query: str
+        self, workspace_root: Path,
     ) -> list[SymbolDict]:
         from ...servers.registry import get_server_for_language
 
