@@ -103,6 +103,13 @@ def get_known_error_solution(server_log: str | None) -> str | None:
 
 
 class LanguageServerStartupError(Exception):
+    server_name: str
+    language: str
+    workspace_root: str
+    original_error: Exception
+    server_log: str | None
+    log_path: str | None
+
     def __init__(
         self,
         server_name: str,
