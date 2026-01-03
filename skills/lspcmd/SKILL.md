@@ -24,6 +24,8 @@ After loading this skill, **lspcmd should be your DEFAULT tool for code explorat
 | Use `list-directory` to explore project structure | `lspcmd files` |
 | Manually search for interface implementations | `lspcmd implementations <interface>` |
 | Grep for function calls to trace code flow | `lspcmd calls --to/--from <function>` |
+| Read a function's implementation to understand what it depends on | `lspcmd calls --from <function>` first for overview |
+| Read multiple files to understand how functions connect | `lspcmd calls --from <function>` to see the call graph |
 
 **The Golden Rule:** If you know the symbol name, **always** use lspcmd. Only use ripgrep when searching for things that aren't symbols (string literals, comments, config values).
 
