@@ -177,6 +177,31 @@ def _format_ambiguous_error_legacy(data: dict[str, object]) -> str:
     return "\n".join(lines)
 
 
+# Export aliases for backwards compatibility with tests
+def format_locations(locations: list[LocationInfo]) -> str:
+    return _format_locations(locations)
+
+
+def format_symbols(symbols: list[SymbolInfo]) -> str:
+    return _format_symbols(symbols)
+
+
+def format_session(result: DescribeSessionResult) -> str:
+    return _format_session(result)
+
+
+def format_tree(result: FilesResult) -> str:
+    return _format_tree(result)
+
+
+def format_call_tree(node: CallNode) -> str:
+    return _format_call_tree(node)
+
+
+def format_call_path(path: list[CallNode]) -> str:
+    return _format_call_path(path)
+
+
 @singledispatch
 def format_model(result: BaseModel) -> str:
     return json.dumps(result.model_dump(exclude_none=True), indent=2)
