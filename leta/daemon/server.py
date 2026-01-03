@@ -5,7 +5,6 @@ import json
 import logging
 import os
 import signal
-from pathlib import Path
 from collections.abc import Callable, Coroutine
 from typing import Any
 
