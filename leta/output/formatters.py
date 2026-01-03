@@ -327,12 +327,12 @@ def format_session(data: dict[str, Any]) -> str:
         if hover:
             lines.append(
                 f"  Hover:  {format_size(hover['current_bytes'])} / {format_size(hover['max_bytes'])} "
-                f"({hover['entries']} entries)"
+                + f"({hover['entries']} entries)"
             )
         if symbol:
             lines.append(
                 f"  Symbol: {format_size(symbol['current_bytes'])} / {format_size(symbol['max_bytes'])} "
-                f"({symbol['entries']} entries)"
+                + f"({symbol['entries']} entries)"
             )
     
     workspaces = data.get("workspaces", [])
