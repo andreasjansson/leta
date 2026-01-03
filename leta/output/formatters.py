@@ -559,7 +559,7 @@ def _render_calls_tree(items: list[dict[str, Any]], lines: list[str], prefix: st
             _render_calls_tree(children, lines, child_prefix, is_outgoing)
 
 
-def format_call_path(data: dict) -> str:
+def format_call_path(data: dict[str, Any]) -> str:
     if not data.get("found"):
         return data.get("message", "No path found")
 
