@@ -176,8 +176,15 @@ def _format_call_hierarchy_item(
     )
 
 
-class CallTreeResult(FormattedCallItemWithCalls, total=False):
+class CallTreeError(TypedDict):
     error: str
+
+
+class CallTreeSuccess(FormattedCallItemWithCalls):
+    pass
+
+
+CallTreeResult = CallTreeError | CallTreeSuccess
 
 
 async def _get_outgoing_calls_tree(
