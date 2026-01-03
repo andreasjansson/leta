@@ -131,7 +131,7 @@ class HandlerContext:
 
         cached = self.symbol_cache.get(cache_key)
         if cached is not None:
-            return cached
+            return cast(list[SymbolDict], cached)
 
         symbols: list[SymbolDict] = []
         try:
