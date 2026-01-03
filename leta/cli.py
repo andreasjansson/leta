@@ -1082,7 +1082,7 @@ def calls(ctx: click.Context, from_symbol: str | None, to_symbol: str | None, ma
     config = load_config()
     workspace_root = get_workspace_root_for_cwd(config)
 
-    params = {
+    params: dict[str, object] = {
         "workspace_root": str(workspace_root),
         "max_depth": max_depth,
         "include_non_workspace": include_non_workspace,
@@ -1108,6 +1108,7 @@ def calls(ctx: click.Context, from_symbol: str | None, to_symbol: str | None, ma
         params["from_symbol"] = from_symbol
         params["mode"] = "outgoing"
     else:
+        assert to_symbol is not None
         resolved = resolve_symbol(to_symbol, workspace_root)
         params["to_path"] = str(resolved.path)
         params["to_line"] = resolved.line
