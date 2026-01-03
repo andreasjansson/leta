@@ -51,7 +51,7 @@ class LSPClient:
     _reader_task: asyncio.Task[None] | None
     _initialized: bool
     _server_capabilities: ServerCapabilities
-    _notification_handlers: dict[str, Callable[[dict[str, object] | None], None]]
+    _notification_handlers: dict[str, Callable[[dict[str, object] | None], Awaitable[None]]]
     _log_handle: TextIO | None
     _service_ready: asyncio.Event
     _needs_service_ready: bool
