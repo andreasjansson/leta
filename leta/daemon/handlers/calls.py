@@ -116,12 +116,13 @@ def _dict_to_call_node(d: FormattedCallItem) -> CallNode:
 
 async def _prepare_call_hierarchy(
     ctx: HandlerContext,
-    workspace: object,
+    workspace: "Workspace",
     path: Path,
     line: int,
     column: int,
 ) -> CallHierarchyItem | None:
     doc = await workspace.ensure_document_open(path)
+    assert workspace.client is not None
 
     try:
         result = await workspace.client.send_request(
