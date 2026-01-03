@@ -172,11 +172,10 @@ utils.py (512B, 25 lines)
 
     def test_tree_with_nested_directories(self):
         data = {
-            "root": "/home/user/project",
             "files": {
-                "main.py": {"size": 100, "lines": 10},
-                "src/utils.py": {"size": 200, "lines": 20},
-                "src/lib/helper.py": {"size": 300, "lines": 30},
+                "main.py": {"path": "main.py", "bytes": 100, "lines": 10},
+                "src/utils.py": {"path": "src/utils.py", "bytes": 200, "lines": 20},
+                "src/lib/helper.py": {"path": "src/lib/helper.py", "bytes": 300, "lines": 30},
             },
             "total_files": 3,
             "total_bytes": 600,
@@ -196,10 +195,9 @@ src
 
     def test_tree_binary_file_no_lines(self):
         data = {
-            "root": "/home/user/project",
             "files": {
-                "main.py": {"size": 1024, "lines": 50},
-                "logo.png": {"size": 2048},
+                "main.py": {"path": "main.py", "bytes": 1024, "lines": 50},
+                "logo.png": {"path": "logo.png", "bytes": 2048, "lines": 0},
             },
             "total_files": 2,
             "total_bytes": 3072,
@@ -208,7 +206,7 @@ src
         result = format_tree(data)
         assert (
             result
-            == """logo.png (2.0KB)
+            == """logo.png (2.0KB, 0 lines)
 main.py (1.0KB, 50 lines)
 
 2 files, 3.0KB, 50 lines"""
@@ -216,7 +214,6 @@ main.py (1.0KB, 50 lines)
 
     def test_tree_empty(self):
         data = {
-            "root": "/home/user/project",
             "files": {},
             "total_files": 0,
             "total_bytes": 0,
@@ -227,10 +224,10 @@ main.py (1.0KB, 50 lines)
 
     def test_tree_single_symbol_singular(self):
         data = {
-            "root": "/home/user/project",
             "files": {
                 "main.py": {
-                    "size": 512,
+                    "path": "main.py",
+                    "bytes": 512,
                     "lines": 25,
                     "symbols": {"class": 1, "function": 1, "method": 1},
                 },
