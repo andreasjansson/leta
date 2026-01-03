@@ -151,8 +151,7 @@ def get_workspace_root_for_cwd(config: Config) -> Path:
         return workspace_root
 
     raise click.ClickException(
-        No workspace found for current directory
-Run: leta workspace add
+        "No workspace found for current directory\nRun: leta workspace add"
     )
 
 
