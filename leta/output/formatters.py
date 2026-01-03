@@ -424,7 +424,7 @@ def format_tree(data: dict[str, Any]) -> str:
     
     lines: list[str] = []
     
-    def format_file_info(info: dict) -> str:
+    def format_file_info(info: dict[str, Any]) -> str:
         parts = [format_size(info["size"])]
         
         if "lines" in info:
