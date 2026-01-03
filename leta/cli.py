@@ -789,10 +789,10 @@ def mv(ctx: click.Context, old_path: str, new_path: str) -> None:
 
       leta mv lib/utils.rs lib/helpers.rs
     """
-    old_path = Path(old_path).resolve()
-    new_path = Path(new_path).resolve()
+    old_path_resolved = Path(old_path).resolve()
+    new_path_resolved = Path(new_path).resolve()
     config = load_config()
-    workspace_root = get_workspace_root_for_path(old_path, config)
+    workspace_root = get_workspace_root_for_path(old_path_resolved, config)
 
     response = run_request("move-file", {
         "old_path": str(old_path),
