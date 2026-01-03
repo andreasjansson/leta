@@ -178,6 +178,20 @@ def _format_ambiguous_error_legacy(data: dict[str, object]) -> str:
 
 
 # Export aliases for backwards compatibility with tests
+def format_code_actions(actions: list[dict[str, object]]) -> str:
+    """Format code actions for display."""
+    lines: list[str] = []
+    for action in actions:
+        title = action.get("title", "")
+        kind = action.get("kind", "")
+        preferred = " [preferred]" if action.get("is_preferred") else ""
+        if kind:
+            lines.append(f"[{kind}] {title}{preferred}")
+        else:
+            lines.append(f"{title}{preferred}")
+    return "\n".join(lines)
+
+
 def format_locations(locations: list[LocationInfo]) -> str:
     return _format_locations(locations)
 
