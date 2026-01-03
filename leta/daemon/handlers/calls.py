@@ -431,7 +431,7 @@ async def _find_call_path(
 
 async def _bfs_call_path(
     ctx: HandlerContext,
-    workspace: object,
+    workspace: "Workspace",
     workspace_root: Path,
     start_item: CallHierarchyItem,
     target_key: tuple[str, int],
@@ -444,6 +444,8 @@ async def _bfs_call_path(
     visited: set[tuple[str, int]] = set()
     start_key = (start_item.uri, start_item.selectionRange.start.line)
     visited.add(start_key)
+
+    assert workspace.client is not None
 
     while queue:
         current_item, path, depth = queue.popleft()
