@@ -1,6 +1,6 @@
 from enum import IntEnum
-from typing import Any, Literal
-from pydantic import BaseModel, Field
+from typing import Any, ClassVar, Literal
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class Position(BaseModel):
@@ -99,7 +99,9 @@ class DeleteFile(BaseModel):
 
 class WorkspaceEdit(BaseModel):
     changes: dict[str, list[TextEdit]] | None = None
-    documentChanges: list[TextDocumentEdit | CreateFile | RenameFile | DeleteFile] | None = None
+    documentChanges: (
+        list[TextDocumentEdit | CreateFile | RenameFile | DeleteFile] | None
+    ) = None
 
 
 class Command(BaseModel):
@@ -199,7 +201,9 @@ class MarkedString(BaseModel):
 
 
 class Hover(BaseModel):
-    contents: MarkupContent | MarkedString | str | list[MarkupContent | MarkedString | str]
+    contents: (
+        MarkupContent | MarkedString | str | list[MarkupContent | MarkedString | str]
+    )
     range: Range | None = None
 
 
