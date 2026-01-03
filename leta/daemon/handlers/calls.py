@@ -98,20 +98,22 @@ async def handle_calls(ctx: HandlerContext, params: CallsParams) -> CallsResult:
         return CallsResult(message=str(result.get("message")) if result.get("message") else None)
 
 
-def _dict_to_call_node(d: FormattedCallItem) -> CallNode:
+def _dict_to_call_node(d: FormattedCallItemWithCalls) -> CallNode:
     calls = None
     called_by = None
-    if "calls" in d and d["calls"]:
-        calls = [_dict_to_call_node(c) for c in d["calls"]]
-    elif "called_by" in d and d["called_by"]:
-        called_by = [_dict_to_call_node(c) for c in d["called_by"]]
+    calls_list = d.get("calls")
+    called_by_list = d.get("called_by")
+    if calls_list:
+        calls = [_dict_to_call_node(c) for c in calls_list]
+    elif called_by_list:
+        called_by = [_dict_to_call_node(c) for c in called_by_list]
     return CallNode(
-        name=d.get("name", ""),
-        kind=d.get("kind"),
-        detail=d.get("detail"),
-        path=d.get("path"),
-        line=d.get("line"),
-        column=d.get("column"),
+        name=d["name"],
+        kind=d["kind"],
+        detail=d["detail"],
+        path=d["path"],
+        line=d["line"],
+        column=d["column"],
         calls=calls,
         called_by=called_by,
     )
