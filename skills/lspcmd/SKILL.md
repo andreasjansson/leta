@@ -151,15 +151,15 @@ lspcmd refs UserRepository.save -n 2
 lspcmd refs UserRepository
 ```
 
-### `lspcmd calls` - Call Hierarchy
+### `lspcmd calls` - Call Hierarchy ⭐ USE THIS TO UNDERSTAND FUNCTION DEPENDENCIES
 
-Trace what a function calls or what calls it.
+**Before reading a function's implementation, use `calls` to get the architectural overview.** This shows you what a function depends on or what depends on it - much faster than reading code to figure out the call graph.
 
 ```bash
-# What does main() call?
+# What does main() call? (understand dependencies before reading code)
 lspcmd calls --from main
 
-# What calls validate_email()?
+# What calls validate_email()? (find all callers)
 lspcmd calls --to validate_email
 
 # Find path from one function to another
@@ -168,6 +168,12 @@ lspcmd calls --from main --to save_to_db
 # Include stdlib/dependency calls
 lspcmd calls --from process_request --include-non-workspace
 ```
+
+**When to use `calls`:**
+- You found a function and want to understand what it does at a high level → `--from`
+- You want to know where/how a function is used → `--to`
+- You're tracing data flow through a system → combine `--from` and `--to`
+- You want to understand the architecture before diving into implementation details
 
 ### `lspcmd implementations` - Find Implementations
 
