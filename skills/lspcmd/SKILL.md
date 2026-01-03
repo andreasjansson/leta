@@ -17,10 +17,11 @@ After loading this skill, **lspcmd should be your DEFAULT tool for code explorat
 |----------------------|---------------------|
 | Use `read-file` to view a function/class you know the name of | `lspcmd show <symbol_name>` |
 | Use `read-file` with specific start and end line ranges in order to view a specific function | `lspcmd show <symbol_name>` |
-| Use `read-file` to "browse" or "understand" a file | `lspcmd grep ".*" path/to/file -k function` to list functions, or `lspcmd show <symbol>` |
-| Use ripgrep-like tools to find where a function is defined | `lspcmd grep "<function_name>" -k function` |
+| Use `read-file` to "browse" or "understand" a file | `lspcmd grep ".*" path/to/file -k function,method` to list functions, or `lspcmd show <symbol>` |
+| Use ripgrep-like tools to find where a function is defined | `lspcmd grep "<function_name>" -k function,method` |
 | Use ripgrep-like tools to find usages/references of a symbol | `lspcmd refs <symbol_name>` |
-| Use ripgrep-like tools to find code related to a concept (e.g. "billing") | `lspcmd grep "<concept>" -k function` |
+| Use ripgrep-like tools to see where a function is imported/wired up | `lspcmd refs <symbol_name>` |
+| Use ripgrep-like tools to find code related to a concept (e.g. "billing") | `lspcmd grep "<concept>" -k function,method` |
 | Use `list-directory` to explore project structure | `lspcmd files` |
 | Manually search for interface implementations | `lspcmd implementations <interface>` |
 | Grep for function calls to trace code flow | `lspcmd calls --to/--from <function>` |
@@ -37,7 +38,7 @@ After loading this skill, **lspcmd should be your DEFAULT tool for code explorat
 
 If you're tempted to do this, ask yourself: *What symbol am I actually looking for?* Then use:
 - `lspcmd show <symbol>` if you know the symbol name
-- `lspcmd grep ".*" path/to/file -k function` to see what functions exist in a file
+- `lspcmd grep ".*" path/to/file -k function,method` to see what functions exist in a file
 - `lspcmd refs <symbol>` to find where something is used
 
 ## When to Use lspcmd vs ripgrep-like tools
@@ -61,7 +62,7 @@ If you're tempted to do this, ask yourself: *What symbol am I actually looking f
 **Don't use ripgrep-like tools for:**
 - Finding where a function/class is defined → use `lspcmd grep`
 - Finding where a symbol is used → use `lspcmd refs`
-- Finding code related to a concept (e.g. "billing", "auth") → use `lspcmd grep "<concept>" -k function`
+- Finding code related to a concept (e.g. "billing", "auth") → use `lspcmd grep "<concept>" -k function,method`
 
 ## Quick Start
 
@@ -102,8 +103,8 @@ lspcmd show COUNTRY_CODES --head 50
 Search for symbols matching a regex pattern. Only searches symbol NAMES, not file contents. Use this instead of ripgrep-like tools when looking for where something is defined.
 
 ```bash
-# Find all functions starting with "test"
-lspcmd grep "^test" -k function
+# Find all functions/methods starting with "test"
+lspcmd grep "^test" -k function,method
 
 # Find a class and show its documentation
 lspcmd grep "UserRepository" -k class -d
@@ -238,7 +239,7 @@ lspcmd mv src/user.ts src/models/user.ts
 lspcmd files
 
 # 2. Find main entry points
-lspcmd grep "^main$\|^Main$" -k function
+lspcmd grep "^main$\|^Main$" -k function,method
 
 # 3. Trace what main calls
 lspcmd calls --from main --max-depth 2
