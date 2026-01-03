@@ -2,7 +2,8 @@ import os
 import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Mapping
+from collections.abc import Mapping
+from typing import Any
 
 from ..utils.text import get_language_id
 
@@ -39,7 +40,13 @@ SERVERS: dict[str, list[ServerConfig]] = {
             languages=["python"],
             file_patterns=["*.py", "*.pyi"],
             install_cmd="npm install -g @anthropic/basedpyright",
-            root_markers=["pyproject.toml", "setup.py", "setup.cfg", "requirements.txt", "pyrightconfig.json"],
+            root_markers=[
+                "pyproject.toml",
+                "setup.py",
+                "setup.cfg",
+                "requirements.txt",
+                "pyrightconfig.json",
+            ],
         ),
         ServerConfig(
             name="pylsp",
@@ -72,7 +79,12 @@ SERVERS: dict[str, list[ServerConfig]] = {
         ServerConfig(
             name="typescript-language-server",
             command=["typescript-language-server", "--stdio"],
-            languages=["typescript", "typescriptreact", "javascript", "javascriptreact"],
+            languages=[
+                "typescript",
+                "typescriptreact",
+                "javascript",
+                "javascriptreact",
+            ],
             file_patterns=["*.ts", "*.tsx", "*.js", "*.jsx"],
             install_cmd="npm install -g typescript-language-server typescript",
             root_markers=["package.json", "tsconfig.json", "jsconfig.json"],
@@ -215,12 +227,16 @@ SERVERS: dict[str, list[ServerConfig]] = {
 }
 
 
-def get_server_for_file(path: str | Path, config: Mapping[str, Any] | None = None) -> ServerConfig | None:
+def get_server_for_file(
+    path: str | Path, config: Mapping[str, Any] | None = None
+) -> ServerConfig | None:
     language_id = get_language_id(path)
     return get_server_for_language(language_id, config)
 
 
-def get_server_for_language(language_id: str, config: Mapping[str, Any] | None = None) -> ServerConfig | None:
+def get_server_for_language(
+    language_id: str, config: Mapping[str, Any] | None = None
+) -> ServerConfig | None:
     language_to_key = {
         "python": "python",
         "rust": "rust",
