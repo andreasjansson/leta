@@ -50,11 +50,16 @@ If you're tempted to do this, ask yourself: *What symbol am I actually looking f
 - Viewing a symbol's implementation when you know its name
 
 **Use ripgrep-like tools for:**
-- Searching string literals, comments, or documentation
-- Multi-word phrase search
+- Searching for **literal strings in comments, docs, or config files** (not code)
+- Multi-word phrase search in non-code content
 - Searching for library/external symbols not defined in your code
-- Pattern matching across file contents
-- Searching for concepts/keywords (not symbol names)
+- Pattern matching in string literals or configuration
+- Searching in file types lspcmd doesn't understand (markdown, yaml, etc.)
+
+**Don't use ripgrep-like tools for:**
+- Finding where a function/class is defined → use `lspcmd grep`
+- Finding where a symbol is used → use `lspcmd refs`
+- Finding code related to a concept (e.g. "billing", "auth") → use `lspcmd grep "<concept>" -k function`
 
 ## Quick Start
 
