@@ -219,7 +219,7 @@ def format_plain(data: Any) -> str:
     return str(data)
 
 
-def format_locations(locations: list[dict]) -> str:
+def format_locations(locations: list[LocationDict]) -> str:
     lines = []
     for loc in locations:
         path = loc["path"]
