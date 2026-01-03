@@ -31,6 +31,7 @@ from .types import (
     TypeHierarchySupertypesResponse,
     RenameFilesParams,
     WillRenameFilesResponse,
+    ServerCapabilities,
 )
 
 logger = logging.getLogger(__name__)
