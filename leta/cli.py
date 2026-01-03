@@ -795,7 +795,7 @@ def supertypes(ctx: click.Context, symbol: str, context: int) -> None:
 
     resolved = resolve_symbol(symbol, workspace_root)
 
-    response = run_request(
+    result = make_request(
         "supertypes",
         {
             "path": str(resolved.path),
@@ -804,9 +804,10 @@ def supertypes(ctx: click.Context, symbol: str, context: int) -> None:
             "column": resolved.column,
             "context": context,
         },
+        SupertypesResult,
     )
     output_format = "json" if cast(CliContext, ctx.obj)["json"] else "plain"
-    output_result(response["result"], output_format)
+    output_result(result, output_format)
 
 
 @cli.command("rename")
