@@ -57,34 +57,108 @@ class LocationDict(TypedDict, total=False):
     kind: str | None
     detail: str | None
 
+
 DEFAULT_EXCLUDE_DIRS = {
-    ".git", "__pycache__", "node_modules", ".venv", "venv",
-    "target", "build", "dist", ".tox", ".mypy_cache", ".pytest_cache",
-    ".eggs", ".cache", ".coverage", ".hypothesis", ".nox", ".ruff_cache",
-    "__pypackages__", ".pants.d", ".pyre", ".pytype",
-    "vendor", "third_party", ".bundle",
-    ".next", ".nuxt", ".svelte-kit", ".turbo", ".parcel-cache",
-    "coverage", ".nyc_output",
+    ".git",
+    "__pycache__",
+    "node_modules",
+    ".venv",
+    "venv",
+    "target",
+    "build",
+    "dist",
+    ".tox",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".eggs",
+    ".cache",
+    ".coverage",
+    ".hypothesis",
+    ".nox",
+    ".ruff_cache",
+    "__pypackages__",
+    ".pants.d",
+    ".pyre",
+    ".pytype",
+    "vendor",
+    "third_party",
+    ".bundle",
+    ".next",
+    ".nuxt",
+    ".svelte-kit",
+    ".turbo",
+    ".parcel-cache",
+    "coverage",
+    ".nyc_output",
     ".zig-cache",
 }
 
 BINARY_EXTENSIONS = {
-    ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".ico", ".webp", ".tiff", ".tif",
-    ".svg", ".pdf", ".eps", ".ps",
-    ".zip", ".tar", ".gz", ".bz2", ".xz", ".7z", ".rar",
-    ".exe", ".dll", ".so", ".dylib", ".a", ".o", ".lib",
-    ".woff", ".woff2", ".ttf", ".otf", ".eot",
-    ".mp3", ".mp4", ".wav", ".ogg", ".flac", ".avi", ".mov", ".mkv", ".webm",
-    ".pyc", ".pyo", ".class", ".jar", ".war", ".ear",
-    ".db", ".sqlite", ".sqlite3",
-    ".bin", ".dat", ".pak", ".bundle",
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".gif",
+    ".bmp",
+    ".ico",
+    ".webp",
+    ".tiff",
+    ".tif",
+    ".svg",
+    ".pdf",
+    ".eps",
+    ".ps",
+    ".zip",
+    ".tar",
+    ".gz",
+    ".bz2",
+    ".xz",
+    ".7z",
+    ".rar",
+    ".exe",
+    ".dll",
+    ".so",
+    ".dylib",
+    ".a",
+    ".o",
+    ".lib",
+    ".woff",
+    ".woff2",
+    ".ttf",
+    ".otf",
+    ".eot",
+    ".mp3",
+    ".mp4",
+    ".wav",
+    ".ogg",
+    ".flac",
+    ".avi",
+    ".mov",
+    ".mkv",
+    ".webm",
+    ".pyc",
+    ".pyo",
+    ".class",
+    ".jar",
+    ".war",
+    ".ear",
+    ".db",
+    ".sqlite",
+    ".sqlite3",
+    ".bin",
+    ".dat",
+    ".pak",
+    ".bundle",
     ".lock",
 }
 
 
 class HandlerContext:
     """Context object providing access to session, caches, and utilities."""
-    
+
+    session: Session
+    hover_cache: LMDBCache
+    symbol_cache: LMDBCache
+
     def __init__(
         self,
         session: Session,
@@ -206,13 +280,21 @@ class HandlerContext:
         return all_symbols
 
     async def collect_all_workspace_symbols(
-        self, workspace_root: Path,
+        self,
+        workspace_root: Path,
     ) -> list[SymbolDict]:
         from ...servers.registry import get_server_for_language
 
         skip_dirs = {
-            "node_modules", "__pycache__", ".git", "venv", ".venv",
-            "build", "dist", ".tox", ".eggs",
+            "node_modules",
+            "__pycache__",
+            ".git",
+            "venv",
+            ".venv",
+            "build",
+            "dist",
+            ".tox",
+            ".eggs",
         }
         excluded_languages = set(
             self.session.config.get("workspaces", {}).get("excluded_languages", [])
@@ -310,7 +392,8 @@ class HandlerContext:
             return None
 
     def format_locations(
-        self, result: DefinitionResponse,
+        self,
+        result: DefinitionResponse,
         workspace_root: Path,
         context: int = 0,
     ) -> list[LocationDict]:
@@ -395,8 +478,7 @@ class HandlerContext:
         files = []
         for root, dirs, filenames in os.walk(workspace_root):
             dirs[:] = [
-                d for d in dirs
-                if d not in exclude_dirs and not d.endswith(".egg-info")
+                d for d in dirs if d not in exclude_dirs and not d.endswith(".egg-info")
             ]
 
             for filename in filenames:
@@ -431,21 +513,51 @@ class HandlerContext:
 
     def find_all_source_files(self, workspace_root: Path) -> list[Path]:
         source_extensions = {
-            ".py", ".pyi", ".js", ".jsx", ".ts", ".tsx", ".go", ".rs",
-            ".java", ".c", ".h", ".cpp", ".hpp", ".cc", ".cxx", ".rb",
-            ".ex", ".exs", ".hs", ".ml", ".mli", ".lua", ".zig", ".php",
+            ".py",
+            ".pyi",
+            ".js",
+            ".jsx",
+            ".ts",
+            ".tsx",
+            ".go",
+            ".rs",
+            ".java",
+            ".c",
+            ".h",
+            ".cpp",
+            ".hpp",
+            ".cc",
+            ".cxx",
+            ".rb",
+            ".ex",
+            ".exs",
+            ".hs",
+            ".ml",
+            ".mli",
+            ".lua",
+            ".zig",
+            ".php",
         }
         exclude_dirs = {
-            ".git", "__pycache__", "node_modules", ".venv", "venv",
-            "target", "build", "dist", ".tox", ".mypy_cache", ".pytest_cache",
-            ".eggs", "*.egg-info",
+            ".git",
+            "__pycache__",
+            "node_modules",
+            ".venv",
+            "venv",
+            "target",
+            "build",
+            "dist",
+            ".tox",
+            ".mypy_cache",
+            ".pytest_cache",
+            ".eggs",
+            "*.egg-info",
         }
 
         files = []
         for root, dirs, filenames in os.walk(workspace_root):
             dirs[:] = [
-                d for d in dirs
-                if d not in exclude_dirs and not d.endswith(".egg-info")
+                d for d in dirs if d not in exclude_dirs and not d.endswith(".egg-info")
             ]
 
             for filename in filenames:
@@ -458,8 +570,15 @@ class HandlerContext:
         from ...servers.registry import get_server_for_language
 
         skip_dirs = {
-            "node_modules", "__pycache__", ".git", "venv", ".venv",
-            "build", "dist", ".tox", ".eggs",
+            "node_modules",
+            "__pycache__",
+            ".git",
+            "venv",
+            ".venv",
+            "build",
+            "dist",
+            ".tox",
+            ".eggs",
         }
         excluded_languages = set(
             self.session.config.get("workspaces", {}).get("excluded_languages", [])
@@ -545,7 +664,11 @@ def find_symbol_at_line(
                     child = find_symbol_at_line(sym.children, line)
                     if child:
                         return child
-                return {"range_start": start, "range_end": end, "children": sym.children}
+                return {
+                    "range_start": start,
+                    "range_end": end,
+                    "children": sym.children,
+                }
         else:
             sym_line = sym.location.range.start.line
             if sym_line == line:
@@ -561,40 +684,47 @@ def expand_variable_range(lines: list[str], start_line: int) -> int:
     """Expand a single-line variable range to include full multi-line definitions."""
     if start_line >= len(lines):
         return start_line
-    
+
     first_line = lines[start_line]
-    
-    open_parens = first_line.count('(') - first_line.count(')')
-    open_brackets = first_line.count('[') - first_line.count(']')
-    open_braces = first_line.count('{') - first_line.count('}')
-    
-    in_multiline_string = first_line.count('"""') % 2 == 1 or first_line.count("'''") % 2 == 1
-    
-    if open_parens == 0 and open_brackets == 0 and open_braces == 0 and not in_multiline_string:
+
+    open_parens = first_line.count("(") - first_line.count(")")
+    open_brackets = first_line.count("[") - first_line.count("]")
+    open_braces = first_line.count("{") - first_line.count("}")
+
+    in_multiline_string = (
+        first_line.count('"""') % 2 == 1 or first_line.count("'''") % 2 == 1
+    )
+
+    if (
+        open_parens == 0
+        and open_brackets == 0
+        and open_braces == 0
+        and not in_multiline_string
+    ):
         return start_line
-    
+
     for i in range(start_line + 1, len(lines)):
         line = lines[i]
-        
+
         if in_multiline_string:
             if '"""' in line or "'''" in line:
                 in_multiline_string = False
                 if open_parens == 0 and open_brackets == 0 and open_braces == 0:
                     return i
             continue
-        
-        open_parens += line.count('(') - line.count(')')
-        open_brackets += line.count('[') - line.count(']')
-        open_braces += line.count('{') - line.count('}')
-        
+
+        open_parens += line.count("(") - line.count(")")
+        open_brackets += line.count("[") - line.count("]")
+        open_braces += line.count("{") - line.count("}")
+
         if '"""' in line or "'''" in line:
             if line.count('"""') % 2 == 1 or line.count("'''") % 2 == 1:
                 in_multiline_string = True
                 continue
-        
+
         if open_parens <= 0 and open_brackets <= 0 and open_braces <= 0:
             return i
-    
+
     return start_line
 
 
