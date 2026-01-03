@@ -188,6 +188,9 @@ class DaemonServer:
             "resolve-symbol": (ResolveSymbolParams, handle_resolve_symbol),
         }
 
+        if method is None:
+            return {"error": "No method specified"}
+        
         handler_info = handlers.get(method)
         if not handler_info:
             return {"error": f"Unknown method: {method}"}
