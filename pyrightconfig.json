@@ -1,16 +1,17 @@
 {
   "include": [
-    "leta",
-    "test"
+    "leta"
   ],
   "exclude": [
     "**/__pycache__",
     ".venv",
     "leta.egg-info",
-    "test/fixtures"
+    "test/fixtures",
+    "test"
   ],
   "reportMissingImports": "error",
   "reportMissingTypeStubs": false,
+  "reportUnusedCallResult": false,
   "pythonVersion": "3.13",
   "pythonPlatform": "Darwin",
   "executionEnvironments": [
