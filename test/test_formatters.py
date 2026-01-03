@@ -131,10 +131,9 @@ class TestFormatSession:
 class TestFormatTree:
     def test_simple_tree(self):
         data = {
-            "root": "/home/user/project",
             "files": {
-                "main.py": {"size": 1024, "lines": 50},
-                "utils.py": {"size": 512, "lines": 25},
+                "main.py": {"path": "main.py", "bytes": 1024, "lines": 50},
+                "utils.py": {"path": "utils.py", "bytes": 512, "lines": 25},
             },
             "total_files": 2,
             "total_bytes": 1536,
@@ -151,10 +150,10 @@ utils.py (512B, 25 lines)
 
     def test_tree_with_symbols(self):
         data = {
-            "root": "/home/user/project",
             "files": {
                 "main.py": {
-                    "size": 1024,
+                    "path": "main.py",
+                    "bytes": 1024,
                     "lines": 50,
                     "symbols": {"class": 2, "function": 3, "method": 5},
                 },
