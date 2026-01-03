@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+from collections.abc import Awaitable
 from pathlib import Path
 from typing import Any, Callable, Literal, TextIO, overload
 
