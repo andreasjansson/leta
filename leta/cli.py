@@ -328,7 +328,7 @@ def cli(ctx: click.Context, json_output: bool) -> None:
 
 @cli.group()
 @click.pass_context
-def daemon(ctx: click.Context) -> None:
+def daemon(_ctx: click.Context) -> None:
     """Manage the leta daemon."""
     pass
 
