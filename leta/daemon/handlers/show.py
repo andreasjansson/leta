@@ -182,6 +182,8 @@ async def _handle_location_request(
     line, column = ctx.parse_position({"line": params.line, "column": params.column})
     context = params.context
 
+    assert workspace.client is not None
+
     result = await workspace.client.send_request(
         "textDocument/definition",
         TextDocumentPositionParams(
