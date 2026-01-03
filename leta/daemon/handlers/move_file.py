@@ -40,7 +40,8 @@ async def handle_move_file(
     await workspace.client.wait_for_service_ready()
 
     server_name = workspace.server_config.name
-    supports_will_rename = workspace.client.capabilities.get("workspace", {}).get(
+    caps = workspace.client.capabilities.model_dump()
+    supports_will_rename = caps.get("workspace", {}).get(
         "fileOperations", {}
     ).get("willRename")
 
