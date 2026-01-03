@@ -288,17 +288,16 @@ def _format_tree(result: FilesResult) -> str:
     if not result.files:
         return "0 files, 0B"
 
-    TreeNode = dict[str, "FileInfo | TreeNode"]  # type: ignore[misc]
-    tree: TreeNode = {}
+    tree: dict[str, object] = {}
 
     for rel_path, info in result.files.items():
         parts = Path(rel_path).parts
-        current: TreeNode = tree
+        current = tree
         for part in parts[:-1]:
             if part not in current:
                 current[part] = {}
             next_node = current[part]
-            if isinstance(next_node, dict) and not isinstance(next_node, FileInfo):
+            if isinstance(next_node, dict):
                 current = next_node
         current[parts[-1]] = info
 
@@ -325,10 +324,10 @@ def _format_tree(result: FilesResult) -> str:
 
         return ", ".join(parts)
 
-    def render_tree(node: TreeNode, prefix: str = "", is_root: bool = True) -> None:
+    def render_tree(node: dict[str, object], prefix: str = "", is_root: bool = True) -> None:
         entries = sorted(
             node.keys(),
-            key=lambda k: (isinstance(node[k], dict) and not isinstance(node[k], FileInfo), k),
+            key=lambda k: (isinstance(node[k], dict), k),
         )
         for i, name in enumerate(entries):
             is_last = i == len(entries) - 1
@@ -344,7 +343,7 @@ def _format_tree(result: FilesResult) -> str:
             if isinstance(child, FileInfo):
                 info_str = format_file_info(child)
                 lines.append(f"{prefix}{connector}{name} ({info_str})")
-            else:
+            elif isinstance(child, dict):
                 lines.append(f"{prefix}{connector}{name}")
                 render_tree(child, new_prefix, is_root=False)
 
