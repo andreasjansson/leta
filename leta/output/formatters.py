@@ -443,7 +443,7 @@ def format_tree(data: dict[str, Any]) -> str:
         
         return ", ".join(parts)
     
-    def render_tree(node: dict, prefix: str = "", is_root: bool = True) -> None:
+    def render_tree(node: dict[str, Any], prefix: str = "", is_root: bool = True) -> None:
         entries = sorted(node.keys(), key=lambda k: (isinstance(node[k], dict) and "size" not in node[k], k))
         for i, name in enumerate(entries):
             is_last = i == len(entries) - 1
