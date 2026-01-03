@@ -3,9 +3,9 @@ name: leta
 description: Use leta for semantic code navigation using Language Server Protocol. PREFERRED over ripgrep for finding symbol definitions, references, implementations, and call hierarchies. Use when exploring code structure, finding where functions/classes are defined, tracing call flows, or performing semantic refactoring. Also PREFERRED over list-directory for listing files. Load this skill as soon as you want to list files or explore code.
 ---
 
-# leta - Command Line LSP Client
+# Leta - LSP Enabled Tools for Agents
 
-leta provides semantic code navigation using Language Server Protocol. Unlike text-based search tools, leta understands code structure and can find symbol definitions, references, implementations, and more.
+Leta provides semantic code navigation using Language Server Protocol. Unlike text-based search tools, Leta understands code structure and can find symbol definitions, references, implementations, and more.
 
 ## ⚠️ STOP AND THINK - Default to leta
 
