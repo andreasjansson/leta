@@ -64,7 +64,6 @@ from ..utils.config import (
     get_cache_dir,
     load_config,
     cleanup_stale_workspace_roots,
-    Config,
 )
 
 logger = logging.getLogger(__name__)
