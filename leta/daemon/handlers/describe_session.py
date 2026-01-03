@@ -12,7 +12,7 @@ from .base import HandlerContext
 
 
 async def handle_describe_session(
-    ctx: HandlerContext, params: DescribeSessionParams
+    ctx: HandlerContext, _params: DescribeSessionParams
 ) -> DescribeSessionResult:
     workspaces: list[WorkspaceInfo] = []
     for root, servers in ctx.session.workspaces.items():
