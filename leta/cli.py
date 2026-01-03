@@ -138,18 +138,17 @@ def run_request(method: str, params: dict[str, object]) -> dict[str, object]:
     return response
 
 
-def output_result(result: object, output_format: str) -> None:
-    """Output a result, writing errors/warnings/empty results to stderr."""
-    if isinstance(result, dict):
-        if "warning" in result:
-            click.echo(f"Warning: {result['warning']}", err=True)
-            return
+def make_request(
+    method: str, params: dict[str, object], result_type: type[T]
+) -> T:
+    """Make a typed request to the daemon, returning a validated Pydantic model."""
+    response = run_request(method, params)
+    return result_type.model_validate(response["result"])
 
-    if isinstance(result, list) and not result:
-        click.echo("No results", err=True)
-        return
 
-    formatted = format_output(result, output_format)
+def output_result(result: BaseModel, output_format: str) -> None:
+    """Output a Pydantic result model."""
+    formatted = format_result(result, output_format)
     if formatted:
         click.echo(formatted)
 
