@@ -57,6 +57,7 @@ async def _handle_direct_definition(
         else:
             workspace = await ctx.session.get_or_create_workspace(path, workspace_root)
             doc = await workspace.ensure_document_open(path)
+            assert workspace.client is not None
             result = await workspace.client.send_request(
                 "textDocument/documentSymbol",
                 DocumentSymbolParams(textDocument=TextDocumentIdentifier(uri=doc.uri)),
