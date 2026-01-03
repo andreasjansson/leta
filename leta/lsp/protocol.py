@@ -49,6 +49,9 @@ class LSPResponseError(Exception):
 
 
 class LSPMethodNotSupported(Exception):
+    method: str
+    server_name: str
+
     def __init__(self, method: str, server_name: str):
         self.method = method
         self.server_name = server_name
