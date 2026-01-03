@@ -222,8 +222,8 @@ def format_plain(data: Any) -> str:
 def format_locations(locations: list[LocationDict]) -> str:
     lines = []
     for loc in locations:
-        path = loc["path"]
-        line = loc["line"]
+        path = loc.get("path", "")
+        line = loc.get("line", 0)
 
         # Check if this is a type hierarchy result with name/kind/detail
         if "name" in loc and "kind" in loc:
