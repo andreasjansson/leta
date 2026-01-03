@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace LspcmdFixture;
+namespace LetaFixture;
 
 /**
  * Class with intentional errors for diagnostics testing.

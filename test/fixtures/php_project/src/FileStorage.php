@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace LspcmdFixture;
+namespace LetaFixture;
 
 /**
  * Stores users in files (stub implementation).
