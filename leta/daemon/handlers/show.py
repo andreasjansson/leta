@@ -152,7 +152,7 @@ async def _handle_definition_body(ctx: HandlerContext, params: ShowParams) -> di
                 end = start + head - 1
 
             return {
-                "path": rel_path,
+                "path": path_val,
                 "start_line": start + 1,
                 "end_line": end + 1,
                 "content": "\n".join(lines[start : end + 1]),
@@ -165,9 +165,9 @@ async def _handle_definition_body(ctx: HandlerContext, params: ShowParams) -> di
             return {"error": "Language server does not provide symbol ranges"}
 
     return {
-        "path": rel_path,
-        "start_line": loc["line"],
-        "end_line": loc["line"],
+        "path": path_val,
+        "start_line": line_val,
+        "end_line": line_val,
         "content": lines[target_line] if target_line < len(lines) else "",
     }
 
