@@ -168,8 +168,7 @@ class DaemonServer:
         method = request.get("method")
         params = request.get("params", {})
 
-        HandlerFunc = Callable[[HandlerContext, Any], Coroutine[Any, Any, BaseModel]]
-        handlers: dict[str, tuple[type[BaseModel], HandlerFunc]] = {
+        handlers: dict[str, tuple[type[BaseModel], Callable[[HandlerContext, Any], Coroutine[Any, Any, BaseModel]]]] = {
             "shutdown": (ShutdownParams, self._handle_shutdown_wrapper),
             "describe-session": (DescribeSessionParams, handle_describe_session),
             "show": (ShowParams, handle_show),
