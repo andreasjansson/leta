@@ -521,14 +521,13 @@ def workspace_restart(ctx: click.Context, path: str | None) -> None:
     else:
         workspace_root = get_workspace_root_for_cwd(config)
 
-    response = run_request(
+    result = make_request(
         "restart-workspace",
-        {
-            "workspace_root": str(workspace_root),
-        },
+        {"workspace_root": str(workspace_root)},
+        RestartWorkspaceResult,
     )
     output_format = "json" if cast(CliContext, ctx.obj)["json"] else "plain"
-    output_result(response.get("result"), output_format)
+    output_result(result, output_format)
 
 
 @cli.command()
