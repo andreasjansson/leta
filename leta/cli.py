@@ -1132,7 +1132,7 @@ def files(
         workspace_root = get_workspace_root_for_cwd(config)
         subpath = None
 
-    response = run_request(
+    result = make_request(
         "files",
         {
             "workspace_root": str(workspace_root),
@@ -1140,9 +1140,10 @@ def files(
             "exclude_patterns": list(exclude),
             "include_patterns": list(include),
         },
+        FilesResult,
     )
     output_format = "json" if cast(CliContext, ctx.obj)["json"] else "plain"
-    output_result(response["result"], output_format)
+    output_result(result, output_format)
 
 
 CALLS_HELP = """\
