@@ -477,7 +477,7 @@ class LSPClient:
             else:
                 logger.debug(f"Progress end: {token}, {len(self._active_progress_tokens)} remaining")
 
-    def on_notification(self, method: str, handler: Callable[..., Any]) -> None:
+    def on_notification(self, method: str, handler: Callable[[dict[str, object] | None], Awaitable[None]]) -> None:
         self._notification_handlers[method] = handler
 
     async def wait_for_service_ready(self, timeout: float = 30.0) -> bool:
