@@ -279,3 +279,5 @@ lspcmd show FileStorage
 4. **Symbol formats are flexible** - if `SymbolName` is ambiguous, qualify it with `path:Symbol` or `Parent.Symbol`.
 
 5. **Check workspace first** - if commands fail, ensure you've run `lspcmd workspace add`.
+
+6. **Don't redirect stderr** (e.g., `2>/dev/null`) - when a symbol is ambiguous, lspcmd outputs disambiguation options to stderr showing how to qualify the symbol name. You need to see this to know how to fix the command.
