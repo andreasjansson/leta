@@ -171,6 +171,18 @@ def _format_call_hierarchy_item(
     }
 
 
+class CallTreeResult(TypedDict, total=False):
+    name: str
+    kind: str | None
+    detail: str | None
+    path: str
+    line: int
+    column: int
+    calls: list[FormattedCallItem]
+    called_by: list[FormattedCallItem]
+    error: str
+
+
 async def _get_outgoing_calls_tree(
     ctx: HandlerContext,
     workspace_root: Path,
@@ -180,7 +192,7 @@ async def _get_outgoing_calls_tree(
     symbol_name: str,
     max_depth: int,
     include_non_workspace: bool = False,
-) -> dict[str, object]:
+) -> CallTreeResult:
     workspace = await ctx.session.get_or_create_workspace(path, workspace_root)
     if not workspace or not workspace.client:
         raise ValueError(f"No language server available for {path}")
@@ -190,12 +202,12 @@ async def _get_outgoing_calls_tree(
     item = await _prepare_call_hierarchy(ctx, workspace, path, line, column)
     if not item:
         rel_path = ctx.relative_path(path, workspace_root)
-        return {
-            "error": f"No callable symbol found at {rel_path}:{line}:{column} for '{symbol_name}'. "
-                     "The symbol may not be a function/method, or the position may be incorrect."
-        }
+        return CallTreeResult(
+            error=f"No callable symbol found at {rel_path}:{line}:{column} for '{symbol_name}'. "
+                  "The symbol may not be a function/method, or the position may be incorrect."
+        )
 
-    root: dict[str, object] = dict(_format_call_hierarchy_item(item, workspace_root, ctx))
+    root: CallTreeResult = CallTreeResult(**_format_call_hierarchy_item(item, workspace_root, ctx))
     root["calls"] = await _expand_outgoing_calls(
         ctx, workspace, workspace_root, item, max_depth, set(),
         include_non_workspace, is_root=True
