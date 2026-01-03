@@ -388,9 +388,9 @@ async def _expand_incoming_calls(
 
 class CallPathResult(TypedDict, total=False):
     found: bool
-    path: list[FormattedCallItem]
-    from_: FormattedCallItem
-    to: FormattedCallItem
+    path: list[FormattedCallItemWithCalls]
+    from_: FormattedCallItemWithCalls
+    to: FormattedCallItemWithCalls
     message: str
     error: str
 
