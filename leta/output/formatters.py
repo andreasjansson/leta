@@ -71,14 +71,16 @@ def _format_dict_legacy(data: dict[str, object]) -> str:
             return _format_ambiguous_error_legacy(data)
         return f"Error: {data['error']}"
     
-    if "symbols" in data and isinstance(data.get("symbols"), list):
+    symbols_list = data.get("symbols")
+    if isinstance(symbols_list, list):
         if data.get("warning"):
             return f"Warning: {data['warning']}"
-        symbols = [SymbolInfo.model_validate(s) for s in data["symbols"]]
+        symbols = [SymbolInfo.model_validate(s) for s in symbols_list]
         return _format_symbols(symbols)
     
-    if "locations" in data and isinstance(data.get("locations"), list):
-        locations = [LocationInfo.model_validate(loc) for loc in data["locations"]]
+    locations_list = data.get("locations")
+    if isinstance(locations_list, list):
+        locations = [LocationInfo.model_validate(loc) for loc in locations_list]
         return _format_locations(locations)
     
     if "warning" in data:
