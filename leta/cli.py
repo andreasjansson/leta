@@ -566,7 +566,7 @@ def with_symbol_help(func: F) -> F:
 @click.option("--head", default=200, help="Maximum lines to show (default: 200)")
 @click.pass_context
 @with_symbol_help
-def show_cmd(ctx, symbol, context, head):
+def show_cmd(ctx: click.Context, symbol: str, context: int, head: int) -> None:
     """Print the definition of a symbol. Shows the full body.
 
     \b
@@ -608,7 +608,7 @@ def show_cmd(ctx, symbol, context, head):
 @click.option("-n", "--context", default=0, help="Lines of context")
 @click.pass_context
 @with_symbol_help
-def declaration(ctx, symbol, context):
+def declaration(ctx: click.Context, symbol: str, context: int) -> None:
     """Find declaration of a symbol."""
     config = load_config()
     workspace_root = get_workspace_root_for_cwd(config)
@@ -631,7 +631,7 @@ def declaration(ctx, symbol, context):
 @click.option("-n", "--context", default=0, help="Lines of context")
 @click.pass_context
 @with_symbol_help
-def refs(ctx, symbol, context):
+def refs(ctx: click.Context, symbol: str, context: int) -> None:
     """Find all references to a symbol.
 
     \b
@@ -661,7 +661,7 @@ def refs(ctx, symbol, context):
 @click.option("-n", "--context", default=0, help="Lines of context")
 @click.pass_context
 @with_symbol_help
-def implementations(ctx, symbol, context):
+def implementations(ctx: click.Context, symbol: str, context: int) -> None:
     """Find implementations of an interface or abstract method.
 
     \b
@@ -690,7 +690,7 @@ def implementations(ctx, symbol, context):
 @click.option("-n", "--context", default=0, help="Lines of context")
 @click.pass_context
 @with_symbol_help
-def subtypes(ctx, symbol, context):
+def subtypes(ctx: click.Context, symbol: str, context: int) -> None:
     """Find direct subtypes of a type.
 
     Returns types that directly extend/implement the given type.
@@ -717,7 +717,7 @@ def subtypes(ctx, symbol, context):
 @click.option("-n", "--context", default=0, help="Lines of context")
 @click.pass_context
 @with_symbol_help
-def supertypes(ctx, symbol, context):
+def supertypes(ctx: click.Context, symbol: str, context: int) -> None:
     """Find direct supertypes of a type.
 
     Returns types that the given type directly extends/implements.
@@ -743,7 +743,7 @@ def supertypes(ctx, symbol, context):
 @click.argument("new_name")
 @click.pass_context
 @with_symbol_help
-def rename(ctx, symbol, new_name):
+def rename(ctx: click.Context, symbol: str, new_name: str) -> None:
     """Rename a symbol across the workspace.
 
     \b
@@ -772,7 +772,7 @@ def rename(ctx, symbol, new_name):
 @click.argument("old_path", type=click.Path(exists=True))
 @click.argument("new_path", type=click.Path())
 @click.pass_context
-def mv(ctx, old_path, new_path):
+def mv(ctx: click.Context, old_path: str, new_path: str) -> None:
     """Move/rename a file and update all imports.
 
     Moves OLD_PATH to NEW_PATH and asks the language server to update
@@ -949,7 +949,7 @@ COMPARISON WITH ripgrep:
 @click.option("-d", "--docs", is_flag=True, help="Include documentation for each symbol")
 @click.option("-C", "--case-sensitive", is_flag=True, help="Case-sensitive pattern matching")
 @click.pass_context
-def grep(ctx, pattern, path, kind, exclude, docs, case_sensitive):
+def grep(ctx: click.Context, pattern: str, path: str | None, kind: str, exclude: tuple[str, ...], docs: bool, case_sensitive: bool) -> None:
     if " " in pattern:
         click.echo(
             f"Warning: Pattern contains a space. leta grep searches symbol names, "
@@ -999,7 +999,7 @@ def grep(ctx, pattern, path, kind, exclude, docs, case_sensitive):
     help="Include default-excluded directories (e.g., -i .git -i node_modules)",
 )
 @click.pass_context
-def files(ctx, path, exclude, include):
+def files(ctx: click.Context, path: str | None, exclude: tuple[str, ...], include: tuple[str, ...]) -> None:
     """Show source file tree with symbol and line counts.
 
     Lists all files in the workspace (or PATH if specified) with line counts.
@@ -1075,7 +1075,7 @@ SYMBOL formats:
 @click.option("--max-depth", default=3, help="Maximum recursion depth (default: 3)")
 @click.option("--include-non-workspace", is_flag=True, help="Include calls to symbols outside the workspace (stdlib, dependencies)")
 @click.pass_context
-def calls(ctx, from_symbol, to_symbol, max_depth, include_non_workspace):
+def calls(ctx: click.Context, from_symbol: str | None, to_symbol: str | None, max_depth: int, include_non_workspace: bool) -> None:
     if not from_symbol and not to_symbol:
         raise click.ClickException("At least one of --from or --to must be specified")
 
@@ -1127,7 +1127,7 @@ def calls(ctx, from_symbol, to_symbol, max_depth, include_non_workspace):
     "-l", "--language", default="python", help="Language server to use (python, go, typescript, etc.)"
 )
 @click.pass_context
-def raw_lsp_request(ctx, method, params, language):
+def raw_lsp_request(ctx: click.Context, method: str, params: str | None, language: str) -> None:
     """Send a raw LSP request.
 
     METHOD is the LSP method (e.g. textDocument/documentSymbol).
