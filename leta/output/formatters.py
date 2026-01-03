@@ -505,7 +505,7 @@ def _is_stdlib_path(path: str) -> bool:
     return False
 
 
-def format_call_tree(data: dict) -> str:
+def format_call_tree(data: dict[str, Any]) -> str:
     lines = []
 
     name = data.get("name", "")
