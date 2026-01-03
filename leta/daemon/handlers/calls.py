@@ -176,17 +176,7 @@ def _format_call_hierarchy_item(
     )
 
 
-class CallTreeResult(TypedDict, total=False):
-    name: str
-    kind: str | None
-    detail: str | None
-    path: str
-    line: int
-    column: int
-    calls: list[FormattedCallItemWithCalls]
-    called_by: list[FormattedCallItemWithCalls]
-    from_ranges: list[dict[str, int]]
-    call_sites: list[dict[str, int]]
+class CallTreeResult(FormattedCallItemWithCalls, total=False):
     error: str
 
 
