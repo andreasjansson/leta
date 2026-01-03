@@ -272,7 +272,7 @@ class MoveFileResult(BaseModel):
 class RawLspRequestParams(BaseModel):
     workspace_root: str
     method: str
-    params: dict = Field(default_factory=dict)
+    params: dict[str, object] = Field(default_factory=dict)
     language: str = "python"
 
 
