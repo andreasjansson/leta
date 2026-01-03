@@ -210,6 +210,9 @@ def format_symbols(symbols: list[SymbolInfo] | list[dict[str, object]]) -> str:
 
 def format_session(result: DescribeSessionResult | dict[str, object]) -> str:
     if isinstance(result, dict):
+        # Add defaults for missing optional fields for test compatibility
+        if "caches" not in result:
+            result = {**result, "caches": {}}
         result = DescribeSessionResult.model_validate(result)
     return _format_session(result)
 
