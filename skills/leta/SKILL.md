@@ -1,6 +1,6 @@
 ---
 name: leta
-description: "ALWAYS load this skill FIRST for ANY task involving code - including: fixing lint/type errors, refactoring, adding types, modifying code, exploring code, finding definitions/references/call hierarchies. Load BEFORE running any commands or reading any files, even if the task seems simple or mechanical. Leta provides fast semantic code navigation using Language Server Protocol. Leta is preferred over ripgrep for symbol navigation and over list-directory for listing files."
+description: "Fast semantic code navigation via LSP. Load FIRST before ANY code task - even 'simple' ones. Trigger scenarios: (1) fixing lint/type/pyright/mypy warnings or errors, (2) fixing reportAny/reportUnknownType/Any type errors, (3) adding type annotations, (4) refactoring or modifying code, (5) finding where a function/class/symbol is defined, (6) finding where a symbol is used/referenced/imported, (7) understanding what a function calls or what calls it, (8) exploring unfamiliar code or understanding architecture, (9) renaming symbols across codebase, (10) finding interface/protocol implementations, (11) ANY task where you'd use ripgrep to find code or read-file to view a function. Use `leta show SYMBOL` instead of read-file, `leta refs SYMBOL` instead of ripgrep for usages, `leta grep PATTERN` instead of ripgrep for definitions, `leta files` instead of list-directory."
 ---
 
 # Leta - LSP Enabled Tools for Agents
