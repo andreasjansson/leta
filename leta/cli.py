@@ -338,7 +338,7 @@ def daemon(ctx: click.Context) -> None:
 def daemon_info(ctx: click.Context) -> None:
     """Show current daemon state."""
     response = run_request("describe-session", {})
-    output_format = "json" if ctx.obj["json"] else "plain"
+    output_format = "json" if cast(CliContext, ctx.obj)["json"] else "plain"
     output_result(response.get("result"), output_format)
 
 
@@ -510,7 +510,7 @@ def workspace_restart(ctx: click.Context, path: str | None) -> None:
             "workspace_root": str(workspace_root),
         },
     )
-    output_format = "json" if ctx.obj["json"] else "plain"
+    output_format = "json" if cast(CliContext, ctx.obj)["json"] else "plain"
     output_result(response.get("result"), output_format)
 
 
@@ -634,7 +634,7 @@ def show_cmd(ctx: click.Context, symbol: str, context: int, head: int) -> None:
             "kind": resolved.kind,
         },
     )
-    output_format = "json" if ctx.obj["json"] else "plain"
+    output_format = "json" if cast(CliContext, ctx.obj)["json"] else "plain"
     output_result(response["result"], output_format)
 
 
@@ -660,7 +660,7 @@ def declaration(ctx: click.Context, symbol: str, context: int) -> None:
             "context": context,
         },
     )
-    output_format = "json" if ctx.obj["json"] else "plain"
+    output_format = "json" if cast(CliContext, ctx.obj)["json"] else "plain"
     output_result(response["result"], output_format)
 
 
@@ -693,7 +693,7 @@ def refs(ctx: click.Context, symbol: str, context: int) -> None:
             "context": context,
         },
     )
-    output_format = "json" if ctx.obj["json"] else "plain"
+    output_format = "json" if cast(CliContext, ctx.obj)["json"] else "plain"
     output_result(response["result"], output_format)
 
 
@@ -725,7 +725,7 @@ def implementations(ctx: click.Context, symbol: str, context: int) -> None:
             "context": context,
         },
     )
-    output_format = "json" if ctx.obj["json"] else "plain"
+    output_format = "json" if cast(CliContext, ctx.obj)["json"] else "plain"
     output_result(response["result"], output_format)
 
 
@@ -755,7 +755,7 @@ def subtypes(ctx: click.Context, symbol: str, context: int) -> None:
             "context": context,
         },
     )
-    output_format = "json" if ctx.obj["json"] else "plain"
+    output_format = "json" if cast(CliContext, ctx.obj)["json"] else "plain"
     output_result(response["result"], output_format)
 
 
@@ -784,7 +784,7 @@ def supertypes(ctx: click.Context, symbol: str, context: int) -> None:
             "context": context,
         },
     )
-    output_format = "json" if ctx.obj["json"] else "plain"
+    output_format = "json" if cast(CliContext, ctx.obj)["json"] else "plain"
     output_result(response["result"], output_format)
 
 
@@ -817,7 +817,7 @@ def rename(ctx: click.Context, symbol: str, new_name: str) -> None:
             "new_name": new_name,
         },
     )
-    output_format = "json" if ctx.obj["json"] else "plain"
+    output_format = "json" if cast(CliContext, ctx.obj)["json"] else "plain"
     output_result(response["result"], output_format)
 
 
@@ -855,7 +855,7 @@ def mv(ctx: click.Context, old_path: str, new_path: str) -> None:
             "workspace_root": str(workspace_root),
         },
     )
-    output_format = "json" if ctx.obj["json"] else "plain"
+    output_format = "json" if cast(CliContext, ctx.obj)["json"] else "plain"
     output_result(response["result"], output_format)
 
 
@@ -1051,7 +1051,7 @@ def grep(
             "exclude_patterns": exclude_patterns,
         },
     )
-    output_format = "json" if ctx.obj["json"] else "plain"
+    output_format = "json" if cast(CliContext, ctx.obj)["json"] else "plain"
     output_result(response["result"], output_format)
 
 
@@ -1116,7 +1116,7 @@ def files(
             "include_patterns": list(include),
         },
     )
-    output_format = "json" if ctx.obj["json"] else "plain"
+    output_format = "json" if cast(CliContext, ctx.obj)["json"] else "plain"
     output_result(response["result"], output_format)
 
 
@@ -1208,7 +1208,7 @@ def calls(
         params["mode"] = "incoming"
 
     response = run_request("calls", params)
-    output_format = "json" if ctx.obj["json"] else "plain"
+    output_format = "json" if cast(CliContext, ctx.obj)["json"] else "plain"
     output_result(response["result"], output_format)
 
 
