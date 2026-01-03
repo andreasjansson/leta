@@ -16,6 +16,8 @@ async def handle_declaration(
     line, column = ctx.parse_position({"line": params.line, "column": params.column})
     context = params.context
 
+    assert workspace.client is not None
+
     try:
         result = await workspace.client.send_request(
             "textDocument/declaration",
