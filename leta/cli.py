@@ -63,12 +63,12 @@ def ensure_daemon_running() -> None:
     raise click.ClickException("Failed to start daemon")
 
 
-async def send_request(method: str, params: dict[str, Any]) -> dict[str, Any]:
+async def send_request(method: str, params: dict[str, object]) -> dict[str, object]:
     socket_path = get_socket_path()
 
     reader, writer = await asyncio.open_unix_connection(str(socket_path))
 
-    request = {"method": method, "params": params}
+    request: dict[str, object] = {"method": method, "params": params}
     writer.write(json.dumps(request).encode())
     await writer.drain()
     writer.write_eof()
@@ -77,7 +77,8 @@ async def send_request(method: str, params: dict[str, Any]) -> dict[str, Any]:
     writer.close()
     await writer.wait_closed()
 
-    return json.loads(data.decode())
+    result: dict[str, object] = json.loads(data.decode())
+    return result
 
 
 def get_daemon_log_tail(num_lines: int = 10) -> str | None:
