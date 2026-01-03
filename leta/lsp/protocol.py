@@ -59,6 +59,10 @@ class LSPMethodNotSupported(Exception):
 
 
 class LanguageServerNotFound(Exception):
+    server_name: str
+    language: str
+    install_cmd: str | None
+
     def __init__(self, server_name: str, language: str, install_cmd: str | None = None):
         self.server_name = server_name
         self.language = language
