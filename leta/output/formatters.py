@@ -366,7 +366,7 @@ def format_session(data: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def format_definition_content(data: dict) -> str:
+def format_definition_content(data: dict[str, Any]) -> str:
     start = data['start_line']
     end = data['end_line']
     if start == end:
