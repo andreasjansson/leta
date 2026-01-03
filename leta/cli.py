@@ -49,7 +49,7 @@ def ensure_daemon_running() -> None:
         return
 
     subprocess.Popen(
-        [sys.executable, "-m", "lspcmd.daemon_cli"],
+        [sys.executable, "-m", "leta.daemon_cli"],
         start_new_session=True,
         env=os.environ.copy(),
     )
@@ -135,7 +135,7 @@ def get_workspace_root_for_path(path: Path, config: Config) -> Path:
         return workspace_root
 
     raise click.ClickException(
-        f"No workspace found for {path}\n" f"Run: lspcmd workspace add"
+        f"No workspace found for {path}\n" f"Run: leta workspace add"
     )
 
 
@@ -147,7 +147,7 @@ def get_workspace_root_for_cwd(config: Config) -> Path:
         return workspace_root
 
     raise click.ClickException(
-        f"No workspace found for current directory\n" f"Run: lspcmd workspace add"
+        f"No workspace found for current directory\n" f"Run: leta workspace add"
     )
 
 
@@ -231,25 +231,25 @@ def expand_path_pattern(pattern: str) -> list[Path]:
 
 
 CLI_HELP = """\
-lspcmd is a command line LSP client. It can quickly search for symbols across
+leta is a command line LSP client. It can quickly search for symbols across
 large code bases with regular expressions, print full function and method bodies,
 find references, implementations, subtypes, etc. It also has refactoring tools,
 like renaming symbols across the entire code base.
 
-`lspcmd grep` can be much better than naive text search tools when you want to
-understand a code base. Note that `lspcmd grep` only exposes symbols that are
+`leta grep` can be much better than naive text search tools when you want to
+understand a code base. Note that `leta grep` only exposes symbols that are
 declared in its workspace, so use (rip)grep or other search tools when you're
 looking for specific multi-symbol strings, puncuation, or library functions.
-`lspcmd grep PATTERN [PATH] --docs` prints function and method documentation
+`leta grep PATTERN [PATH] --docs` prints function and method documentation
 for all matching symbols.
 
-`lspcmd files` is a good starting point when starting work on a project.
+`leta files` is a good starting point when starting work on a project.
 
-Use `lspcmd show SYMBOL` to print the full body of a symbol. Use
-`lspcmd refs SYMBOL` to find all uses of a symbol. These two (and other)
+Use `leta show SYMBOL` to print the full body of a symbol. Use
+`leta refs SYMBOL` to find all uses of a symbol. These two (and other)
 commands accept `--context N` for surrounding lines.
 
-See `lspcmd COMMAND --help` for more documentation and command-specific options.
+See `leta COMMAND --help` for more documentation and command-specific options.
 """
 
 
@@ -285,7 +285,7 @@ def cli(ctx, json_output):
 @cli.group()
 @click.pass_context
 def daemon(ctx):
-    """Manage the lspcmd daemon."""
+    """Manage the leta daemon."""
     pass
 
 
@@ -301,7 +301,7 @@ def daemon_info(ctx):
 @daemon.command("start")
 @click.pass_context
 def daemon_start(ctx):
-    """Start the lspcmd daemon."""
+    """Start the leta daemon."""
     pid_path = get_pid_path()
     socket_path = get_socket_path()
 
@@ -316,7 +316,7 @@ def daemon_start(ctx):
 @daemon.command("stop")
 @click.pass_context
 def daemon_stop(ctx):
-    """Stop the lspcmd daemon."""
+    """Stop the leta daemon."""
     if not is_daemon_running(get_pid_path()):
         click.echo("Daemon is not running")
         return
@@ -328,7 +328,7 @@ def daemon_stop(ctx):
 @daemon.command("restart")
 @click.pass_context
 def daemon_restart(ctx):
-    """Restart the lspcmd daemon."""
+    """Restart the leta daemon."""
     socket_path = get_socket_path()
     
     if is_daemon_running(get_pid_path()):
@@ -390,7 +390,7 @@ def workspace_add(ctx, root):
         else:
             raise click.ClickException(
                 f"Cannot prompt for workspace root in non-interactive mode.\n"
-                f"Use: lspcmd workspace add --root {default_root}"
+                f"Use: leta workspace add --root {default_root}"
             )
 
     roots = config.get("workspaces", {}).get("roots", [])
@@ -469,11 +469,11 @@ def config(ctx):
 def help_all(ctx):
     """Print help for all commands."""
     click.echo("=" * 70)
-    click.echo("LSPCMD - Command Line LSP Client")
+    click.echo("LETA - Command Line LSP Client")
     click.echo("=" * 70)
     click.echo()
     
-    with click.Context(cli, info_name="lspcmd") as main_ctx:
+    with click.Context(cli, info_name="leta") as main_ctx:
         click.echo(cli.get_help(main_ctx))
     
     click.echo()
@@ -485,11 +485,11 @@ def help_all(ctx):
         full_name = f"{prefix}{name}" if prefix else name
         click.echo()
         click.echo("-" * 70)
-        click.echo(f"lspcmd {full_name}")
+        click.echo(f"leta {full_name}")
         click.echo("-" * 70)
         click.echo()
         
-        with click.Context(cmd, info_name=f"lspcmd {full_name}") as cmd_ctx:
+        with click.Context(cmd, info_name=f"leta {full_name}") as cmd_ctx:
             click.echo(cmd.get_help(cmd_ctx))
         
         if isinstance(cmd, click.Group):
@@ -531,11 +531,11 @@ def show_cmd(ctx, symbol, context, head):
 
     \b
     Examples:
-      lspcmd show UserRepository
-      lspcmd show UserRepository.add_user
-      lspcmd show "*.py:User"
-      lspcmd show storage:MemoryStorage -n 2
-      lspcmd show COUNTRY_CODES           # shows full multi-line dict/object
+      leta show UserRepository
+      leta show UserRepository.add_user
+      leta show "*.py:User"
+      leta show storage:MemoryStorage -n 2
+      leta show COUNTRY_CODES           # shows full multi-line dict/object
 
     Use -n/--context to show surrounding lines.
     Use --head N to limit output to N lines.
@@ -596,9 +596,9 @@ def refs(ctx, symbol, context):
 
     \b
     Examples:
-      lspcmd refs UserRepository
-      lspcmd refs UserRepository.add_user
-      lspcmd refs "*.py:validate_email"
+      leta refs UserRepository
+      leta refs UserRepository.add_user
+      leta refs "*.py:validate_email"
     """
     config = load_config()
     workspace_root = get_workspace_root_for_cwd(config)
@@ -626,8 +626,8 @@ def implementations(ctx, symbol, context):
 
     \b
     Examples:
-      lspcmd implementations Storage
-      lspcmd implementations Storage.save
+      leta implementations Storage
+      leta implementations Storage.save
     """
     config = load_config()
     workspace_root = get_workspace_root_for_cwd(config)
@@ -708,9 +708,9 @@ def rename(ctx, symbol, new_name):
 
     \b
     Examples:
-      lspcmd rename old_function new_function
-      lspcmd rename UserRepository.add_user add_new_user
-      lspcmd rename "user.py:User" Person
+      leta rename old_function new_function
+      leta rename UserRepository.add_user add_new_user
+      leta rename "user.py:User" Person
     """
     config = load_config()
     workspace_root = get_workspace_root_for_cwd(config)
@@ -745,9 +745,9 @@ def mv(ctx, old_path, new_path):
 
     Examples:
 
-      lspcmd mv src/user.ts src/models/user.ts
+      leta mv src/user.ts src/models/user.ts
 
-      lspcmd mv lib/utils.rs lib/helpers.rs
+      leta mv lib/utils.rs lib/helpers.rs
     """
     old_path = Path(old_path).resolve()
     new_path = Path(new_path).resolve()
@@ -826,7 +826,7 @@ PATH supports wildcards. Simple patterns like '*.go' search recursively.
 Directories are automatically expanded to include all files recursively.
 
 \b
-IMPORTANT: lspcmd grep searches SYMBOL NAMES only (functions, classes,
+IMPORTANT: leta grep searches SYMBOL NAMES only (functions, classes,
 methods, variables, etc.). It does NOT search file contents like ripgrep.
 Use ripgrep/grep when searching for:
   - String literals, comments, or documentation
@@ -835,7 +835,7 @@ Use ripgrep/grep when searching for:
   - Punctuation or operators
 
 \b
-WHY USE lspcmd grep INSTEAD OF ripgrep?
+WHY USE leta grep INSTEAD OF ripgrep?
   - Semantic search: finds symbol definitions, not just text matches
   - No false positives: "User" won't match "UserError" or "getUser"
   - Filter by kind: find only classes, only functions, etc.
@@ -846,41 +846,41 @@ WHY USE lspcmd grep INSTEAD OF ripgrep?
 COOKBOOK EXAMPLES:
 \b
   Find all test functions across the project:
-    lspcmd grep "^Test" -k function
-    lspcmd grep "^test_" "*.py" -k function
+    leta grep "^Test" -k function
+    leta grep "^test_" "*.py" -k function
 \b
   Find a class and all its methods:
-    lspcmd grep "UserRepository" -k class
-    lspcmd grep ".*" -k method | grep UserRepository
+    leta grep "UserRepository" -k class
+    leta grep ".*" -k method | grep UserRepository
 \b
   Find all implementations of an interface pattern:
-    lspcmd grep "Storage$" -k class,struct
-    lspcmd grep "Handler$" -k class -d  # with docs
+    leta grep "Storage$" -k class,struct
+    leta grep "Handler$" -k class -d  # with docs
 \b
   Explore unfamiliar code - what's in this file?
-    lspcmd grep "." src/server.py
-    lspcmd grep "." src/server.py -k function,method
+    leta grep "." src/server.py
+    leta grep "." src/server.py -k function,method
 \b
   Find all public functions (Go convention):
-    lspcmd grep "^[A-Z]" "*.go" -k function
+    leta grep "^[A-Z]" "*.go" -k function
 \b
   Find all private methods (Python convention):
-    lspcmd grep "^_[^_]" "*.py" -k method
+    leta grep "^_[^_]" "*.py" -k method
 \b
   Find constants and configuration:
-    lspcmd grep ".*" -k constant
-    lspcmd grep "^(CONFIG|DEFAULT|MAX|MIN)" -k variable
+    leta grep ".*" -k constant
+    leta grep "^(CONFIG|DEFAULT|MAX|MIN)" -k variable
 \b
   Search with documentation to understand purpose:
-    lspcmd grep "parse" -k function -d
-    lspcmd grep "validate" -d
+    leta grep "parse" -k function -d
+    leta grep "validate" -d
 \b
   Exclude test files and vendor directories:
-    lspcmd grep "Handler" -x test -x vendor -x mock
+    leta grep "Handler" -x test -x vendor -x mock
 \b
   Find symbols in a specific package/module:
-    lspcmd grep ".*" internal/auth -k function
-    lspcmd grep ".*" "src/models/*.py" -k class
+    leta grep ".*" internal/auth -k function
+    leta grep ".*" "src/models/*.py" -k class
 
 \b
 COMPARISON WITH ripgrep:
@@ -888,11 +888,11 @@ COMPARISON WITH ripgrep:
   ripgrep: finds TEXT anywhere in files
     rg "UserRepository"  →  matches comments, strings, imports, usages
 \b
-  lspcmd grep: finds SYMBOL DEFINITIONS only
-    lspcmd grep "UserRepository"  →  matches only where it's defined
+  leta grep: finds SYMBOL DEFINITIONS only
+    leta grep "UserRepository"  →  matches only where it's defined
 \b
   Use ripgrep for: "find all files mentioning 'deprecated'"
-  Use lspcmd grep for: "find the deprecated functions"
+  Use leta grep for: "find the deprecated functions"
 """
 
 
@@ -912,7 +912,7 @@ COMPARISON WITH ripgrep:
 def grep(ctx, pattern, path, kind, exclude, docs, case_sensitive):
     if " " in pattern:
         click.echo(
-            f"Warning: Pattern contains a space. lspcmd grep searches symbol names, "
+            f"Warning: Pattern contains a space. leta grep searches symbol names, "
             f"not file contents. Use ripgrep or grep for text search.",
             err=True,
         )
@@ -971,15 +971,15 @@ def files(ctx, path, exclude, include):
 
     Examples:
 
-      lspcmd files                       # current workspace
+      leta files                       # current workspace
 
-      lspcmd files src/                  # only src/ directory
+      leta files src/                  # only src/ directory
 
-      lspcmd files -x tests -x vendor    # exclude additional directories
+      leta files -x tests -x vendor    # exclude additional directories
 
-      lspcmd files -i .git               # include .git directory
+      leta files -i .git               # include .git directory
 
-      lspcmd --json files                # JSON output
+      leta --json files                # JSON output
     """
     config = load_config()
     
@@ -1016,10 +1016,10 @@ Use --max-depth to limit recursion depth (default: 3).
 
 \b
 Examples:
-  lspcmd calls --from main              # what does main() call?
-  lspcmd calls --to validate_email      # what calls validate_email()?
-  lspcmd calls --from main --to save    # find path from main to save
-  lspcmd calls --from UserRepo.add --max-depth 5
+  leta calls --from main              # what does main() call?
+  leta calls --to validate_email      # what calls validate_email()?
+  leta calls --from main --to save    # find path from main to save
+  leta calls --from UserRepo.add --max-depth 5
 
 \b
 SYMBOL formats:
@@ -1096,10 +1096,10 @@ def raw_lsp_request(ctx, method, params, language):
     Examples:
 
       \b
-      lspcmd raw-lsp-request textDocument/documentSymbol \\
+      leta raw-lsp-request textDocument/documentSymbol \\
         '{"textDocument": {"uri": "file:///path/to/file.py"}}'
 
-      lspcmd raw-lsp-request workspace/symbol '{"query": ""}' -l go
+      leta raw-lsp-request workspace/symbol '{"query": ""}' -l go
     """
     config = load_config()
     workspace_root = get_workspace_root_for_cwd(config)

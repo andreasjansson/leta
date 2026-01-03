@@ -1,4 +1,4 @@
-"""Integration tests for lspcmd.
+"""Integration tests for leta.
 
 Tests LSP features using the Unix socket-based daemon.
 Uses pytest-xdist for parallel execution to test concurrent daemon access.
@@ -17,9 +17,9 @@ from pathlib import Path
 import click
 import pytest
 
-from lspcmd.cli import run_request as cli_run_request, ensure_daemon_running
-from lspcmd.output.formatters import format_output as _format_output
-from lspcmd.utils.config import add_workspace_root, load_config
+from leta.cli import run_request as cli_run_request, ensure_daemon_running
+from leta.output.formatters import format_output as _format_output
+from leta.utils.config import add_workspace_root, load_config
 
 from ..conftest import (
     FIXTURES_DIR,
@@ -35,7 +35,7 @@ from ..conftest import (
     requires_zls,
 )
 
-os.environ["LSPCMD_REQUEST_TIMEOUT"] = "60"
+os.environ["LETA_REQUEST_TIMEOUT"] = "60"
 
 
 def run_request(method: str, params: dict, raise_on_error: bool = False) -> dict:
@@ -69,7 +69,7 @@ def class_temp_dir(tmp_path_factory):
 
 @pytest.fixture(scope="class")
 def class_isolated_config(class_temp_dir):
-    cache_dir = Path(tempfile.mkdtemp(prefix="lspcmd_test_"))
+    cache_dir = Path(tempfile.mkdtemp(prefix="leta_test_"))
     config_dir = class_temp_dir / "config"
     config_dir.mkdir()
     old_cache = os.environ.get("XDG_CACHE_HOME")

@@ -4,7 +4,7 @@ import time
 
 import pytest
 
-from lspcmd.utils.config import add_workspace_root, load_config
+from leta.utils.config import add_workspace_root, load_config
 
 from .conftest import (
     FIXTURES_DIR,

@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from lspcmd.utils.text import (
+from leta.utils.text import (
     get_language_id,
     get_line_at,
     get_lines_around,

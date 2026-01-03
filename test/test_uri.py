@@ -3,7 +3,7 @@ import tempfile
 
 import pytest
 
-from lspcmd.utils.uri import path_to_uri, uri_to_path
+from leta.utils.uri import path_to_uri, uri_to_path
 
 
 class TestPathToUri:

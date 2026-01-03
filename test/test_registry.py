@@ -1,6 +1,6 @@
 import pytest
 
-from lspcmd.servers.registry import (
+from leta.servers.registry import (
     get_server_for_file,
     get_server_for_language,
     SERVERS,

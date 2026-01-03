@@ -151,7 +151,7 @@ class DaemonServer:
         except json.JSONDecodeError as e:
             logger.exception(f"Failed to parse client request: {e}")
             error_response = {
-                "error": f"Internal error: malformed request (got {len(data)} bytes). This is a bug in lspcmd."
+                "error": f"Internal error: malformed request (got {len(data)} bytes). This is a bug in leta."
             }
             writer.write(json.dumps(error_response).encode())
             await writer.drain()

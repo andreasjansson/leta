@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from lspcmd.utils.config import (
+from leta.utils.config import (
     detect_workspace_root,
     get_known_workspace_root,
     add_workspace_root,

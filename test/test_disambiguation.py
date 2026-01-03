@@ -10,7 +10,7 @@ exactly the symbol we generated it for. This is tested in TestRoundTripConsisten
 """
 
 import pytest
-from lspcmd.daemon.handlers.resolve_symbol import (
+from leta.daemon.handlers.resolve_symbol import (
     _normalize_symbol_name,
     _normalize_container,
     _get_module_name,
@@ -831,7 +831,7 @@ class TestResolveSymbolRoundTrip:
     """Test that suggested refs actually resolve back to the correct symbol.
     
     This is the key invariant: if we suggest "Container.name" as a ref,
-    then "lspcmd show Container.name" must resolve to that exact symbol.
+    then "leta show Container.name" must resolve to that exact symbol.
     """
 
     def setup_method(self):

@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="lspcmd",
+    name="leta",
     version="0.1.0",
     description="Command-line wrapper around LSP language servers",
     packages=find_packages(),
@@ -22,8 +22,8 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "lspcmd=lspcmd.cli:cli",
-            "lspcmd-daemon=lspcmd.daemon_cli:main",
+            "leta=leta.cli:cli",
+            "leta-daemon=leta.daemon_cli:main",
         ],
     },
 )

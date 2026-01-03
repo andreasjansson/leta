@@ -5,7 +5,7 @@ import time
 import click
 import pytest
 
-from lspcmd.utils.config import add_workspace_root, load_config
+from leta.utils.config import add_workspace_root, load_config
 
 from .conftest import (
     FIXTURES_DIR,
@@ -183,7 +183,7 @@ src/UserRepository.php:10 [Class] UserRepository"""
         output = format_output(response["result"], "plain")
         assert output == """\
 src/Main.php:17 [Method] createSampleUser (static) in Main
-    __LspcmdFixture\\\\Main::createSampleUser__
+    __LetaFixture\\\\Main::createSampleUser__
     
     Creates a sample user for testing.
     

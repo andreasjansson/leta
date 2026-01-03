@@ -42,7 +42,7 @@ def get_cache_dir() -> Path:
         base = Path(xdg)
     else:
         base = Path.home() / ".cache"
-    return base / "lspcmd"
+    return base / "leta"
 
 
 def get_config_dir() -> Path:
@@ -51,7 +51,7 @@ def get_config_dir() -> Path:
         base = Path(xdg)
     else:
         base = Path.home() / ".config"
-    return base / "lspcmd"
+    return base / "leta"
 
 
 def get_config_path() -> Path:
@@ -59,11 +59,11 @@ def get_config_path() -> Path:
 
 
 def get_socket_path() -> Path:
-    return get_cache_dir() / "lspcmd.sock"
+    return get_cache_dir() / "leta.sock"
 
 
 def get_pid_path() -> Path:
-    return get_cache_dir() / "lspcmd.pid"
+    return get_cache_dir() / "leta.pid"
 
 
 def get_log_dir() -> Path:
@@ -186,7 +186,7 @@ def get_best_workspace_root(path: Path, config: Config, cwd: Path | None = None)
     Only returns explicitly initialized workspace roots (from config).
     
     Returns None if no initialized workspace contains the path.
-    Use `lspcmd workspace init` to initialize a workspace.
+    Use `leta workspace init` to initialize a workspace.
     
     The cwd parameter is ignored (kept for API compatibility).
     """

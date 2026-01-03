@@ -1,7 +1,7 @@
 import asyncio
 import pytest
 
-from lspcmd.lsp.protocol import encode_message, read_message, LSPProtocolError
+from leta.lsp.protocol import encode_message, read_message, LSPProtocolError
 
 
 class TestEncodeMessage:

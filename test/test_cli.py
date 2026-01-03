@@ -7,9 +7,9 @@ from pathlib import Path
 import pytest
 from click.testing import CliRunner
 
-from lspcmd.cli import cli
-from lspcmd.daemon.pidfile import is_daemon_running
-from lspcmd.utils.config import get_pid_path, add_workspace_root, load_config
+from leta.cli import cli
+from leta.daemon.pidfile import is_daemon_running
+from leta.utils.config import get_pid_path, add_workspace_root, load_config
 
 from .conftest import requires_basedpyright, requires_gopls
 
@@ -42,10 +42,10 @@ class TestCliCommands:
         runner = CliRunner()
         result = runner.invoke(cli, ["help-all"])
         assert result.exit_code == 0
-        assert "LSPCMD - Command Line LSP Client" in result.output
+        assert "LETA - Command Line LSP Client" in result.output
         assert "COMMAND DETAILS" in result.output
-        assert "lspcmd grep" in result.output
-        assert "lspcmd daemon info" in result.output
+        assert "leta grep" in result.output
+        assert "leta daemon info" in result.output
         assert "COOKBOOK EXAMPLES" in result.output
 
     def test_workspace_add(self, python_project, isolated_config):
@@ -99,18 +99,18 @@ class TestCliCommands:
     def test_no_results_written_to_stderr(self):
         """Test that output_result writes 'No results' to stderr."""
         from unittest.mock import patch
-        from lspcmd.cli import output_result
+        from leta.cli import output_result
         
-        with patch('lspcmd.cli.click.echo') as mock_echo:
+        with patch('leta.cli.click.echo') as mock_echo:
             output_result([], "plain")
             mock_echo.assert_called_once_with("No results", err=True)
 
     def test_warning_written_to_stderr(self):
         """Test that output_result writes warnings to stderr."""
         from unittest.mock import patch
-        from lspcmd.cli import output_result
+        from leta.cli import output_result
         
-        with patch('lspcmd.cli.click.echo') as mock_echo:
+        with patch('leta.cli.click.echo') as mock_echo:
             output_result({"warning": "test warning message"}, "plain")
             mock_echo.assert_called_once_with("Warning: test warning message", err=True)
 

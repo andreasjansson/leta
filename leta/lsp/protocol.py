@@ -139,7 +139,7 @@ class LanguageServerStartupError(Exception):
             lines.append(f"  - Try running '{server_name}' directly in that directory to see detailed errors")
         
         lines.append("")
-        lines.append("To exclude these files, use: lspcmd grep PATTERN 'your/path/*.ext' -x 'path/to/exclude/*'")
+        lines.append("To exclude these files, use: leta grep PATTERN 'your/path/*.ext' -x 'path/to/exclude/*'")
         
         super().__init__("\n".join(lines))
 

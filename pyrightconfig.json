@@ -1,12 +1,12 @@
 {
   "include": [
-    "lspcmd",
+    "leta",
     "test"
   ],
   "exclude": [
     "**/__pycache__",
     ".venv",
-    "lspcmd.egg-info",
+    "leta.egg-info",
     "test/fixtures"
   ],
   "reportMissingImports": "error",

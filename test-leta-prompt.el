@@ -1,8 +1,8 @@
-;;; test-lspcmd-prompt.el --- Test if agent uses lspcmd vs ripgrep -*- lexical-binding: t -*-
+;;; test-leta-prompt.el --- Test if agent uses leta vs ripgrep -*- lexical-binding: t -*-
 
 (require 'greger)
 
-(defun test-lspcmd-prompt-extract-tool (buffer)
+(defun test-leta-prompt-extract-tool (buffer)
   "Extract the last tool used from BUFFER."
   (with-current-buffer buffer
     (save-excursion
@@ -15,9 +15,9 @@
               "unknown-no-name"))
         "no-tool-use"))))
 
-(defun test-lspcmd-prompt-run-once (iteration)
+(defun test-leta-prompt-run-once (iteration)
   "Run the greger buffer once and return which tool was used."
-  (let ((test-file "~/projects/greger.el/test/lspcmd-system-prompt-base.greger")
+  (let ((test-file "~/projects/greger.el/test/leta-system-prompt-base.greger")
         (greger-buffer nil)
         (result nil))
     
@@ -62,7 +62,7 @@
       (sit-for 2)
       
       ;; Extract the tool used
-      (setq result (test-lspcmd-prompt-extract-tool greger-buffer))
+      (setq result (test-leta-prompt-extract-tool greger-buffer))
       
       ;; Don't save the buffer
       (set-buffer-modified-p nil))
@@ -74,7 +74,7 @@
     (message ">>> Iteration %d RESULT: %s <<<" iteration result)
     result))
 
-(defun test-lspcmd-prompt-main ()
+(defun test-leta-prompt-main ()
   "Run the test 3 times and report results."
   ;; Override the error handler for max iterations
   (advice-add 'greger--run-agent-loop :around
@@ -93,7 +93,7 @@
           (message "=== Running iteration %d ===" (1+ i))
           (message "========================================")
           (condition-case err
-              (push (test-lspcmd-prompt-run-once (1+ i)) results)
+              (push (test-leta-prompt-run-once (1+ i)) results)
             (error
              (message "Error in iteration %d: %s" (1+ i) err)
              (push (format "error: %s" err) results)))
@@ -134,7 +134,7 @@
 
 ;; Run when loaded in batch mode
 (when noninteractive
-  (test-lspcmd-prompt-main))
+  (test-leta-prompt-main))
 
-(provide 'test-lspcmd-prompt)
-;;; test-lspcmd-prompt.el ends here
+(provide 'test-leta-prompt)
+;;; test-leta-prompt.el ends here

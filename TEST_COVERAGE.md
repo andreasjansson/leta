@@ -1,4 +1,4 @@
-## lspcmd Integration Test Coverage by Language
+## leta Integration Test Coverage by Language
 
 | Command | Python | Go | Rust | TypeScript | Java | C++ | Zig | Lua | Ruby | PHP |
 |---------|:------:|:--:|:----:|:----------:|:----:|:---:|:---:|:---:|:----:|:---:|

@@ -35,7 +35,7 @@ from .types import (
 
 logger = logging.getLogger(__name__)
 
-REQUEST_TIMEOUT = float(os.environ.get("LSPCMD_REQUEST_TIMEOUT", "30"))
+REQUEST_TIMEOUT = float(os.environ.get("LETA_REQUEST_TIMEOUT", "30"))
 
 
 class LSPClient:

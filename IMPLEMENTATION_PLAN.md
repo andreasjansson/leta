@@ -1,4 +1,4 @@
-# lspcmd
+# leta
 
 A command-line wrapper around LSP language servers, inspired by lsp-mode.el.
 
@@ -6,7 +6,7 @@ A command-line wrapper around LSP language servers, inspired by lsp-mode.el.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                           lspcmd CLI                                │
+│                           leta CLI                                │
 │  (User-facing commands: definition, rename, format, grep...)        │
 └─────────────────────────────────────────────────────────────────────┘
                                   │
@@ -14,7 +14,7 @@ A command-line wrapper around LSP language servers, inspired by lsp-mode.el.
                                   │
                                   ▼
 ┌─────────────────────────────────────────────────────────────────────┐
-│                         lspcmd Daemon                               │
+│                         leta Daemon                               │
 │  - Manages language server processes                                │
 │  - Maintains open documents state                                   │
 │  - Handles LSP initialization/shutdown                              │
@@ -36,10 +36,10 @@ The CLI is the primary interface for interacting with the daemon.
 ## Project Structure
 
 ```
-lspcmd/
+leta/
 ├── __init__.py
-├── cli.py                   # Click CLI definitions for `lspcmd`
-├── daemon_cli.py            # Entry point for `lspcmd-daemon`
+├── cli.py                   # Click CLI definitions for `leta`
+├── daemon_cli.py            # Entry point for `leta-daemon`
 ├── daemon/
 │   ├── __init__.py
 │   ├── pidfile.py           # PID file management
@@ -71,8 +71,8 @@ Defined in `setup.py`:
 ```python
 entry_points={
     "console_scripts": [
-        "lspcmd=lspcmd.cli:cli",
-        "lspcmd-daemon=lspcmd.daemon_cli:main",
+        "leta=leta.cli:cli",
+        "leta-daemon=leta.daemon_cli:main",
     ],
 }
 ```
@@ -83,26 +83,26 @@ entry_points={
 
 | Command | Description |
 |---------|-------------|
-| `lspcmd workspace init [--root PATH]` | Initialize a workspace for LSP operations |
-| `lspcmd workspace restart [PATH]` | Restart language servers for a workspace |
-| `lspcmd daemon info` | Show daemon state: workspaces, servers, open documents |
-| `lspcmd daemon shutdown` | Shutdown the daemon gracefully |
-| `lspcmd config` | Print config file location and contents |
+| `leta workspace init [--root PATH]` | Initialize a workspace for LSP operations |
+| `leta workspace restart [PATH]` | Restart language servers for a workspace |
+| `leta daemon info` | Show daemon state: workspaces, servers, open documents |
+| `leta daemon shutdown` | Shutdown the daemon gracefully |
+| `leta config` | Print config file location and contents |
 
 ### Debugging
 
 | Command | Description |
 |---------|-------------|
-| `lspcmd raw-lsp-request METHOD [PARAMS] [-l LANGUAGE]` | Send raw LSP request, get JSON response |
+| `leta raw-lsp-request METHOD [PARAMS] [-l LANGUAGE]` | Send raw LSP request, get JSON response |
 
 The `raw-lsp-request` command is useful for debugging LSP server behavior:
 ```bash
 # Get raw document symbols
-lspcmd raw-lsp-request textDocument/documentSymbol \
+leta raw-lsp-request textDocument/documentSymbol \
   '{"textDocument": {"uri": "file:///path/to/file.go"}}' -l go
 
 # Query workspace symbols
-lspcmd raw-lsp-request workspace/symbol '{"query": "Handler"}' -l typescript
+leta raw-lsp-request workspace/symbol '{"query": "Handler"}' -l typescript
 ```
 
 ### Navigation Commands
@@ -111,12 +111,12 @@ All navigation commands use symbol-based lookup:
 
 | Command | Description |
 |---------|-------------|
-| `lspcmd show SYMBOL [-n CONTEXT]` | Show symbol definition (full body) |
-| `lspcmd ref SYMBOL [-n CONTEXT]` | Find all references to a symbol |
-| `lspcmd implementations SYMBOL [-n CONTEXT]` | Find implementations of interface/method |
-| `lspcmd subtypes SYMBOL [-n CONTEXT]` | Find direct subtypes of a type |
-| `lspcmd supertypes SYMBOL [-n CONTEXT]` | Find direct supertypes of a type |
-| `lspcmd declaration SYMBOL [-n CONTEXT]` | Find declaration of a symbol |
+| `leta show SYMBOL [-n CONTEXT]` | Show symbol definition (full body) |
+| `leta ref SYMBOL [-n CONTEXT]` | Find all references to a symbol |
+| `leta implementations SYMBOL [-n CONTEXT]` | Find implementations of interface/method |
+| `leta subtypes SYMBOL [-n CONTEXT]` | Find direct subtypes of a type |
+| `leta supertypes SYMBOL [-n CONTEXT]` | Find direct supertypes of a type |
+| `leta declaration SYMBOL [-n CONTEXT]` | Find declaration of a symbol |
 
 #### Symbol Format
 
@@ -134,10 +134,10 @@ The parent hierarchy follows LSP document symbol containers:
 - `module.Class.method.variable` (Python, TypeScript, etc.)
 - `MemoryStorage.Save` matches Go method `(*MemoryStorage).Save`
 
-When a symbol is ambiguous, lspcmd shows all matches with copy-pasteable references:
+When a symbol is ambiguous, leta shows all matches with copy-pasteable references:
 
 ```
-$ lspcmd show PredictionPayload
+$ leta show PredictionPayload
 Error: Symbol 'PredictionPayload' is ambiguous (3 matches)
   internal_types.py:PredictionPayload
     mocks/web/internal_types.py:37 [Class] PredictionPayload
@@ -150,43 +150,43 @@ Error: Symbol 'PredictionPayload' is ambiguous (3 matches)
 Examples:
 ```bash
 # Find definition by symbol name (shows full body)
-lspcmd show UserRepository
+leta show UserRepository
 
 # Find definition of a method within a class
-lspcmd show UserRepository.add_user
+leta show UserRepository.add_user
 
 # Filter by file pattern
-lspcmd show "*.py:User"
+leta show "*.py:User"
 
 # Find references to a symbol
-lspcmd ref Counter.increment
+leta ref Counter.increment
 
 # Rename a symbol across the workspace
-lspcmd rename old_function_name new_name
+leta rename old_function_name new_name
 ```
 
 ### Diagnostics Commands
 
 | Command | Description |
 |---------|-------------|
-| `lspcmd diagnostics [PATH] [-s SEVERITY]` | Show errors/warnings for a file or workspace |
+| `leta diagnostics [PATH] [-s SEVERITY]` | Show errors/warnings for a file or workspace |
 
 When `PATH` is omitted, shows diagnostics for all files in the current workspace.
 The `-s/--severity` option filters by minimum severity level (error, warning, info, hint).
 
 Examples:
 ```bash
-lspcmd diagnostics                        # All diagnostics in workspace
-lspcmd diagnostics src/main.py            # Single file
-lspcmd diagnostics -s error               # Errors only (no warnings)
-lspcmd --json diagnostics                 # JSON output
+leta diagnostics                        # All diagnostics in workspace
+leta diagnostics src/main.py            # Single file
+leta diagnostics -s error               # Errors only (no warnings)
+leta --json diagnostics                 # JSON output
 ```
 
 ### Symbol Commands
 
 | Command | Description |
 |---------|-------------|
-| `lspcmd grep PATTERN [PATH] [-k KIND] [-x EXCLUDE] [-d] [-C]` | Search symbols by regex pattern |
+| `leta grep PATTERN [PATH] [-k KIND] [-x EXCLUDE] [-d] [-C]` | Search symbols by regex pattern |
 
 The `grep` command is the primary way to search symbols. All filtering is done server-side in the daemon for performance:
 - `PATTERN`: Regex matched against symbol names (case-insensitive by default)
@@ -201,21 +201,21 @@ Directories are automatically expanded to include all files recursively (e.g., `
 
 Examples:
 ```bash
-lspcmd grep "Test.*" "*.py" -k function      # Find test functions
-lspcmd grep "^User" -k class                  # Find classes starting with User
-lspcmd grep "Handler$" internal -d            # Find handlers with docs in internal/
-lspcmd grep ".*" "*.go" -x tests              # All symbols excluding tests/ directory
-lspcmd grep "." server.py                     # All symbols in any server.py file
+leta grep "Test.*" "*.py" -k function      # Find test functions
+leta grep "^User" -k class                  # Find classes starting with User
+leta grep "Handler$" internal -d            # Find handlers with docs in internal/
+leta grep ".*" "*.go" -x tests              # All symbols excluding tests/ directory
+leta grep "." server.py                     # All symbols in any server.py file
 ```
 
 ### Code Actions
 
 | Command | Description |
 |---------|-------------|
-| `lspcmd format PATH` | Format a file |
-| `lspcmd organize-imports PATH` | Organize imports in a file |
-| `lspcmd rename SYMBOL NEW_NAME` | Rename symbol across the workspace |
-| `lspcmd move-file OLD_PATH NEW_PATH` | Move/rename file and update imports |
+| `leta format PATH` | Format a file |
+| `leta organize-imports PATH` | Organize imports in a file |
+| `leta rename SYMBOL NEW_NAME` | Rename symbol across the workspace |
+| `leta move-file OLD_PATH NEW_PATH` | Move/rename file and update imports |
 
 The `move-file` command uses `workspace/willRenameFiles` to ask the language server
 to update all import statements across the workspace. Supported by:
@@ -228,22 +228,22 @@ Servers that don't support this will just move the file without updating imports
 Examples:
 ```bash
 # Traditional line,column format
-lspcmd definition src/main.py 42,10
+leta definition src/main.py 42,10
 
 # Search for unique pattern on a specific line
-lspcmd definition src/main.py "42:UserRepository"
+leta definition src/main.py "42:UserRepository"
 
 # Search for unique pattern in the whole file
-lspcmd definition src/main.py "class UserRepository:"
+leta definition src/main.py "class UserRepository:"
 
 # Regex with special characters (escaped)
-lspcmd definition src/main.py "def __init__\\(self\\)"
+leta definition src/main.py "def __init__\\(self\\)"
 
 # Print full definition body
-lspcmd show src/main.py "class UserRepository:"
+leta show src/main.py "class UserRepository:"
 
 # Print full definition body with 2 lines of context
-lspcmd show src/main.py "class UserRepository:" -n 2
+leta show src/main.py "class UserRepository:" -n 2
 ```
 
 If a regex matches multiple times, you'll get a helpful error showing all locations:
@@ -260,7 +260,7 @@ Use LINE:REGEX or LINE,COLUMN to specify which one.
 
 All commands support `--json` flag for JSON output:
 ```bash
-lspcmd --json def UserRepository
+leta --json def UserRepository
 ```
 
 ## Daemon Methods
@@ -293,11 +293,11 @@ The CLI communicates with the daemon via JSON over Unix socket. Each CLI command
 
 | Path | Description |
 |------|-------------|
-| `~/.config/lspcmd/config.toml` | Configuration file |
-| `~/.cache/lspcmd/lspcmd.sock` | Unix socket for daemon communication |
-| `~/.cache/lspcmd/lspcmd.pid` | Daemon PID file |
-| `~/.cache/lspcmd/log/daemon.log` | Daemon log file |
-| `~/.cache/lspcmd/log/{server}.log` | Per-server log files |
+| `~/.config/leta/config.toml` | Configuration file |
+| `~/.cache/leta/leta.sock` | Unix socket for daemon communication |
+| `~/.cache/leta/leta.pid` | Daemon PID file |
+| `~/.cache/leta/log/daemon.log` | Daemon log file |
+| `~/.cache/leta/log/{server}.log` | Per-server log files |
 
 Respects `XDG_CONFIG_HOME` and `XDG_CACHE_HOME` environment variables.
 
@@ -328,15 +328,15 @@ preferred = "rust-analyzer"
 
 ### Workspace Root Detection
 
-When a command targets a file, lspcmd determines the workspace root by:
+When a command targets a file, leta determines the workspace root by:
 1. Checking if file is under a known workspace root (from config)
 2. Detecting via markers: `.git`, `pyproject.toml`, `Cargo.toml`, `package.json`, `go.mod`, etc.
 
 Initialize a workspace with:
 ```bash
-lspcmd workspace init --root=/path/to/project
+leta workspace init --root=/path/to/project
 # or interactively:
-lspcmd workspace init
+leta workspace init
 ```
 
 ## Supported Language Servers
@@ -367,7 +367,7 @@ lspcmd workspace init
 ### Setup
 
 ```bash
-cd /path/to/lspcmd
+cd /path/to/leta
 
 # Create virtual environment
 python -m venv .venv
@@ -386,13 +386,13 @@ pip install -e .
 # Activate the virtual environment first
 source .venv/bin/activate
 
-# Run lspcmd
-lspcmd --help
-lspcmd workspace init --root=.
-lspcmd grep ".*" lspcmd/cli.py -k function
+# Run leta
+leta --help
+leta workspace init --root=.
+leta grep ".*" leta/cli.py -k function
 
 # Run the daemon directly (usually auto-started)
-python -m lspcmd.daemon_cli
+python -m leta.daemon_cli
 ```
 
 ### Running Tests
@@ -407,7 +407,7 @@ python -m pytest tests/ -v
 python -m pytest tests/test_cli.py -v
 
 # Run with coverage
-python -m pytest tests/ --cov=lspcmd --cov-report=term-missing
+python -m pytest tests/ --cov=leta --cov-report=term-missing
 
 # Run only unit tests (fast, no LSP servers needed)
 python -m pytest tests/ -v --ignore=tests/test_integration.py
@@ -442,19 +442,19 @@ tests/
 
 View daemon logs:
 ```bash
-tail -f ~/.cache/lspcmd/log/daemon.log
+tail -f ~/.cache/leta/log/daemon.log
 ```
 
 View language server logs:
 ```bash
-tail -f ~/.cache/lspcmd/log/pyright.log
-tail -f ~/.cache/lspcmd/log/gopls.log
+tail -f ~/.cache/leta/log/pyright.log
+tail -f ~/.cache/leta/log/gopls.log
 ```
 
 Restart with fresh state:
 ```bash
-lspcmd daemon shutdown
-rm -rf ~/.cache/lspcmd/
+leta daemon shutdown
+rm -rf ~/.cache/leta/
 ```
 
 ## Architecture Details
@@ -462,11 +462,11 @@ rm -rf ~/.cache/lspcmd/
 ### Daemon Lifecycle
 
 1. First CLI command checks for PID file
-2. If no daemon or stale PID, spawns `lspcmd-daemon` in background
+2. If no daemon or stale PID, spawns `leta-daemon` in background
 3. CLI connects via Unix socket
 4. CLI sends JSON request, waits for JSON response
 5. Daemon keeps running indefinitely, managing servers
-6. User runs `lspcmd daemon shutdown` to stop daemon
+6. User runs `leta daemon shutdown` to stop daemon
 
 ### Session State
 
@@ -489,7 +489,7 @@ Key features:
 
 ### Important: Capability Negotiation
 
-Some LSP capabilities cause servers to send requests to the client and block waiting for responses. The current `lspcmd/lsp/capabilities.py` is carefully curated to avoid these issues. Notable exclusions:
+Some LSP capabilities cause servers to send requests to the client and block waiting for responses. The current `leta/lsp/capabilities.py` is carefully curated to avoid these issues. Notable exclusions:
 - `workspaceFolders: True` - causes pyright to block
 - `window.workDoneProgress: True` - causes progress notifications
 - `workspace.configuration: True` - requires handling config requests

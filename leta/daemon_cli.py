@@ -1,10 +1,10 @@
-"""Entry point for the lspcmd daemon."""
+"""Entry point for the leta daemon."""
 
 import asyncio
 
 
 def main():
-    """Run the lspcmd daemon with Unix socket server."""
+    """Run the leta daemon with Unix socket server."""
     from .daemon.server import run_daemon
 
     asyncio.run(run_daemon())

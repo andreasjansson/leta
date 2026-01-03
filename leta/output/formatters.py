@@ -340,7 +340,7 @@ def format_definition_content(data: dict) -> str:
         total_lines = data.get("total_lines", head)
         symbol = data.get("symbol", "SYMBOL")
         lines.append("")
-        lines.append(f"[truncated after {head} lines, use `lspcmd show \"{symbol}\" --head {total_lines}` to show the full {total_lines} lines]")
+        lines.append(f"[truncated after {head} lines, use `leta show \"{symbol}\" --head {total_lines}` to show the full {total_lines} lines]")
     
     return "\n".join(lines)
 

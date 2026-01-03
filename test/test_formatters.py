@@ -1,6 +1,6 @@
 import pytest
 
-from lspcmd.output.formatters import (
+from leta.output.formatters import (
     format_output,
     format_locations,
     format_symbols,
