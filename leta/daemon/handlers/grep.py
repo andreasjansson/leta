@@ -41,9 +41,12 @@ async def handle_grep(ctx: HandlerContext, params: GrepParams) -> GrepResult:
 
     if include_docs and symbols:
         for sym in symbols:
-            sym["documentation"] = await ctx.get_symbol_documentation(
-                workspace_root, sym["path"], sym["line"], sym.get("column", 0)
-            )
+            path_val = sym.get("path")
+            line_val = sym.get("line")
+            if path_val is not None and line_val is not None:
+                sym["documentation"] = await ctx.get_symbol_documentation(
+                    workspace_root, path_val, line_val, sym.get("column", 0)
+                )
 
     warning = None
     if not symbols and r"\|" in pattern:
