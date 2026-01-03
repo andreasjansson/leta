@@ -29,7 +29,11 @@ class LSPProtocolError(Exception):
 
 
 class LSPResponseError(Exception):
-    def __init__(self, code: int, message: str, data: Any = None):
+    code: int
+    message: str
+    data: object | None
+
+    def __init__(self, code: int, message: str, data: object | None = None):
         self.code = code
         self.message = message
         self.data = data
