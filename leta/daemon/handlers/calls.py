@@ -180,6 +180,8 @@ class CallTreeResult(TypedDict, total=False):
     column: int
     calls: list[FormattedCallItem]
     called_by: list[FormattedCallItem]
+    from_ranges: list[dict[str, int]]
+    call_sites: list[dict[str, int]]
     error: str
 
 
