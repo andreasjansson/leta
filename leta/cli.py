@@ -734,7 +734,7 @@ def implementations(ctx: click.Context, symbol: str, context: int) -> None:
 
     resolved = resolve_symbol(symbol, workspace_root)
 
-    response = run_request(
+    result = make_request(
         "implementations",
         {
             "path": str(resolved.path),
@@ -743,9 +743,10 @@ def implementations(ctx: click.Context, symbol: str, context: int) -> None:
             "column": resolved.column,
             "context": context,
         },
+        ImplementationsResult,
     )
     output_format = "json" if cast(CliContext, ctx.obj)["json"] else "plain"
-    output_result(response["result"], output_format)
+    output_result(result, output_format)
 
 
 @cli.command("subtypes")
