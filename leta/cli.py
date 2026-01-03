@@ -301,31 +301,32 @@ See `leta COMMAND --help` for more documentation and command-specific options.
 )
 @click.option("--json", "json_output", is_flag=True, help="Output as JSON")
 @click.pass_context
-def cli(ctx, json_output):
+def cli(ctx: click.Context, json_output: bool) -> None:
     ctx.ensure_object(dict)
     ctx.obj["json"] = json_output
 
 
 @cli.group()
 @click.pass_context
-def daemon(ctx):
+def daemon(ctx: click.Context) -> None:
     """Manage the leta daemon."""
     pass
 
 
 @daemon.command("info")
 @click.pass_context
-def daemon_info(ctx):
+def daemon_info(ctx: click.Context) -> None:
     """Show current daemon state."""
     response = run_request("describe-session", {})
     output_format = "json" if ctx.obj["json"] else "plain"
-    output_result(response["result"], output_format)
+    output_result(response.get("result"), output_format)
 
 
 @daemon.command("start")
 @click.pass_context
-def daemon_start(ctx):
+def daemon_start(ctx: click.Context) -> None:
     """Start the leta daemon."""
+    _ = ctx
     pid_path = get_pid_path()
     socket_path = get_socket_path()
 
@@ -339,8 +340,9 @@ def daemon_start(ctx):
 
 @daemon.command("stop")
 @click.pass_context
-def daemon_stop(ctx):
+def daemon_stop(ctx: click.Context) -> None:
     """Stop the leta daemon."""
+    _ = ctx
     if not is_daemon_running(get_pid_path()):
         click.echo("Daemon is not running")
         return
@@ -351,8 +353,9 @@ def daemon_stop(ctx):
 
 @daemon.command("restart")
 @click.pass_context
-def daemon_restart(ctx):
+def daemon_restart(ctx: click.Context) -> None:
     """Restart the leta daemon."""
+    _ = ctx
     socket_path = get_socket_path()
     
     if is_daemon_running(get_pid_path()):
