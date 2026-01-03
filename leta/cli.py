@@ -420,7 +420,7 @@ def workspace_add(ctx: click.Context, root: str | None) -> None:
         else:
             raise click.ClickException(
                 f"Cannot prompt for workspace root in non-interactive mode.\n"
-                f"Use: leta workspace add --root {default_root}"
+                + f"Use: leta workspace add --root {default_root}"
             )
 
     workspaces_config = config.get("workspaces", {})
