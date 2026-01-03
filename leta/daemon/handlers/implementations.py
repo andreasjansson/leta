@@ -17,7 +17,7 @@ async def handle_implementations(
     line, column = ctx.parse_position({"line": params.line, "column": params.column})
     context = params.context
 
-    caps = workspace.client.capabilities
+    caps = workspace.client.capabilities.model_dump()
     if not caps.get("implementationProvider"):
         server_name = workspace.server_config.name
         return ImplementationsResult(
