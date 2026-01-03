@@ -105,7 +105,7 @@ class LMDBCache:
         key_bytes = pickle.dumps(key)
 
         with self.env.begin(write=True) as txn:  # type: ignore[union-attr]
-            value_bytes: bytes | None = txn.get(key_bytes)  # type: ignore[union-attr]
+            value_bytes = txn.get(key_bytes)  # type: ignore[union-attr]
             if value_bytes is None:
                 return default
 
