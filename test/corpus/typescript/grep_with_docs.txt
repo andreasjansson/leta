@@ -1,0 +1,11 @@
+==================
+grep with docs
+==================
+leta grep "^createSampleUser$" --kind function --docs src/main.ts -C
+---
+src/main.ts:6 [Function] createSampleUser
+    ```typescript
+    function createSampleUser(): User
+    ```
+    Creates a sample user for testing.
+
