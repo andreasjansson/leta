@@ -1,0 +1,6 @@
+==================
+calls outgoing not supported
+==================
+leta calls --from main
+---
+Error: callHierarchy/outgoingCalls is not supported by clangd
