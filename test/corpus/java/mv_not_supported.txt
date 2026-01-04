@@ -1,6 +1,0 @@
-==================
-move file not supported
-==================
-leta mv src/main/java/com/example/Errors.java src/main/java/com/example/ErrorClass.java
----
-Error: [Errno 2] No such file or directory: '/Users/ajansson/projects/leta/test/corpus/java/fixture/src/main/java/com/example/ErrorClass.java'
