@@ -1,0 +1,16 @@
+==================
+show multiline array constant
+==================
+leta show COUNTRY_CODES
+---
+user.hpp:162-170
+
+constexpr const char* COUNTRY_CODES[] = {
+    "US",
+    "CA",
+    "GB",
+    "DE",
+    "FR",
+    "JP",
+    "AU",
+};
