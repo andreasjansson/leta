@@ -1,0 +1,6 @@
+==================
+grep kind filter interface
+==================
+leta grep "." --kind interface -C
+---
+src/main/java/com/example/Storage.java:8 [Interface] Storage
