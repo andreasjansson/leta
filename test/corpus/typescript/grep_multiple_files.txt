@@ -1,0 +1,7 @@
+==================
+grep multiple files via glob
+==================
+leta grep "^validate" --kind function "src/*.ts" -C
+---
+src/main.ts:20 [Function] validateEmail
+src/user.ts:119 [Function] validateUser
