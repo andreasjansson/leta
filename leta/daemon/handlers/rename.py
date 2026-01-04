@@ -82,10 +82,11 @@ async def handle_rename(ctx: HandlerContext, params: RPCRenameParams) -> RenameR
         # For ruby-lsp, we need to wait for it to process the file changes
         # It processes messages asynchronously, so we send a dummy request and wait
         if workspace.client and workspace.client.server_name == "ruby-lsp":
+            from ...lsp.types import WorkspaceSymbolParams
             try:
                 await workspace.client.send_request(
                     "workspace/symbol",
-                    {"query": ""},
+                    WorkspaceSymbolParams(query=""),
                     timeout=5.0,
                 )
             except Exception:
