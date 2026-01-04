@@ -183,19 +183,73 @@ Make sure every original test has a corresponding corpus test.
 
 ## File Organization
 
-Group related tests into files:
-- `grep.txt` - All grep/search tests
-- `show.txt` - Symbol display tests
-- `refs.txt` - Reference finding tests
-- `calls.txt` - Call hierarchy tests
-- `rename.txt` - Rename refactoring tests (mutation)
-- `mv.txt` - Move file tests (mutation)
-- `implementations.txt` - Interface implementation tests
-- `types.txt` - Type hierarchy tests (subtypes/supertypes)
-- `errors.txt` - Error handling tests
+**IMPORTANT: Each test case should have its own file with a single command/expectation pair.**
 
-Or combine small related groups:
-- `grep_basic.txt`, `grep_filters.txt`, `grep_docs.txt`
+This makes tests easier to understand, debug, and update. Name files descriptively:
+
+```
+test/corpus/<language>/
+├── grep_pattern.txt           # Single grep pattern test
+├── grep_kind_class.txt        # Single grep kind filter test
+├── show_function.txt          # Single show test
+├── refs_basic.txt             # Single refs test
+├── calls_outgoing.txt         # Single calls test
+├── declaration_not_supported.txt  # Single error test
+└── rename_class.txt           # Exception: multi-step mutation test
+```
+
+### Exception: Mutating Commands
+
+Tests for commands that modify state (rename, mv) are the **only exception**. These need multiple steps in a single file to:
+1. Verify state before
+2. Run the mutation
+3. Verify state after
+4. **Restore state** so subsequent test runs work
+
+Example from Python corpus (`rename_class.txt`):
+```
+==================
+check class exists before rename
+==================
+grep "class.*Person" editable.py
+---
+class EditablePerson:
+
+==================
+rename EditablePerson to RenamedPerson
+==================
+leta rename EditablePerson RenamedPerson
+---
+Renamed in 2 file(s):
+  editable_consumer.py
+  editable.py
+
+==================
+verify class was renamed
+==================
+grep "class.*Person" editable.py
+---
+class RenamedPerson:
+
+==================
+verify import was updated
+==================
+grep "from editable import" editable_consumer.py
+---
+from editable import RenamedPerson, editable_create_sample
+```
+
+Note: The Python rename test doesn't restore because subsequent tests handle that. But for Go where rename affects fewer files, we restore explicitly:
+
+```
+==================
+restore original name
+==================
+leta rename RenamedPerson EditablePerson
+---
+Renamed in 1 file(s):
+  editable.go
+```
 
 ## Common Patterns
 
