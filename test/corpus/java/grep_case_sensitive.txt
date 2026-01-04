@@ -1,0 +1,6 @@
+==================
+grep case sensitive finds User
+==================
+leta grep "^User$" -C
+---
+src/main/java/com/example/User.java:9 [Class] User
