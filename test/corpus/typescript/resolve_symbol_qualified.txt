@@ -1,0 +1,10 @@
+==================
+resolve qualified method
+==================
+leta show Counter.increment
+---
+src/main.ts:39-41
+
+    increment(): number {
+        return ++this.value;
+    }
