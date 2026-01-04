@@ -29,8 +29,8 @@ async def handle_show(
 
 
 async def _handle_direct_definition(
-    ctx: HandlerContext, params: ShowParams, body: bool
-) -> list[LocationDict] | dict[str, object]:
+    ctx: HandlerContext, params: ShowParams
+) -> dict[str, object]:
     path = Path(params.path).resolve()
     workspace_root = Path(params.workspace_root).resolve()
     line = params.line
@@ -43,66 +43,52 @@ async def _handle_direct_definition(
     content = read_file_content(path)
     lines = content.splitlines()
 
-    if body:
-        range_start = params.range_start_line
-        range_end = params.range_end_line
+    range_start = params.range_start_line
+    range_end = params.range_end_line
 
-        if range_start is not None and range_end is not None:
-            start = range_start - 1
-            end = range_end - 1
+    if range_start is not None and range_end is not None:
+        start = range_start - 1
+        end = range_end - 1
 
-            if start == end and symbol_kind in ("Constant", "Variable"):
-                end = expand_variable_range(lines, start)
-        else:
-            workspace = await ctx.session.get_or_create_workspace(path, workspace_root)
-            doc = await workspace.ensure_document_open(path)
-            assert workspace.client is not None
-            result = await workspace.client.send_request(
-                "textDocument/documentSymbol",
-                DocumentSymbolParams(textDocument=TextDocumentIdentifier(uri=doc.uri)),
-            )
-            if result:
-                symbol = find_symbol_at_line(result, line - 1)
-                if symbol:
-                    start = symbol["range_start"]
-                    end = symbol["range_end"]
-                else:
-                    start = end = line - 1
+        if start == end and symbol_kind in ("Constant", "Variable"):
+            end = expand_variable_range(lines, start)
+    else:
+        workspace = await ctx.session.get_or_create_workspace(path, workspace_root)
+        doc = await workspace.ensure_document_open(path)
+        assert workspace.client is not None
+        result = await workspace.client.send_request(
+            "textDocument/documentSymbol",
+            DocumentSymbolParams(textDocument=TextDocumentIdentifier(uri=doc.uri)),
+        )
+        if result:
+            symbol = find_symbol_at_line(result, line - 1)
+            if symbol:
+                start = symbol["range_start"]
+                end = symbol["range_end"]
             else:
                 start = end = line - 1
+        else:
+            start = end = line - 1
 
-        if context > 0:
-            start = max(0, start - context)
-            end = min(len(lines) - 1, end + context)
+    if context > 0:
+        start = max(0, start - context)
+        end = min(len(lines) - 1, end + context)
 
-        total_lines = end - start + 1
-        truncated = total_lines > head
-        if truncated:
-            end = start + head - 1
+    total_lines = end - start + 1
+    truncated = total_lines > head
+    if truncated:
+        end = start + head - 1
 
-        return {
-            "path": rel_path,
-            "start_line": start + 1,
-            "end_line": end + 1,
-            "content": "\n".join(lines[start : end + 1]),
-            "truncated": truncated,
-            "total_lines": total_lines,
-            "head": head,
-            "symbol": symbol_name,
-        }
-    else:
-        location: LocationDict = {
-            "path": rel_path,
-            "line": line,
-            "column": params.column,
-        }
-
-        if context > 0 and path.exists():
-            ctx_lines, start, end = get_lines_around(content, line - 1, context)
-            location["context_lines"] = ctx_lines
-            location["context_start"] = start + 1
-
-        return [location]
+    return {
+        "path": rel_path,
+        "start_line": start + 1,
+        "end_line": end + 1,
+        "content": "\n".join(lines[start : end + 1]),
+        "truncated": truncated,
+        "total_lines": total_lines,
+        "head": head,
+        "symbol": symbol_name,
+    }
 
 
 async def _handle_definition_body(
