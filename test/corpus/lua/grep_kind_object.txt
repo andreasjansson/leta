@@ -1,0 +1,6 @@
+==================
+grep kind filter object
+==================
+leta grep "^User$" --kind object user.lua -C
+---
+user.lua:11 [Object] User
