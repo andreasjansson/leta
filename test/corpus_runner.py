@@ -12,12 +12,12 @@ Usage:
 """
 
 import argparse
-import multiprocessing
 import re
 import shutil
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
@@ -27,7 +27,7 @@ from threading import Thread
 
 CORPUS_DIR = Path(__file__).parent / "corpus"
 
-LANGUAGE_SERVER_COMMANDS = {
+LANGUAGE_SERVER_COMMANDS: dict[str, str | list[str]] = {
     "python": "basedpyright-langserver",
     "go": "gopls",
     "typescript": "typescript-language-server",
@@ -59,7 +59,7 @@ class TestResult:
     actual_output: str | None = None
     error: str | None = None
     elapsed: float = 0.0
-    language: str = ""
+    suite: str = ""
 
 
 @dataclass
@@ -73,8 +73,8 @@ class FileResult:
 
 
 @dataclass
-class LanguageResult:
-    language: str
+class SuiteResult:
+    suite: str
     file_results: list[FileResult] = field(default_factory=list)
     setup_error: str | None = None
     elapsed: float = 0.0
@@ -114,7 +114,6 @@ class Colors:
         cls.RESET = ""
 
 
-# Global queue for progress updates
 progress_queue: Queue | None = None
 
 
@@ -156,32 +155,33 @@ def parse_corpus_file(path: Path) -> list[CorpusTest]:
     return tests
 
 
-def check_language_server(language: str) -> bool:
-    """Check if the language server for a language is installed.
+def check_requirements(suite: str) -> bool:
+    """Check if requirements for a test suite are met.
     
     Returns True if no language server is required (not in LANGUAGE_SERVER_COMMANDS).
     """
-    cmd = LANGUAGE_SERVER_COMMANDS.get(language)
+    cmd = LANGUAGE_SERVER_COMMANDS.get(suite)
     if cmd is None:
-        return True  # No language server required
+        return True
     if isinstance(cmd, list):
         return all(shutil.which(c) is not None for c in cmd)
     return shutil.which(cmd) is not None
 
 
-def get_language_server_name(language: str) -> str:
+def get_language_server_name(suite: str) -> str:
     """Get display name for language server(s)."""
-    cmd = LANGUAGE_SERVER_COMMANDS.get(language, "unknown")
+    cmd = LANGUAGE_SERVER_COMMANDS.get(suite)
+    if cmd is None:
+        return "none"
     if isinstance(cmd, list):
         return ", ".join(cmd)
     return cmd
 
 
-def setup_workspace(language: str, work_dir: Path) -> str | None:
+def setup_workspace(suite: str, work_dir: Path) -> str | None:
     """Set up a workspace for testing. Returns error message or None."""
-    fixture_dir = CORPUS_DIR / language / "fixture"
+    fixture_dir = CORPUS_DIR / suite / "fixture"
     
-    # If there's a fixture directory, copy it and set up workspace
     if fixture_dir.exists():
         shutil.copytree(fixture_dir, work_dir, dirs_exist_ok=True)
 
@@ -220,7 +220,7 @@ def run_command(command: str, work_dir: Path) -> tuple[str, int]:
     return output.rstrip("\n"), result.returncode
 
 
-def run_test(test: CorpusTest, work_dir: Path, language: str) -> TestResult:
+def run_test(test: CorpusTest, work_dir: Path, suite: str) -> TestResult:
     """Run a single test and return the result."""
     start = time.time()
     try:
@@ -228,13 +228,13 @@ def run_test(test: CorpusTest, work_dir: Path, language: str) -> TestResult:
         elapsed = time.time() - start
 
         if actual_output == test.expected_output:
-            result = TestResult(test=test, passed=True, actual_output=actual_output, elapsed=elapsed, language=language)
+            result = TestResult(test=test, passed=True, actual_output=actual_output, elapsed=elapsed, suite=suite)
         else:
-            result = TestResult(test=test, passed=False, actual_output=actual_output, elapsed=elapsed, language=language)
+            result = TestResult(test=test, passed=False, actual_output=actual_output, elapsed=elapsed, suite=suite)
     except subprocess.TimeoutExpired:
-        result = TestResult(test=test, passed=False, error="Command timed out", elapsed=time.time() - start, language=language)
+        result = TestResult(test=test, passed=False, error="Command timed out", elapsed=time.time() - start, suite=suite)
     except Exception as e:
-        result = TestResult(test=test, passed=False, error=str(e), elapsed=time.time() - start, language=language)
+        result = TestResult(test=test, passed=False, error=str(e), elapsed=time.time() - start, suite=suite)
     
     if progress_queue:
         progress_queue.put(("test", result))
@@ -242,54 +242,54 @@ def run_test(test: CorpusTest, work_dir: Path, language: str) -> TestResult:
     return result
 
 
-def run_corpus_file(file_path: Path, work_dir: Path, language: str) -> FileResult:
+def run_corpus_file(file_path: Path, work_dir: Path, suite: str) -> FileResult:
     """Run all tests in a corpus file."""
     file_result = FileResult(file_path=file_path)
     tests = parse_corpus_file(file_path)
 
     for test in tests:
-        result = run_test(test, work_dir, language)
+        result = run_test(test, work_dir, suite)
         file_result.results.append(result)
 
     return file_result
 
 
-def run_language(language: str, temp_base: Path, filter_pattern: str | None = None) -> LanguageResult:
-    """Run all corpus tests for a language."""
+def run_suite(suite: str, temp_base: Path, filter_pattern: str | None = None) -> SuiteResult:
+    """Run all corpus tests for a suite."""
     start_time = time.time()
-    result = LanguageResult(language=language)
+    result = SuiteResult(suite=suite)
 
-    if not check_language_server(language):
-        result.setup_error = f"Language server not installed: {get_language_server_name(language)}"
+    if not check_requirements(suite):
+        result.setup_error = f"Language server not installed: {get_language_server_name(suite)}"
         result.elapsed = time.time() - start_time
         if progress_queue:
-            progress_queue.put(("skip", language, result.setup_error))
+            progress_queue.put(("skip", suite, result.setup_error))
         return result
 
-    work_dir = temp_base / language
+    work_dir = temp_base / suite
     work_dir.mkdir(parents=True, exist_ok=True)
 
-    setup_error = setup_workspace(language, work_dir)
+    setup_error = setup_workspace(suite, work_dir)
     if setup_error:
         result.setup_error = setup_error
         result.elapsed = time.time() - start_time
         if progress_queue:
-            progress_queue.put(("skip", language, setup_error))
+            progress_queue.put(("skip", suite, setup_error))
         return result
 
-    corpus_files = sorted((CORPUS_DIR / language).glob("*.txt"))
+    corpus_files = sorted((CORPUS_DIR / suite).glob("*.txt"))
 
     for corpus_file in corpus_files:
         if filter_pattern and filter_pattern not in corpus_file.stem:
             continue
-        file_result = run_corpus_file(corpus_file, work_dir, language)
+        file_result = run_corpus_file(corpus_file, work_dir, suite)
         result.file_results.append(file_result)
 
     result.elapsed = time.time() - start_time
     return result
 
 
-def progress_printer_thread(queue: Queue, verbose: bool, stop_event) -> None:
+def progress_printer_thread(queue: Queue, verbose: bool, stop_event: threading.Event) -> None:
     """Thread that prints progress updates from the queue."""
     dot_count = 0
     
@@ -304,7 +304,7 @@ def progress_printer_thread(queue: Queue, verbose: bool, stop_event) -> None:
             if verbose:
                 status = f"{Colors.GREEN}✓{Colors.RESET}" if result.passed else f"{Colors.RED}✗{Colors.RESET}"
                 time_str = f"{Colors.DIM}{result.elapsed:.2f}s{Colors.RESET}"
-                print(f"{status} {result.language}/{result.test.file_path.stem}: {result.test.name} {time_str}")
+                print(f"{status} {result.suite}/{result.test.file_path.stem}: {result.test.name} {time_str}")
                 sys.stdout.flush()
             else:
                 if result.passed:
@@ -316,14 +316,13 @@ def progress_printer_thread(queue: Queue, verbose: bool, stop_event) -> None:
                     print()
                     dot_count = 0
         elif msg[0] == "skip":
-            language, reason = msg[1], msg[2]
+            suite, reason = msg[1], msg[2]
             if verbose:
-                print(f"{Colors.YELLOW}S{Colors.RESET} {language}: {reason}")
+                print(f"{Colors.YELLOW}S{Colors.RESET} {suite}: {reason}")
             else:
                 print(f"{Colors.YELLOW}S{Colors.RESET}", end="", flush=True)
                 dot_count += 1
     
-    # Final newline after dots
     if not verbose and dot_count > 0:
         print()
 
@@ -389,42 +388,40 @@ def print_diff(expected: str, actual: str) -> None:
             print(line.rstrip())
 
 
-def print_results(results: list[LanguageResult], elapsed: float) -> None:
+def print_results(results: list[SuiteResult], elapsed: float) -> None:
     """Print test results."""
     total_passed = 0
     total_failed = 0
     total_skipped = 0
     failed_tests: list[TestResult] = []
 
-    # Print per-language results (no blank lines between)
-    for lang_result in sorted(results, key=lambda r: r.language):
-        if lang_result.setup_error:
-            print(f"{Colors.YELLOW}⊘ {lang_result.language}{Colors.RESET}: {lang_result.setup_error}")
+    for suite_result in sorted(results, key=lambda r: r.suite):
+        if suite_result.setup_error:
+            print(f"{Colors.YELLOW}⊘ {suite_result.suite}{Colors.RESET}: {suite_result.setup_error}")
             total_skipped += 1
             continue
 
-        lang_passed = lang_result.passed_tests
-        lang_total = lang_result.total_tests
-        lang_time = f" in {lang_result.elapsed:.2f}s"
+        suite_passed = suite_result.passed_tests
+        suite_total = suite_result.total_tests
+        suite_time = f" in {suite_result.elapsed:.2f}s"
 
-        total_passed += lang_passed
-        total_failed += lang_total - lang_passed
+        total_passed += suite_passed
+        total_failed += suite_total - suite_passed
 
-        if lang_result.passed:
-            print(f"{Colors.GREEN}✓ {lang_result.language}{Colors.RESET}: {lang_passed}/{lang_total} tests passed{lang_time}")
+        if suite_result.passed:
+            print(f"{Colors.GREEN}✓ {suite_result.suite}{Colors.RESET}: {suite_passed}/{suite_total} tests passed{suite_time}")
         else:
-            print(f"{Colors.RED}✗ {lang_result.language}{Colors.RESET}: {lang_passed}/{lang_total} tests passed{lang_time}")
-            for file_result in lang_result.file_results:
+            print(f"{Colors.RED}✗ {suite_result.suite}{Colors.RESET}: {suite_passed}/{suite_total} tests passed{suite_time}")
+            for file_result in suite_result.file_results:
                 for result in file_result.results:
                     if not result.passed:
                         failed_tests.append(result)
 
-    # Print failures
     if failed_tests:
         print(f"\n{Colors.RED}{Colors.BOLD}Failures:{Colors.RESET}")
         for result in failed_tests:
             file_name = result.test.file_path.stem
-            print(f"\n{Colors.RED}✗{Colors.RESET} {result.language}/{file_name}: {result.test.name}")
+            print(f"\n{Colors.RED}✗{Colors.RESET} {result.suite}/{file_name}: {result.test.name}")
             if result.error:
                 print(f"  Error: {result.error}")
             elif result.actual_output is not None:
@@ -433,7 +430,6 @@ def print_results(results: list[LanguageResult], elapsed: float) -> None:
                 print()
                 print_diff(result.test.expected_output, result.actual_output)
 
-    # Print final summary
     print()
     elapsed_str = f" in {elapsed:.2f}s"
     if total_failed == 0 and total_skipped == 0:
@@ -444,17 +440,20 @@ def print_results(results: list[LanguageResult], elapsed: float) -> None:
 
 def list_tests() -> None:
     """List all available tests."""
-    for lang_dir in sorted(CORPUS_DIR.iterdir()):
-        if not lang_dir.is_dir() or not (lang_dir / "fixture").exists():
+    for suite_dir in sorted(CORPUS_DIR.iterdir()):
+        if not suite_dir.is_dir():
+            continue
+        corpus_files = list(suite_dir.glob("*.txt"))
+        if not corpus_files:
             continue
 
-        language = lang_dir.name
-        server_cmd = get_language_server_name(language)
-        installed = "✓" if check_language_server(language) else "✗"
+        suite = suite_dir.name
+        server_cmd = get_language_server_name(suite)
+        installed = "✓" if check_requirements(suite) else "✗"
 
-        print(f"\n{Colors.BOLD}{language}{Colors.RESET} ({server_cmd}) [{installed}]")
+        print(f"\n{Colors.BOLD}{suite}{Colors.RESET} ({server_cmd}) [{installed}]")
 
-        for corpus_file in sorted(lang_dir.glob("*.txt")):
+        for corpus_file in sorted(corpus_files):
             tests = parse_corpus_file(corpus_file)
             print(f"  {corpus_file.stem}: {len(tests)} test(s)")
             for test in tests:
@@ -465,12 +464,12 @@ def main() -> int:
     global progress_queue
 
     parser = argparse.ArgumentParser(description="Run leta corpus tests")
-    parser.add_argument("filter", nargs="?", help="Filter by language or language/file")
+    parser.add_argument("filter", nargs="?", help="Filter by suite or suite/file")
     parser.add_argument("--update", "-u", action="store_true", help="Update expected outputs")
     parser.add_argument("--list", "-l", action="store_true", help="List all tests")
     parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
     parser.add_argument("--no-color", action="store_true", help="Disable colored output")
-    parser.add_argument("--sequential", "-s", action="store_true", help="Run languages sequentially")
+    parser.add_argument("--sequential", "-s", action="store_true", help="Run suites sequentially")
 
     args = parser.parse_args()
 
@@ -481,59 +480,57 @@ def main() -> int:
         list_tests()
         return 0
 
-    language_filter = None
+    suite_filter = None
     file_filter = None
 
     if args.filter:
         if "/" in args.filter:
-            language_filter, file_filter = args.filter.split("/", 1)
+            suite_filter, file_filter = args.filter.split("/", 1)
         else:
-            language_filter = args.filter
+            suite_filter = args.filter
 
-    languages = []
-    for lang_dir in sorted(CORPUS_DIR.iterdir()):
-        if not lang_dir.is_dir() or not (lang_dir / "fixture").exists():
+    suites = []
+    for suite_dir in sorted(CORPUS_DIR.iterdir()):
+        if not suite_dir.is_dir():
             continue
-        language = lang_dir.name
-        if language_filter and language != language_filter:
+        corpus_files = list(suite_dir.glob("*.txt"))
+        if not corpus_files:
             continue
-        languages.append(language)
+        suite = suite_dir.name
+        if suite_filter and suite != suite_filter:
+            continue
+        suites.append(suite)
 
-    if not languages:
-        print(f"{Colors.RED}No languages found{Colors.RESET}")
+    if not suites:
+        print(f"{Colors.RED}No test suites found{Colors.RESET}")
         return 1
 
     temp_base = Path(tempfile.mkdtemp(prefix="leta_corpus_")).resolve()
     start_time = time.time()
 
-    # Set up progress queue and printer thread
-    import threading
     progress_queue = Queue()
     stop_event = threading.Event()
     printer_thread = Thread(target=progress_printer_thread, args=(progress_queue, args.verbose, stop_event))
     printer_thread.start()
 
     try:
-        if args.sequential or len(languages) == 1:
-            results = [run_language(lang, temp_base, file_filter) for lang in languages]
+        if args.sequential or len(suites) == 1:
+            results = [run_suite(suite, temp_base, file_filter) for suite in suites]
         else:
-            # Use ThreadPoolExecutor for parallel execution with progress updates
             results = []
-            with ThreadPoolExecutor(max_workers=len(languages)) as executor:
-                futures = {executor.submit(run_language, lang, temp_base, file_filter): lang for lang in languages}
+            with ThreadPoolExecutor(max_workers=len(suites)) as executor:
+                futures = {executor.submit(run_suite, suite, temp_base, file_filter): suite for suite in suites}
                 for future in as_completed(futures):
                     results.append(future.result())
 
-        # Stop the printer thread
         stop_event.set()
         printer_thread.join()
 
-        # Add separator before summary
         print()
 
         if args.update:
-            for lang_result in results:
-                for file_result in lang_result.file_results:
+            for suite_result in results:
+                for file_result in suite_result.file_results:
                     failed_results = [r for r in file_result.results if not r.passed and r.actual_output is not None]
                     if failed_results:
                         update_corpus_file(file_result.file_path, failed_results)
