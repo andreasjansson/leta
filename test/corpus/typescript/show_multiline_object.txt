@@ -1,0 +1,16 @@
+==================
+show multiline object constant
+==================
+leta show COUNTRY_CODES
+---
+src/user.ts:135-143
+
+export const COUNTRY_CODES: Record<string, string> = {
+    "US": "United States",
+    "CA": "Canada",
+    "GB": "United Kingdom",
+    "DE": "Germany",
+    "FR": "France",
+    "JP": "Japan",
+    "AU": "Australia",
+};
