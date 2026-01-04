@@ -263,6 +263,7 @@ async def _get_outgoing_calls_tree(
         raise ValueError(f"No language server available for {path}")
 
     await workspace.client.wait_for_service_ready()
+    await workspace.client.wait_for_indexing()
 
     item = await _prepare_call_hierarchy(workspace, path, line, column)
     if not item:
