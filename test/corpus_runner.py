@@ -18,11 +18,12 @@ import shutil
 import subprocess
 import sys
 import tempfile
-import threading
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from pathlib import Path
-from queue import Queue
+from queue import Empty, Queue
+from threading import Thread
 
 CORPUS_DIR = Path(__file__).parent / "corpus"
 
@@ -58,6 +59,7 @@ class TestResult:
     actual_output: str | None = None
     error: str | None = None
     elapsed: float = 0.0
+    language: str = ""
 
 
 @dataclass
@@ -112,46 +114,8 @@ class Colors:
         cls.RESET = ""
 
 
-class ProgressPrinter:
-    """Thread-safe progress printer for test results."""
-    
-    def __init__(self, verbose: bool = False):
-        self.verbose = verbose
-        self.lock = threading.Lock()
-        self.dot_count = 0
-    
-    def test_completed(self, result: TestResult, language: str) -> None:
-        with self.lock:
-            if self.verbose:
-                status = f"{Colors.GREEN}✓{Colors.RESET}" if result.passed else f"{Colors.RED}✗{Colors.RESET}"
-                time_str = f"{Colors.DIM}{result.elapsed:.2f}s{Colors.RESET}"
-                print(f"  {status} {language}/{result.test.file_path.stem}: {result.test.name} {time_str}")
-                sys.stdout.flush()
-            else:
-                if result.passed:
-                    print(f"{Colors.GREEN}.{Colors.RESET}", end="", flush=True)
-                else:
-                    print(f"{Colors.RED}F{Colors.RESET}", end="", flush=True)
-                self.dot_count += 1
-                if self.dot_count >= 80:
-                    print()
-                    self.dot_count = 0
-    
-    def language_skipped(self, language: str, reason: str) -> None:
-        with self.lock:
-            if self.verbose:
-                print(f"  {Colors.YELLOW}S{Colors.RESET} {language}: {reason}")
-            else:
-                print(f"{Colors.YELLOW}S{Colors.RESET}", end="", flush=True)
-                self.dot_count += 1
-    
-    def finish_dots(self) -> None:
-        with self.lock:
-            if not self.verbose and self.dot_count > 0:
-                print()
-
-
-progress_printer: ProgressPrinter | None = None
+# Global queue for progress updates
+progress_queue: Queue | None = None
 
 
 def parse_corpus_file(path: Path) -> list[CorpusTest]:
@@ -260,16 +224,16 @@ def run_test(test: CorpusTest, work_dir: Path, language: str) -> TestResult:
         elapsed = time.time() - start
 
         if actual_output == test.expected_output:
-            result = TestResult(test=test, passed=True, actual_output=actual_output, elapsed=elapsed)
+            result = TestResult(test=test, passed=True, actual_output=actual_output, elapsed=elapsed, language=language)
         else:
-            result = TestResult(test=test, passed=False, actual_output=actual_output, elapsed=elapsed)
+            result = TestResult(test=test, passed=False, actual_output=actual_output, elapsed=elapsed, language=language)
     except subprocess.TimeoutExpired:
-        result = TestResult(test=test, passed=False, error="Command timed out", elapsed=time.time() - start)
+        result = TestResult(test=test, passed=False, error="Command timed out", elapsed=time.time() - start, language=language)
     except Exception as e:
-        result = TestResult(test=test, passed=False, error=str(e), elapsed=time.time() - start)
+        result = TestResult(test=test, passed=False, error=str(e), elapsed=time.time() - start, language=language)
     
-    if progress_printer:
-        progress_printer.test_completed(result, language)
+    if progress_queue:
+        progress_queue.put(("test", result))
     
     return result
 
@@ -294,8 +258,8 @@ def run_language(language: str, temp_base: Path, filter_pattern: str | None = No
     if not check_language_server(language):
         result.setup_error = f"Language server not installed: {get_language_server_name(language)}"
         result.elapsed = time.time() - start_time
-        if progress_printer:
-            progress_printer.language_skipped(language, result.setup_error)
+        if progress_queue:
+            progress_queue.put(("skip", language, result.setup_error))
         return result
 
     work_dir = temp_base / language
@@ -305,8 +269,8 @@ def run_language(language: str, temp_base: Path, filter_pattern: str | None = No
     if setup_error:
         result.setup_error = setup_error
         result.elapsed = time.time() - start_time
-        if progress_printer:
-            progress_printer.language_skipped(language, setup_error)
+        if progress_queue:
+            progress_queue.put(("skip", language, setup_error))
         return result
 
     corpus_files = sorted((CORPUS_DIR / language).glob("*.txt"))
@@ -321,10 +285,43 @@ def run_language(language: str, temp_base: Path, filter_pattern: str | None = No
     return result
 
 
-def run_language_wrapper(args: tuple[str, Path, str | None]) -> LanguageResult:
-    """Wrapper for multiprocessing."""
-    language, temp_base, filter_pattern = args
-    return run_language(language, temp_base, filter_pattern)
+def progress_printer_thread(queue: Queue, verbose: bool, stop_event) -> None:
+    """Thread that prints progress updates from the queue."""
+    dot_count = 0
+    
+    while not stop_event.is_set() or not queue.empty():
+        try:
+            msg = queue.get(timeout=0.1)
+        except Empty:
+            continue
+        
+        if msg[0] == "test":
+            result = msg[1]
+            if verbose:
+                status = f"{Colors.GREEN}✓{Colors.RESET}" if result.passed else f"{Colors.RED}✗{Colors.RESET}"
+                time_str = f"{Colors.DIM}{result.elapsed:.2f}s{Colors.RESET}"
+                print(f"{status} {result.language}/{result.test.file_path.stem}: {result.test.name} {time_str}")
+                sys.stdout.flush()
+            else:
+                if result.passed:
+                    print(f"{Colors.GREEN}.{Colors.RESET}", end="", flush=True)
+                else:
+                    print(f"{Colors.RED}F{Colors.RESET}", end="", flush=True)
+                dot_count += 1
+                if dot_count >= 80:
+                    print()
+                    dot_count = 0
+        elif msg[0] == "skip":
+            language, reason = msg[1], msg[2]
+            if verbose:
+                print(f"{Colors.YELLOW}S{Colors.RESET} {language}: {reason}")
+            else:
+                print(f"{Colors.YELLOW}S{Colors.RESET}", end="", flush=True)
+                dot_count += 1
+    
+    # Final newline after dots
+    if not verbose and dot_count > 0:
+        print()
 
 
 def update_corpus_file(file_path: Path, results: list[TestResult]) -> None:
@@ -388,45 +385,42 @@ def print_diff(expected: str, actual: str) -> None:
             print(line.rstrip())
 
 
-def print_summary(results: list[LanguageResult], verbose: bool, elapsed: float) -> None:
-    """Print test summary."""
+def print_results(results: list[LanguageResult], elapsed: float) -> None:
+    """Print test results."""
     total_passed = 0
     total_failed = 0
     total_skipped = 0
-    failed_tests: list[tuple[str, TestResult]] = []
+    failed_tests: list[TestResult] = []
 
-    for lang_result in results:
+    # Print per-language results (no blank lines between)
+    for lang_result in sorted(results, key=lambda r: r.language):
         if lang_result.setup_error:
+            print(f"{Colors.YELLOW}⊘ {lang_result.language}{Colors.RESET}: {lang_result.setup_error}")
             total_skipped += 1
             continue
 
         lang_passed = lang_result.passed_tests
         lang_total = lang_result.total_tests
+        lang_time = f" in {lang_result.elapsed:.2f}s"
+
         total_passed += lang_passed
         total_failed += lang_total - lang_passed
 
-        for file_result in lang_result.file_results:
-            for result in file_result.results:
-                if not result.passed:
-                    failed_tests.append((lang_result.language, result))
-
-    # Print language summary line
-    lang_summaries = []
-    for lang_result in sorted(results, key=lambda r: r.language):
-        if lang_result.setup_error:
-            lang_summaries.append(f"{Colors.YELLOW}{lang_result.language}:S{Colors.RESET}")
-        elif lang_result.passed:
-            lang_summaries.append(f"{Colors.GREEN}{lang_result.language}:{lang_result.passed_tests}{Colors.RESET}")
+        if lang_result.passed:
+            print(f"{Colors.GREEN}✓ {lang_result.language}{Colors.RESET}: {lang_passed}/{lang_total} tests passed{lang_time}")
         else:
-            lang_summaries.append(f"{Colors.RED}{lang_result.language}:{lang_result.passed_tests}/{lang_result.total_tests}{Colors.RESET}")
-    
-    print(f"\n{' '.join(lang_summaries)}")
+            print(f"{Colors.RED}✗ {lang_result.language}{Colors.RESET}: {lang_passed}/{lang_total} tests passed{lang_time}")
+            for file_result in lang_result.file_results:
+                for result in file_result.results:
+                    if not result.passed:
+                        failed_tests.append(result)
 
     # Print failures
     if failed_tests:
         print(f"\n{Colors.RED}{Colors.BOLD}Failures:{Colors.RESET}")
-        for language, result in failed_tests:
-            print(f"\n{Colors.RED}✗{Colors.RESET} {language}/{result.test.file_path.stem}: {result.test.name}")
+        for result in failed_tests:
+            file_name = result.test.file_path.stem
+            print(f"\n{Colors.RED}✗{Colors.RESET} {result.language}/{file_name}: {result.test.name}")
             if result.error:
                 print(f"  Error: {result.error}")
             elif result.actual_output is not None:
@@ -436,11 +430,12 @@ def print_summary(results: list[LanguageResult], verbose: bool, elapsed: float) 
                 print_diff(result.test.expected_output, result.actual_output)
 
     # Print final summary
+    print()
     elapsed_str = f" in {elapsed:.2f}s"
     if total_failed == 0 and total_skipped == 0:
-        print(f"\n{Colors.GREEN}{Colors.BOLD}All {total_passed} tests passed{Colors.RESET}{elapsed_str}")
+        print(f"{Colors.GREEN}{Colors.BOLD}All {total_passed} tests passed{Colors.RESET}{elapsed_str}")
     else:
-        print(f"\n{Colors.BOLD}Summary:{Colors.RESET} {total_passed} passed, {total_failed} failed, {total_skipped} skipped{elapsed_str}")
+        print(f"{Colors.BOLD}Summary:{Colors.RESET} {total_passed} passed, {total_failed} failed, {total_skipped} skipped{elapsed_str}")
 
 
 def list_tests() -> None:
@@ -463,7 +458,7 @@ def list_tests() -> None:
 
 
 def main() -> int:
-    global progress_printer
+    global progress_queue
 
     parser = argparse.ArgumentParser(description="Run leta corpus tests")
     parser.add_argument("filter", nargs="?", help="Filter by language or language/file")
@@ -507,19 +502,27 @@ def main() -> int:
     temp_base = Path(tempfile.mkdtemp(prefix="leta_corpus_"))
     start_time = time.time()
 
-    # Only use progress printer for sequential mode (multiprocessing doesn't share state)
-    if args.sequential or len(languages) == 1:
-        progress_printer = ProgressPrinter(verbose=args.verbose)
+    # Set up progress queue and printer thread
+    import threading
+    progress_queue = Queue()
+    stop_event = threading.Event()
+    printer_thread = Thread(target=progress_printer_thread, args=(progress_queue, args.verbose, stop_event))
+    printer_thread.start()
 
     try:
         if args.sequential or len(languages) == 1:
             results = [run_language(lang, temp_base, file_filter) for lang in languages]
-            progress_printer.finish_dots()
         else:
-            # Parallel mode - run without live progress, show results at end
-            with multiprocessing.Pool(processes=len(languages)) as pool:
-                task_args = [(lang, temp_base, file_filter) for lang in languages]
-                results = pool.map(run_language_wrapper, task_args)
+            # Use ThreadPoolExecutor for parallel execution with progress updates
+            results = []
+            with ThreadPoolExecutor(max_workers=len(languages)) as executor:
+                futures = {executor.submit(run_language, lang, temp_base, file_filter): lang for lang in languages}
+                for future in as_completed(futures):
+                    results.append(future.result())
+
+        # Stop the printer thread
+        stop_event.set()
+        printer_thread.join()
 
         if args.update:
             for lang_result in results:
@@ -530,12 +533,14 @@ def main() -> int:
                         print(f"{Colors.YELLOW}Updated{Colors.RESET}: {file_result.file_path}")
 
         elapsed = time.time() - start_time
-        print_summary(results, verbose=args.verbose, elapsed=elapsed)
+        print_results(results, elapsed=elapsed)
 
         all_passed = all(r.passed or r.setup_error for r in results)
         return 0 if all_passed else 1
 
     finally:
+        stop_event.set()
+        printer_thread.join(timeout=1)
         shutil.rmtree(temp_base, ignore_errors=True)
 
 
