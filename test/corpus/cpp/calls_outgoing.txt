@@ -1,0 +1,15 @@
+==================
+calls outgoing
+==================
+leta calls --from main
+---
+main.cpp:7 [Function] main
+
+Outgoing calls:
+  ├── user.hpp:111 [Constructor] UserRepository (example::UserRepository::UserRepository)
+  ├── user.hpp:114 [Method] addUser (example::UserRepository::addUser)
+  ├── user.hpp:135 [Function] createSampleUser (example::createSampleUser)
+  ├── user.hpp:26 [Method] displayName (example::User::displayName)
+  ├── user.hpp:118 [Method] getUser (example::UserRepository::getUser)
+  ├── user.hpp:23 [Method] isAdult (example::User::isAdult)
+  └── user.hpp:140 [Function] validateUser (example::validateUser)
