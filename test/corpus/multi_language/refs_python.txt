@@ -1,0 +1,9 @@
+==================
+refs Python class
+==================
+leta refs PythonUser
+---
+app.py:19 class PythonUser:
+app.py:36         self._users: list[PythonUser] = []
+app.py:42     def add_user(self, user: PythonUser) -> None:
+app.py:46     def get_users(self) -> list[PythonUser]:
