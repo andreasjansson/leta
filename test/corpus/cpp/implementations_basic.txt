@@ -1,0 +1,7 @@
+==================
+implementations basic
+==================
+leta implementations Storage
+---
+user.hpp:48 class MemoryStorage : public Storage {
+user.hpp:80 class FileStorage : public Storage {
