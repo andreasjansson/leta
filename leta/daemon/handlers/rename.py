@@ -80,15 +80,21 @@ async def handle_rename(ctx: HandlerContext, params: RPCRenameParams) -> RenameR
         await workspace.notify_files_changed(file_changes)
         
         # For ruby-lsp, we need to wait for it to process the file changes
-        # It processes messages asynchronously, so we send a dummy request and wait
+        # It processes messages asynchronously in a queue, and the index update
+        # happens when the didChangeWatchedFiles notification is processed.
+        # We send a request and wait for its response to ensure the queue is flushed.
         if workspace.client and workspace.client.server_name == "ruby-lsp":
+            import asyncio
             from ...lsp.types import WorkspaceSymbolParams
             try:
+                # Send a request that forces queue processing
                 await workspace.client.send_request(
                     "workspace/symbol",
-                    WorkspaceSymbolParams(query=""),
+                    WorkspaceSymbolParams(query="__leta_sync__"),
                     timeout=5.0,
                 )
+                # Small additional delay to ensure index is fully updated
+                await asyncio.sleep(0.1)
             except Exception:
                 pass  # Just want to ensure notifications are processed
 
