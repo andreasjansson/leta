@@ -1,0 +1,10 @@
+==================
+grep kind filter method
+==================
+leta grep "." --kind method src/User.php -C
+---
+src/User.php:53 [Method] getName in User
+src/User.php:63 [Method] getEmail in User
+src/User.php:73 [Method] getAge in User
+src/User.php:83 [Method] isAdult in User
+src/User.php:93 [Method] displayName in User
