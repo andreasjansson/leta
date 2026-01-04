@@ -1,0 +1,11 @@
+==================
+grep multiple files via glob
+==================
+leta grep "^get" --kind method "src/main/java/com/example/*.java" -C
+---
+src/main/java/com/example/AbstractStorage.java:24 [Method] getName() ( : String) in AbstractStorage
+src/main/java/com/example/FileStorage.java:31 [Method] getBasePath() ( : String) in FileStorage
+src/main/java/com/example/User.java:54 [Method] getName() ( : String) in User
+src/main/java/com/example/User.java:63 [Method] getEmail() ( : String) in User
+src/main/java/com/example/User.java:72 [Method] getAge() ( : int) in User
+src/main/java/com/example/UserRepository.java:36 [Method] getUser(String) ( : User) in UserRepository
