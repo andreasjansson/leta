@@ -1,0 +1,31 @@
+==================
+resolve symbol unique
+==================
+leta show example.UserRepository
+---
+user.hpp:109-132
+
+class UserRepository {
+public:
+    explicit UserRepository(std::unique_ptr<Storage> storage)
+        : storage_(std::move(storage)) {}
+
+    void addUser(const User& user) {
+        storage_->save(user);
+    }
+
+    std::optional<User> getUser(const std::string& email) {
+        return storage_->load(email);
+    }
+
+    bool deleteUser(const std::string& email) {
+        return storage_->remove(email);
+    }
+
+    std::vector<User> listUsers() {
+        return storage_->list();
+    }
+
+private:
+    std::unique_ptr<Storage> storage_;
+};
