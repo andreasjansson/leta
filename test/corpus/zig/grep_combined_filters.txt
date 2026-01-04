@@ -1,0 +1,8 @@
+==================
+grep combined filters Storage constants
+==================
+leta grep "Storage" --kind constant -C
+---
+src/user.zig:31 [Constant] Storage
+src/user.zig:51 [Constant] MemoryStorage
+src/user.zig:85 [Constant] FileStorage
