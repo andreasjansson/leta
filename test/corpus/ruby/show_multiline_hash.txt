@@ -1,0 +1,16 @@
+==================
+show multiline hash constant
+==================
+leta show COUNTRY_CODES
+---
+user.rb:144-152
+
+COUNTRY_CODES = {
+  'US' => 'United States',
+  'CA' => 'Canada',
+  'GB' => 'United Kingdom',
+  'DE' => 'Germany',
+  'FR' => 'France',
+  'JP' => 'Japan',
+  'AU' => 'Australia'
+}.freeze
