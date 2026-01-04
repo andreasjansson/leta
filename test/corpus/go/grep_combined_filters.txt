@@ -1,0 +1,7 @@
+==================
+grep combined filters Storage structs
+==================
+leta grep "Storage" --kind struct main.go -C
+---
+main.go:39 [Struct] MemoryStorage (struct{...})
+main.go:85 [Struct] FileStorage (struct{...})
