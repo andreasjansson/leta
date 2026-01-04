@@ -1,0 +1,16 @@
+==================
+show method definition
+==================
+leta show createSampleUser
+---
+src/Main.php:12-20
+
+    /**
+     * Creates a sample user for testing.
+     *
+     * @return User A sample user instance
+     */
+    public static function createSampleUser(): User
+    {
+        return new User('John Doe', 'john@example.com', 30);
+    }
