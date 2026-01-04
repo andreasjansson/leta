@@ -141,7 +141,7 @@ def setup_workspace(language: str, work_dir: Path) -> str | None:
     shutil.copytree(fixture_dir, work_dir, dirs_exist_ok=True)
 
     result = subprocess.run(
-        ["leta", "workspace", "add", str(work_dir)],
+        ["leta", "workspace", "add", "--root", str(work_dir)],
         capture_output=True,
         text=True,
     )
