@@ -1,0 +1,11 @@
+==================
+show function definition
+==================
+leta show create_sample_user
+---
+src/main.rs:9-12
+
+/// Creates a sample user for testing.
+fn create_sample_user() -> User {
+    User::new("John Doe".to_string(), "john@example.com".to_string(), 30)
+}
