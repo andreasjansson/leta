@@ -1,0 +1,6 @@
+==================
+grep combined filters
+==================
+leta grep "^Memory" --kind class user.rb
+---
+user.rb:71 [Class] MemoryStorage
