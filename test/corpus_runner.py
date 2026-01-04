@@ -153,6 +153,9 @@ def discover_suites(base_dir: Path) -> list[Path]:
     for path in sorted(base_dir.rglob("*.txt")):
         if path.name.startswith("_"):
             continue
+        # Skip files inside fixture directories
+        if "fixture" in path.parts:
+            continue
         suite_dir = path.parent
         if suite_dir not in suites:
             suites.append(suite_dir)
