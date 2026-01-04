@@ -339,11 +339,12 @@ def print_results(results: list[LanguageResult], verbose: bool = False, elapsed:
 
         lang_passed = lang_result.passed_tests
         lang_total = lang_result.total_tests
+        lang_time = f" in {lang_result.elapsed:.2f}s" if lang_result.elapsed > 0 else ""
 
         if lang_result.passed:
-            print(f"\n{Colors.GREEN}✓ {lang_result.language}{Colors.RESET}: {lang_passed}/{lang_total} tests passed")
+            print(f"\n{Colors.GREEN}✓ {lang_result.language}{Colors.RESET}: {lang_passed}/{lang_total} tests passed{lang_time}")
         else:
-            print(f"\n{Colors.RED}✗ {lang_result.language}{Colors.RESET}: {lang_passed}/{lang_total} tests passed")
+            print(f"\n{Colors.RED}✗ {lang_result.language}{Colors.RESET}: {lang_passed}/{lang_total} tests passed{lang_time}")
 
         total_passed += lang_passed
         total_failed += lang_total - lang_passed
