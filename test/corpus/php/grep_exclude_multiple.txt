@@ -1,0 +1,8 @@
+==================
+grep exclude multiple patterns
+==================
+leta grep "." --kind class --exclude "Errors.php" --exclude "*Storage*" -C
+---
+src/Main.php:10 [Class] Main
+src/User.php:10 [Class] User
+src/UserRepository.php:10 [Class] UserRepository
