@@ -1,0 +1,47 @@
+==================
+calls outgoing
+==================
+leta calls --from createSampleUser
+---
+main.go:149 [Function] createSampleUser (sample_project • main.go)
+
+Outgoing calls:
+  └── main.go:16 [Function] NewUser (sample_project • main.go)
+
+==================
+calls incoming
+==================
+leta calls --to createSampleUser
+---
+main.go:149 [Function] createSampleUser (sample_project • main.go)
+
+Incoming calls:
+  └── main.go:172 [Function] main (sample_project • main.go)
+
+==================
+calls path found
+==================
+leta calls --from main --to createSampleUser
+---
+Call path:
+main.go:172 [Function] main (sample_project • main.go)
+  → main.go:149 [Function] createSampleUser (sample_project • main.go)
+
+==================
+calls outgoing include non-workspace
+==================
+leta calls --from User.DisplayName --include-non-workspace --max-depth 1
+---
+main.go:26 [Function] DisplayName (sample_project • main.go)
+
+Outgoing calls:
+  └── [Function] Sprintf (fmt • print.go)
+
+==================
+calls outgoing excludes stdlib by default
+==================
+leta calls --from User.DisplayName
+---
+main.go:26 [Function] DisplayName (sample_project • main.go)
+
+Outgoing calls:
