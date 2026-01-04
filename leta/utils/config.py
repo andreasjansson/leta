@@ -91,6 +91,23 @@ DEFAULT_CONFIG: Config = {
 }
 
 
+def _get_lock_path() -> Path:
+    return get_config_path().with_suffix(".lock")
+
+
+@contextmanager
+def _config_lock() -> Generator[None, None, None]:
+    """Acquire an exclusive lock on the config file."""
+    lock_path = _get_lock_path()
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(lock_path, "w") as lock_file:
+        fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
+
+
 def load_config() -> Config:
     config_path = get_config_path()
     config: dict[str, Any] = dict(DEFAULT_CONFIG)
