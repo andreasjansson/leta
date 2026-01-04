@@ -11,8 +11,8 @@ rename EditablePerson to RenamedPerson
 leta rename EditablePerson RenamedPerson
 ---
 Renamed in 2 file(s):
-  editable_consumer.py
   editable.py
+  editable_consumer.py
 
 ==================
 verify class was renamed
