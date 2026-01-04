@@ -1,0 +1,14 @@
+==================
+grep with docs
+==================
+leta grep "^NewUser$" --kind function --docs main.go -C
+---
+main.go:16 [Function] NewUser (func(name, email string, age int) *User)
+    ```go
+    func NewUser(name string, email string, age int) *User
+    ```
+    
+    ---
+    
+    NewUser creates a new User instance.
+
