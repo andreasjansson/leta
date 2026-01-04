@@ -1,4 +1,4 @@
 #!/bin/bash
 set -e
 cd "$(dirname "$0")/.."
-python -m pytest test/unit "$@"
+uv run pytest test/unit "$@"
