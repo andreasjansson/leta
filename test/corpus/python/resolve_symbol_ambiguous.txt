@@ -1,0 +1,14 @@
+==================
+show ambiguous symbol shows options
+==================
+leta show save
+---
+Error: Symbol 'save' is ambiguous (4 matches)
+  EditableStorage.save
+    editable.py:37 [Method] save in EditableStorage
+  StorageProtocol.save
+    main.py:17 [Method] save in StorageProtocol
+  MemoryStorage.save
+    main.py:55 [Method] save in MemoryStorage
+  FileStorage.save
+    main.py:68 [Method] save in FileStorage
