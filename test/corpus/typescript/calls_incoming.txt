@@ -1,0 +1,10 @@
+==================
+calls incoming
+==================
+leta calls --to createSampleUser
+---
+src/main.ts:6 [Function] createSampleUser
+
+Incoming calls:
+  └── src/main.ts:55 [Function] main
+      └── src/main.ts:1 [Module] main.ts (src)
