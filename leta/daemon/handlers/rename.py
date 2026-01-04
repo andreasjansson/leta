@@ -48,28 +48,21 @@ async def handle_rename(ctx: HandlerContext, params: RPCRenameParams) -> RenameR
     if not result:
         raise ValueError("Rename not supported or failed")
 
+    # Close ALL documents that will be modified BEFORE applying edits
+    # This is critical for servers like ruby-lsp that won't reindex files
+    # from didChangeWatchedFiles if the document is still open
+    files_to_modify = _get_files_from_workspace_edit(result, workspace_root)
+    logger.info(f"Closing {len(files_to_modify)} documents before rename: {files_to_modify}")
+    for file_path in files_to_modify:
+        await workspace.close_document(file_path)
+
     files_modified, renamed_files = await _apply_workspace_edit(ctx, result, workspace_root)
 
     logger.debug(f"Rename: files_modified={files_modified}, renamed_files={renamed_files}")
-    
-    # For ruby-lsp, we need to close documents AFTER applying edits but BEFORE 
-    # sending didChangeWatchedFiles. This is because ruby-lsp only calls 
-    # index.handle_change for CHANGED if the file is NOT in the store.
-    # The file content on disk must be the NEW content when ruby-lsp reads it.
-    files_to_close = _get_files_from_workspace_edit(result, workspace_root)
-    logger.info(f"Closing {len(files_to_close)} documents after applying edits: {files_to_close}")
-    for file_path in files_to_close:
-        await workspace.close_document(file_path)
 
     # Build list of file changes for didChangeWatchedFiles notification
-    # 
-    # For ruby-lsp, we MUST use DELETED followed by CREATED for modified files:
-    # - DELETED: calls index.delete(uri) unconditionally - removes old entries
-    # - CREATED: calls index.index_single(uri, content) - adds new entries
-    # 
-    # Using CHANGED doesn't work reliably because:
-    # - CHANGED only calls handle_change if file is NOT in store
-    # - The didClose notification might not be processed before didChangeWatchedFiles
+    # For modified files, we MUST send DELETE first to remove old index entries,
+    # then CREATE to add new ones. ruby-lsp's index_single doesn't delete old entries.
     file_changes: list[tuple[Path, FileChangeType]] = []
     for old_path, new_path in renamed_files:
         file_changes.append((old_path, FileChangeType.Deleted))
@@ -86,31 +79,29 @@ async def handle_rename(ctx: HandlerContext, params: RPCRenameParams) -> RenameR
         await workspace.notify_files_changed(file_changes)
         
         # For ruby-lsp, we need to wait for it to process the file changes
-        # It processes messages in order from stdin, so we need to ensure the
-        # didChangeWatchedFiles notification is fully written before sending
-        # the sync request.
+        # It processes messages asynchronously in a queue, and the index update
+        # happens when the didChangeWatchedFiles notification is processed.
+        # We send a request and wait for its response to ensure the queue is flushed.
         if workspace.client and workspace.client.server_name == "ruby-lsp":
             import asyncio
             from ...lsp.types import WorkspaceSymbolParams
             try:
-                # Small delay to ensure the notification is sent first
-                await asyncio.sleep(0.05)
-                logger.info("Sending workspace/symbol sync request to ruby-lsp")
-                # Send a request that forces queue processing - ruby-lsp processes
-                # messages in order, so by the time we get a response, the notification
-                # should have been processed
+                # Send a request that forces queue processing
                 await workspace.client.send_request(
                     "workspace/symbol",
                     WorkspaceSymbolParams(query="__leta_sync__"),
                     timeout=5.0,
                 )
-                logger.info("workspace/symbol sync completed")
-            except Exception as e:
-                logger.warning(f"workspace/symbol sync failed: {e}")
+                # Delay to ensure index is fully updated
+                # ruby-lsp's index update can take a moment after processing
+                await asyncio.sleep(0.2)
+            except Exception:
+                pass  # Just want to ensure notifications are processed
 
-    # Reopen all modified documents and force reindexing
-    # For ruby-lsp, ensure_document_open sends didOpen + documentSymbol which 
-    # triggers run_combined_requests to re-index the file via index.handle_change
+    # Reopen all modified documents
+    # This also forces the LSP to process the file changes (especially for ruby-lsp
+    # which processes messages asynchronously) because ensure_document_open sends a
+    # documentSymbol request and waits for the response
     for old_path, new_path in renamed_files:
         await workspace.ensure_document_open(new_path)
     for rel_path in files_modified:
