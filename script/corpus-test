@@ -1,4 +1,4 @@
 #!/bin/bash
 set -e
 cd "$(dirname "$0")/.."
-python -m test.corpus_runner "$@"
+python -m test.corpus.corpus_runner "$@"
