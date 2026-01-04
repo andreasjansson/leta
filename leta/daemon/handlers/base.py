@@ -390,6 +390,9 @@ class HandlerContext:
             else:
                 doc_str = str(contents) if contents else None
 
+            if doc_str:
+                doc_str = self._relativize_file_uris(doc_str, workspace_root)
+
             self.hover_cache[cache_key] = doc_str or ""
             return doc_str
         except Exception as e:
