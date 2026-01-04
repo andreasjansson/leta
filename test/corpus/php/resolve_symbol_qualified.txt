@@ -1,0 +1,16 @@
+==================
+resolve qualified method
+==================
+leta show MemoryStorage.save
+---
+src/MemoryStorage.php:15-23
+
+    /**
+     * Saves a user to memory.
+     *
+     * @param User $user The user to save
+     */
+    public function save(User $user): void
+    {
+        $this->users[$user->getEmail()] = $user;
+    }
