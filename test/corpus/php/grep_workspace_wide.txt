@@ -1,0 +1,6 @@
+==================
+grep workspace wide validate methods
+==================
+leta grep "validate" --kind method -C
+---
+src/Main.php:28 [Method] validateUser (static) in Main
