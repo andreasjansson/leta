@@ -468,6 +468,9 @@ class LSPClient:
                 logger.info(f"Server {self.server_name} is now ServiceReady")
                 self._service_ready.set()
 
+        if method == "experimental/serverStatus" and params:
+            self._handle_server_status(params)
+
         if method == "$/progress" and params:
             self._handle_progress(params)
 
