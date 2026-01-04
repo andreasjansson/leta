@@ -1,0 +1,44 @@
+==================
+refs with context
+==================
+leta refs User -n 1
+---
+user.lua:10-12
+-- @field age number The user's age in years
+local User = {}
+User.__index = User
+
+user.lua:11-13
+local User = {}
+User.__index = User
+
+
+user.lua:11-13
+local User = {}
+User.__index = User
+
+
+user.lua:18-20
+-- @return User A new user instance
+function User.new(name, email, age)
+    local self = setmetatable({}, User)
+
+user.lua:19-21
+function User.new(name, email, age)
+    local self = setmetatable({}, User)
+    self.name = name
+
+user.lua:28-30
+-- @return boolean True if the user is an adult
+function User:isAdult()
+    return self.age >= 18
+
+user.lua:34-36
+-- @return string The display name in format "name <email>"
+function User:displayName()
+    return string.format("%s <%s>", self.name, self.email)
+
+user.lua:38-40
+
+M.User = User
+
