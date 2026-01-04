@@ -1,8 +1,6 @@
 ==================
 grep case insensitive (default)
 ==================
-leta grep "storage" --kind class user.rb
+leta grep "^user$"
 ---
-user.rb:38 [Class] Storage
-user.rb:71 [Class] MemoryStorage
-user.rb:113 [Class] FileStorage
+user.rb:8 [Class] User
