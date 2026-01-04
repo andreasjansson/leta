@@ -36,14 +36,14 @@ async def handle_rename(ctx: HandlerContext, params: RPCRenameParams) -> RenameR
 
     assert workspace.client is not None
 
-    result = await workspace.client.send_request(
-        "textDocument/rename",
-        RenameParams(
-            textDocument=TextDocumentIdentifier(uri=doc.uri),
-            position=Position(line=line, character=column),
-            newName=new_name,
-        ),
+    rename_params = RenameParams(
+        textDocument=TextDocumentIdentifier(uri=doc.uri),
+        position=Position(line=line, character=column),
+        newName=new_name,
     )
+    logger.info(f"Sending rename request: uri={doc.uri}, line={line}, column={column}, newName={new_name}")
+    result = await workspace.client.send_request("textDocument/rename", rename_params)
+    logger.info(f"Rename result: {result}")
 
     if not result:
         raise ValueError("Rename not supported or failed")
