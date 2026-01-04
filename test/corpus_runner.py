@@ -13,15 +13,16 @@ Usage:
 
 import argparse
 import multiprocessing
-import os
 import re
 import shutil
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
+from queue import Queue
 
 CORPUS_DIR = Path(__file__).parent / "corpus"
 
@@ -36,7 +37,7 @@ LANGUAGE_SERVER_COMMANDS = {
     "php": "intelephense",
     "lua": "lua-language-server",
     "zig": "zls",
-    "multi_language": ["basedpyright-langserver", "gopls"],  # requires multiple servers
+    "multi_language": ["basedpyright-langserver", "gopls"],
 }
 
 
@@ -56,6 +57,7 @@ class TestResult:
     passed: bool
     actual_output: str | None = None
     error: str | None = None
+    elapsed: float = 0.0
 
 
 @dataclass
@@ -88,19 +90,83 @@ class LanguageResult:
         return sum(1 for f in self.file_results for r in f.results if r.passed)
 
 
+class Colors:
+    GREEN = "\033[92m"
+    RED = "\033[91m"
+    YELLOW = "\033[93m"
+    BLUE = "\033[94m"
+    CYAN = "\033[96m"
+    BOLD = "\033[1m"
+    DIM = "\033[2m"
+    RESET = "\033[0m"
+
+    @classmethod
+    def disable(cls) -> None:
+        cls.GREEN = ""
+        cls.RED = ""
+        cls.YELLOW = ""
+        cls.BLUE = ""
+        cls.CYAN = ""
+        cls.BOLD = ""
+        cls.DIM = ""
+        cls.RESET = ""
+
+
+class ProgressPrinter:
+    """Thread-safe progress printer for test results."""
+    
+    def __init__(self, verbose: bool = False):
+        self.verbose = verbose
+        self.lock = threading.Lock()
+        self.dot_count = 0
+    
+    def test_completed(self, result: TestResult, language: str) -> None:
+        with self.lock:
+            if self.verbose:
+                status = f"{Colors.GREEN}✓{Colors.RESET}" if result.passed else f"{Colors.RED}✗{Colors.RESET}"
+                time_str = f"{Colors.DIM}{result.elapsed:.2f}s{Colors.RESET}"
+                print(f"  {status} {language}/{result.test.file_path.stem}: {result.test.name} {time_str}")
+                sys.stdout.flush()
+            else:
+                if result.passed:
+                    print(f"{Colors.GREEN}.{Colors.RESET}", end="", flush=True)
+                else:
+                    print(f"{Colors.RED}F{Colors.RESET}", end="", flush=True)
+                self.dot_count += 1
+                if self.dot_count >= 80:
+                    print()
+                    self.dot_count = 0
+    
+    def language_skipped(self, language: str, reason: str) -> None:
+        with self.lock:
+            if self.verbose:
+                print(f"  {Colors.YELLOW}S{Colors.RESET} {language}: {reason}")
+            else:
+                print(f"{Colors.YELLOW}S{Colors.RESET}", end="", flush=True)
+                self.dot_count += 1
+    
+    def finish_dots(self) -> None:
+        with self.lock:
+            if not self.verbose and self.dot_count > 0:
+                print()
+
+
+progress_printer: ProgressPrinter | None = None
+
+
 def parse_corpus_file(path: Path) -> list[CorpusTest]:
     """Parse a corpus test file into individual tests."""
     content = path.read_text()
     tests = []
 
     pattern = re.compile(
-        r"^(={3,})\n"  # Opening delimiter
-        r"(.+?)\n"  # Test name
-        r"\1\n"  # Matching delimiter
-        r"(.+?)\n"  # Command
-        r"(-{3,})\n"  # Separator
-        r"(.*?)"  # Expected output
-        r"(?=\n={3,}\n|\Z)",  # Lookahead for next test or end
+        r"^(={3,})\n"
+        r"(.+?)\n"
+        r"\1\n"
+        r"(.+?)\n"
+        r"(-{3,})\n"
+        r"(.*?)"
+        r"(?=\n={3,}\n|\Z)",
         re.MULTILINE | re.DOTALL,
     )
 
@@ -173,11 +239,7 @@ def setup_workspace(language: str, work_dir: Path) -> str | None:
 
 
 def run_command(command: str, work_dir: Path) -> tuple[str, int]:
-    """Run a shell command and return (output, return_code).
-    
-    Always captures both stdout and stderr combined, and doesn't fail
-    on non-zero exit codes since we're testing output, not exit codes.
-    """
+    """Run a shell command and return (output, return_code)."""
     result = subprocess.run(
         command,
         shell=True,
@@ -186,33 +248,39 @@ def run_command(command: str, work_dir: Path) -> tuple[str, int]:
         text=True,
         timeout=60,
     )
-    # Combine stdout and stderr - commands may output errors we want to test
     output = result.stdout + result.stderr
     return output.rstrip("\n"), result.returncode
 
 
-def run_test(test: CorpusTest, work_dir: Path) -> TestResult:
+def run_test(test: CorpusTest, work_dir: Path, language: str) -> TestResult:
     """Run a single test and return the result."""
+    start = time.time()
     try:
         actual_output, _ = run_command(test.command, work_dir)
+        elapsed = time.time() - start
 
         if actual_output == test.expected_output:
-            return TestResult(test=test, passed=True, actual_output=actual_output)
+            result = TestResult(test=test, passed=True, actual_output=actual_output, elapsed=elapsed)
         else:
-            return TestResult(test=test, passed=False, actual_output=actual_output)
+            result = TestResult(test=test, passed=False, actual_output=actual_output, elapsed=elapsed)
     except subprocess.TimeoutExpired:
-        return TestResult(test=test, passed=False, error="Command timed out")
+        result = TestResult(test=test, passed=False, error="Command timed out", elapsed=time.time() - start)
     except Exception as e:
-        return TestResult(test=test, passed=False, error=str(e))
+        result = TestResult(test=test, passed=False, error=str(e), elapsed=time.time() - start)
+    
+    if progress_printer:
+        progress_printer.test_completed(result, language)
+    
+    return result
 
 
-def run_corpus_file(file_path: Path, work_dir: Path) -> FileResult:
+def run_corpus_file(file_path: Path, work_dir: Path, language: str) -> FileResult:
     """Run all tests in a corpus file."""
     file_result = FileResult(file_path=file_path)
     tests = parse_corpus_file(file_path)
 
     for test in tests:
-        result = run_test(test, work_dir)
+        result = run_test(test, work_dir, language)
         file_result.results.append(result)
 
     return file_result
@@ -226,6 +294,8 @@ def run_language(language: str, temp_base: Path, filter_pattern: str | None = No
     if not check_language_server(language):
         result.setup_error = f"Language server not installed: {get_language_server_name(language)}"
         result.elapsed = time.time() - start_time
+        if progress_printer:
+            progress_printer.language_skipped(language, result.setup_error)
         return result
 
     work_dir = temp_base / language
@@ -235,6 +305,8 @@ def run_language(language: str, temp_base: Path, filter_pattern: str | None = No
     if setup_error:
         result.setup_error = setup_error
         result.elapsed = time.time() - start_time
+        if progress_printer:
+            progress_printer.language_skipped(language, setup_error)
         return result
 
     corpus_files = sorted((CORPUS_DIR / language).glob("*.txt"))
@@ -242,7 +314,7 @@ def run_language(language: str, temp_base: Path, filter_pattern: str | None = No
     for corpus_file in corpus_files:
         if filter_pattern and filter_pattern not in corpus_file.stem:
             continue
-        file_result = run_corpus_file(corpus_file, work_dir)
+        file_result = run_corpus_file(corpus_file, work_dir, language)
         result.file_results.append(file_result)
 
     result.elapsed = time.time() - start_time
@@ -292,26 +364,6 @@ def update_corpus_file(file_path: Path, results: list[TestResult]) -> None:
     file_path.write_text("\n".join(lines))
 
 
-class Colors:
-    GREEN = "\033[92m"
-    RED = "\033[91m"
-    YELLOW = "\033[93m"
-    BLUE = "\033[94m"
-    CYAN = "\033[96m"
-    BOLD = "\033[1m"
-    RESET = "\033[0m"
-
-    @classmethod
-    def disable(cls) -> None:
-        cls.GREEN = ""
-        cls.RED = ""
-        cls.YELLOW = ""
-        cls.BLUE = ""
-        cls.CYAN = ""
-        cls.BOLD = ""
-        cls.RESET = ""
-
-
 def print_diff(expected: str, actual: str) -> None:
     """Print a colored diff between expected and actual output."""
     import difflib
@@ -336,55 +388,59 @@ def print_diff(expected: str, actual: str) -> None:
             print(line.rstrip())
 
 
-def print_results(results: list[LanguageResult], verbose: bool = False, elapsed: float = 0.0) -> None:
-    """Print test results."""
+def print_summary(results: list[LanguageResult], verbose: bool, elapsed: float) -> None:
+    """Print test summary."""
     total_passed = 0
     total_failed = 0
     total_skipped = 0
+    failed_tests: list[tuple[str, TestResult]] = []
 
     for lang_result in results:
         if lang_result.setup_error:
-            print(f"\n{Colors.YELLOW}⊘ {lang_result.language}{Colors.RESET}: {lang_result.setup_error}")
             total_skipped += 1
             continue
 
         lang_passed = lang_result.passed_tests
         lang_total = lang_result.total_tests
-        lang_time = f" in {lang_result.elapsed:.2f}s" if lang_result.elapsed > 0 else ""
-
-        if lang_result.passed:
-            print(f"\n{Colors.GREEN}✓ {lang_result.language}{Colors.RESET}: {lang_passed}/{lang_total} tests passed{lang_time}")
-        else:
-            print(f"\n{Colors.RED}✗ {lang_result.language}{Colors.RESET}: {lang_passed}/{lang_total} tests passed{lang_time}")
-
         total_passed += lang_passed
         total_failed += lang_total - lang_passed
 
         for file_result in lang_result.file_results:
-            file_name = file_result.file_path.stem
-            file_passed = sum(1 for r in file_result.results if r.passed)
-            file_total = len(file_result.results)
+            for result in file_result.results:
+                if not result.passed:
+                    failed_tests.append((lang_result.language, result))
 
-            if file_result.passed:
-                if verbose:
-                    print(f"  {Colors.GREEN}✓{Colors.RESET} {file_name}: {file_passed}/{file_total}")
-            else:
-                print(f"  {Colors.RED}✗{Colors.RESET} {file_name}: {file_passed}/{file_total}")
+    # Print language summary line
+    lang_summaries = []
+    for lang_result in sorted(results, key=lambda r: r.language):
+        if lang_result.setup_error:
+            lang_summaries.append(f"{Colors.YELLOW}{lang_result.language}:S{Colors.RESET}")
+        elif lang_result.passed:
+            lang_summaries.append(f"{Colors.GREEN}{lang_result.language}:{lang_result.passed_tests}{Colors.RESET}")
+        else:
+            lang_summaries.append(f"{Colors.RED}{lang_result.language}:{lang_result.passed_tests}/{lang_result.total_tests}{Colors.RESET}")
+    
+    print(f"\n{' '.join(lang_summaries)}")
 
-                for result in file_result.results:
-                    if not result.passed:
-                        print(f"    {Colors.RED}✗{Colors.RESET} {result.test.name}")
-                        if result.error:
-                            print(f"      Error: {result.error}")
-                        elif result.actual_output is not None:
-                            print(f"      {result.test.file_path}:{result.test.start_line}")
-                            print(f"      Command: {result.test.command}")
-                            print()
-                            print_diff(result.test.expected_output, result.actual_output)
-                            print()
+    # Print failures
+    if failed_tests:
+        print(f"\n{Colors.RED}{Colors.BOLD}Failures:{Colors.RESET}")
+        for language, result in failed_tests:
+            print(f"\n{Colors.RED}✗{Colors.RESET} {language}/{result.test.file_path.stem}: {result.test.name}")
+            if result.error:
+                print(f"  Error: {result.error}")
+            elif result.actual_output is not None:
+                print(f"  {result.test.file_path}:{result.test.start_line}")
+                print(f"  Command: {result.test.command}")
+                print()
+                print_diff(result.test.expected_output, result.actual_output)
 
-    elapsed_str = f" in {elapsed:.2f}s" if elapsed > 0 else ""
-    print(f"\n{Colors.BOLD}Summary:{Colors.RESET} {total_passed} passed, {total_failed} failed, {total_skipped} skipped{elapsed_str}")
+    # Print final summary
+    elapsed_str = f" in {elapsed:.2f}s"
+    if total_failed == 0 and total_skipped == 0:
+        print(f"\n{Colors.GREEN}{Colors.BOLD}All {total_passed} tests passed{Colors.RESET}{elapsed_str}")
+    else:
+        print(f"\n{Colors.BOLD}Summary:{Colors.RESET} {total_passed} passed, {total_failed} failed, {total_skipped} skipped{elapsed_str}")
 
 
 def list_tests() -> None:
@@ -407,6 +463,8 @@ def list_tests() -> None:
 
 
 def main() -> int:
+    global progress_printer
+
     parser = argparse.ArgumentParser(description="Run leta corpus tests")
     parser.add_argument("filter", nargs="?", help="Filter by language or language/file")
     parser.add_argument("--update", "-u", action="store_true", help="Update expected outputs")
@@ -449,10 +507,16 @@ def main() -> int:
     temp_base = Path(tempfile.mkdtemp(prefix="leta_corpus_"))
     start_time = time.time()
 
+    # Only use progress printer for sequential mode (multiprocessing doesn't share state)
+    if args.sequential or len(languages) == 1:
+        progress_printer = ProgressPrinter(verbose=args.verbose)
+
     try:
         if args.sequential or len(languages) == 1:
             results = [run_language(lang, temp_base, file_filter) for lang in languages]
+            progress_printer.finish_dots()
         else:
+            # Parallel mode - run without live progress, show results at end
             with multiprocessing.Pool(processes=len(languages)) as pool:
                 task_args = [(lang, temp_base, file_filter) for lang in languages]
                 results = pool.map(run_language_wrapper, task_args)
@@ -466,7 +530,7 @@ def main() -> int:
                         print(f"{Colors.YELLOW}Updated{Colors.RESET}: {file_result.file_path}")
 
         elapsed = time.time() - start_time
-        print_results(results, verbose=args.verbose, elapsed=elapsed)
+        print_summary(results, verbose=args.verbose, elapsed=elapsed)
 
         all_passed = all(r.passed or r.setup_error for r in results)
         return 0 if all_passed else 1
