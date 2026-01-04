@@ -1,0 +1,5 @@
+==================
+supertypes returns empty
+==================
+leta supertypes MemoryStorage
+---
