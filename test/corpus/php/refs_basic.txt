@@ -1,0 +1,33 @@
+==================
+refs basic
+==================
+leta refs User
+---
+src/FileStorage.php:34      * @param User $user The user to save
+src/FileStorage.php:36     public function save(User $user): void
+src/FileStorage.php:45      * @return User|null The user if found
+src/FileStorage.php:47     public function load(string $email): ?User
+src/FileStorage.php:68      * @return User[] All users
+src/Main.php:15      * @return User A sample user instance
+src/Main.php:17     public static function createSampleUser(): User
+src/Main.php:19         return new User('John Doe', 'john@example.com', 30);
+src/Main.php:25      * @param User $user The user to validate
+src/Main.php:28     public static function validateUser(User $user): void
+src/Main.php:50             fn(User $user) => $user->displayName(),
+src/MemoryStorage.php:12     /** @var array<string, User> */
+src/MemoryStorage.php:18      * @param User $user The user to save
+src/MemoryStorage.php:20     public function save(User $user): void
+src/MemoryStorage.php:29      * @return User|null The user if found
+src/MemoryStorage.php:31     public function load(string $email): ?User
+src/MemoryStorage.php:54      * @return User[] All users in the storage
+src/Storage.php:15      * @param User $user The user to save
+src/Storage.php:17     public function save(User $user): void;
+src/Storage.php:23      * @return User|null The user if found, null otherwise
+src/Storage.php:25     public function load(string $email): ?User;
+src/Storage.php:38      * @return User[] All users in the storage
+src/User.php:10 class User
+src/UserRepository.php:24      * @param User $user The user to add
+src/UserRepository.php:26     public function addUser(User $user): void
+src/UserRepository.php:35      * @return User|null The user if found
+src/UserRepository.php:37     public function getUser(string $email): ?User
+src/UserRepository.php:56      * @return User[] All users in the repository
