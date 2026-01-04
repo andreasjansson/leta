@@ -1,0 +1,12 @@
+==================
+show function with context
+==================
+leta show createSampleUser -n 1
+---
+src/main.ts:5-9
+
+ */
+function createSampleUser(): User {
+    return new User("John Doe", "john@example.com", 30);
+}
+
