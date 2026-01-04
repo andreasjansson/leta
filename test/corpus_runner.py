@@ -426,6 +426,7 @@ def main() -> int:
         return 1
 
     temp_base = Path(tempfile.mkdtemp(prefix="leta_corpus_"))
+    start_time = time.time()
 
     try:
         if args.sequential or len(languages) == 1:
@@ -443,7 +444,8 @@ def main() -> int:
                         update_corpus_file(file_result.file_path, failed_results)
                         print(f"{Colors.YELLOW}Updated{Colors.RESET}: {file_result.file_path}")
 
-        print_results(results, verbose=args.verbose)
+        elapsed = time.time() - start_time
+        print_results(results, verbose=args.verbose, elapsed=elapsed)
 
         all_passed = all(r.passed or r.setup_error for r in results)
         return 0 if all_passed else 1
