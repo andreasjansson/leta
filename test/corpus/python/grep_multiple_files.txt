@@ -1,0 +1,7 @@
+==================
+grep multiple files via glob
+==================
+leta grep "^validate" --kind function "*.py" -C
+---
+utils.py:9 [Function] validate_email
+utils.py:22 [Function] validate_age
