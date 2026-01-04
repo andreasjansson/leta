@@ -1,0 +1,14 @@
+==================
+resolve qualified name with dot
+==================
+leta show User.new
+---
+user.lua:19-25
+
+function User.new(name, email, age)
+    local self = setmetatable({}, User)
+    self.name = name
+    self.email = email
+    self.age = age
+    return self
+end
