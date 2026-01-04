@@ -1,0 +1,26 @@
+==================
+refs basic
+==================
+leta refs User
+---
+src/user.zig:4 pub const User = struct {
+src/user.zig:10     pub fn init(name: []const u8, email: []const u8, age: i32) User {
+src/user.zig:11         return User{
+src/user.zig:19     pub fn isAdult(self: User) bool {
+src/user.zig:24     pub fn displayName(self: User) []const u8 {
+src/user.zig:33     saveFn: *const fn (*anyopaque, User) anyerror!void,
+src/user.zig:34     loadFn: *const fn (*anyopaque, []const u8) ?User,
+src/user.zig:37     pub fn save(self: Storage, u: User) !void {
+src/user.zig:41     pub fn load(self: Storage, email: []const u8) ?User {
+src/user.zig:53     users: std.StringHashMap(User),
+src/user.zig:58             .users = std.StringHashMap(User).init(allocator),
+src/user.zig:66     pub fn save(self: *MemoryStorage, u: User) !void {
+src/user.zig:70     pub fn load(self: *MemoryStorage, email: []const u8) ?User {
+src/user.zig:78     pub fn list(self: *MemoryStorage) []User {
+src/user.zig:80         return &[_]User{};
+src/user.zig:94     pub fn save(self: *FileStorage, u: User) !void {
+src/user.zig:99     pub fn load(self: *FileStorage, email: []const u8) ?User {
+src/user.zig:122     pub fn addUser(self: *UserRepository, u: User) !void {
+src/user.zig:126     pub fn getUser(self: *UserRepository, email: []const u8) ?User {
+src/user.zig:136     const u = User.init("Test", "test@test.com", 25);
+src/user.zig:141     const u = User.init("Test", "test@test.com", 15);
