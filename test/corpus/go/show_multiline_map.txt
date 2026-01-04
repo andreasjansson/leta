@@ -1,0 +1,16 @@
+==================
+show multiline map variable
+==================
+leta show CountryCodes
+---
+utils.go:100-108
+
+var CountryCodes = map[string]string{
+	"US": "United States",
+	"CA": "Canada",
+	"GB": "United Kingdom",
+	"DE": "Germany",
+	"FR": "France",
+	"JP": "Japan",
+	"AU": "Australia",
+}
