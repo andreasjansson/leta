@@ -1,0 +1,7 @@
+==================
+grep kind filter interface
+==================
+leta grep "." --kind interface main.go -C
+---
+main.go:31 [Interface] Storage (interface{...})
+main.go:154 [Interface] Validator (interface{...})
