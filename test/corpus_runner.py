@@ -317,7 +317,7 @@ def print_diff(expected: str, actual: str) -> None:
             print(line.rstrip())
 
 
-def print_results(results: list[LanguageResult], verbose: bool = False) -> None:
+def print_results(results: list[LanguageResult], verbose: bool = False, elapsed: float = 0.0) -> None:
     """Print test results."""
     total_passed = 0
     total_failed = 0
@@ -363,7 +363,8 @@ def print_results(results: list[LanguageResult], verbose: bool = False) -> None:
                             print_diff(result.test.expected_output, result.actual_output)
                             print()
 
-    print(f"\n{Colors.BOLD}Summary:{Colors.RESET} {total_passed} passed, {total_failed} failed, {total_skipped} skipped")
+    elapsed_str = f" in {elapsed:.2f}s" if elapsed > 0 else ""
+    print(f"\n{Colors.BOLD}Summary:{Colors.RESET} {total_passed} passed, {total_failed} failed, {total_skipped} skipped{elapsed_str}")
 
 
 def list_tests() -> None:
