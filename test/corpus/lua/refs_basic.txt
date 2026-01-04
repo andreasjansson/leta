@@ -1,0 +1,13 @@
+==================
+refs basic
+==================
+leta refs User
+---
+user.lua:11 local User = {}
+user.lua:12 User.__index = User
+user.lua:12 User.__index = User
+user.lua:19 function User.new(name, email, age)
+user.lua:20     local self = setmetatable({}, User)
+user.lua:29 function User:isAdult()
+user.lua:35 function User:displayName()
+user.lua:39 M.User = User
