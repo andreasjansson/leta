@@ -151,6 +151,10 @@ async def _apply_workspace_edit_for_move(
                 files_modified.append(ctx.relative_path(file_path, workspace_root))
             elif isinstance(change, TextDocumentEdit):
                 file_path = uri_to_path(change.textDocument.uri)
+                if not change.edits:
+                    continue
+                if file_path == move_old_path:
+                    file_path = move_new_path
                 await _apply_text_edits(file_path, change.edits)
                 files_modified.append(ctx.relative_path(file_path, workspace_root))
 
