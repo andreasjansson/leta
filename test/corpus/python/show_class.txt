@@ -3,7 +3,7 @@ show class definition
 ==================
 leta show User
 ---
-main.py:27-46
+main.py:26-46
 
 @dataclass
 class User:
