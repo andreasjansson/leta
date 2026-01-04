@@ -500,6 +500,24 @@ class LSPClient:
                     f"Progress end: {token}, {len(self._active_progress_tokens)} remaining"
                 )
 
+    def _handle_server_status(self, params: dict[str, Any]) -> None:
+        """Handle experimental/serverStatus notification from rust-analyzer.
+        
+        This notification indicates when rust-analyzer has finished all background
+        work (quiescent=true) and its health status.
+        """
+        health = params.get("health", "ok")
+        quiescent = params.get("quiescent", False)
+        
+        logger.debug(f"Server status: health={health}, quiescent={quiescent}")
+        
+        if quiescent and health != "error":
+            self._indexing_done.set()
+            logger.info(f"Server {self.server_name} is quiescent (ready)")
+        else:
+            self._indexing_done.clear()
+            logger.debug(f"Server {self.server_name} is busy (not quiescent)")
+
     def on_notification(
         self,
         method: str,
