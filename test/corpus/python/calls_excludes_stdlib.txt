@@ -1,0 +1,8 @@
+==================
+outgoing calls excludes stdlib by default
+==================
+leta calls --from validate_email
+---
+utils.py:9 [Function] validate_email
+
+Outgoing calls:
