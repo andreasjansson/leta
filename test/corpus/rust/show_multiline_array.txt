@@ -1,0 +1,15 @@
+==================
+show multiline array constant
+==================
+leta show DEFAULT_PORTS
+---
+src/user.rs:91-98
+
+/// Default ports for various services.
+pub const DEFAULT_PORTS: [u16; 5] = [
+    80,
+    443,
+    8080,
+    8443,
+    3000,
+];
