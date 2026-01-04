@@ -41,7 +41,7 @@ async def handle_rename(ctx: HandlerContext, params: RPCRenameParams) -> RenameR
         position=Position(line=line, character=column),
         newName=new_name,
     )
-    logger.info(f"Sending rename request: uri={doc.uri}, line={line}, column={column}, newName={new_name}")
+    logger.info(f"Sending rename request via server {workspace.client.server_name}: uri={doc.uri}, line={line}, column={column}, newName={new_name}")
     result = await workspace.client.send_request("textDocument/rename", rename_params)
     logger.info(f"Rename result: {result}")
 
