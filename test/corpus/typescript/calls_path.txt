@@ -1,0 +1,8 @@
+==================
+calls path found
+==================
+leta calls --from main --to createSampleUser
+---
+Call path:
+src/main.ts:55 [Function] main
+  → src/main.ts:6 [Function] createSampleUser
