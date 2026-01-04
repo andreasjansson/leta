@@ -1,0 +1,9 @@
+==================
+outgoing calls from function
+==================
+leta calls --from create_sample_user
+---
+main.py:114 [Function] create_sample_user
+
+Outgoing calls:
+  └── main.py:27 [Class] User
