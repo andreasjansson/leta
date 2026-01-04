@@ -286,12 +286,11 @@ def run_suite(suite_dir: Path, filter_pattern: str | None = None) -> SuiteResult
     finally:
         # Always run _teardown.txt if it exists
         teardown_file = suite_dir / "_teardown.txt"
-        if teardown_file.exists() and temp_dir:
-            work_dir = temp_dir if temp_dir.exists() else suite_dir
-            file_result = run_corpus_file(teardown_file, work_dir, suite_name, template_vars)
+        if teardown_file.exists() and temp_dir.exists():
+            file_result = run_corpus_file(teardown_file, temp_dir, suite_name, template_vars)
             result.file_results.append(file_result)
         
-        if temp_dir and temp_dir.exists():
+        if temp_dir.exists():
             shutil.rmtree(temp_dir, ignore_errors=True)
 
 
