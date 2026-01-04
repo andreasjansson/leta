@@ -1,6 +1,6 @@
 ===
 setup workspace
 ===
-leta workspace add --root {{ FIXTURE_DIR }} && leta grep . {{ FIXTURE_DIR }}
+leta workspace add --root {{ FIXTURE_DIR }} && leta grep . {{ FIXTURE_DIR }} > /dev/null
 ---
 Added workspace: {{ FIXTURE_DIR }}
