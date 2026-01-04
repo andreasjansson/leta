@@ -3,6 +3,9 @@ from typing import Any
 
 def get_client_capabilities() -> dict[str, Any]:
     return {
+        "experimental": {
+            "serverStatusNotification": True,
+        },
         "workspace": {
             "applyEdit": True,
             "workspaceEdit": {
