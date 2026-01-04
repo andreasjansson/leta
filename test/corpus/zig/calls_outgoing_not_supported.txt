@@ -1,5 +1,5 @@
 ==================
-calls not supported
+calls outgoing not supported
 ==================
 leta calls --from main
 ---
