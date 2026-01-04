@@ -85,7 +85,10 @@ class LSPClient:
         self._needs_service_ready = server_name == "jdtls"
         self._active_progress_tokens = set()
         self._indexing_done = asyncio.Event()
-        self._indexing_done.set()
+        # rust-analyzer uses experimental/serverStatus to signal quiescence
+        # other servers may not send progress notifications, so assume ready
+        if server_name != "rust-analyzer":
+            self._indexing_done.set()
         self._stderr_task = None
 
     @property
