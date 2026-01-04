@@ -1,0 +1,7 @@
+==================
+grep with exclude pattern
+==================
+leta grep "User" --kind class --exclude "errors*"
+---
+user.rb:8 [Class] User
+user.rb:163 [Class] UserRepository
