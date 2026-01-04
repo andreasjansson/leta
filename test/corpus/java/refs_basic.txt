@@ -1,0 +1,25 @@
+==================
+refs basic
+==================
+leta refs User
+---
+src/main/java/com/example/FileStorage.java:14     private Map<String, User> cache = new HashMap<>();
+src/main/java/com/example/FileStorage.java:39     public void save(User user) {
+src/main/java/com/example/FileStorage.java:48     public User load(String email) {
+src/main/java/com/example/FileStorage.java:64     public List<User> list() {
+src/main/java/com/example/Main.java:15     public static User createSampleUser() {
+src/main/java/com/example/Main.java:16         return new User("John Doe", "john@example.com", 30);
+src/main/java/com/example/Main.java:27                 .map(User::displayName)
+src/main/java/com/example/Main.java:50         User user = createSampleUser();
+src/main/java/com/example/Main.java:54         User found = repo.getUser("john@example.com");
+src/main/java/com/example/MemoryStorage.java:13     private Map<String, User> users = new HashMap<>();
+src/main/java/com/example/MemoryStorage.java:26     public void save(User user) {
+src/main/java/com/example/MemoryStorage.java:34     public User load(String email) {
+src/main/java/com/example/MemoryStorage.java:50     public List<User> list() {
+src/main/java/com/example/Storage.java:14     void save(User user);
+src/main/java/com/example/Storage.java:22     User load(String email);
+src/main/java/com/example/Storage.java:37     List<User> list();
+src/main/java/com/example/User.java:9 public class User {
+src/main/java/com/example/UserRepository.java:26     public void addUser(User user) {
+src/main/java/com/example/UserRepository.java:36     public User getUser(String email) {
+src/main/java/com/example/UserRepository.java:55     public List<User> listUsers() {
