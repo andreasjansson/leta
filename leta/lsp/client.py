@@ -169,6 +169,7 @@ class LSPClient:
 
         result = await self.send_request("initialize", init_params)
         self._server_capabilities = result.capabilities
+        logger.info(f"Server capabilities for {self.server_name}: callHierarchy={self._server_capabilities.supports_call_hierarchy()}, typeHierarchy={self._server_capabilities.supports_type_hierarchy()}")
         await self.send_notification("initialized", {})
         self._initialized = True
 
