@@ -224,7 +224,7 @@ def run_language(language: str, temp_base: Path, filter_pattern: str | None = No
     result = LanguageResult(language=language)
 
     if not check_language_server(language):
-        result.setup_error = f"Language server not installed: {LANGUAGE_SERVER_COMMANDS.get(language, 'unknown')}"
+        result.setup_error = f"Language server not installed: {get_language_server_name(language)}"
         result.elapsed = time.time() - start_time
         return result
 
