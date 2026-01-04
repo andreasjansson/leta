@@ -1,0 +1,6 @@
+==================
+grep workspace wide validate methods
+==================
+leta grep "validate" --kind method --exclude "*Errors*" -C
+---
+src/main/java/com/example/Main.java:37 [Method] validateEmail(String) ( : boolean) in Main
