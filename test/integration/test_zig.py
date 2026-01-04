@@ -39,7 +39,7 @@ class TestZigIntegration:
                 "paths": [str(project / "src" / "user.zig")],
                 "workspace_root": str(project),
                 "pattern": ".*",
-            },
+            }
         )
         time.sleep(1.0)
         return project
@@ -56,7 +56,7 @@ class TestZigIntegration:
                 "paths": [str(workspace / "src" / "user.zig")],
                 "workspace_root": str(workspace),
                 "pattern": "Storage",
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -77,7 +77,7 @@ src/user.zig:114 [Field] storage (UserRepository) in UserRepository"""
                 "workspace_root": str(workspace),
                 "pattern": ".*",
                 "kinds": ["constant"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -102,7 +102,7 @@ src/user.zig:155 [Constant] COUNTRY_CODES"""
                 "workspace_root": str(workspace),
                 "pattern": ".*",
                 "kinds": ["function"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -124,7 +124,7 @@ src/main.zig:27 [Function] validateUser (fn validateUser(u: user.User) !void)"""
                 "pattern": "storage",
                 "kinds": ["constant"],
                 "case_sensitive": False,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -144,7 +144,7 @@ src/user.zig:85 [Constant] FileStorage"""
                 "pattern": "storage",
                 "kinds": ["constant"],
                 "case_sensitive": True,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert output == ""
@@ -158,7 +158,7 @@ src/user.zig:85 [Constant] FileStorage"""
                 "workspace_root": str(workspace),
                 "pattern": "^Memory",
                 "kinds": ["constant"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert output == "src/user.zig:51 [Constant] MemoryStorage"
@@ -175,7 +175,7 @@ src/user.zig:85 [Constant] FileStorage"""
                 "workspace_root": str(workspace),
                 "pattern": "User",
                 "kinds": ["constant"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -196,7 +196,7 @@ src/main.zig:2 [Constant] user"""
                 "workspace_root": str(workspace),
                 "pattern": "main",
                 "kinds": ["function"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert output == "src/main.zig:4 [Function] main (fn main() !void)"
@@ -212,7 +212,7 @@ src/main.zig:2 [Constant] user"""
                 "pattern": "User",
                 "kinds": ["constant"],
                 "exclude_patterns": ["errors.zig"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -233,7 +233,7 @@ src/main.zig:2 [Constant] user"""
                 "pattern": "^createSampleUser$",
                 "kinds": ["function"],
                 "include_docs": True,
-            },
+            }
         )
         output = format_output(result, "plain")
         # zls returns hover docs with markdown including code blocks
@@ -258,7 +258,7 @@ src/main.zig:2 [Constant] user"""
                 "line": 12,
                 "column": 24,
                 "context": 0,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -285,7 +285,7 @@ pub fn createSampleUser() user.User {
                 "line": 4,
                 "column": 11,
                 "context": 0,
-            },
+            }
         )
         output = format_output(result, "plain")
         # zls returns many references to User type
@@ -307,10 +307,12 @@ pub fn createSampleUser() user.User {
                 "old_path": str(workspace / "src" / "user.zig"),
                 "new_path": str(workspace / "src" / "person.zig"),
                 "workspace_root": str(workspace),
-            },
+            }
+        ,
+            expect_error=True,
         )
-        assert "error" in response
-        assert response["error"] == "move-file is not supported by zls"
+        assert hasattr(result, "error")
+        assert result.error == "move-file is not supported by zls"
 
         # Verify file was NOT moved
         assert (workspace / "src" / "user.zig").exists()
@@ -328,7 +330,7 @@ pub fn createSampleUser() user.User {
             {
                 "workspace_root": str(workspace),
                 "symbol_path": "User",
-            },
+            }
         )
         assert result.name == "User"
         assert result.kind == "Constant"
@@ -341,7 +343,7 @@ pub fn createSampleUser() user.User {
             {
                 "workspace_root": str(workspace),
                 "symbol_path": "User.isAdult",
-            },
+            }
         )
         assert result.name == "isAdult"
         assert result.kind == "Function"
@@ -354,7 +356,7 @@ pub fn createSampleUser() user.User {
             {
                 "workspace_root": str(workspace),
                 "symbol_path": "main.zig:main",
-            },
+            }
         )
         assert result.name == "main"
         assert result.path.endswith("main.zig")
@@ -378,7 +380,7 @@ pub fn createSampleUser() user.User {
                 "range_start_line": 146,
                 "range_end_line": 152,
                 "kind": "Constant",
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -412,7 +414,7 @@ pub const DEFAULT_PORTS = [_]u16{
                 "from_column": 7,
                 "from_symbol": "main",
                 "max_depth": 1,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (

@@ -39,7 +39,7 @@ class TestRubyIntegration:
                 "paths": [str(project / "user.rb")],
                 "workspace_root": str(project),
                 "pattern": ".*",
-            },
+            }
         )
         time.sleep(1.0)
         return project
@@ -57,7 +57,7 @@ class TestRubyIntegration:
                 "workspace_root": str(workspace),
                 "pattern": "Storage",
                 "kinds": ["class"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -77,7 +77,7 @@ user.rb:113 [Class] FileStorage"""
                 "workspace_root": str(workspace),
                 "pattern": ".*",
                 "kinds": ["class"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -99,7 +99,7 @@ user.rb:163 [Class] UserRepository"""
                 "workspace_root": str(workspace),
                 "pattern": ".*",
                 "kinds": ["method"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert "initialize" in output
@@ -115,7 +115,7 @@ user.rb:163 [Class] UserRepository"""
                 "workspace_root": str(workspace),
                 "pattern": ".*",
                 "kinds": ["function", "method"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -138,7 +138,7 @@ main.rb:31 [Method] main"""
                 "pattern": "storage",
                 "kinds": ["class"],
                 "case_sensitive": False,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -158,7 +158,7 @@ user.rb:113 [Class] FileStorage"""
                 "pattern": "storage",
                 "kinds": ["class"],
                 "case_sensitive": True,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert output == ""
@@ -172,7 +172,7 @@ user.rb:113 [Class] FileStorage"""
                 "workspace_root": str(workspace),
                 "pattern": "^Memory",
                 "kinds": ["class"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert output == "user.rb:71 [Class] MemoryStorage"
@@ -186,7 +186,7 @@ user.rb:113 [Class] FileStorage"""
                 "workspace_root": str(workspace),
                 "pattern": "User",
                 "kinds": ["class"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -206,7 +206,7 @@ user.rb:163 [Class] UserRepository"""
                 "workspace_root": str(workspace),
                 "pattern": "main",
                 "kinds": ["method"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert output == "main.rb:31 [Method] main"
@@ -222,7 +222,7 @@ user.rb:163 [Class] UserRepository"""
                 "pattern": "User",
                 "kinds": ["class"],
                 "exclude_patterns": ["errors.rb"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -243,7 +243,7 @@ user.rb:163 [Class] UserRepository"""
                 "pattern": "^User$",
                 "kinds": ["class"],
                 "include_docs": True,
-            },
+            }
         )
         output = format_output(result, "plain")
         # Solargraph doesn't return docs at the reported symbol position
@@ -264,7 +264,7 @@ user.rb:163 [Class] UserRepository"""
                 "line": 35,
                 "column": 9,
                 "context": 0,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -291,7 +291,7 @@ end"""
                 "line": 8,
                 "column": 6,
                 "context": 0,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -314,10 +314,12 @@ user.rb:8 class User"""
                 "old_path": str(workspace / "user.rb"),
                 "new_path": str(workspace / "person.rb"),
                 "workspace_root": str(workspace),
-            },
+            }
+        ,
+            expect_error=True,
         )
-        assert "error" in response
-        assert response["error"] == "move-file is not supported by solargraph"
+        assert hasattr(result, "error")
+        assert result.error == "move-file is not supported by solargraph"
 
         # Verify file was NOT moved
         assert (workspace / "user.rb").exists()
@@ -335,7 +337,7 @@ user.rb:8 class User"""
             {
                 "workspace_root": str(workspace),
                 "symbol_path": "User",
-            },
+            }
         )
         assert result.name == "User"
         assert result.kind == "Class"
@@ -348,7 +350,7 @@ user.rb:8 class User"""
             {
                 "workspace_root": str(workspace),
                 "symbol_path": "User.is_adult",
-            },
+            }
         )
         # Solargraph may not find instance methods with this notation
         if "error" not in result:
@@ -363,7 +365,7 @@ user.rb:8 class User"""
             {
                 "workspace_root": str(workspace),
                 "symbol_path": "user.rb:User",
-            },
+            }
         )
         assert result.name == "User"
         assert result.path.endswith("user.rb")
@@ -387,7 +389,7 @@ user.rb:8 class User"""
                 "range_start_line": 144,
                 "range_end_line": 152,
                 "kind": "Constant",
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -421,7 +423,7 @@ COUNTRY_CODES = {
                 "range_start_line": 155,
                 "range_end_line": 160,
                 "kind": "Constant",
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -454,10 +456,12 @@ DEFAULT_CONFIG = [
                 "from_column": 4,
                 "from_symbol": "main",
                 "max_depth": 1,
-            },
+            }
+        ,
+            expect_error=True,
         )
-        assert "error" in response
+        assert hasattr(result, "error")
         assert (
-            response["error"]
+            result.error
             == "textDocument/prepareCallHierarchy is not supported by solargraph"
         )

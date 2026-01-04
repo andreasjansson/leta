@@ -40,7 +40,7 @@ class TestPythonIntegration:
                 "paths": [str(project / "main.py")],
                 "workspace_root": str(project),
                 "pattern": ".*",
-            },
+            }
         )
         time.sleep(1.0)
         return project
@@ -57,7 +57,7 @@ class TestPythonIntegration:
                 "paths": [str(workspace / "main.py")],
                 "workspace_root": str(workspace),
                 "pattern": ".*",
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -125,7 +125,7 @@ main.py:138 [Variable] found in main"""
                 "workspace_root": str(workspace),
                 "pattern": "^User",
                 "case_sensitive": True,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -144,7 +144,7 @@ main.py:80 [Class] UserRepository"""
                 "workspace_root": str(workspace),
                 "pattern": ".*",
                 "kinds": ["class"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -166,7 +166,7 @@ main.py:80 [Class] UserRepository"""
                 "workspace_root": str(workspace),
                 "pattern": ".*",
                 "kinds": ["function"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -186,7 +186,7 @@ main.py:127 [Function] main"""
                 "workspace_root": str(workspace),
                 "pattern": "user",
                 "case_sensitive": False,
-            },
+            }
         )
         insensitive_output = format_output(result, "plain")
 
@@ -197,7 +197,7 @@ main.py:127 [Function] main"""
                 "workspace_root": str(workspace),
                 "pattern": "user",
                 "case_sensitive": True,
-            },
+            }
         )
         sensitive_output = format_output(result, "plain")
 
@@ -242,7 +242,7 @@ main.py:130 [Variable] user in main"""
                 "workspace_root": str(workspace),
                 "pattern": "Storage",
                 "kinds": ["class"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -262,7 +262,7 @@ main.py:61 [Class] FileStorage"""
                 "workspace_root": str(workspace),
                 "pattern": ".*",
                 "kinds": ["function"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -288,7 +288,7 @@ utils.py:125 [Function] format_name"""
                 "pattern": "validate",
                 "kinds": ["function"],
                 "exclude_patterns": ["editable*"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -307,7 +307,7 @@ utils.py:22 [Function] validate_age"""
                 "pattern": ".*",
                 "kinds": ["function"],
                 "exclude_patterns": ["editable*"],
-            },
+            }
         )
         all_output = format_output(result, "plain")
 
@@ -318,7 +318,7 @@ utils.py:22 [Function] validate_age"""
                 "pattern": ".*",
                 "kinds": ["function"],
                 "exclude_patterns": ["utils.py", "editable*"],
-            },
+            }
         )
         filtered_output = format_output(result, "plain")
 
@@ -360,7 +360,7 @@ main.py:127 [Function] main"""
                 "pattern": "^create_sample_user$",
                 "kinds": ["function"],
                 "include_docs": True,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -391,7 +391,7 @@ main.py:113 [Function] create_sample_user
                 "line": 130,
                 "column": 11,
                 "context": 0,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -414,7 +414,7 @@ def create_sample_user() -> User:
                 "line": 130,
                 "column": 11,
                 "context": 2,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -445,7 +445,7 @@ def create_sample_user() -> User:
                 "line": 27,
                 "column": 6,
                 "context": 0,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -470,7 +470,7 @@ main.py:115     return User(name="John Doe", email="john@example.com", age=30)""
                 "line": 27,
                 "column": 6,
                 "context": 1,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -541,7 +541,7 @@ main.py:114-116
                     "line": 11,
                     "column": 6,
                     "new_name": "RenamedPerson",
-                },
+                }
             )
             output = format_output(result, "plain")
             assert (
@@ -576,7 +576,7 @@ Renamed in 2 file(s):
                 "line": 27,
                 "column": 6,
                 "context": 0,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert output == "main.py:27 class User:"
@@ -595,7 +595,7 @@ Renamed in 2 file(s):
                 "line": 14,
                 "column": 6,
                 "context": 0,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -621,10 +621,12 @@ editable.py:30 class EditableStorage:"""
                 "line": 14,
                 "column": 6,
                 "context": 0,
-            },
+            }
+        ,
+            expect_error=True,
         )
-        assert "error" in response
-        assert "prepareTypeHierarchy" in response["error"]
+        assert hasattr(result, "error")
+        assert "prepareTypeHierarchy" in result.error
 
     def test_supertypes_not_supported(self, workspace):
         os.chdir(workspace)
@@ -636,10 +638,12 @@ editable.py:30 class EditableStorage:"""
                 "line": 48,
                 "column": 6,
                 "context": 0,
-            },
+            }
+        ,
+            expect_error=True,
         )
-        assert "error" in response
-        assert "prepareTypeHierarchy" in response["error"]
+        assert hasattr(result, "error")
+        assert "prepareTypeHierarchy" in result.error
 
     # =========================================================================
     # move-file tests (uses isolated editable files)
@@ -665,7 +669,7 @@ editable.py:30 class EditableStorage:"""
                     "old_path": str(editable_path),
                     "new_path": str(renamed_editable_path),
                     "workspace_root": str(workspace),
-                },
+                }
             )
             output = format_output(result, "plain")
 
@@ -697,7 +701,7 @@ editable.py:30 class EditableStorage:"""
             {
                 "workspace_root": str(workspace),
                 "symbol_path": "User",
-            },
+            }
         )
         assert result.name == "User"
         assert result.line == 27
@@ -711,7 +715,9 @@ editable.py:30 class EditableStorage:"""
             {
                 "workspace_root": str(workspace),
                 "symbol_path": "save",
-            },
+            }
+        ,
+            expect_error=True,
         )
         assert result.error == "Symbol 'save' is ambiguous (4 matches)"
         assert result.total_matches == 4
@@ -731,7 +737,7 @@ editable.py:30 class EditableStorage:"""
             {
                 "workspace_root": str(workspace),
                 "symbol_path": "MemoryStorage.save",
-            },
+            }
         )
         assert result.name == "save"
         assert result.line == 54
@@ -745,7 +751,7 @@ editable.py:30 class EditableStorage:"""
             {
                 "workspace_root": str(workspace),
                 "symbol_path": "main.py:User",
-            },
+            }
         )
         assert result.name == "User"
         assert result.line == 27
@@ -770,7 +776,7 @@ editable.py:30 class EditableStorage:"""
                 "range_start_line": 130,
                 "range_end_line": 130,
                 "kind": "Constant",
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -804,7 +810,7 @@ COUNTRY_CODES = {
                 "range_start_line": 140,
                 "range_end_line": 140,
                 "kind": "Constant",
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -837,7 +843,7 @@ DEFAULT_CONFIG = [
                 "from_column": 4,
                 "from_symbol": "create_sample_user",
                 "max_depth": 1,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -862,7 +868,7 @@ Outgoing calls:
                 "to_column": 4,
                 "to_symbol": "create_sample_user",
                 "max_depth": 1,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -891,7 +897,7 @@ Incoming calls:
                 "to_column": 4,
                 "to_symbol": "create_sample_user",
                 "max_depth": 3,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -919,7 +925,7 @@ main.py:127 [Function] main
                 "to_column": 4,
                 "to_symbol": "main",
                 "max_depth": 3,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -941,7 +947,7 @@ main.py:127 [Function] main
                 "from_symbol": "validate_email",
                 "max_depth": 1,
                 "include_non_workspace": True,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -968,7 +974,7 @@ Outgoing calls:
                 "from_column": 4,
                 "from_symbol": "validate_email",
                 "max_depth": 1,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (

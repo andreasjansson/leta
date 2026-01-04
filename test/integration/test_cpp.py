@@ -39,7 +39,7 @@ class TestCppIntegration:
                 "paths": [str(project / "user.hpp")],
                 "workspace_root": str(project),
                 "pattern": ".*",
-            },
+            }
         )
         time.sleep(1.0)
         return project
@@ -57,7 +57,7 @@ class TestCppIntegration:
                 "workspace_root": str(workspace),
                 "pattern": "Storage",
                 "kinds": ["class"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert "Storage" in output
@@ -73,7 +73,7 @@ class TestCppIntegration:
                 "workspace_root": str(workspace),
                 "pattern": ".*",
                 "kinds": ["class"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert "[Class] User" in output
@@ -91,7 +91,7 @@ class TestCppIntegration:
                 "workspace_root": str(workspace),
                 "pattern": ".*",
                 "kinds": ["function"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -110,7 +110,7 @@ user.hpp:140 [Function] validateUser (void (const User &)) in example"""
                 "workspace_root": str(workspace),
                 "pattern": "^is",
                 "kinds": ["method"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert output == "user.hpp:23 [Method] isAdult (bool () const) in User"
@@ -124,7 +124,7 @@ user.hpp:140 [Function] validateUser (void (const User &)) in example"""
                 "workspace_root": str(workspace),
                 "pattern": "^User$",
                 "case_sensitive": False,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -141,7 +141,7 @@ user.hpp:15 [Constructor] User ((std::string, std::string, int)) in User"""
                 "workspace_root": str(workspace),
                 "pattern": "^user$",
                 "case_sensitive": True,
-            },
+            }
         )
         lowercase_output = format_output(result, "plain")
         assert lowercase_output == ""
@@ -155,7 +155,7 @@ user.hpp:15 [Constructor] User ((std::string, std::string, int)) in User"""
                 "workspace_root": str(workspace),
                 "pattern": "Storage",
                 "kinds": ["class"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -175,7 +175,7 @@ user.hpp:80 [Class] FileStorage (class) in example"""
                 "workspace_root": str(workspace),
                 "pattern": ".*",
                 "kinds": ["function"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -195,7 +195,7 @@ main.cpp:7 [Function] main (int ())"""
                 "pattern": "validate",
                 "case_sensitive": False,
                 "kinds": ["function"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -211,7 +211,7 @@ main.cpp:7 [Function] main (int ())"""
                 "workspace_root": str(workspace),
                 "pattern": ".*",
                 "kinds": ["function"],
-            },
+            }
         )
         all_output = format_output(result, "plain")
         assert (
@@ -235,7 +235,7 @@ main.cpp:7 [Function] main (int ())"""
                 "pattern": ".*",
                 "kinds": ["function"],
                 "exclude_patterns": ["errors.cpp"],
-            },
+            }
         )
         filtered_output = format_output(result, "plain")
         assert (
@@ -256,7 +256,7 @@ main.cpp:7 [Function] main (int ())"""
                 "pattern": "createSampleUser",
                 "kinds": ["function"],
                 "include_docs": True,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -292,7 +292,7 @@ user.hpp:135 [Function] createSampleUser (User ()) in example
                 "line": 11,
                 "column": 16,
                 "context": 0,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -316,7 +316,7 @@ inline User createSampleUser() {
                 "line": 11,
                 "column": 25,
                 "context": 1,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -348,7 +348,7 @@ inline User createSampleUser() {
                 "line": 13,
                 "column": 6,
                 "context": 0,
-            },
+            }
         )
         output = format_output(result, "plain")
         expected_lines = {
@@ -386,7 +386,7 @@ inline User createSampleUser() {
                 "line": 37,
                 "column": 6,
                 "context": 0,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert "MemoryStorage" in output
@@ -413,7 +413,7 @@ inline User createSampleUser() {
                 "line": 13,
                 "column": 6,
                 "new_name": "Person",
-            },
+            }
         )
         output = format_output(result, "plain")
         # clangd renames in multiple files (user.hpp and main.cpp), order may vary
@@ -435,7 +435,7 @@ inline User createSampleUser() {
                 "line": 13,
                 "column": 6,
                 "new_name": "User",
-            },
+            }
         )
 
         # Verify revert worked
@@ -456,10 +456,12 @@ inline User createSampleUser() {
                 "old_path": str(workspace / "user.hpp"),
                 "new_path": str(workspace / "person.hpp"),
                 "workspace_root": str(workspace),
-            },
+            }
+        ,
+            expect_error=True,
         )
-        assert "error" in response
-        assert response["error"] == "move-file is not supported by clangd"
+        assert hasattr(result, "error")
+        assert result.error == "move-file is not supported by clangd"
 
         # Verify file was NOT moved
         assert (workspace / "user.hpp").exists()
@@ -477,7 +479,7 @@ inline User createSampleUser() {
             {
                 "workspace_root": str(workspace),
                 "symbol_path": "example.UserRepository",
-            },
+            }
         )
         assert result.name == "UserRepository"
         assert result.kind == "Class"
@@ -490,7 +492,9 @@ inline User createSampleUser() {
             {
                 "workspace_root": str(workspace),
                 "symbol_path": "save",
-            },
+            }
+        ,
+            expect_error=True,
         )
         assert result.error == "Symbol 'save' is ambiguous (3 matches)"
         assert result.total_matches == 3
@@ -505,7 +509,7 @@ inline User createSampleUser() {
             {
                 "workspace_root": str(workspace),
                 "symbol_path": "User.isAdult",
-            },
+            }
         )
         assert result.name == "isAdult"
         assert result.kind == "Method"
@@ -518,7 +522,7 @@ inline User createSampleUser() {
             {
                 "workspace_root": str(workspace),
                 "symbol_path": "main.cpp:main",
-            },
+            }
         )
         assert result.name == "main"
         assert result.path.endswith("main.cpp")
@@ -542,7 +546,7 @@ inline User createSampleUser() {
                 "range_start_line": 162,
                 "range_end_line": 170,
                 "kind": "Variable",
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -578,11 +582,13 @@ constexpr const char* COUNTRY_CODES[] = {
                 "from_column": 4,
                 "from_symbol": "main",
                 "max_depth": 1,
-            },
+            }
+        ,
+            expect_error=True,
         )
-        assert "error" in response
+        assert hasattr(result, "error")
         assert (
-            response["error"]
+            result.error
             == "callHierarchy/outgoingCalls is not supported by clangd"
         )
 
@@ -599,7 +605,7 @@ constexpr const char* COUNTRY_CODES[] = {
                 "to_column": 5,
                 "to_symbol": "createSampleUser",
                 "max_depth": 1,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (

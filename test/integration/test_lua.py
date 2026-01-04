@@ -39,7 +39,7 @@ class TestLuaIntegration:
                 "paths": [str(project / "user.lua")],
                 "workspace_root": str(project),
                 "pattern": ".*",
-            },
+            }
         )
         time.sleep(1.0)
         return project
@@ -56,7 +56,7 @@ class TestLuaIntegration:
                 "paths": [str(workspace / "user.lua")],
                 "workspace_root": str(workspace),
                 "pattern": "Storage",
-            },
+            }
         )
         output = format_output(result, "plain")
         assert "[Object] Storage" in output
@@ -72,7 +72,7 @@ class TestLuaIntegration:
                 "workspace_root": str(workspace),
                 "pattern": ".*",
                 "kinds": ["function"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -93,7 +93,7 @@ main.lua:36 [Function] main (function ())"""
                 "workspace_root": str(workspace),
                 "pattern": "^User$",
                 "kinds": ["object"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert output == "user.lua:11 [Object] User"
@@ -109,7 +109,7 @@ main.lua:36 [Function] main (function ())"""
                 "pattern": "storage",
                 "kinds": ["object"],
                 "case_sensitive": False,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert "[Object] Storage" in output
@@ -125,7 +125,7 @@ main.lua:36 [Function] main (function ())"""
                 "pattern": "storage",
                 "kinds": ["object"],
                 "case_sensitive": True,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert output == ""
@@ -139,7 +139,7 @@ main.lua:36 [Function] main (function ())"""
                 "workspace_root": str(workspace),
                 "pattern": "^Memory",
                 "kinds": ["object"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert output == "user.lua:72 [Object] MemoryStorage"
@@ -153,7 +153,7 @@ main.lua:36 [Function] main (function ())"""
                 "workspace_root": str(workspace),
                 "pattern": "User",
                 "kinds": ["object"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -174,7 +174,7 @@ user.lua:158 [Object] UserRepository"""
                 "workspace_root": str(workspace),
                 "pattern": "main",
                 "kinds": ["function"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert output == "main.lua:36 [Function] main (function ())"
@@ -190,7 +190,7 @@ user.lua:158 [Object] UserRepository"""
                 "pattern": "User",
                 "kinds": ["object"],
                 "exclude_patterns": ["errors.lua"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -211,7 +211,7 @@ user.lua:158 [Object] UserRepository"""
                 "pattern": "^createSampleUser$",
                 "kinds": ["function"],
                 "include_docs": True,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -245,7 +245,7 @@ main.lua:8 [Function] createSampleUser (function ())
                 "line": 40,
                 "column": 23,
                 "context": 0,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -272,7 +272,7 @@ end"""
                 "line": 12,
                 "column": 6,
                 "context": 0,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert output == "user.lua:12 User.__index = User"
@@ -292,10 +292,12 @@ end"""
                 "old_path": str(workspace / "user.lua"),
                 "new_path": str(workspace / "person.lua"),
                 "workspace_root": str(workspace),
-            },
+            }
+        ,
+            expect_error=True,
         )
-        assert "error" in response
-        assert response["error"] == "move-file is not supported by lua-language-server"
+        assert hasattr(result, "error")
+        assert result.error == "move-file is not supported by lua-language-server"
 
         # Verify file was NOT moved
         assert (workspace / "user.lua").exists()
@@ -313,7 +315,7 @@ end"""
             {
                 "workspace_root": str(workspace),
                 "symbol_path": "User",
-            },
+            }
         )
         assert result.name == "User"
         assert result.kind == "Object"
@@ -326,7 +328,7 @@ end"""
             {
                 "workspace_root": str(workspace),
                 "symbol_path": "user.lua:User",
-            },
+            }
         )
         assert result.name == "User"
         assert result.path.endswith("user.lua")
@@ -350,7 +352,7 @@ end"""
                 "range_start_line": 199,
                 "range_end_line": 207,
                 "kind": "Object",
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -384,7 +386,7 @@ M.COUNTRY_CODES = {
                 "range_start_line": 210,
                 "range_end_line": 215,
                 "kind": "Array",
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -417,10 +419,12 @@ M.DEFAULT_CONFIG = {
                 "from_column": 4,
                 "from_symbol": "main.lua:36:main",
                 "max_depth": 1,
-            },
+            }
+        ,
+            expect_error=True,
         )
-        assert "error" in response
+        assert hasattr(result, "error")
         assert (
-            response["error"]
+            result.error
             == "textDocument/prepareCallHierarchy is not supported by lua-language-server"
         )

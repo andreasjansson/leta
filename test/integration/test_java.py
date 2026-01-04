@@ -48,7 +48,7 @@ class TestJavaIntegration:
                 ],
                 "workspace_root": str(project),
                 "pattern": ".*",
-            },
+            }
         )
         time.sleep(3.0)
         return project
@@ -75,7 +75,7 @@ class TestJavaIntegration:
                 ],
                 "workspace_root": str(workspace),
                 "pattern": "^get",
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -105,7 +105,7 @@ src/main/java/com/example/User.java:72 [Method] getAge() ( : int) in User"""
                 "workspace_root": str(workspace),
                 "pattern": ".*",
                 "kinds": ["class"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert output == "src/main/java/com/example/User.java:9 [Class] User"
@@ -129,7 +129,7 @@ src/main/java/com/example/User.java:72 [Method] getAge() ( : int) in User"""
                 "workspace_root": str(workspace),
                 "pattern": ".*",
                 "kinds": ["method"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -162,7 +162,7 @@ src/main/java/com/example/User.java:95 [Method] toString() ( : String) in User""
                 "workspace_root": str(workspace),
                 "pattern": "^User$",
                 "case_sensitive": False,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert output == "src/main/java/com/example/User.java:9 [Class] User"
@@ -184,7 +184,7 @@ src/main/java/com/example/User.java:95 [Method] toString() ( : String) in User""
                 "workspace_root": str(workspace),
                 "pattern": "^user$",
                 "case_sensitive": True,
-            },
+            }
         )
         lowercase_output = format_output(result, "plain")
         assert lowercase_output == ""
@@ -197,7 +197,7 @@ src/main/java/com/example/User.java:95 [Method] toString() ( : String) in User""
                 "workspace_root": str(workspace),
                 "pattern": "Storage",
                 "kinds": ["class"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -218,7 +218,7 @@ src/main/java/com/example/MemoryStorage.java:12 [Class] MemoryStorage"""
                 "workspace_root": str(workspace),
                 "pattern": ".*",
                 "kinds": ["method"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -245,7 +245,7 @@ src/main/java/com/example/User.java:95 [Method] toString() ( : String) in User""
                 "pattern": "validate",
                 "case_sensitive": False,
                 "kinds": ["method"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -262,7 +262,7 @@ src/main/java/com/example/User.java:95 [Method] toString() ( : String) in User""
                 "pattern": ".*",
                 "kinds": ["class"],
                 "exclude_patterns": ["Errors.java"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -287,7 +287,7 @@ src/main/java/com/example/MemoryStorage.java:12 [Class] MemoryStorage"""
                 "pattern": "createSampleUser",
                 "kinds": ["method"],
                 "include_docs": True,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -326,7 +326,7 @@ src/main/java/com/example/Main.java:15 [Method] createSampleUser() ( : User) in 
                 "line": 50,
                 "column": 21,
                 "context": 0,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -363,7 +363,7 @@ src/main/java/com/example/Main.java:10-17
                 "line": 50,
                 "column": 21,
                 "context": 1,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -405,7 +405,7 @@ src/main/java/com/example/Main.java:9-18
                 "line": 9,
                 "column": 13,
                 "context": 0,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -451,7 +451,7 @@ src/main/java/com/example/UserRepository.java:55     public List<User> listUsers
                 "line": 9,
                 "column": 13,
                 "context": 1,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -581,7 +581,7 @@ src/main/java/com/example/UserRepository.java:54-56
                 "line": 8,
                 "column": 17,
                 "context": 0,
-            },
+            }
         )
         output = format_output(result, "plain")
         # Order is non-deterministic for jdtls, so check parts
@@ -623,7 +623,7 @@ src/main/java/com/example/UserRepository.java:54-56
                     "old_path": str(user_path),
                     "new_path": str(person_path),
                     "workspace_root": str(workspace),
-                },
+                }
             )
             output = format_output(result, "plain")
 
@@ -664,7 +664,7 @@ src/main/java/com/example/UserRepository.java:54-56
             {
                 "workspace_root": str(workspace),
                 "symbol_path": "UserRepository",
-            },
+            }
         )
         assert result.name == "UserRepository"
         assert result.kind == "Class"
@@ -679,7 +679,7 @@ src/main/java/com/example/UserRepository.java:54-56
                 "paths": [str(workspace / "src" / "main" / "java" / "com" / "example")],
                 "workspace_root": str(workspace),
                 "pattern": "save",
-            },
+            }
         )
         time.sleep(1.0)
         result = run_request(
@@ -687,7 +687,7 @@ src/main/java/com/example/UserRepository.java:54-56
             {
                 "workspace_root": str(workspace),
                 "symbol_path": "save",
-            },
+            }
         )
         assert result.error == "Symbol 'save' is ambiguous (3 matches)"
         assert result.total_matches == 3
@@ -702,7 +702,7 @@ src/main/java/com/example/UserRepository.java:54-56
             {
                 "workspace_root": str(workspace),
                 "symbol_path": "MemoryStorage.save",
-            },
+            }
         )
         assert result.name == "save(User)"
         assert result.kind == "Method"
@@ -715,7 +715,7 @@ src/main/java/com/example/UserRepository.java:54-56
             {
                 "workspace_root": str(workspace),
                 "symbol_path": "Main.java:Main",
-            },
+            }
         )
         assert result.name == "Main"
         assert result.path.endswith("Main.java")
@@ -747,7 +747,7 @@ src/main/java/com/example/UserRepository.java:54-56
                 "range_start_line": 10,
                 "range_end_line": 21,
                 "kind": "Constant",
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -794,7 +794,7 @@ src/main/java/com/example/User.java:10-21
                 "to_column": 25,
                 "to_symbol": "createSampleUser",
                 "max_depth": 1,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (

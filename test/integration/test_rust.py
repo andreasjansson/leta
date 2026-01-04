@@ -41,7 +41,7 @@ class TestRustIntegration:
                     "paths": [str(project / "src" / f)],
                     "workspace_root": str(project),
                     "pattern": ".*",
-                },
+                }
             )
         time.sleep(4.0)
         return project
@@ -72,7 +72,7 @@ class TestRustIntegration:
                 "workspace_root": str(workspace),
                 "pattern": "Storage",
                 "kinds": ["struct", "interface"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -92,7 +92,7 @@ src/storage.rs:58 [Struct] FileStorage"""
                 "workspace_root": str(workspace),
                 "pattern": ".*",
                 "kinds": ["struct"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -104,40 +104,40 @@ src/user.rs:44 [Struct] UserRepository"""
 
     def test_grep_case_sensitive(self, workspace):
         os.chdir(workspace)
-        response = self._run_request_with_retry(
+        result = self._run_request_with_retry(
             "grep",
             {
                 "paths": [str(workspace / "src" / "user.rs")],
                 "workspace_root": str(workspace),
                 "pattern": "^User$",
                 "case_sensitive": False,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert output == "src/user.rs:5 [Struct] User"
 
-        response = self._run_request_with_retry(
+        result = self._run_request_with_retry(
             "grep",
             {
                 "paths": [str(workspace / "src" / "user.rs")],
                 "workspace_root": str(workspace),
                 "pattern": "^user$",
                 "case_sensitive": True,
-            },
+            }
         )
         lowercase_output = format_output(result, "plain")
         assert lowercase_output == ""
 
     def test_grep_combined_filters(self, workspace):
         os.chdir(workspace)
-        response = self._run_request_with_retry(
+        result = self._run_request_with_retry(
             "grep",
             {
                 "paths": [str(workspace / "src" / "storage.rs")],
                 "workspace_root": str(workspace),
                 "pattern": "Storage",
                 "kinds": ["struct"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -149,7 +149,7 @@ src/storage.rs:58 [Struct] FileStorage"""
 
     def test_grep_multiple_files(self, workspace):
         os.chdir(workspace)
-        response = self._run_request_with_retry(
+        result = self._run_request_with_retry(
             "grep",
             {
                 "paths": [
@@ -159,7 +159,7 @@ src/storage.rs:58 [Struct] FileStorage"""
                 "workspace_root": str(workspace),
                 "pattern": "^new$",
                 "kinds": ["function"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -173,14 +173,14 @@ src/storage.rs:65 [Function] new (fn(base_path: String) -> Self) in impl FileSto
 
     def test_grep_workspace_wide(self, workspace):
         os.chdir(workspace)
-        response = self._run_request_with_retry(
+        result = self._run_request_with_retry(
             "grep",
             {
                 "workspace_root": str(workspace),
                 "pattern": "validate",
                 "case_sensitive": False,
                 "kinds": ["function"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -190,13 +190,13 @@ src/storage.rs:65 [Function] new (fn(base_path: String) -> Self) in impl FileSto
 
     def test_grep_exclude_pattern(self, workspace):
         os.chdir(workspace)
-        response = self._run_request_with_retry(
+        result = self._run_request_with_retry(
             "grep",
             {
                 "workspace_root": str(workspace),
                 "pattern": ".*",
                 "kinds": ["function"],
-            },
+            }
         )
         all_output = format_output(result, "plain")
         assert (
@@ -216,14 +216,14 @@ src/storage.rs:34 [Function] default (fn() -> Self) in impl Default for MemorySt
 src/storage.rs:65 [Function] new (fn(base_path: String) -> Self) in impl FileStorage"""
         )
 
-        response = self._run_request_with_retry(
+        result = self._run_request_with_retry(
             "grep",
             {
                 "workspace_root": str(workspace),
                 "pattern": ".*",
                 "kinds": ["function"],
                 "exclude_patterns": ["errors.rs"],
-            },
+            }
         )
         filtered_output = format_output(result, "plain")
         assert (
@@ -242,7 +242,7 @@ src/storage.rs:65 [Function] new (fn(base_path: String) -> Self) in impl FileSto
 
     def test_grep_with_docs(self, workspace):
         os.chdir(workspace)
-        response = self._run_request_with_retry(
+        result = self._run_request_with_retry(
             "grep",
             {
                 "paths": [str(workspace / "src" / "main.rs")],
@@ -250,7 +250,7 @@ src/storage.rs:65 [Function] new (fn(base_path: String) -> Self) in impl FileSto
                 "pattern": "^create_sample_user$",
                 "kinds": ["function"],
                 "include_docs": True,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -278,7 +278,7 @@ src/main.rs:10 [Function] create_sample_user (fn() -> User)
 
     def test_definition(self, workspace):
         os.chdir(workspace)
-        response = self._run_request_with_retry(
+        result = self._run_request_with_retry(
             "show",
             {
                 "path": str(workspace / "src" / "main.rs"),
@@ -286,7 +286,7 @@ src/main.rs:10 [Function] create_sample_user (fn() -> User)
                 "line": 25,
                 "column": 16,
                 "context": 0,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -302,7 +302,7 @@ fn create_sample_user() -> User {
 
     def test_definition_with_context(self, workspace):
         os.chdir(workspace)
-        response = self._run_request_with_retry(
+        result = self._run_request_with_retry(
             "show",
             {
                 "path": str(workspace / "src" / "main.rs"),
@@ -310,7 +310,7 @@ fn create_sample_user() -> User {
                 "line": 25,
                 "column": 16,
                 "context": 1,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -333,7 +333,7 @@ fn create_sample_user() -> User {
 
     def test_references_basic(self, workspace):
         os.chdir(workspace)
-        response = self._run_request_with_retry(
+        result = self._run_request_with_retry(
             "references",
             {
                 "path": str(workspace / "src" / "main.rs"),
@@ -341,7 +341,7 @@ fn create_sample_user() -> User {
                 "line": 10,
                 "column": 3,
                 "context": 0,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -353,7 +353,7 @@ src/main.rs:10 fn create_sample_user() -> User {"""
 
     def test_references_with_context(self, workspace):
         os.chdir(workspace)
-        response = self._run_request_with_retry(
+        result = self._run_request_with_retry(
             "references",
             {
                 "path": str(workspace / "src" / "main.rs"),
@@ -361,7 +361,7 @@ src/main.rs:10 fn create_sample_user() -> User {"""
                 "line": 10,
                 "column": 3,
                 "context": 1,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -395,7 +395,7 @@ fn create_sample_user() -> User {
         original_storage = storage_rs.read_text()
 
         try:
-            response = self._run_request_with_retry(
+            result = self._run_request_with_retry(
                 "rename",
                 {
                     "path": str(user_rs),
@@ -403,7 +403,7 @@ fn create_sample_user() -> User {
                     "line": 5,
                     "column": 11,
                     "new_name": "Person",
-                },
+                }
             )
             output = format_output(result, "plain")
             assert (
@@ -437,13 +437,13 @@ Renamed in 3 file(s):
         assert "mod user;" in original_main
 
         # Rename user.rs to person.rs
-        response = self._run_request_with_retry(
+        result = self._run_request_with_retry(
             "move-file",
             {
                 "old_path": str(workspace / "src" / "user.rs"),
                 "new_path": str(workspace / "src" / "person.rs"),
                 "workspace_root": str(workspace),
-            },
+            }
         )
         output = format_output(result, "plain")
 
@@ -474,12 +474,12 @@ Moved file and updated imports in 3 file(s):
     def test_resolve_symbol_unique_name(self, workspace):
         """Test resolving a unique symbol name."""
         os.chdir(workspace)
-        response = self._run_request_with_retry(
+        result = self._run_request_with_retry(
             "resolve-symbol",
             {
                 "workspace_root": str(workspace),
                 "symbol_path": "UserRepository",
-            },
+            }
         )
         assert result.name == "UserRepository"
         assert result.kind == "Struct"
@@ -487,12 +487,12 @@ Moved file and updated imports in 3 file(s):
     def test_resolve_symbol_ambiguous_shows_container_refs(self, workspace):
         """Test that ambiguous Rust symbols show Type.method format."""
         os.chdir(workspace)
-        response = self._run_request_with_retry(
+        result = self._run_request_with_retry(
             "resolve-symbol",
             {
                 "workspace_root": str(workspace),
                 "symbol_path": "new",
-            },
+            }
         )
         assert result.error == "Symbol 'new' is ambiguous (4 matches)"
         assert result.total_matches == 4
@@ -507,12 +507,12 @@ Moved file and updated imports in 3 file(s):
     def test_resolve_symbol_impl_method(self, workspace):
         """Test resolving impl method with Type.method format."""
         os.chdir(workspace)
-        response = self._run_request_with_retry(
+        result = self._run_request_with_retry(
             "resolve-symbol",
             {
                 "workspace_root": str(workspace),
                 "symbol_path": "MemoryStorage.new",
-            },
+            }
         )
         assert result.name == "new"
         assert result.kind == "Function"
@@ -521,12 +521,12 @@ Moved file and updated imports in 3 file(s):
     def test_resolve_symbol_file_filter(self, workspace):
         """Test resolving with file filter."""
         os.chdir(workspace)
-        response = self._run_request_with_retry(
+        result = self._run_request_with_retry(
             "resolve-symbol",
             {
                 "workspace_root": str(workspace),
                 "symbol_path": "storage.rs:Storage",
-            },
+            }
         )
         assert result.name == "Storage"
         assert result.path.endswith("storage.rs")
@@ -538,7 +538,7 @@ Moved file and updated imports in 3 file(s):
     def test_show_multiline_array_constant(self, workspace):
         """Test that show displays multi-line array constants correctly."""
         os.chdir(workspace)
-        response = self._run_request_with_retry(
+        result = self._run_request_with_retry(
             "show",
             {
                 "path": str(workspace / "src" / "user.rs"),
@@ -550,7 +550,7 @@ Moved file and updated imports in 3 file(s):
                 "range_start_line": 91,
                 "range_end_line": 98,
                 "kind": "Constant",
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -575,7 +575,7 @@ pub const DEFAULT_PORTS: [u16; 5] = [
     def test_calls_incoming(self, workspace):
         """Test incoming calls to create_sample_user function."""
         os.chdir(workspace)
-        response = self._run_request_with_retry(
+        result = self._run_request_with_retry(
             "calls",
             {
                 "workspace_root": str(workspace),
@@ -585,7 +585,7 @@ pub const DEFAULT_PORTS: [u16; 5] = [
                 "to_column": 3,
                 "to_symbol": "create_sample_user",
                 "max_depth": 1,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -600,7 +600,7 @@ Incoming calls:
     def test_calls_outgoing_include_non_workspace(self, workspace):
         """Test outgoing calls with --include-non-workspace shows stdlib calls."""
         os.chdir(workspace)
-        response = self._run_request_with_retry(
+        result = self._run_request_with_retry(
             "calls",
             {
                 "workspace_root": str(workspace),
@@ -611,7 +611,7 @@ Incoming calls:
                 "from_symbol": "create_sample_user",
                 "max_depth": 1,
                 "include_non_workspace": True,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -627,7 +627,7 @@ Outgoing calls:
     def test_calls_outgoing_excludes_stdlib_by_default(self, workspace):
         """Test outgoing calls without --include-non-workspace excludes stdlib."""
         os.chdir(workspace)
-        response = self._run_request_with_retry(
+        result = self._run_request_with_retry(
             "calls",
             {
                 "workspace_root": str(workspace),
@@ -637,7 +637,7 @@ Outgoing calls:
                 "from_column": 3,
                 "from_symbol": "create_sample_user",
                 "max_depth": 1,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (

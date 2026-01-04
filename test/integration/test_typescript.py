@@ -38,7 +38,7 @@ class TestTypeScriptIntegration:
                 "paths": [str(project / "src" / "main.ts")],
                 "workspace_root": str(project),
                 "pattern": ".*",
-            },
+            }
         )
         time.sleep(1.0)
         return project
@@ -56,7 +56,7 @@ class TestTypeScriptIntegration:
                 "workspace_root": str(workspace),
                 "pattern": "Storage",
                 "kinds": ["class", "interface"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -76,7 +76,7 @@ src/user.ts:29 [Interface] Storage"""
                 "workspace_root": str(workspace),
                 "pattern": ".*",
                 "kinds": ["class"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -97,7 +97,7 @@ src/user.ts:92 [Class] UserRepository"""
                 "workspace_root": str(workspace),
                 "pattern": ".*",
                 "kinds": ["interface"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert output == "src/user.ts:29 [Interface] Storage"
@@ -111,7 +111,7 @@ src/user.ts:92 [Class] UserRepository"""
                 "workspace_root": str(workspace),
                 "pattern": "^User$",
                 "case_sensitive": False,
-            },
+            }
         )
         insensitive_output = format_output(result, "plain")
         assert insensitive_output == "src/user.ts:4 [Class] User"
@@ -123,7 +123,7 @@ src/user.ts:92 [Class] UserRepository"""
                 "workspace_root": str(workspace),
                 "pattern": "^user$",
                 "case_sensitive": True,
-            },
+            }
         )
         lowercase_output = format_output(result, "plain")
         assert lowercase_output == ""
@@ -137,7 +137,7 @@ src/user.ts:92 [Class] UserRepository"""
                 "workspace_root": str(workspace),
                 "pattern": "Storage",
                 "kinds": ["class"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -160,7 +160,7 @@ src/user.ts:39 [Class] MemoryStorage"""
                 "pattern": "^validate",
                 "case_sensitive": False,
                 "kinds": ["function"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -180,7 +180,7 @@ src/user.ts:119 [Function] validateUser"""
                 "case_sensitive": False,
                 "kinds": ["function"],
                 "exclude_patterns": ["editable*"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -199,7 +199,7 @@ src/user.ts:119 [Function] validateUser"""
                 "pattern": ".*",
                 "kinds": ["function"],
                 "exclude_patterns": ["editable*"],
-            },
+            }
         )
         all_output = format_output(result, "plain")
         assert (
@@ -227,7 +227,7 @@ src/user.ts:119 [Function] validateUser"""
                 "pattern": ".*",
                 "kinds": ["function"],
                 "exclude_patterns": ["errors.ts", "editable*"],
-            },
+            }
         )
         filtered_output = format_output(result, "plain")
         assert (
@@ -252,7 +252,7 @@ src/user.ts:119 [Function] validateUser"""
                 "pattern": "^createSampleUser$",
                 "kinds": ["function"],
                 "include_docs": True,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -281,7 +281,7 @@ src/main.ts:6 [Function] createSampleUser
                 "line": 58,
                 "column": 18,
                 "context": 0,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -305,7 +305,7 @@ function createSampleUser(): User {
                 "line": 58,
                 "column": 18,
                 "context": 1,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -334,7 +334,7 @@ function createSampleUser(): User {
                 "line": 4,
                 "column": 13,
                 "context": 0,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -371,7 +371,7 @@ src/main.ts:7     return new User("John Doe", "john@example.com", 30);"""
                 "line": 4,
                 "column": 13,
                 "context": 1,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -487,7 +487,7 @@ function createSampleUser(): User {
                 "line": 29,
                 "column": 17,
                 "context": 0,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -507,7 +507,7 @@ src/user.ts:62 export class FileStorage implements Storage {"""
                 "line": 29,
                 "column": 17,
                 "context": 1,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -549,7 +549,7 @@ export class FileStorage implements Storage {
                     "line": 10,
                     "column": 13,
                     "new_name": "RenamedPerson",
-                },
+                }
             )
             output = format_output(result, "plain")
             lines = output.strip().split("\n")
@@ -593,7 +593,7 @@ export class FileStorage implements Storage {
                     "old_path": str(editable_path),
                     "new_path": str(moved_editable_path),
                     "workspace_root": str(workspace),
-                },
+                }
             )
             output = format_output(result, "plain")
 
@@ -630,7 +630,7 @@ Moved file and updated imports in 2 file(s):
             {
                 "workspace_root": str(workspace),
                 "symbol_path": "Counter",
-            },
+            }
         )
         assert result.name == "Counter"
         assert result.kind == "Class"
@@ -643,7 +643,7 @@ Moved file and updated imports in 2 file(s):
             {
                 "workspace_root": str(workspace),
                 "symbol_path": "save",
-            },
+            }
         )
         assert result.error == "Symbol 'save' is ambiguous (4 matches)"
         assert result.total_matches == 4
@@ -663,7 +663,7 @@ Moved file and updated imports in 2 file(s):
             {
                 "workspace_root": str(workspace),
                 "symbol_path": "Counter.increment",
-            },
+            }
         )
         assert result.name == "increment"
         assert result.kind == "Method"
@@ -676,7 +676,7 @@ Moved file and updated imports in 2 file(s):
             {
                 "workspace_root": str(workspace),
                 "symbol_path": "main.ts:createSampleUser",
-            },
+            }
         )
         assert result.name == "createSampleUser"
         assert result.path.endswith("main.ts")
@@ -700,7 +700,7 @@ Moved file and updated imports in 2 file(s):
                 "range_start_line": 135,
                 "range_end_line": 143,
                 "kind": "Constant",
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -734,7 +734,7 @@ export const COUNTRY_CODES: Record<string, string> = {
                 "range_start_line": 148,
                 "range_end_line": 153,
                 "kind": "Constant",
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -767,7 +767,7 @@ export const DEFAULT_CONFIG: string[] = [
                 "from_column": 9,
                 "from_symbol": "createSampleUser",
                 "max_depth": 1,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -792,7 +792,7 @@ Outgoing calls:
                 "to_column": 9,
                 "to_symbol": "createSampleUser",
                 "max_depth": 1,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -818,7 +818,7 @@ Incoming calls:
                 "from_symbol": "processUsers",
                 "max_depth": 1,
                 "include_non_workspace": True,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -845,7 +845,7 @@ Outgoing calls:
                 "from_column": 9,
                 "from_symbol": "processUsers",
                 "max_depth": 1,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (

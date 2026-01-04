@@ -39,7 +39,7 @@ class TestPhpIntegration:
                 "paths": [str(project / "src" / "User.php")],
                 "workspace_root": str(project),
                 "pattern": ".*",
-            },
+            }
         )
         time.sleep(1.0)
         return project
@@ -57,7 +57,7 @@ class TestPhpIntegration:
                 "workspace_root": str(workspace),
                 "pattern": "Storage",
                 "kinds": ["interface"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert "Storage" in output
@@ -71,7 +71,7 @@ class TestPhpIntegration:
                 "workspace_root": str(workspace),
                 "pattern": ".*",
                 "kinds": ["class"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert "[Class] MemoryStorage" in output
@@ -85,7 +85,7 @@ class TestPhpIntegration:
                 "workspace_root": str(workspace),
                 "pattern": ".*",
                 "kinds": ["interface"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert "[Interface] Storage" in output
@@ -99,7 +99,7 @@ class TestPhpIntegration:
                 "workspace_root": str(workspace),
                 "pattern": "^get",
                 "kinds": ["method"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -119,7 +119,7 @@ src/User.php:73 [Method] getAge in User"""
                 "workspace_root": str(workspace),
                 "pattern": "^User$",
                 "case_sensitive": False,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert output == "src/User.php:10 [Class] User"
@@ -131,7 +131,7 @@ src/User.php:73 [Method] getAge in User"""
                 "workspace_root": str(workspace),
                 "pattern": "^user$",
                 "case_sensitive": True,
-            },
+            }
         )
         lowercase_output = format_output(result, "plain")
         assert lowercase_output == ""
@@ -144,7 +144,7 @@ src/User.php:73 [Method] getAge in User"""
                 "workspace_root": str(workspace),
                 "pattern": "Storage",
                 "kinds": ["class"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -166,7 +166,7 @@ src/FileStorage.php:10 [Class] FileStorage"""
                 "workspace_root": str(workspace),
                 "pattern": ".*",
                 "kinds": ["method"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -192,7 +192,7 @@ src/User.php:93 [Method] displayName in User"""
                 "pattern": "validate",
                 "case_sensitive": False,
                 "kinds": ["method"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert output == "src/Main.php:28 [Method] validateUser (static) in Main"
@@ -206,7 +206,7 @@ src/User.php:93 [Method] displayName in User"""
                 "pattern": ".*",
                 "kinds": ["class"],
                 "exclude_patterns": ["Errors.php"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -229,7 +229,7 @@ src/UserRepository.php:10 [Class] UserRepository"""
                 "pattern": "createSampleUser",
                 "kinds": ["method"],
                 "include_docs": True,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -264,7 +264,7 @@ src/Main.php:17 [Method] createSampleUser (static) in Main
                 "line": 63,
                 "column": 22,
                 "context": 0,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert "createSampleUser" in output
@@ -284,7 +284,7 @@ src/Main.php:17 [Method] createSampleUser (static) in Main
                 "line": 10,
                 "column": 6,
                 "context": 0,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert "User" in output
@@ -303,7 +303,7 @@ src/Main.php:17 [Method] createSampleUser (static) in Main
                 "line": 10,
                 "column": 10,
                 "context": 0,
-            },
+            }
         )
         output = format_output(result, "plain")
         assert "does not support implementations" in output
@@ -328,10 +328,12 @@ src/Main.php:17 [Method] createSampleUser (static) in Main
                 "old_path": str(base_path / "User.php"),
                 "new_path": str(base_path / "Person.php"),
                 "workspace_root": str(workspace),
-            },
+            }
+        ,
+            expect_error=True,
         )
-        assert "error" in response
-        assert response["error"] == "move-file is not supported by intelephense"
+        assert hasattr(result, "error")
+        assert result.error == "move-file is not supported by intelephense"
 
         # Verify file was NOT moved
         assert (base_path / "User.php").exists()
@@ -349,7 +351,7 @@ src/Main.php:17 [Method] createSampleUser (static) in Main
             {
                 "workspace_root": str(workspace),
                 "symbol_path": "UserRepository",
-            },
+            }
         )
         assert result.name == "UserRepository"
         assert result.kind == "Class"
@@ -362,7 +364,9 @@ src/Main.php:17 [Method] createSampleUser (static) in Main
             {
                 "workspace_root": str(workspace),
                 "symbol_path": "save",
-            },
+            }
+        ,
+            expect_error=True,
         )
         assert result.error == "Symbol 'save' is ambiguous (3 matches)"
         assert result.total_matches == 3
@@ -377,7 +381,7 @@ src/Main.php:17 [Method] createSampleUser (static) in Main
             {
                 "workspace_root": str(workspace),
                 "symbol_path": "MemoryStorage.save",
-            },
+            }
         )
         assert result.name == "save"
         assert result.kind == "Method"
@@ -390,7 +394,7 @@ src/Main.php:17 [Method] createSampleUser (static) in Main
             {
                 "workspace_root": str(workspace),
                 "symbol_path": "User.php:User",
-            },
+            }
         )
         assert result.name == "User"
         assert result.path.endswith("User.php")
@@ -414,7 +418,7 @@ src/Main.php:17 [Method] createSampleUser (static) in Main
                 "range_start_line": 15,
                 "range_end_line": 23,
                 "kind": "Constant",
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -450,10 +454,12 @@ src/User.php:15-23
                 "from_column": 23,
                 "from_symbol": "run",
                 "max_depth": 1,
-            },
+            }
+        ,
+            expect_error=True,
         )
-        assert "error" in response
+        assert hasattr(result, "error")
         assert (
-            response["error"]
+            result.error
             == "textDocument/prepareCallHierarchy is not supported by intelephense"
         )

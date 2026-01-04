@@ -41,7 +41,7 @@ class TestMultiLanguageIntegration:
                 "paths": [str(workspace / "app.py")],
                 "workspace_root": str(workspace),
                 "pattern": ".*",
-            },
+            }
         )
         time.sleep(0.5)
 
@@ -52,7 +52,7 @@ class TestMultiLanguageIntegration:
                 "workspace_root": str(workspace),
                 "pattern": ".*",
                 "kinds": ["class"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -73,7 +73,7 @@ app.py:25 [Class] PythonService"""
                 "paths": [str(workspace / "main.go")],
                 "workspace_root": str(workspace),
                 "pattern": ".*",
-            },
+            }
         )
         time.sleep(0.5)
 
@@ -84,7 +84,7 @@ app.py:25 [Class] PythonService"""
                 "workspace_root": str(workspace),
                 "pattern": ".*",
                 "kinds": ["struct"],
-            },
+            }
         )
         output = format_output(result, "plain")
         assert (
@@ -106,7 +106,7 @@ main.go:12 [Struct] GoService (struct{...})"""
                 "paths": [str(workspace / "app.py")],
                 "workspace_root": str(workspace),
                 "pattern": ".*",
-            },
+            }
         )
         run_request(
             "grep",
@@ -114,7 +114,7 @@ main.go:12 [Struct] GoService (struct{...})"""
                 "paths": [str(workspace / "main.go")],
                 "workspace_root": str(workspace),
                 "pattern": ".*",
-            },
+            }
         )
         time.sleep(0.5)
 
@@ -125,7 +125,7 @@ main.go:12 [Struct] GoService (struct{...})"""
                 "workspace_root": str(workspace),
                 "pattern": "Service",
                 "kinds": ["struct", "class"],
-            },
+            }
         )
         output = format_output(result, "plain")
         # Order may vary, check both are present
