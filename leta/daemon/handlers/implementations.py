@@ -23,8 +23,7 @@ async def handle_implementations(
     line, column = ctx.parse_position({"line": params.line, "column": params.column})
     context = params.context
 
-    caps = workspace.client.capabilities.model_dump()
-    if not caps.get("implementationProvider"):
+    if not workspace.client.capabilities.supports_implementation():
         server_name = workspace.server_config.name
         return ImplementationsResult(
             error=f"Server '{server_name}' does not support implementations (may require a license)"
