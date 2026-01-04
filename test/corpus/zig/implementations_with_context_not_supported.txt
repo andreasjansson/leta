@@ -1,0 +1,6 @@
+==================
+implementations with context not supported
+==================
+leta implementations Storage -n 1
+---
+Error: Server 'zls' does not support implementations (may require a license)
