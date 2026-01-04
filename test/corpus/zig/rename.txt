@@ -1,7 +1,7 @@
 ==================
 check before rename
 ==================
-grep "pub const User" src/user.zig
+grep "pub const User = struct" src/user.zig
 ---
 pub const User = struct {
 
@@ -16,7 +16,7 @@ Renamed in 1 file(s):
 ==================
 verify rename worked
 ==================
-grep "pub const.*User" src/user.zig
+grep "pub const RenamedUser = struct" src/user.zig
 ---
 pub const RenamedUser = struct {
 
@@ -31,6 +31,6 @@ Renamed in 1 file(s):
 ==================
 verify restore worked
 ==================
-grep "pub const User" src/user.zig
+grep "pub const User = struct" src/user.zig
 ---
 pub const User = struct {
