@@ -6,6 +6,7 @@ from pathlib import Path
 from ..rpc import RenameParams as RPCRenameParams, RenameResult
 
 logger = logging.getLogger(__name__)
+
 from ...lsp.types import (
     RenameParams,
     TextDocumentIdentifier,
