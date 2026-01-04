@@ -1,0 +1,6 @@
+==================
+rename not reliable due to jdtls sync issues
+==================
+leta rename NonExistent NewName
+---
+Error: Symbol 'NonExistent' not found
