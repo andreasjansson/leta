@@ -161,7 +161,11 @@ def setup_workspace(language: str, work_dir: Path) -> str | None:
 
 
 def run_command(command: str, work_dir: Path) -> tuple[str, int]:
-    """Run a shell command and return (output, return_code)."""
+    """Run a shell command and return (output, return_code).
+    
+    Always captures both stdout and stderr combined, and doesn't fail
+    on non-zero exit codes since we're testing output, not exit codes.
+    """
     result = subprocess.run(
         command,
         shell=True,
@@ -170,9 +174,8 @@ def run_command(command: str, work_dir: Path) -> tuple[str, int]:
         text=True,
         timeout=60,
     )
-    output = result.stdout
-    if result.stderr and result.returncode != 0:
-        output = result.stdout + result.stderr
+    # Combine stdout and stderr - commands may output errors we want to test
+    output = result.stdout + result.stderr
     return output.rstrip("\n"), result.returncode
 
 
