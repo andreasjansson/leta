@@ -1,0 +1,8 @@
+==================
+calls path found
+==================
+leta calls --from main --to createSampleUser
+---
+Call path:
+main.go:172 [Function] main (sample_project • main.go)
+  → main.go:149 [Function] createSampleUser (sample_project • main.go)
