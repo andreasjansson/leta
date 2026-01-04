@@ -32,7 +32,7 @@ from pathlib import Path
 from queue import Empty, Queue
 from threading import Thread
 
-CORPUS_DIR = Path(__file__).parent / "corpus"
+CORPUS_DIR = Path(__file__).parent
 
 
 @dataclass
