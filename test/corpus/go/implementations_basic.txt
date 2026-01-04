@@ -1,0 +1,7 @@
+==================
+implementations basic
+==================
+leta implementations Storage
+---
+main.go:39 type MemoryStorage struct {
+main.go:85 type FileStorage struct {
