@@ -1,0 +1,14 @@
+==================
+show qualified name
+==================
+leta show MemoryStorage.save
+---
+src/main/java/com/example/MemoryStorage.java:22-28
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void save(User user) {
+        users.put(user.getEmail(), user);
+    }
