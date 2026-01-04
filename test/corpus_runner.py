@@ -209,10 +209,12 @@ def run_corpus_file(file_path: Path, work_dir: Path) -> FileResult:
 
 def run_language(language: str, temp_base: Path, filter_pattern: str | None = None) -> LanguageResult:
     """Run all corpus tests for a language."""
+    start_time = time.time()
     result = LanguageResult(language=language)
 
     if not check_language_server(language):
         result.setup_error = f"Language server not installed: {LANGUAGE_SERVER_COMMANDS.get(language, 'unknown')}"
+        result.elapsed = time.time() - start_time
         return result
 
     work_dir = temp_base / language
@@ -221,6 +223,7 @@ def run_language(language: str, temp_base: Path, filter_pattern: str | None = No
     setup_error = setup_workspace(language, work_dir)
     if setup_error:
         result.setup_error = setup_error
+        result.elapsed = time.time() - start_time
         return result
 
     corpus_files = sorted((CORPUS_DIR / language).glob("*.txt"))
@@ -231,6 +234,7 @@ def run_language(language: str, temp_base: Path, filter_pattern: str | None = No
         file_result = run_corpus_file(corpus_file, work_dir)
         result.file_results.append(file_result)
 
+    result.elapsed = time.time() - start_time
     return result
 
 
