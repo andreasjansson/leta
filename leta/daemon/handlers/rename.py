@@ -49,6 +49,11 @@ async def handle_rename(ctx: HandlerContext, params: RPCRenameParams) -> RenameR
 
     files_modified, renamed_files = await _apply_workspace_edit(ctx, result, workspace_root)
 
+    # Close old documents FIRST (before notifying about file changes)
+    # This is important for servers like ruby-lsp that check if files are managed by client
+    for old_path, new_path in renamed_files:
+        await workspace.close_document(old_path)
+
     # Build list of file changes for didChangeWatchedFiles notification
     file_changes: list[tuple[Path, FileChangeType]] = []
     for old_path, new_path in renamed_files:
@@ -63,9 +68,8 @@ async def handle_rename(ctx: HandlerContext, params: RPCRenameParams) -> RenameR
     if file_changes:
         await workspace.notify_files_changed(file_changes)
 
-    # Sync open documents with the LSP
+    # Now open the new documents
     for old_path, new_path in renamed_files:
-        await workspace.close_document(old_path)
         await workspace.ensure_document_open(new_path)
     for rel_path in files_modified:
         abs_path = workspace_root / rel_path
