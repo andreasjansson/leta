@@ -1,0 +1,17 @@
+==================
+show unique symbol
+==================
+leta show validateEmail
+---
+src/main/java/com/example/Main.java:31-40
+
+    /**
+     * Validates an email address format.
+     *
+     * @param email The email to validate
+     * @return true if the email format is valid
+     */
+    public static boolean validateEmail(String email) {
+        String pattern = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
+        return email.matches(pattern);
+    }
