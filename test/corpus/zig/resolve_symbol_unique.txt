@@ -1,0 +1,10 @@
+==================
+resolve unique symbol
+==================
+leta show createSampleUser
+---
+src/main.zig:22-24
+
+pub fn createSampleUser() user.User {
+    return user.User.init("John Doe", "john@example.com", 30);
+}
