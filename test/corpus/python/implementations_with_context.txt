@@ -1,0 +1,25 @@
+==================
+find implementations with context
+==================
+leta implementations StorageProtocol -n 1
+---
+editable.py:30-32
+
+class EditableStorage:
+    """Editable storage class for testing method replacement."""
+
+main.py:13-15
+
+class StorageProtocol(Protocol):
+    """Protocol defining the storage interface."""
+
+main.py:48-50
+
+class MemoryStorage:
+    """In-memory storage implementation."""
+
+main.py:61-63
+
+class FileStorage:
+    """File-based storage implementation."""
+
