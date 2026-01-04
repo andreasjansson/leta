@@ -1,7 +1,7 @@
 ==================
 grep classes only
 ==================
-leta grep main.py --kind class
+leta grep . main.py --kind class
 ---
 main.py:14 [Class] StorageProtocol
 main.py:27 [Class] User
