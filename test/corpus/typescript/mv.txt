@@ -1,0 +1,50 @@
+==================
+check import before move
+==================
+grep "from './editable'" src/editable_consumer.ts
+---
+import { EditablePerson, editableCreateSample } from './editable';
+
+==================
+create models directory
+==================
+mkdir -p src/models
+---
+
+==================
+move file to models directory
+==================
+leta mv src/editable.ts src/models/editable.ts
+---
+Moved file and updated imports in 2 file(s):
+  src/editable_consumer.ts
+  src/models/editable.ts
+
+==================
+verify import was updated
+==================
+grep "from './models/editable'" src/editable_consumer.ts
+---
+import { EditablePerson, editableCreateSample } from './models/editable';
+
+==================
+restore file back
+==================
+leta mv src/models/editable.ts src/editable.ts
+---
+Moved file and updated imports in 2 file(s):
+  src/editable_consumer.ts
+  src/editable.ts
+
+==================
+verify import was restored
+==================
+grep "from './editable'" src/editable_consumer.ts
+---
+import { EditablePerson, editableCreateSample } from './editable';
+
+==================
+cleanup models directory
+==================
+rmdir src/models
+---
