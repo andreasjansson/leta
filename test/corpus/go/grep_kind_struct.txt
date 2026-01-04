@@ -1,0 +1,9 @@
+==================
+grep kind filter struct
+==================
+leta grep "." --kind struct main.go -C
+---
+main.go:9 [Struct] User (struct{...})
+main.go:39 [Struct] MemoryStorage (struct{...})
+main.go:85 [Struct] FileStorage (struct{...})
+main.go:119 [Struct] UserRepository (struct{...})
