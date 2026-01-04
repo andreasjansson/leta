@@ -1,0 +1,23 @@
+==================
+resolve symbol with file filter
+==================
+leta show main.cpp:main
+---
+main.cpp:7-22
+
+int main() {
+    auto storage = std::make_unique<MemoryStorage>();
+    UserRepository repo(std::move(storage));
+
+    User user = createSampleUser();
+    validateUser(user);
+
+    repo.addUser(user);
+
+    if (auto found = repo.getUser("john@example.com")) {
+        std::cout << "Found user: " << found->displayName() << std::endl;
+        std::cout << "Is adult: " << (found->isAdult() ? "yes" : "no") << std::endl;
+    }
+
+    return 0;
+}
