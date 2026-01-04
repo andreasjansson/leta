@@ -3,4 +3,4 @@ implementations not supported
 ==================
 leta implementations Storage
 ---
-Error: Server 'solargraph' does not support implementations (may require a license)
+Error: Server 'ruby-lsp' does not support implementations (may require a license)
