@@ -51,6 +51,7 @@ async def handle_rename(ctx: HandlerContext, params: RPCRenameParams) -> RenameR
     # This is critical for servers like ruby-lsp that won't reindex files
     # from didChangeWatchedFiles if the document is still open
     files_to_modify = _get_files_from_workspace_edit(result, workspace_root)
+    logger.info(f"Closing {len(files_to_modify)} documents before rename: {files_to_modify}")
     for file_path in files_to_modify:
         await workspace.close_document(file_path)
 
