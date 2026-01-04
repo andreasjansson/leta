@@ -1,0 +1,6 @@
+==================
+find declaration of class
+==================
+leta declaration User
+---
+main.py:27 class User:
