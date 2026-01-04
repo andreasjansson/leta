@@ -1,0 +1,18 @@
+==================
+show unique symbol
+==================
+leta show validate_email
+---
+utils.py:9-19
+
+def validate_email(email: str) -> bool:
+    """Validate an email address format.
+
+    Args:
+        email: The email address to validate.
+
+    Returns:
+        True if the email format is valid, False otherwise.
+    """
+    pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+    return bool(re.match(pattern, email))
