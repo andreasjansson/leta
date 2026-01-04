@@ -36,6 +36,10 @@ async def handle_rename(ctx: HandlerContext, params: RPCRenameParams) -> RenameR
 
     assert workspace.client is not None
 
+    # Wait for indexing to complete before sending rename request
+    # Some servers (like ruby-lsp) return null if not fully indexed
+    await workspace.client.wait_for_indexing(timeout=10.0)
+
     rename_params = RenameParams(
         textDocument=TextDocumentIdentifier(uri=doc.uri),
         position=Position(line=line, character=column),
