@@ -400,6 +400,10 @@ class DocumentSymbolParams(BaseModel):
     textDocument: TextDocumentIdentifier
 
 
+class WorkspaceSymbolParams(BaseModel):
+    query: str
+
+
 class RenameParams(BaseModel):
     textDocument: TextDocumentIdentifier
     position: Position
