@@ -3,4 +3,4 @@ move file not supported
 ==================
 leta mv user.rb person.rb
 ---
-Error: move-file is not supported by solargraph
+Error: move-file is not supported by ruby-lsp
