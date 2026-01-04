@@ -1,0 +1,7 @@
+==================
+grep kind filter struct
+==================
+leta grep "." --kind struct src/user.rs -C
+---
+src/user.rs:5 [Struct] User
+src/user.rs:44 [Struct] UserRepository
