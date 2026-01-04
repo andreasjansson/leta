@@ -1,0 +1,8 @@
+==================
+grep pattern filter
+==================
+leta grep "Storage" --kind object user.lua -C
+---
+user.lua:43 [Object] Storage
+user.lua:72 [Object] MemoryStorage
+user.lua:122 [Object] FileStorage
