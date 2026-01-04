@@ -1,0 +1,28 @@
+==================
+show class definition
+==================
+leta show User
+---
+src/user.ts:4-24
+
+export class User {
+    constructor(
+        public readonly name: string,
+        public readonly email: string,
+        public readonly age: number
+    ) {}
+
+    /**
+     * Checks if the user is an adult (18 or older).
+     */
+    isAdult(): boolean {
+        return this.age >= 18;
+    }
+
+    /**
+     * Returns a formatted display name.
+     */
+    displayName(): string {
+        return `${this.name} <${this.email}>`;
+    }
+}
