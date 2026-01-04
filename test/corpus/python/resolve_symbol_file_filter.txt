@@ -1,0 +1,12 @@
+==================
+show with file filter
+==================
+leta show main.py:save
+---
+Error: Symbol 'save' is ambiguous (3 matches)
+  StorageProtocol.save
+    main.py:17 [Method] save in StorageProtocol
+  MemoryStorage.save
+    main.py:55 [Method] save in MemoryStorage
+  FileStorage.save
+    main.py:68 [Method] save in FileStorage
