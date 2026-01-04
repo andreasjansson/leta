@@ -1,0 +1,6 @@
+==================
+implementations basic
+==================
+leta implementations Storage
+---
+user.lua:43 local Storage = {}
