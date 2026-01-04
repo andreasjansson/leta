@@ -166,28 +166,38 @@ async def _prepare_call_hierarchy(
     path: Path,
     line: int,
     column: int,
+    max_retries: int = 3,
 ) -> CallHierarchyItem | None:
     doc = await workspace.ensure_document_open(path)
     assert workspace.client is not None
 
-    try:
-        result = await workspace.client.send_request(
-            "textDocument/prepareCallHierarchy",
-            TextDocumentPositionParams(
-                textDocument=TextDocumentIdentifier(uri=doc.uri),
-                position=Position(line=line - 1, character=column),
-            ),
-        )
-    except LSPResponseError as e:
-        if e.is_method_not_found():
-            raise LSPMethodNotSupported(
-                "textDocument/prepareCallHierarchy", workspace.server_config.name
+    last_error: LSPResponseError | None = None
+    for attempt in range(max_retries):
+        try:
+            result = await workspace.client.send_request(
+                "textDocument/prepareCallHierarchy",
+                TextDocumentPositionParams(
+                    textDocument=TextDocumentIdentifier(uri=doc.uri),
+                    position=Position(line=line - 1, character=column),
+                ),
             )
-        raise
+            if not result:
+                return None
+            return result[0]
+        except LSPResponseError as e:
+            if e.is_method_not_found():
+                raise LSPMethodNotSupported(
+                    "textDocument/prepareCallHierarchy", workspace.server_config.name
+                )
+            if e.is_retryable() and attempt < max_retries - 1:
+                last_error = e
+                await asyncio.sleep(0.5 * (attempt + 1))
+                continue
+            raise
 
-    if not result:
-        return None
-    return result[0]
+    if last_error:
+        raise last_error
+    return None
 
 
 def _is_path_in_workspace(uri: str, workspace_root: Path) -> bool:
