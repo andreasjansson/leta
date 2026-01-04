@@ -7,7 +7,6 @@ from pydantic import BaseModel
 from ..daemon.rpc import (
     CallNode,
     CallsResult,
-    CacheInfo,
     DeclarationResult,
     DescribeSessionResult,
     FileInfo,
@@ -25,7 +24,6 @@ from ..daemon.rpc import (
     SubtypesResult,
     SupertypesResult,
     SymbolInfo,
-    WorkspaceInfo,
 )
 
 
