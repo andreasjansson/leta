@@ -449,12 +449,19 @@ def list_tests() -> None:
     
     for suite_dir in suites:
         suite_name = str(suite_dir.relative_to(CORPUS_DIR))
-        has_fixture = (suite_dir / "fixture").exists()
-        marker_str = " [fixture]" if has_fixture else ""
+        
+        markers = []
+        if (suite_dir / "fixture").exists():
+            markers.append("fixture")
+        if (suite_dir / "_setup.txt").exists():
+            markers.append("setup")
+        if (suite_dir / "_teardown.txt").exists():
+            markers.append("teardown")
+        marker_str = f" [{', '.join(markers)}]" if markers else ""
         
         print(f"\n{Colors.BOLD}{suite_name}{Colors.RESET}{marker_str}")
 
-        corpus_files = sorted(suite_dir.glob("*.txt"))
+        corpus_files = sorted(f for f in suite_dir.glob("*.txt") if not f.name.startswith("_"))
         for corpus_file in corpus_files:
             tests = parse_corpus_file(corpus_file)
             print(f"  {corpus_file.stem}: {len(tests)} test(s)")
