@@ -1,0 +1,18 @@
+==================
+show method with context
+==================
+leta show getName -n 1
+---
+src/User.php:47-57
+
+
+    /**
+     * Gets the user's name.
+     *
+     * @return string The user's name
+     */
+    public function getName(): string
+    {
+        return $this->name;
+    }
+
