@@ -80,6 +80,9 @@ async def handle_rename(ctx: HandlerContext, params: RPCRenameParams) -> RenameR
         await workspace.notify_files_changed(file_changes)
 
     # Reopen all modified documents
+    # This also forces the LSP to process the file changes (especially for ruby-lsp
+    # which processes messages asynchronously) because ensure_document_open sends a
+    # documentSymbol request and waits for the response
     for old_path, new_path in renamed_files:
         await workspace.ensure_document_open(new_path)
     for rel_path in files_modified:
