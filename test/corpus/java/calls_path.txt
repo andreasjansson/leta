@@ -1,0 +1,8 @@
+==================
+calls path found
+==================
+leta calls --from main --to createSampleUser
+---
+Call path:
+src/main/java/com/example/Main.java:47 [Method] main(String[]) : void (com.example.Main)
+  → src/main/java/com/example/Main.java:15 [Method] createSampleUser() : User (com.example.Main)
