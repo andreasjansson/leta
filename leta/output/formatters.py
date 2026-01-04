@@ -97,13 +97,13 @@ def _(result: ShowResult) -> str:
 
 @format_model.register
 def _(result: RenameResult) -> str:
-    files = result.files_changed
+    files = sorted(result.files_changed)
     return f"Renamed in {len(files)} file(s):\n" + "\n".join(f"  {f}" for f in files)
 
 
 @format_model.register
 def _(result: MoveFileResult) -> str:
-    files = result.files_changed
+    files = sorted(result.files_changed)
     if result.imports_updated:
         return f"Moved file and updated imports in {len(files)} file(s):\n" + "\n".join(
             f"  {f}" for f in files
