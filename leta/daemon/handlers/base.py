@@ -203,9 +203,14 @@ class HandlerContext:
         file_sha = self.get_file_sha(file_path)
         cache_key = (str(file_path), str(workspace_root), file_sha)
 
+        import sys
+        print(f"DEBUG cache_key={cache_key}", file=sys.stderr)
+
         cached = self.symbol_cache.get(cache_key)
         if cached is not None:
+            print(f"DEBUG cache HIT", file=sys.stderr)
             return cast(list[SymbolDict], cached)
+        print(f"DEBUG cache MISS", file=sys.stderr)
 
         symbols: list[SymbolDict] = []
         try:
