@@ -1,0 +1,43 @@
+==================
+check before rename
+==================
+grep "pub struct User" src/user.rs
+---
+pub struct User {
+pub struct UserRepository<S: Storage> {
+
+==================
+rename User to Person
+==================
+leta rename User Person
+---
+Renamed in 3 file(s):
+  src/main.rs
+  src/storage.rs
+  src/user.rs
+
+==================
+verify rename worked
+==================
+grep "pub struct.*User\|Person" src/user.rs
+---
+pub struct Person {
+pub struct UserRepository<S: Storage> {
+
+==================
+restore original name
+==================
+leta rename Person User
+---
+Renamed in 3 file(s):
+  src/main.rs
+  src/storage.rs
+  src/user.rs
+
+==================
+verify restore worked
+==================
+grep "pub struct User" src/user.rs
+---
+pub struct User {
+pub struct UserRepository<S: Storage> {
