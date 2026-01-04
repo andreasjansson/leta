@@ -1,6 +1,8 @@
+import fcntl
 import os
+from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, TypedDict
+from typing import Any, Generator, TypedDict
 
 import tomli
 import tomli_w
