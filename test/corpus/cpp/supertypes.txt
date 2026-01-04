@@ -1,0 +1,6 @@
+==================
+supertypes
+==================
+leta supertypes MemoryStorage
+---
+user.hpp:37 [Class] Storage (example::Storage)
