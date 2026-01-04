@@ -1,0 +1,7 @@
+==================
+grep multiple files via glob
+==================
+leta grep "User" --kind class "*.rb"
+---
+user.rb:8 [Class] User
+user.rb:163 [Class] UserRepository
