@@ -1,0 +1,7 @@
+==================
+grep multiple files via glob
+==================
+leta grep "User" --kind object "*.lua" -C
+---
+user.lua:11 [Object] User
+user.lua:158 [Object] UserRepository
