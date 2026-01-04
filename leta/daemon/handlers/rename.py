@@ -78,53 +78,14 @@ async def handle_rename(ctx: HandlerContext, params: RPCRenameParams) -> RenameR
         logger.info(f"Notifying LSP about {len(file_changes)} file changes: {file_changes}")
         await workspace.notify_files_changed(file_changes)
 
-    # For ruby-lsp, we need special handling to ensure the index is properly updated.
-    # ruby-lsp's index doesn't get updated reliably via didChangeWatchedFiles alone.
-    # We need to:
-    # 1. Wait for notifications to be processed
-    # 2. Reopen documents which triggers run_combined_requests
-    # 3. That calls index.handle_change which properly deletes old entries and adds new ones
+    # For ruby-lsp, we need to restart the server after rename to force a full reindex.
+    # This is a workaround for a ruby-lsp bug where the index doesn't properly update
+    # after didChangeWatchedFiles notifications - the old symbol names remain in the
+    # index, causing "name already in use" errors on consecutive renames.
     if workspace.client and workspace.client.server_name == "ruby-lsp":
-        import asyncio
-        from ...lsp.types import WorkspaceSymbolParams, DocumentSymbolParams
-        
-        logger.info("ruby-lsp: starting sync sequence")
-        
-        # Wait for didChangeWatchedFiles to be processed
-        try:
-            logger.info("ruby-lsp: sending workspace/symbol sync")
-            await workspace.client.send_request(
-                "workspace/symbol",
-                WorkspaceSymbolParams(query="__sync__"),
-                timeout=5.0,
-            )
-            logger.info("ruby-lsp: workspace/symbol sync complete")
-        except Exception as e:
-            logger.warning(f"ruby-lsp: workspace/symbol sync failed: {e}")
-        
-        # Reopen documents and force reindexing via documentSymbol
-        for rel_path in files_modified:
-            abs_path = workspace_root / rel_path
-            if abs_path.exists():
-                logger.info(f"ruby-lsp: reprocessing {abs_path}")
-                # Ensure document is closed first
-                await workspace.close_document(abs_path)
-                # Small delay to ensure close is processed  
-                await asyncio.sleep(0.05)
-                # Reopen with fresh content from disk
-                doc = await workspace.ensure_document_open(abs_path)
-                # Force reindex via documentSymbol request - this triggers run_combined_requests
-                # which calls index.handle_change with a block that deletes old entries
-                try:
-                    logger.info(f"ruby-lsp: sending documentSymbol for {doc.uri}")
-                    await workspace.client.send_request(
-                        "textDocument/documentSymbol",
-                        DocumentSymbolParams(textDocument=TextDocumentIdentifier(uri=doc.uri)),
-                        timeout=5.0,
-                    )
-                    logger.info(f"ruby-lsp: documentSymbol complete for {doc.uri}")
-                except Exception as e:
-                    logger.warning(f"ruby-lsp: documentSymbol failed: {e}")
+        logger.info("ruby-lsp: restarting server to refresh index after rename")
+        # Restart ruby-lsp to force a full reindex
+        await ctx.session.restart_workspace(workspace.root)
     else:
         # For other servers, just reopen documents
         for old_path, new_path in renamed_files:
