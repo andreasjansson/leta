@@ -83,6 +83,28 @@ async def handle_rename(ctx: HandlerContext, params: RPCRenameParams) -> RenameR
     return RenameResult(files_changed=files_modified)
 
 
+def _get_files_from_workspace_edit(edit: WorkspaceEdit, workspace_root: Path) -> list[Path]:
+    """Extract all file paths that will be modified by a workspace edit."""
+    files: list[Path] = []
+    
+    if edit.changes:
+        for uri in edit.changes.keys():
+            files.append(uri_to_path(uri))
+    
+    if edit.documentChanges:
+        for change in edit.documentChanges:
+            if isinstance(change, TextDocumentEdit):
+                files.append(uri_to_path(change.textDocument.uri))
+            elif isinstance(change, RenameFile):
+                files.append(uri_to_path(change.oldUri))
+            elif isinstance(change, CreateFile):
+                pass  # New file, nothing to close
+            elif isinstance(change, DeleteFile):
+                files.append(uri_to_path(change.uri))
+    
+    return files
+
+
 async def _apply_workspace_edit(
     ctx: HandlerContext, edit: WorkspaceEdit, workspace_root: Path
 ) -> tuple[list[str], list[tuple[Path, Path]]]:
