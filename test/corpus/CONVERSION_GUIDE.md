@@ -49,6 +49,14 @@ rm -rf test/corpus/<language>/fixture/.venv  # Remove any venv
 ls -la test/corpus/<language>/fixture/
 ```
 
+4. **Add the workspace to leta** (required for leta to index it):
+```bash
+cd test/corpus/<language>/fixture
+leta workspace add --root $(pwd)
+```
+
+This step is essential - without it, leta won't know about the workspace and will either fail or search in the wrong directories.
+
 ### Step 3: Convert Each Test Methodically
 
 For EACH test in the original file:
