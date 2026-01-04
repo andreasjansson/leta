@@ -131,7 +131,17 @@ def check_language_server(language: str) -> bool:
     cmd = LANGUAGE_SERVER_COMMANDS.get(language)
     if not cmd:
         return False
+    if isinstance(cmd, list):
+        return all(shutil.which(c) is not None for c in cmd)
     return shutil.which(cmd) is not None
+
+
+def get_language_server_name(language: str) -> str:
+    """Get display name for language server(s)."""
+    cmd = LANGUAGE_SERVER_COMMANDS.get(language, "unknown")
+    if isinstance(cmd, list):
+        return ", ".join(cmd)
+    return cmd
 
 
 def setup_workspace(language: str, work_dir: Path) -> str | None:
