@@ -10,12 +10,8 @@ move file and update imports
 ==================
 leta mv editable.py editable_renamed.py
 ---
-Moved file and updated imports in 6 file(s):
-  editable.py
+Moved file and updated imports in 2 file(s):
   editable_consumer.py
-  utils.py
-  errors.py
-  main.py
   editable_renamed.py
 
 ==================
@@ -30,12 +26,8 @@ restore file back
 ==================
 leta mv editable_renamed.py editable.py
 ---
-Moved file and updated imports in 6 file(s):
-  editable_renamed.py
+Moved file and updated imports in 2 file(s):
   editable_consumer.py
-  utils.py
-  errors.py
-  main.py
   editable.py
 
 ==================
