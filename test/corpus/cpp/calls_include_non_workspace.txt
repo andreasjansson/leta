@@ -1,0 +1,9 @@
+==================
+calls include non-workspace
+==================
+leta calls --from createSampleUser --include-non-workspace --max-depth 1
+---
+user.hpp:135 [Function] createSampleUser
+
+Outgoing calls:
+  └── user.hpp:15 [Constructor] User (example::User::User)
