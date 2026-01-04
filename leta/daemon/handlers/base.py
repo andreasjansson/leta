@@ -472,6 +472,8 @@ class HandlerContext:
 
             locations.append(location)
 
+        # Sort by path and line for deterministic output
+        locations.sort(key=lambda loc: (loc["path"], loc["line"]))
         return locations
 
     def find_all_files_for_tree(
