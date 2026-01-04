@@ -1,0 +1,8 @@
+==================
+supertypes of class
+==================
+leta supertypes MemoryStorage
+---
+user.rb:38 [Class] Storage (user.rb)
+user.rb:38 [Class] Storage (user.rb)
+user.rb:38 [Class] Storage (user.rb)
