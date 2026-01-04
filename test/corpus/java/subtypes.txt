@@ -1,0 +1,6 @@
+==================
+subtypes of interface
+==================
+leta subtypes Storage
+---
+src/main/java/com/example/AbstractStorage.java:7 [Class] AbstractStorage (com.example)
