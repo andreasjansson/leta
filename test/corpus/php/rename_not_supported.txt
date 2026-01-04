@@ -1,0 +1,6 @@
+==================
+rename not supported
+==================
+leta rename User Person
+---
+Error: Rename not supported or failed
