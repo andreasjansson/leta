@@ -402,18 +402,23 @@ class HandlerContext:
     def _relativize_file_uris(self, content: str, workspace_root: Path) -> str:
         """Replace absolute file:// URIs with relative paths in content."""
         workspace_str = str(workspace_root)
+        logger.debug(f"Relativizing URIs with workspace_root={workspace_str}")
         
         def replace_uri(match: re.Match[str]) -> str:
             uri = match.group(0)
             try:
-                path = uri_to_path(uri.split("#")[0].split("?")[0])
+                base_uri = uri.split("#")[0].split("?")[0]
+                path = uri_to_path(base_uri)
                 path_str = str(path)
+                logger.debug(f"Checking URI {uri}: path={path_str}, workspace={workspace_str}")
                 if path_str.startswith(workspace_str):
                     rel_path = path_str[len(workspace_str):].lstrip("/")
-                    suffix = uri[len(match.group(1)):]
-                    return rel_path + suffix
-            except Exception:
-                pass
+                    suffix = uri[len(base_uri):]
+                    result = rel_path + suffix
+                    logger.debug(f"Relativized to: {result}")
+                    return result
+            except Exception as e:
+                logger.debug(f"Error relativizing URI {uri}: {e}")
             return uri
         
         return re.sub(r"(file://[^\s\)\]\"\']+)", replace_uri, content)
