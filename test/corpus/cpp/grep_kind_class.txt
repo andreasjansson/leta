@@ -1,0 +1,10 @@
+==================
+grep kind filter class
+==================
+leta grep "." --kind class user.hpp -C
+---
+user.hpp:13 [Class] User (class) in example
+user.hpp:37 [Class] Storage (class) in example
+user.hpp:48 [Class] MemoryStorage (class) in example
+user.hpp:80 [Class] FileStorage (class) in example
+user.hpp:109 [Class] UserRepository (class) in example
