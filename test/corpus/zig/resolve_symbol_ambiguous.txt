@@ -1,0 +1,14 @@
+==================
+resolve ambiguous symbol shows matches
+==================
+leta show init
+---
+Error: Symbol 'init' is ambiguous (4 matches)
+  User.init
+    src/user.zig:10 [Function] init in User
+  MemoryStorage.init
+    src/user.zig:55 [Function] init in MemoryStorage
+  FileStorage.init
+    src/user.zig:88 [Function] init in FileStorage
+  UserRepository.init
+    src/user.zig:116 [Function] init in UserRepository
