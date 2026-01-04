@@ -1,9 +1,0 @@
-==================
-rename returns empty (solargraph limitation)
-==================
-leta rename User Person
----
-Renamed in 3 file(s):
-  main.rb
-  person.rb
-  user.rb
