@@ -1,0 +1,36 @@
+==================
+check before rename
+==================
+grep "^class Storage$" user.rb
+---
+class Storage
+
+==================
+rename Storage to StorageInterface
+==================
+leta rename Storage StorageInterface
+---
+Renamed in 1 file(s):
+  user.rb
+
+==================
+verify rename worked
+==================
+grep "^class StorageInterface$" user.rb
+---
+class StorageInterface
+
+==================
+restore original name
+==================
+leta rename StorageInterface Storage
+---
+Renamed in 1 file(s):
+  user.rb
+
+==================
+verify restore worked
+==================
+grep "^class Storage$" user.rb
+---
+class Storage
