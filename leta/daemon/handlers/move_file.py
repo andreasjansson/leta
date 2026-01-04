@@ -100,6 +100,14 @@ async def handle_move_file(
         old_path.rename(new_path)
         files_modified.append(ctx.relative_path(new_path, workspace_root))
 
+    # Sync the LSP with the changes so subsequent operations see the updated state
+    await workspace.close_document(old_path)
+    for rel_path in files_modified:
+        abs_path = workspace_root / rel_path
+        if abs_path.exists() and abs_path != new_path:
+            await workspace.ensure_document_open(abs_path)
+    await workspace.ensure_document_open(new_path)
+
     return MoveFileResult(
         files_changed=list(dict.fromkeys(files_modified)),
         imports_updated=imports_updated,
