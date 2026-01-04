@@ -93,17 +93,20 @@ async def handle_rename(ctx: HandlerContext, params: RPCRenameParams) -> RenameR
             import asyncio
             from ...lsp.types import WorkspaceSymbolParams
             try:
+                logger.info("Sending workspace/symbol sync request to ruby-lsp")
                 # Send a request that forces queue processing
                 await workspace.client.send_request(
                     "workspace/symbol",
                     WorkspaceSymbolParams(query="__leta_sync__"),
                     timeout=5.0,
                 )
+                logger.info("workspace/symbol sync completed, waiting 0.2s")
                 # Delay to ensure index is fully updated
                 # ruby-lsp's index update can take a moment after processing
                 await asyncio.sleep(0.2)
-            except Exception:
-                pass  # Just want to ensure notifications are processed
+                logger.info("ruby-lsp sync complete")
+            except Exception as e:
+                logger.warning(f"workspace/symbol sync failed: {e}")
 
     # Reopen all modified documents
     # This also forces the LSP to process the file changes (especially for ruby-lsp
