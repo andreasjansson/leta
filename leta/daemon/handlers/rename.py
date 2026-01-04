@@ -49,10 +49,11 @@ async def handle_rename(ctx: HandlerContext, params: RPCRenameParams) -> RenameR
     # Sync the LSP with the changes so subsequent operations see the updated state
     for old_path, new_path in renamed_files:
         await workspace.close_document(old_path)
+        await workspace.ensure_document_open(new_path)
     for rel_path in files_modified:
         abs_path = workspace_root / rel_path
-        if abs_path.exists():
-            await workspace.sync_document(abs_path)
+        if abs_path.exists() and abs_path not in [new for _, new in renamed_files]:
+            await workspace.ensure_document_open(abs_path)
 
     return RenameResult(files_changed=files_modified)
 
