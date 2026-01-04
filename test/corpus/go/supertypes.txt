@@ -1,0 +1,6 @@
+==================
+supertypes of struct
+==================
+leta supertypes MemoryStorage
+---
+main.go:31 [Interface] Storage (sample_project)
