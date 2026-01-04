@@ -3,4 +3,4 @@ declaration not supported
 ==================
 leta declaration User
 ---
-Error: textDocument/declaration is not supported by solargraph
+Error: textDocument/declaration is not supported by ruby-lsp
