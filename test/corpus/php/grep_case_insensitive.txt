@@ -1,0 +1,6 @@
+==================
+grep case insensitive (default)
+==================
+leta grep "^user$"
+---
+src/User.php:10 [Class] User
