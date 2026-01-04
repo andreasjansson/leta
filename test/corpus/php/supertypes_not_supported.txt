@@ -1,0 +1,5 @@
+==================
+supertypes not supported
+==================
+leta supertypes MemoryStorage
+---
