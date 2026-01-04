@@ -213,6 +213,8 @@ class Workspace:
             doc = self.open_documents[uri]
             current_content = read_file_content(path)
             if current_content != doc.content:
+                import sys
+                print(f"DEBUG ensure_document_open: syncing {uri} (content changed)", file=sys.stderr)
                 doc.version += 1
                 doc.content = current_content
                 assert self.client is not None
@@ -223,6 +225,9 @@ class Workspace:
                         "contentChanges": [{"text": current_content}],
                     },
                 )
+            else:
+                import sys
+                print(f"DEBUG ensure_document_open: {uri} already open, content unchanged", file=sys.stderr)
             return doc
 
         content = read_file_content(path)
