@@ -178,14 +178,19 @@ def run_command(command: str, work_dir: Path, env: dict[str, str] | None = None)
     return output.rstrip("\n"), result.returncode
 
 
-def run_test(test: CorpusTest, work_dir: Path, suite: str, env: dict[str, str] | None = None) -> TestResult:
+def run_test(test: CorpusTest, work_dir: Path, suite: str, env: dict[str, str] | None = None, check_exit_only: bool = False) -> TestResult:
     """Run a single test and return the result."""
     start = time.time()
     try:
-        actual_output, _ = run_command(test.command, work_dir, env)
+        actual_output, exit_code = run_command(test.command, work_dir, env)
         elapsed = time.time() - start
 
-        if actual_output == test.expected_output:
+        if check_exit_only:
+            passed = exit_code == 0
+        else:
+            passed = actual_output == test.expected_output
+        
+        if passed:
             result = TestResult(test=test, passed=True, actual_output=actual_output, elapsed=elapsed, suite=suite)
         else:
             result = TestResult(test=test, passed=False, actual_output=actual_output, elapsed=elapsed, suite=suite)
