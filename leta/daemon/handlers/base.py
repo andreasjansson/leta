@@ -203,14 +203,9 @@ class HandlerContext:
         file_sha = self.get_file_sha(file_path)
         cache_key = (str(file_path), str(workspace_root), file_sha)
 
-        import sys
-        print(f"DEBUG cache_key={cache_key}", file=sys.stderr)
-
         cached = self.symbol_cache.get(cache_key)
         if cached is not None:
-            print(f"DEBUG cache HIT", file=sys.stderr)
             return cast(list[SymbolDict], cached)
-        print(f"DEBUG cache MISS", file=sys.stderr)
 
         symbols: list[SymbolDict] = []
         try:
@@ -223,7 +218,11 @@ class HandlerContext:
                 rel_path = self.relative_path(file_path, workspace_root)
                 flatten_symbols(result, rel_path, symbols)
 
-            self.symbol_cache[cache_key] = symbols
+            # Recompute SHA after getting symbols to handle race conditions where
+            # file was modified between initial SHA computation and LSP response
+            final_sha = self.get_file_sha(file_path)
+            final_cache_key = (str(file_path), str(workspace_root), final_sha)
+            self.symbol_cache[final_cache_key] = symbols
         except Exception as e:
             logger.warning(f"Failed to get symbols for {file_path}: {e}")
             self.symbol_cache[cache_key] = []
