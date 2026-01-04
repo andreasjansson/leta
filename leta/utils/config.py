@@ -215,12 +215,20 @@ def get_best_workspace_root(
     return get_known_workspace_root(path, config)
 
 
-def add_workspace_root(root: Path, config: Config) -> None:
-    roots = config.setdefault("workspaces", {}).setdefault("roots", [])
+def add_workspace_root(root: Path, config: Config | None = None) -> None:
+    """Add a workspace root atomically with file locking.
+    
+    The config parameter is ignored - we always reload under lock to avoid races.
+    """
+    _ = config  # Kept for API compatibility
     root_str = str(root.resolve())
-    if root_str not in roots:
-        roots.append(root_str)
-        save_config(config)
+    
+    with _config_lock():
+        current_config = load_config()
+        roots = current_config.setdefault("workspaces", {}).setdefault("roots", [])
+        if root_str not in roots:
+            roots.append(root_str)
+            save_config(current_config)
 
 
 def remove_workspace_root(root: Path, config: Config) -> bool:
