@@ -169,9 +169,6 @@ class LSPClient:
 
         result = await self.send_request("initialize", init_params)
         self._server_capabilities = result.capabilities
-        # Log all capability fields for debugging
-        caps_dict = result.capabilities.model_dump(exclude_none=True)
-        logger.info(f"Server capabilities for {self.server_name}: {list(caps_dict.keys())}")
         await self.send_notification("initialized", {})
         self._initialized = True
 
