@@ -121,7 +121,7 @@ async def handle_rename(ctx: HandlerContext, params: RPCRenameParams) -> RenameR
     # For ruby-lsp, force reindexing by sending documentSymbol requests
     # This triggers run_combined_requests which calls index.handle_change
     if workspace.client and workspace.client.server_name == "ruby-lsp":
-        from ...lsp.types import DocumentSymbolParams, TextDocumentIdentifier
+        from ...lsp.types import DocumentSymbolParams
         for rel_path in files_modified:
             abs_path = workspace_root / rel_path
             if abs_path.exists():
