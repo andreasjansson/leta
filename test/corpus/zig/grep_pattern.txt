@@ -1,0 +1,9 @@
+==================
+grep pattern filter functions
+==================
+leta grep "^init" --kind function -C
+---
+src/user.zig:10 [Function] init (fn init(name: []const u8, email: []const u8, age: i32) User) in User
+src/user.zig:55 [Function] init (fn init(allocator: std.mem.Allocator) MemoryStorage) in MemoryStorage
+src/user.zig:88 [Function] init (fn init(base_path: []const u8) FileStorage) in FileStorage
+src/user.zig:116 [Function] init (fn init(storage: *MemoryStorage) UserRepository) in UserRepository
