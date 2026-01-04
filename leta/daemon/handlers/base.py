@@ -399,6 +399,25 @@ class HandlerContext:
             logger.debug(f"Failed to get hover for {rel_path}:{line}: {e}")
             return None
 
+    def _relativize_file_uris(self, content: str, workspace_root: Path) -> str:
+        """Replace absolute file:// URIs with relative paths in content."""
+        workspace_str = str(workspace_root)
+        
+        def replace_uri(match: re.Match[str]) -> str:
+            uri = match.group(0)
+            try:
+                path = uri_to_path(uri.split("#")[0].split("?")[0])
+                path_str = str(path)
+                if path_str.startswith(workspace_str):
+                    rel_path = path_str[len(workspace_str):].lstrip("/")
+                    suffix = uri[len(match.group(1)):]
+                    return rel_path + suffix
+            except Exception:
+                pass
+            return uri
+        
+        return re.sub(r"(file://[^\s\)\]\"\']+)", replace_uri, content)
+
     def format_locations(
         self,
         result: DefinitionResponse,
