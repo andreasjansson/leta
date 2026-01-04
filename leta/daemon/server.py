@@ -238,6 +238,17 @@ class DaemonServer:
             logger.exception(f"Error in handler {method}")
             return {"error": str(e)}
 
+    def _serialize_result(self, obj: Any) -> Any:
+        """Recursively serialize Pydantic objects in a result."""
+        if isinstance(obj, BaseModel):
+            return obj.model_dump(exclude_none=True)
+        elif isinstance(obj, list):
+            return [self._serialize_result(item) for item in obj]
+        elif isinstance(obj, dict):
+            return {k: self._serialize_result(v) for k, v in obj.items()}
+        else:
+            return obj
+
     async def _handle_shutdown_wrapper(
         self, ctx: HandlerContext, params: ShutdownParams
     ):
