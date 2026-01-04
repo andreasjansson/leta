@@ -48,17 +48,19 @@ async def handle_rename(ctx: HandlerContext, params: RPCRenameParams) -> RenameR
     if not result:
         raise ValueError("Rename not supported or failed")
 
-    # Close ALL documents that will be modified BEFORE applying edits
-    # This is critical for servers like ruby-lsp that won't reindex files
-    # from didChangeWatchedFiles if the document is still open
-    files_to_modify = _get_files_from_workspace_edit(result, workspace_root)
-    logger.info(f"Closing {len(files_to_modify)} documents before rename: {files_to_modify}")
-    for file_path in files_to_modify:
-        await workspace.close_document(file_path)
-
     files_modified, renamed_files = await _apply_workspace_edit(ctx, result, workspace_root)
 
     logger.debug(f"Rename: files_modified={files_modified}, renamed_files={renamed_files}")
+    
+    # For ruby-lsp, we need to close documents AFTER applying edits but BEFORE 
+    # sending didChangeWatchedFiles. This is because:
+    # - If doc is in store: CHANGED calls handle_change (proper delete+add)
+    # - If doc not in store: CHANGED calls handle_change (proper delete+add) 
+    # But we need the file content on disk to be the NEW content when ruby-lsp reads it.
+    files_to_close = _get_files_from_workspace_edit(result, workspace_root)
+    logger.info(f"Closing {len(files_to_close)} documents after applying edits: {files_to_close}")
+    for file_path in files_to_close:
+        await workspace.close_document(file_path)
 
     # Build list of file changes for didChangeWatchedFiles notification
     # 
