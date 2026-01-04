@@ -1,0 +1,7 @@
+==================
+rename returns empty (solargraph limitation)
+==================
+leta rename User Person
+---
+Renamed in 0 file(s):
+
