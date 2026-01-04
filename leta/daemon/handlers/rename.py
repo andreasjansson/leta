@@ -78,6 +78,19 @@ async def handle_rename(ctx: HandlerContext, params: RPCRenameParams) -> RenameR
     if file_changes:
         logger.info(f"Notifying LSP about {len(file_changes)} file changes: {file_changes}")
         await workspace.notify_files_changed(file_changes)
+        
+        # For ruby-lsp, we need to wait for it to process the file changes
+        # It processes messages asynchronously, so we send a dummy request and wait
+        if workspace.client and workspace.client.server_name == "ruby-lsp":
+            from ...lsp.types import WorkspaceSymbolParams
+            try:
+                await workspace.client.send_request(
+                    "workspace/symbol",
+                    WorkspaceSymbolParams(query=""),
+                    timeout=5.0,
+                )
+            except Exception:
+                pass  # Just want to ensure notifications are processed
 
     # Reopen all modified documents
     # This also forces the LSP to process the file changes (especially for ruby-lsp
