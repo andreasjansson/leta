@@ -68,6 +68,7 @@ METHOD_TO_RESULT_TYPE: dict[str, type[BaseModel]] = {
     "restart-workspace": RestartWorkspaceResult,
     "remove-workspace": RemoveWorkspaceResult,
     "describe-session": DescribeSessionResult,
+    "resolve-symbol": ResolveSymbolResult,
 }
 
 T = TypeVar("T", bound=BaseModel)
