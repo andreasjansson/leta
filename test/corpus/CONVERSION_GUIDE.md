@@ -403,85 +403,98 @@ def MyFunc():
 
 ## Canonical Test Cases
 
-Every language should have the following test cases. Some may have different expected outputs (e.g., error messages for unsupported features), but every language needs a test file for each case.
+Every language MUST have all of these test cases. Use `*_not_supported.txt` naming when a feature isn't available (e.g., `subtypes_not_supported.txt`).
 
-### grep tests
+**One test per file!** The only exception is mutation tests (rename, mv) which need multiple steps.
+
+### grep tests (12 files)
 | File | Description |
 |------|-------------|
 | `grep_pattern.txt` | Filter symbols by regex pattern |
-| `grep_kind_class.txt` | Filter by kind (class/struct) |
-| `grep_kind_function.txt` | Filter by kind (function) |
-| `grep_case_sensitive.txt` | Case-sensitive matching (finds match) |
-| `grep_case_insensitive.txt` | Case-insensitive matching (default) |
+| `grep_kind_class.txt` | Filter by kind: class (Python) or struct (Go) |
+| `grep_kind_function.txt` | Filter by kind: function |
+| `grep_case_sensitive.txt` | Case-sensitive match (`-C` flag, finds match) |
+| `grep_case_sensitive_no_match.txt` | Case-sensitive match (no match due to case) |
+| `grep_case_insensitive.txt` | Case-insensitive match (default behavior) |
 | `grep_combined_filters.txt` | Pattern + kind filter together |
-| `grep_multiple_files.txt` | Glob pattern for multiple files |
+| `grep_multiple_files.txt` | Glob pattern for multiple files (`"*.py"`) |
 | `grep_workspace_wide.txt` | Search entire workspace |
-| `grep_exclude.txt` | Exclude pattern |
+| `grep_exclude.txt` | Single exclude pattern (`--exclude`) |
 | `grep_exclude_multiple.txt` | Multiple exclude patterns |
-| `grep_with_docs.txt` | Include documentation |
+| `grep_with_docs.txt` | Include documentation (`--docs`) |
 
-### show tests
+### show tests (4 files)
 | File | Description |
 |------|-------------|
-| `show_function.txt` | Show function/method definition |
-| `show_class.txt` | Show class/struct definition |
+| `show_function.txt` | Show function definition |
+| `show_class.txt` or `show_struct.txt` | Show class/struct definition |
 | `show_with_context.txt` | Show with `-n` context lines |
-| `show_multiline_var.txt` | Multi-line variable/constant |
+| `show_multiline_*.txt` | Multi-line variable (dict/list/map/slice) |
 
-### refs tests
+### refs tests (2 files)
 | File | Description |
 |------|-------------|
-| `refs_basic.txt` | Find all references |
-| `refs_with_context.txt` | References with context lines |
+| `refs_basic.txt` | Find all references to a symbol |
+| `refs_with_context.txt` | References with `-n` context lines |
 
-### implementations tests
+### implementations tests (2 files)
 | File | Description |
 |------|-------------|
 | `implementations_basic.txt` | Find implementations of interface/protocol |
-| `implementations_with_context.txt` | Implementations with context lines |
+| `implementations_with_context.txt` | Implementations with `-n` context lines |
 
-### calls tests
+### calls tests (6 files)
 | File | Description |
 |------|-------------|
-| `calls_outgoing.txt` | Outgoing calls from function |
-| `calls_incoming.txt` | Incoming calls to function |
-| `calls_path.txt` | Find call path between functions |
-| `calls_path_not_found.txt` | Call path not found |
-| `calls_include_non_workspace.txt` | Include stdlib/external calls |
+| `calls_outgoing.txt` | Outgoing calls from a function (`--from`) |
+| `calls_incoming.txt` | Incoming calls to a function (`--to`) |
+| `calls_path.txt` | Find call path between two functions |
+| `calls_path_not_found.txt` | Call path not found (no connection) |
+| `calls_include_non_workspace.txt` | Include stdlib calls (`--include-non-workspace`) |
 | `calls_excludes_stdlib.txt` | Verify stdlib excluded by default |
 
-### resolve_symbol tests
+### resolve_symbol tests (4 files)
 | File | Description |
 |------|-------------|
-| `resolve_symbol_unique.txt` | Resolve unique symbol |
-| `resolve_symbol_ambiguous.txt` | Ambiguous symbol shows matches |
-| `resolve_symbol_qualified.txt` | Container.name qualified lookup |
-| `resolve_symbol_file_filter.txt` | file.ext:symbol filter |
+| `resolve_symbol_unique.txt` | Show resolves unique symbol |
+| `resolve_symbol_ambiguous.txt` | Ambiguous symbol shows all matches |
+| `resolve_symbol_qualified.txt` | `Container.name` qualified lookup |
+| `resolve_symbol_file_filter.txt` | `file.ext:symbol` filter |
 
-### type hierarchy tests
+### type hierarchy tests (2 files)
 | File | Description |
 |------|-------------|
-| `subtypes.txt` | Find subtypes (or `subtypes_not_supported.txt`) |
-| `supertypes.txt` | Find supertypes (or `supertypes_not_supported.txt`) |
+| `subtypes.txt` or `subtypes_not_supported.txt` | Find subtypes of interface/class |
+| `supertypes.txt` or `supertypes_not_supported.txt` | Find supertypes of class |
 
-### declaration tests
+### declaration tests (1 file)
 | File | Description |
 |------|-------------|
-| `declaration.txt` | Find declaration (or `declaration_not_supported.txt`) |
+| `declaration.txt` or `declaration_not_supported.txt` | Find declaration of local variable |
 
-### mutation tests (multi-step)
+### mutation tests (2 files, multi-step)
 | File | Description |
 |------|-------------|
-| `rename.txt` | Rename symbol with verification and restore |
-| `mv.txt` | Move file (or `mv_not_supported.txt`) |
+| `rename.txt` | Rename symbol (verify → rename → verify → restore) |
+| `mv.txt` or `mv_not_supported.txt` | Move file (verify → move → verify → restore) |
 
-### Language-specific tests
+**Total: ~35 test files per language**
 
-Some languages may have additional tests for language-specific features:
-- Go: `resolve_symbol_value_receiver.txt` (method receivers)
-- Go: `grep_kind_struct.txt`, `grep_kind_interface.txt`
-- TypeScript: `grep_kind_interface.txt`
-- etc.
+### Language-specific additions
+
+Some languages need extra tests for language-specific features:
+
+**Go:**
+- `grep_kind_struct.txt` - Structs (in addition to class)
+- `grep_kind_interface.txt` - Go interfaces
+- `resolve_symbol_value_receiver.txt` - Method receiver syntax
+
+**TypeScript:**
+- `grep_kind_interface.txt` - TS interfaces
+- `grep_kind_type.txt` - Type aliases
+
+**Python:**
+- `grep_all.txt` - Optional: show all symbols in a file
 
 ## Checklist for Each Language
 
