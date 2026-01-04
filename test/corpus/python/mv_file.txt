@@ -11,11 +11,11 @@ move file and update imports
 leta mv editable.py editable_renamed.py
 ---
 Moved file and updated imports in 6 file(s):
-  main.py
-  utils.py
   editable.py
   editable_consumer.py
+  utils.py
   errors.py
+  main.py
   editable_renamed.py
 
 ==================
@@ -24,3 +24,23 @@ verify import was updated
 grep "from editable_renamed import" editable_consumer.py
 ---
 from editable_renamed import EditablePerson, editable_create_sample
+
+==================
+restore file back
+==================
+leta mv editable_renamed.py editable.py
+---
+Moved file and updated imports in 6 file(s):
+  editable_renamed.py
+  editable_consumer.py
+  utils.py
+  errors.py
+  main.py
+  editable.py
+
+==================
+verify import was restored
+==================
+grep "from editable import" editable_consumer.py
+---
+from editable import EditablePerson, editable_create_sample
