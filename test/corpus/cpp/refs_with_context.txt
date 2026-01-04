@@ -1,0 +1,15 @@
+==================
+refs with context
+==================
+leta refs createSampleUser -n 1
+---
+main.cpp:10-12
+
+    User user = createSampleUser();
+    validateUser(user);
+
+user.hpp:134-136
+/// Creates a sample user for testing.
+inline User createSampleUser() {
+    return User("John Doe", "john@example.com", 30);
+
