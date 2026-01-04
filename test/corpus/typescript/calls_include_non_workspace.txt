@@ -1,0 +1,11 @@
+==================
+calls outgoing include non-workspace
+==================
+leta calls --from processUsers --include-non-workspace --max-depth 1
+---
+src/main.ts:13 [Function] processUsers
+
+Outgoing calls:
+  ├── [Method] map
+  ├── src/user.ts:107 [Method] listUsers (UserRepository)
+  └── src/user.ts:21 [Method] displayName (User)
