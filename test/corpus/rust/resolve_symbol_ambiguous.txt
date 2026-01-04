@@ -1,0 +1,14 @@
+==================
+show ambiguous symbol shows matches
+==================
+leta show new
+---
+Error: Symbol 'new' is ambiguous (4 matches)
+  User.new
+    src/user.rs:13 [Function] new in impl User
+  UserRepository.new
+    src/user.rs:50 [Function] new in impl UserRepository<S>
+  MemoryStorage.new
+    src/storage.rs:26 [Function] new in impl MemoryStorage
+  FileStorage.new
+    src/storage.rs:65 [Function] new in impl FileStorage
