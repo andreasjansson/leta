@@ -103,7 +103,7 @@ SERVERS: dict[str, list[ServerConfig]] = {
     "c": [
         ServerConfig(
             name="clangd",
-            command=["clangd"],
+            command=["/opt/homebrew/opt/llvm/bin/clangd"],
             languages=["c", "cpp"],
             file_patterns=["*.c", "*.h", "*.cpp", "*.hpp", "*.cc", "*.cxx"],
             install_cmd="brew install llvm (macOS) or apt install clangd (Ubuntu)",
