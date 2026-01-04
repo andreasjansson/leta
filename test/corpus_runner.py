@@ -404,6 +404,11 @@ def print_results(results: list[SuiteResult], elapsed: float) -> None:
         if suite_result.setup_error:
             print(f"{Colors.YELLOW}⊘ {suite_result.suite}{Colors.RESET}: {suite_result.setup_error}")
             total_skipped += 1
+            # Still collect failed tests from setup for the failure report
+            for file_result in suite_result.file_results:
+                for result in file_result.results:
+                    if not result.passed:
+                        failed_tests.append(result)
             continue
 
         suite_passed = suite_result.passed_tests
