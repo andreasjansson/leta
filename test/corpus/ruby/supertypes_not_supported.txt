@@ -1,6 +1,0 @@
-==================
-supertypes not supported
-==================
-leta supertypes MemoryStorage
----
-user.rb:38 [Class] Storage (user.rb)
