@@ -1,0 +1,15 @@
+==================
+implementations with context
+==================
+leta implementations Storage -n 1
+---
+src/user.ts:38-40
+ */
+export class MemoryStorage implements Storage {
+    private users: Map<string, User> = new Map();
+
+src/user.ts:61-63
+ */
+export class FileStorage implements Storage {
+    private cache: Map<string, User> = new Map();
+
