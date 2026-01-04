@@ -121,11 +121,11 @@ SERVERS: dict[str, list[ServerConfig]] = {
     ],
     "ruby": [
         ServerConfig(
-            name="ruby-lsp",
-            command=["ruby-lsp"],
+            name="solargraph",
+            command=["solargraph", "stdio"],
             languages=["ruby"],
             file_patterns=["*.rb", "*.rake", "Gemfile", "Rakefile"],
-            install_cmd="gem install ruby-lsp",
+            install_cmd="gem install solargraph",
             root_markers=["Gemfile", ".ruby-version", "Rakefile"],
         ),
     ],
