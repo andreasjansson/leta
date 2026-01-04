@@ -145,9 +145,9 @@ def _dict_to_call_node(d: FormattedCallItemWithCalls) -> CallNode:
     called_by = None
     calls_list = d.get("calls")
     called_by_list = d.get("called_by")
-    if calls_list:
+    if calls_list is not None:
         calls = [_dict_to_call_node(c) for c in calls_list]
-    elif called_by_list:
+    if called_by_list is not None:
         called_by = [_dict_to_call_node(c) for c in called_by_list]
     return CallNode(
         name=d["name"],
