@@ -157,10 +157,13 @@ def parse_corpus_file(path: Path) -> list[CorpusTest]:
 
 
 def check_language_server(language: str) -> bool:
-    """Check if the language server for a language is installed."""
+    """Check if the language server for a language is installed.
+    
+    Returns True if no language server is required (not in LANGUAGE_SERVER_COMMANDS).
+    """
     cmd = LANGUAGE_SERVER_COMMANDS.get(language)
-    if not cmd:
-        return False
+    if cmd is None:
+        return True  # No language server required
     if isinstance(cmd, list):
         return all(shutil.which(c) is not None for c in cmd)
     return shutil.which(cmd) is not None
