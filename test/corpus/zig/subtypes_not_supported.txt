@@ -1,0 +1,5 @@
+==================
+subtypes returns empty
+==================
+leta subtypes User
+---
