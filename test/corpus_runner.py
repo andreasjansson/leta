@@ -162,12 +162,8 @@ def discover_suites(base_dir: Path) -> list[Path]:
     return suites
 
 
-def run_command(command: str, work_dir: Path, env: dict[str, str] | None = None) -> tuple[str, int]:
+def run_command(command: str, work_dir: Path) -> tuple[str, int]:
     """Run a shell command and return (output, return_code)."""
-    full_env = os.environ.copy()
-    if env:
-        full_env.update(env)
-    
     result = subprocess.run(
         command,
         shell=True,
@@ -175,7 +171,6 @@ def run_command(command: str, work_dir: Path, env: dict[str, str] | None = None)
         capture_output=True,
         text=True,
         timeout=60,
-        env=full_env,
     )
     output = result.stdout + result.stderr
     return output.rstrip("\n"), result.returncode
