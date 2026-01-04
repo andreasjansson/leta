@@ -324,6 +324,14 @@ class Session:
         for workspace in servers.values():
             await workspace.stop_server()
 
+    async def restart_workspace(self, root: Path) -> None:
+        """Restart all servers for a workspace root."""
+        root = root.resolve()
+        servers = self.workspaces.get(root, {})
+        for workspace in servers.values():
+            await workspace.stop_server()
+            await workspace.start_server()
+
     async def close_all(self) -> None:
         for servers in self.workspaces.values():
             for workspace in servers.values():
