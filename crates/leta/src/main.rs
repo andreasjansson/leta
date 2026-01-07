@@ -310,7 +310,13 @@ async fn ensure_daemon_running() -> Result<()> {
 async fn send_request(method: &str, params: Value) -> Result<Value> {
     let socket_path = get_socket_path();
 
-    let stream = UnixStream::connect(&socket_path).await?;
+    let stream = tokio::time::timeout(
+        Duration::from_secs(5),
+        UnixStream::connect(&socket_path)
+    ).await
+        .map_err(|_| anyhow!("Timeout connecting to daemon"))?
+        ?;
+    
     let (mut read_half, mut write_half) = stream.into_split();
 
     let request = json!({
@@ -322,7 +328,12 @@ async fn send_request(method: &str, params: Value) -> Result<Value> {
     write_half.shutdown().await?;
 
     let mut response_data = Vec::new();
-    read_half.read_to_end(&mut response_data).await?;
+    tokio::time::timeout(
+        Duration::from_secs(30),
+        read_half.read_to_end(&mut response_data)
+    ).await
+        .map_err(|_| anyhow!("Timeout waiting for daemon response (method: {})", method))?
+        ?;
 
     let response: Value = serde_json::from_slice(&response_data)?;
 
