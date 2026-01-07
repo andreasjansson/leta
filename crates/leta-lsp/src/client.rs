@@ -8,8 +8,8 @@ use std::time::Duration;
 use dashmap::DashMap;
 use lsp_types::{
     ClientCapabilities, InitializeParams, InitializeResult, InitializedParams,
-    NumberOrString, ProgressParams, ServerCapabilities, Uri, WorkDoneProgress,
-    WorkspaceFolder,
+    NumberOrString, ProgressParams, ProgressParamsValue, ServerCapabilities, Uri,
+    WorkDoneProgress, WorkspaceFolder,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -337,101 +337,89 @@ impl LspClient {
         }
     }
 
-    async fn handle_message(&self, message: Value) {
-        if let Some(id) = message.get("id") {
-            if message.get("method").is_some() {
-                self.handle_server_request(message).await;
-            } else {
+    async fn handle_message(&self, raw: Value) {
+        let msg: IncomingMessage = match serde_json::from_value(raw) {
+            Ok(m) => m,
+            Err(e) => {
+                warn!("Failed to parse incoming message: {}", e);
+                return;
+            }
+        };
+
+        match (&msg.id, &msg.method) {
+            (Some(id), Some(method)) => {
+                self.handle_server_request(id.clone(), method, msg.params).await;
+            }
+            (Some(id), None) => {
                 let id_num = id.as_u64().unwrap_or_else(|| {
-                    if let Some(id_str) = id.as_str() {
-                        id_str.parse().unwrap_or(0)
-                    } else {
-                        0
-                    }
+                    id.as_str().and_then(|s| s.parse().ok()).unwrap_or(0)
                 });
-                debug!("[{}] Processing response for id={}", self.server_name, id_num);
-                self.handle_response(id_num, message).await;
+                self.handle_response(id_num, msg.result, msg.error).await;
             }
-        } else {
-            let method = message.get("method").and_then(|m| m.as_str()).unwrap_or("unknown");
-            if method != "$/progress" && method != "window/logMessage" && method != "textDocument/publishDiagnostics" {
-                debug!("[{}] Received notification: {}", self.server_name, method);
-            } else {
-                debug!("Received notification: {}", method);
+            (None, Some(method)) => {
+                self.handle_notification(method, msg.params).await;
             }
-            self.handle_notification(message).await;
+            (None, None) => {
+                warn!("Received message with no id or method");
+            }
         }
     }
 
-    async fn handle_response(&self, id: u64, message: Value) {
+    async fn handle_response(&self, id: u64, result: Option<Value>, error: Option<IncomingError>) {
         if let Some((_, tx)) = self.pending_requests.remove(&id) {
-            if let Some(error) = message.get("error") {
-                let code = error.get("code").and_then(|c| c.as_i64()).unwrap_or(-1) as i32;
-                let msg = error
-                    .get("message")
-                    .and_then(|m| m.as_str())
-                    .unwrap_or("Unknown error")
-                    .to_string();
-                let data = error.get("data").cloned();
-                debug!("LSP RESPONSE [{}] ERROR: {}", id, msg);
+            if let Some(err) = error {
+                debug!("LSP RESPONSE [{}] ERROR: {}", id, err.message);
                 let _ = tx.send(Err(LspResponseError {
-                    code,
-                    message: msg,
-                    data,
+                    code: err.code as i32,
+                    message: err.message,
+                    data: err.data,
                 }));
             } else {
-                let result = message.get("result").cloned().unwrap_or(Value::Null);
-                debug!("LSP RESPONSE [{}]: {:?}", id, result.as_str().unwrap_or("..."));
-                let _ = tx.send(Ok(result));
+                debug!("LSP RESPONSE [{}]: ok", id);
+                let _ = tx.send(Ok(result.unwrap_or(Value::Null)));
             }
         } else {
             warn!("Received response for unknown request: {}", id);
         }
     }
 
-    async fn handle_server_request(&self, message: Value) {
-        let method = message
-            .get("method")
-            .and_then(|m| m.as_str())
-            .unwrap_or("");
-        let id = message.get("id").cloned().unwrap_or(Value::Null);
-
+    async fn handle_server_request(&self, id: Value, method: &str, params: Option<Value>) {
         debug!("Received server request: {} (id={:?})", method, id);
 
-        let (result, error): (Option<Value>, Option<Value>) = match method {
+        let response = match method {
             "workspace/configuration" => {
-                let items_count = message
-                    .get("params")
+                let items_count = params
+                    .as_ref()
                     .and_then(|p| p.get("items"))
                     .and_then(|i| i.as_array())
                     .map(|a| a.len())
                     .unwrap_or(0);
-                (Some(json!(vec![json!({}); items_count])), None)
+                JsonRpcResponse {
+                    jsonrpc: "2.0",
+                    id,
+                    result: Some(serde_json::to_value(vec![Value::Object(Default::default()); items_count]).unwrap()),
+                    error: None,
+                }
             }
-            "window/workDoneProgress/create" => (Some(Value::Null), None),
-            "client/registerCapability" => (Some(Value::Null), None),
-            "workspace/applyEdit" => (Some(json!({"applied": true})), None),
-            _ => (
-                None,
-                Some(json!({
-                    "code": -32601,
-                    "message": format!("Method not found: {}", method)
-                })),
-            ),
-        };
-
-        let response = if let Some(err) = error {
-            json!({
-                "jsonrpc": "2.0",
-                "id": id,
-                "error": err
-            })
-        } else {
-            json!({
-                "jsonrpc": "2.0",
-                "id": id,
-                "result": result.unwrap_or(Value::Null)
-            })
+            "window/workDoneProgress/create" | "client/registerCapability" => {
+                JsonRpcResponse { jsonrpc: "2.0", id, result: Some(Value::Null), error: None }
+            }
+            "workspace/applyEdit" => {
+                JsonRpcResponse {
+                    jsonrpc: "2.0",
+                    id,
+                    result: Some(serde_json::json!({"applied": true})),
+                    error: None,
+                }
+            }
+            _ => {
+                JsonRpcResponse {
+                    jsonrpc: "2.0",
+                    id,
+                    result: None,
+                    error: Some(JsonRpcError { code: -32601, message: format!("Method not found: {}", method) }),
+                }
+            }
         };
 
         let encoded = encode_message(&response);
@@ -442,75 +430,61 @@ impl LspClient {
         let _ = stdin.flush().await;
     }
 
-    async fn handle_notification(&self, message: Value) {
-        let method = message
-            .get("method")
-            .and_then(|m| m.as_str())
-            .unwrap_or("");
-        let params = message.get("params");
-
-        debug!("Received notification: {}", method);
-
+    async fn handle_notification(&self, method: &str, params: Option<Value>) {
         match method {
             "language/status" => {
-                if let Some(params) = params {
-                    if params.get("type").and_then(|t| t.as_str()) == Some("ServiceReady") {
+                if let Some(p) = params.and_then(|v| serde_json::from_value::<LanguageStatusParams>(v).ok()) {
+                    if p.status_type == "ServiceReady" {
                         info!("Server {} is now ServiceReady", self.server_name);
                         *self.service_ready.write().await = true;
                     }
                 }
             }
             "experimental/serverStatus" => {
-                if let Some(params) = params {
-                    let quiescent = params.get("quiescent").and_then(|q| q.as_bool()).unwrap_or(false);
-                    let health = params.get("health").and_then(|h| h.as_str()).unwrap_or("ok");
+                if let Some(p) = params.and_then(|v| serde_json::from_value::<ServerStatusParams>(v).ok()) {
+                    let quiescent = p.quiescent.unwrap_or(false);
+                    let health = p.health.as_deref().unwrap_or("ok");
                     
                     if quiescent && health != "error" {
                         *self.indexing_done.write().await = true;
                         info!("Server {} is quiescent (ready)", self.server_name);
                     } else {
                         *self.indexing_done.write().await = false;
-                        debug!("Server {} is busy (not quiescent)", self.server_name);
                     }
                 }
             }
             "$/progress" => {
-                if let Some(params) = params {
-                    self.handle_progress(params).await;
+                if let Some(p) = params.and_then(|v| serde_json::from_value::<ProgressParams>(v).ok()) {
+                    self.handle_progress(p).await;
                 }
             }
             _ => {}
         }
     }
 
-    async fn handle_progress(&self, params: &Value) {
-        let token = params
-            .get("token")
-            .and_then(|t| t.as_str().map(String::from).or_else(|| t.as_u64().map(|n| n.to_string())));
-        let kind = params
-            .get("value")
-            .and_then(|v| v.get("kind"))
-            .and_then(|k| k.as_str());
+    async fn handle_progress(&self, params: ProgressParams) {
+        let token = match &params.token {
+            NumberOrString::Number(n) => n.to_string(),
+            NumberOrString::String(s) => s.clone(),
+        };
 
-        if let (Some(token), Some(kind)) = (token, kind) {
-            let mut tokens = self.active_progress_tokens.lock().await;
-            match kind {
-                "begin" => {
-                    tokens.insert(token.clone());
-                    *self.indexing_done.write().await = false;
-                    debug!("Progress begin: {}", token);
-                }
-                "end" => {
-                    tokens.remove(&token);
-                    if tokens.is_empty() {
-                        *self.indexing_done.write().await = true;
-                        debug!("All progress complete, server ready");
-                    } else {
-                        debug!("Progress end: {}, {} remaining", token, tokens.len());
-                    }
-                }
-                _ => {}
+        let progress = match params.value {
+            ProgressParamsValue::WorkDone(wd) => wd,
+        };
+
+        let mut tokens = self.active_progress_tokens.lock().await;
+        match progress {
+            WorkDoneProgress::Begin(_) => {
+                tokens.insert(token);
+                *self.indexing_done.write().await = false;
             }
+            WorkDoneProgress::End(_) => {
+                tokens.remove(&token);
+                if tokens.is_empty() {
+                    *self.indexing_done.write().await = true;
+                }
+            }
+            WorkDoneProgress::Report(_) => {}
         }
     }
 
