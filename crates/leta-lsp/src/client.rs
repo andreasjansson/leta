@@ -550,6 +550,36 @@ impl LspClient {
         self.capabilities.read().await.clone()
     }
 
+    pub async fn supports_call_hierarchy(&self) -> bool {
+        let caps = self.capabilities.read().await;
+        caps.call_hierarchy_provider.is_some()
+    }
+
+    pub async fn supports_type_hierarchy(&self) -> bool {
+        let caps = self.capabilities.read().await;
+        caps.type_hierarchy_provider.is_some()
+    }
+
+    pub async fn supports_declaration(&self) -> bool {
+        let caps = self.capabilities.read().await;
+        caps.declaration_provider.is_some()
+    }
+
+    pub async fn supports_implementation(&self) -> bool {
+        let caps = self.capabilities.read().await;
+        caps.implementation_provider.is_some()
+    }
+
+    pub async fn supports_references(&self) -> bool {
+        let caps = self.capabilities.read().await;
+        caps.references_provider.is_some()
+    }
+
+    pub async fn supports_rename(&self) -> bool {
+        let caps = self.capabilities.read().await;
+        caps.rename_provider.is_some()
+    }
+
     pub fn pid(&self) -> Option<u32> {
         self.process.id()
     }
