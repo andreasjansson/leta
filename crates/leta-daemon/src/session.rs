@@ -372,11 +372,14 @@ pub struct WorkspaceHandle<'a> {
 
 impl<'a> WorkspaceHandle<'a> {
     pub async fn client(&self) -> Option<Arc<LspClient>> {
+        tracing::trace!("WorkspaceHandle::client acquiring read lock");
         let workspaces = self.session.workspaces.read().await;
-        workspaces
+        let result = workspaces
             .get(&self.workspace_root)
             .and_then(|servers| servers.get(&self.server_name))
-            .and_then(|ws| ws.client())
+            .and_then(|ws| ws.client());
+        tracing::trace!("WorkspaceHandle::client releasing read lock");
+        result
     }
 
     pub fn server_name(&self) -> &str {
@@ -384,20 +387,26 @@ impl<'a> WorkspaceHandle<'a> {
     }
 
     pub async fn ensure_document_open(&self, path: &Path) -> Result<(), String> {
+        tracing::trace!("WorkspaceHandle::ensure_document_open acquiring write lock for {:?}", path);
         let mut workspaces = self.session.workspaces.write().await;
+        tracing::trace!("WorkspaceHandle::ensure_document_open got write lock");
         let workspace = workspaces
             .get_mut(&self.workspace_root)
             .and_then(|servers| servers.get_mut(&self.server_name))
             .ok_or_else(|| "Workspace not found".to_string())?;
-        workspace.ensure_document_open(path).await
+        let result = workspace.ensure_document_open(path).await;
+        tracing::trace!("WorkspaceHandle::ensure_document_open releasing write lock");
+        result
     }
 
     pub async fn close_document(&self, path: &Path) {
+        tracing::trace!("WorkspaceHandle::close_document acquiring write lock");
         let mut workspaces = self.session.workspaces.write().await;
         if let Some(servers) = workspaces.get_mut(&self.workspace_root) {
             if let Some(workspace) = servers.get_mut(&self.server_name) {
                 workspace.close_document(path).await;
             }
         }
+        tracing::trace!("WorkspaceHandle::close_document releasing write lock");
     }
 }
