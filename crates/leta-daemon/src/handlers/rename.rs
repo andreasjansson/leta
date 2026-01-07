@@ -45,6 +45,12 @@ pub async fn handle_rename(
     let edit = response.ok_or("Rename not supported or no changes")?;
     let files_changed = apply_workspace_edit(&edit, &workspace_root)?;
 
+    // ruby-lsp has issues refreshing its index after renames, restart to force reindex
+    if workspace.server_name() == "ruby-lsp" {
+        tracing::info!("ruby-lsp: restarting server to refresh index after rename");
+        let _ = ctx.session.restart_workspace(&workspace_root).await;
+    }
+
     Ok(RenameResult { files_changed })
 }
 
