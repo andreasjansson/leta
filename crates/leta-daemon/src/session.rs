@@ -12,7 +12,10 @@ use tracing::info;
 
 #[derive(Clone)]
 pub struct OpenDocument {
+    pub uri: String,
+    pub version: i32,
     pub content: String,
+    pub language_id: String,
 }
 
 pub struct Workspace {
