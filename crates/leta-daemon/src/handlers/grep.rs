@@ -114,6 +114,8 @@ async fn collect_all_workspace_symbols(
     ctx: &HandlerContext,
     workspace_root: &Path,
 ) -> Result<Vec<SymbolInfo>, String> {
+    debug!("collect_all_workspace_symbols: workspace_root={}", workspace_root.display());
+    
     let skip_dirs: HashSet<&str> = [
         "node_modules", "__pycache__", ".git", "venv", ".venv",
         "build", "dist", ".tox", ".eggs", "target",
@@ -159,21 +161,41 @@ async fn collect_all_workspace_symbols(
         files_by_lang.entry(lang.to_string()).or_default().push(path.to_path_buf());
     }
 
+    debug!("collect_all_workspace_symbols: found {} languages", files_by_lang.len());
+    for (lang, files) in &files_by_lang {
+        debug!("  {} files for language {}", files.len(), lang);
+    }
+
     let mut all_symbols = Vec::new();
 
     for (lang, files) in files_by_lang {
+        debug!("collect_all_workspace_symbols: processing language {} ({} files)", lang, files.len());
+        
         let workspace = match ctx.session.get_or_create_workspace_for_language(&lang, workspace_root).await {
             Ok(ws) => ws,
-            Err(_) => continue,
+            Err(e) => {
+                warn!("Failed to create workspace for {}: {}", lang, e);
+                continue;
+            }
         };
 
+        debug!("collect_all_workspace_symbols: got workspace for {}, processing files", lang);
+
         for file_path in files {
-            if let Ok(symbols) = get_file_symbols(ctx, &workspace, workspace_root, &file_path).await {
-                all_symbols.extend(symbols);
+            debug!("collect_all_workspace_symbols: getting symbols for {}", file_path.display());
+            match get_file_symbols(ctx, &workspace, workspace_root, &file_path).await {
+                Ok(symbols) => {
+                    debug!("  got {} symbols", symbols.len());
+                    all_symbols.extend(symbols);
+                }
+                Err(e) => {
+                    warn!("Failed to get symbols for {}: {}", file_path.display(), e);
+                }
             }
         }
     }
 
+    debug!("collect_all_workspace_symbols: total {} symbols", all_symbols.len());
     Ok(all_symbols)
 }
 
