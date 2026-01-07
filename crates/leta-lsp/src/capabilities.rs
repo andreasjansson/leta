@@ -2,68 +2,109 @@ use serde_json::{json, Value};
 
 pub fn get_client_capabilities() -> Value {
     json!({
+        "experimental": {
+            "serverStatusNotification": true
+        },
         "workspace": {
+            "applyEdit": true,
             "workspaceEdit": {
                 "documentChanges": true,
                 "resourceOperations": ["create", "rename", "delete"]
             },
-            "fileOperations": {
-                "willRename": true
+            "symbol": {
+                "dynamicRegistration": false,
+                "symbolKind": {
+                    "valueSet": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26]
+                }
             },
-            "workspaceFolders": true,
-            "configuration": true
+            "executeCommand": {
+                "dynamicRegistration": false
+            },
+            "fileOperations": {
+                "dynamicRegistration": false,
+                "willRename": true,
+                "didRename": true
+            }
         },
         "textDocument": {
-            "definition": {
-                "linkSupport": true
+            "synchronization": {
+                "dynamicRegistration": false,
+                "didSave": true
+            },
+            "hover": {
+                "dynamicRegistration": false,
+                "contentFormat": ["markdown", "plaintext"]
             },
             "declaration": {
+                "dynamicRegistration": false,
+                "linkSupport": true
+            },
+            "definition": {
+                "dynamicRegistration": false,
+                "linkSupport": true
+            },
+            "typeDefinition": {
+                "dynamicRegistration": false,
+                "linkSupport": true
+            },
+            "implementation": {
+                "dynamicRegistration": false,
                 "linkSupport": true
             },
             "references": {
                 "dynamicRegistration": false
             },
             "documentSymbol": {
-                "hierarchicalDocumentSymbolSupport": true,
+                "dynamicRegistration": false,
                 "symbolKind": {
                     "valueSet": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26]
+                },
+                "hierarchicalDocumentSymbolSupport": true
+            },
+            "codeAction": {
+                "dynamicRegistration": false,
+                "codeActionLiteralSupport": {
+                    "codeActionKind": {
+                        "valueSet": [
+                            "",
+                            "quickfix",
+                            "refactor",
+                            "refactor.extract",
+                            "refactor.inline",
+                            "refactor.rewrite",
+                            "source",
+                            "source.organizeImports",
+                            "source.fixAll"
+                        ]
+                    }
+                },
+                "isPreferredSupport": true,
+                "resolveSupport": {
+                    "properties": ["edit"]
                 }
             },
-            "rename": {
-                "prepareSupport": true,
+            "formatting": {
                 "dynamicRegistration": false
             },
-            "hover": {
-                "contentFormat": ["markdown", "plaintext"]
+            "rangeFormatting": {
+                "dynamicRegistration": false
+            },
+            "rename": {
+                "dynamicRegistration": false,
+                "prepareSupport": true
+            },
+            "publishDiagnostics": {
+                "relatedInformation": true
             },
             "callHierarchy": {
                 "dynamicRegistration": false
             },
             "typeHierarchy": {
                 "dynamicRegistration": false
-            },
-            "implementation": {
-                "linkSupport": true
-            },
-            "typeDefinition": {
-                "linkSupport": true
-            },
-            "synchronization": {
-                "didSave": true,
-                "willSave": false,
-                "willSaveWaitUntil": false
-            },
-            "completion": {
-                "completionItem": {
-                    "snippetSupport": false
-                }
             }
         },
         "window": {
             "workDoneProgress": true
-        },
-        "general": {
-            "positionEncodings": ["utf-32", "utf-16"]
         }
     })
 }
