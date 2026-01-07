@@ -226,14 +226,16 @@ impl LspClient {
             }
         }
 
-        for entry in self.pending_requests.iter() {
-            let _ = entry.value().send(Err(LspResponseError {
-                code: -1,
-                message: "Connection closed".to_string(),
-                data: None,
-            }));
+        let keys: Vec<u64> = self.pending_requests.iter().map(|e| *e.key()).collect();
+        for key in keys {
+            if let Some((_, tx)) = self.pending_requests.remove(&key) {
+                let _ = tx.send(Err(LspResponseError {
+                    code: -1,
+                    message: "Connection closed".to_string(),
+                    data: None,
+                }));
+            }
         }
-        self.pending_requests.clear();
     }
 
     async fn handle_message(&self, message: Value) {
