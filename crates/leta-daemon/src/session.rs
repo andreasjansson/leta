@@ -309,21 +309,6 @@ impl Session {
         workspace.ensure_document_open(file_path).await
     }
 
-    pub async fn close_document(&self, file_path: &Path, workspace_root: &Path) {
-        let config = self.config.read().await;
-        let Some(server_config) = get_server_for_file(file_path, Some(&*config)) else {
-            return;
-        };
-        let workspace_root = workspace_root.canonicalize().unwrap_or_else(|_| workspace_root.to_path_buf());
-
-        let mut workspaces = self.workspaces.write().await;
-        if let Some(servers) = workspaces.get_mut(&workspace_root) {
-            if let Some(workspace) = servers.get_mut(server_config.name) {
-                workspace.close_document(file_path).await;
-            }
-        }
-    }
-
     pub async fn close_workspace(&self, root: &Path) -> Vec<String> {
         let root = root.canonicalize().unwrap_or_else(|_| root.to_path_buf());
         let mut workspaces = self.workspaces.write().await;
