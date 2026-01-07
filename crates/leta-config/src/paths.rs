@@ -1,3 +1,5 @@
+use std::fs::File;
+use std::os::unix::io::AsRawFd;
 use std::path::PathBuf;
 
 pub fn get_config_dir() -> PathBuf {
@@ -90,4 +92,30 @@ pub fn detect_workspace_root(path: &std::path::Path) -> Option<PathBuf> {
         }
     }
     None
+}
+
+pub struct DaemonLock {
+    _file: File,
+}
+
+impl DaemonLock {
+    pub fn acquire() -> Option<DaemonLock> {
+        let lock_path = get_pid_path().with_extension("lock");
+        if let Some(parent) = lock_path.parent() {
+            let _ = std::fs::create_dir_all(parent);
+        }
+
+        let file = match File::options().write(true).create(true).open(&lock_path) {
+            Ok(f) => f,
+            Err(_) => return None,
+        };
+
+        let fd = file.as_raw_fd();
+        let result = unsafe { libc::flock(fd, libc::LOCK_EX | libc::LOCK_NB) };
+        if result == 0 {
+            Some(DaemonLock { _file: file })
+        } else {
+            None
+        }
+    }
 }
