@@ -91,7 +91,7 @@ pub async fn handle_calls(
             let item = &items[0];
             let mut visited = HashSet::new();
             let called_by = collect_incoming_calls(
-                client,
+                client.clone(),
                 item,
                 &workspace_root,
                 0,
