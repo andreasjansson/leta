@@ -490,6 +490,12 @@ impl LspClient {
     }
 
     async fn handle_progress(&self, params: ProgressParams) {
+        // rust-analyzer uses experimental/serverStatus for quiescence, not $/progress
+        // So we skip progress-based indexing tracking for rust-analyzer
+        if self.server_name == "rust-analyzer" {
+            return;
+        }
+        
         let token = match &params.token {
             NumberOrString::Number(n) => n.to_string(),
             NumberOrString::String(s) => s.clone(),
