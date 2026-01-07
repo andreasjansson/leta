@@ -4,7 +4,6 @@ use heed::types::*;
 use heed::{Database, Env, EnvOpenOptions};
 use serde::{de::DeserializeOwned, Serialize};
 use thiserror::Error;
-use tracing::warn;
 
 #[derive(Error, Debug)]
 pub enum CacheError {
@@ -12,6 +11,8 @@ pub enum CacheError {
     Lmdb(#[from] heed::Error),
     #[error("Serialization error: {0}")]
     Serialization(#[from] serde_json::Error),
+    #[error("IO error: {0}")]
+    Io(#[from] std::io::Error),
 }
 
 pub struct LMDBCache {
@@ -84,11 +85,8 @@ impl LMDBCache {
             .and_then(|rtxn| self.db.len(&rtxn))
             .unwrap_or(0) as u64;
 
-        let current_bytes = self
-            .env
-            .info()
-            .map(|info| info.last_pgno as u64 * 4096)
-            .unwrap_or(0);
+        let info = self.env.info();
+        let current_bytes = info.last_pgno as u64 * 4096;
 
         CacheInfo {
             current_bytes,
