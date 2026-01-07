@@ -11,8 +11,8 @@ use lsp_types::{
     ServerCapabilities, Uri, WorkspaceFolder,
 };
 use serde_json::{json, Value};
-use tokio::io::{AsyncWriteExt, BufReader};
-use tokio::process::{Child, ChildStdin, ChildStdout};
+use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+use tokio::process::{Child, ChildStderr, ChildStdin, ChildStdout};
 use tokio::sync::{oneshot, Mutex, RwLock};
 use tracing::{debug, error, info, warn};
 
