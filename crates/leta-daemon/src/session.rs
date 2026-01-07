@@ -409,6 +409,14 @@ impl<'a> WorkspaceHandle<'a> {
         &self.server_name
     }
 
+    pub async fn wait_for_ready(&self, timeout_secs: u64) -> bool {
+        if let Some(client) = self.client().await {
+            client.wait_for_indexing(timeout_secs).await
+        } else {
+            false
+        }
+    }
+
     pub async fn ensure_document_open(&self, path: &Path) -> Result<(), String> {
         tracing::trace!("WorkspaceHandle::ensure_document_open acquiring write lock for {:?}", path);
         let mut workspaces = self.session.workspaces.write().await;
