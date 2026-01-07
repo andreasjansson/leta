@@ -3,6 +3,6 @@ grep exclude pattern
 ==================
 leta grep "." --kind function --exclude "errors*" -C
 ---
+main.cpp:7 [Function] main (int ())
 user.hpp:135 [Function] createSampleUser (User ()) in example
 user.hpp:140 [Function] validateUser (void (const User &)) in example
-main.cpp:7 [Function] main (int ())
