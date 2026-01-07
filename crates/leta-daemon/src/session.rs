@@ -265,18 +265,33 @@ impl Session {
     ) -> Result<WorkspaceHandle<'_>, String> {
         let workspace_root = workspace_root.canonicalize().unwrap_or_else(|_| workspace_root.to_path_buf());
 
-        {
+        // Check if workspace exists (read lock only)
+        let needs_create = {
+            let workspaces = self.workspaces.read().await;
+            if let Some(servers) = workspaces.get(&workspace_root) {
+                if let Some(ws) = servers.get(server_config.name) {
+                    ws.client.is_none() // needs restart
+                } else {
+                    true // needs create
+                }
+            } else {
+                true // needs create
+            }
+        };
+
+        if needs_create {
+            // Start server outside of lock to avoid blocking other operations
+            let mut new_workspace = Workspace::new(workspace_root.clone(), server_config);
+            new_workspace.start_server().await?;
+
+            // Now insert with write lock (quick operation)
             let mut workspaces = self.workspaces.write().await;
             let servers = workspaces.entry(workspace_root.clone()).or_insert_with(HashMap::new);
-
-            if !servers.contains_key(server_config.name) {
-                let mut workspace = Workspace::new(workspace_root.clone(), server_config);
-                workspace.start_server().await?;
-                servers.insert(server_config.name.to_string(), workspace);
-            } else if servers.get(server_config.name).map(|w| w.client.is_none()).unwrap_or(false) {
-                if let Some(ws) = servers.get_mut(server_config.name) {
-                    ws.start_server().await?;
-                }
+            
+            // Check again in case another task created it while we were starting
+            if !servers.contains_key(server_config.name) || 
+               servers.get(server_config.name).map(|w| w.client.is_none()).unwrap_or(false) {
+                servers.insert(server_config.name.to_string(), new_workspace);
             }
         }
 
