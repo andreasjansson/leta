@@ -592,7 +592,10 @@ impl LspClient {
 
     pub async fn supports_implementation(&self) -> bool {
         let caps = self.capabilities.read().await;
-        caps.implementation_provider.is_some()
+        let result = caps.implementation_provider.is_some();
+        tracing::info!("supports_implementation: server={} implementation_provider={:?} result={}", 
+            self.server_name, caps.implementation_provider, result);
+        result
     }
 
     pub async fn supports_references(&self) -> bool {
