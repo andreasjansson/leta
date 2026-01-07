@@ -294,10 +294,16 @@ impl LspClient {
                         0
                     }
                 });
-                debug!("Processing response for id={}", id_num);
+                debug!("[{}] Processing response for id={}", self.server_name, id_num);
                 self.handle_response(id_num, message).await;
             }
         } else {
+            let method = message.get("method").and_then(|m| m.as_str()).unwrap_or("unknown");
+            if method != "$/progress" && method != "window/logMessage" && method != "textDocument/publishDiagnostics" {
+                debug!("[{}] Received notification: {}", self.server_name, method);
+            } else {
+                debug!("Received notification: {}", method);
+            }
             self.handle_notification(message).await;
         }
     }
