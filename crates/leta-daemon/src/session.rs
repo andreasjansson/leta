@@ -178,6 +178,9 @@ impl Workspace {
             });
             let _ = client.send_notification("textDocument/didOpen", params).await;
 
+            // ruby-lsp processes messages asynchronously in a queue, so we need to ensure
+            // the didOpen is fully processed before subsequent operations can succeed.
+            // We do this by sending a simple request and waiting for its response.
             if client.server_name() == "ruby-lsp" {
                 let symbol_params = serde_json::json!({
                     "textDocument": {"uri": uri}
