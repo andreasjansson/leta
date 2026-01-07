@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use anyhow::{anyhow, Result};
 use clap::{Parser, Subcommand};
-use leta_config::{get_log_dir, get_pid_path, get_socket_path, Config};
+use leta_config::{get_log_dir, get_socket_path, is_daemon_running, Config};
 use leta_output::*;
 use leta_types::*;
 use serde_json::{json, Value};
