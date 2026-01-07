@@ -327,11 +327,11 @@ async fn collect_all_symbols(ctx: &HandlerContext, workspace_root: &PathBuf) -> 
 
     let config = ctx.session.config().await;
     let excluded_languages: HashSet<String> = config
-        .get("workspaces")
-        .and_then(|w| w.get("excluded_languages"))
-        .and_then(|e| e.as_array())
-        .map(|a| a.iter().filter_map(|v| v.as_str().map(String::from)).collect())
-        .unwrap_or_default();
+        .workspaces
+        .excluded_languages
+        .iter()
+        .cloned()
+        .collect();
 
     let mut files_by_lang: std::collections::HashMap<String, Vec<PathBuf>> = std::collections::HashMap::new();
 
@@ -354,7 +354,7 @@ async fn collect_all_symbols(ctx: &HandlerContext, workspace_root: &PathBuf) -> 
         let path = entry.path();
         let lang = get_language_id(path);
         
-        if lang == "plaintext" || excluded_languages.contains(&lang) {
+        if lang == "plaintext" || excluded_languages.contains(lang) {
             continue;
         }
         
@@ -362,7 +362,7 @@ async fn collect_all_symbols(ctx: &HandlerContext, workspace_root: &PathBuf) -> 
             continue;
         }
 
-        files_by_lang.entry(lang).or_default().push(path.to_path_buf());
+        files_by_lang.entry(lang.to_string()).or_default().push(path.to_path_buf());
     }
 
     let mut all_symbols = Vec::new();
