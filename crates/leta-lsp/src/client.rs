@@ -591,11 +591,14 @@ impl LspClient {
     }
 
     pub async fn supports_implementation(&self) -> bool {
+        use leta_lsp::lsp_types::ImplementationProviderCapability;
         let caps = self.capabilities.read().await;
-        let result = caps.implementation_provider.is_some();
-        tracing::info!("supports_implementation: server={} implementation_provider={:?} result={}", 
-            self.server_name, caps.implementation_provider, result);
-        result
+        // Check for actual support - Some(Simple(false)) means explicitly disabled
+        match &caps.implementation_provider {
+            Some(ImplementationProviderCapability::Simple(true)) => true,
+            Some(ImplementationProviderCapability::Options(_)) => true,
+            _ => false,
+        }
     }
 
     pub async fn supports_references(&self) -> bool {
