@@ -3,6 +3,6 @@ grep workspace-wide finds both languages
 ==================
 leta grep "Service" --kind struct,class
 ---
-main.go:12 [Struct] GoService (struct{...})
 app.py:10 [Class] ServiceProtocol
 app.py:26 [Class] PythonService
+main.go:12 [Struct] GoService (struct{...})
