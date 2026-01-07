@@ -232,7 +232,7 @@ impl Session {
         &self,
         file_path: &Path,
         workspace_root: &Path,
-    ) -> Result<WorkspaceHandle, String> {
+    ) -> Result<WorkspaceHandle<'_>, String> {
         let config = self.config.read().await;
         let server_config = get_server_for_file(file_path, Some(&config))
             .ok_or_else(|| format!("No language server found for {}", file_path.display()))?;
@@ -244,7 +244,7 @@ impl Session {
         &self,
         language_id: &str,
         workspace_root: &Path,
-    ) -> Result<WorkspaceHandle, String> {
+    ) -> Result<WorkspaceHandle<'_>, String> {
         let config = self.config.read().await;
         let server_config = get_server_for_language(language_id, Some(&config))
             .ok_or_else(|| format!("No language server found for language {}", language_id))?;
@@ -256,7 +256,7 @@ impl Session {
         &self,
         workspace_root: &Path,
         server_config: &'static ServerConfig,
-    ) -> Result<WorkspaceHandle, String> {
+    ) -> Result<WorkspaceHandle<'_>, String> {
         let workspace_root = workspace_root.canonicalize().unwrap_or_else(|_| workspace_root.to_path_buf());
 
         {
