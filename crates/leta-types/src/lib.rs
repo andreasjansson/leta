@@ -1,7 +1,7 @@
+mod location;
 mod rpc;
 mod symbol;
-mod location;
 
+pub use location::*;
 pub use rpc::*;
 pub use symbol::*;
-pub use location::*;
