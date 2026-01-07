@@ -2,15 +2,14 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use leta_config::Config;
 use leta_fs::{get_language_id, path_to_uri, read_file_content};
 use leta_lsp::LspClient;
 use leta_servers::{get_server_env, get_server_for_file, get_server_for_language, ServerConfig};
+use serde_json::Value;
 use tokio::sync::RwLock;
 use tracing::info;
 
 #[derive(Clone)]
-#[allow(dead_code)]
 pub struct OpenDocument {
     pub uri: String,
     pub version: i32,
@@ -19,10 +18,10 @@ pub struct OpenDocument {
 }
 
 pub struct Workspace {
-    pub root: PathBuf,
-    pub server_config: &'static ServerConfig,
-    pub client: Option<Arc<LspClient>>,
-    pub open_documents: HashMap<String, OpenDocument>,
+    root: PathBuf,
+    server_config: &'static ServerConfig,
+    client: Option<Arc<LspClient>>,
+    open_documents: HashMap<String, OpenDocument>,
 }
 
 impl Workspace {
@@ -33,6 +32,18 @@ impl Workspace {
             client: None,
             open_documents: HashMap::new(),
         }
+    }
+
+    pub fn client(&self) -> Option<Arc<LspClient>> {
+        self.client.clone()
+    }
+
+    pub fn server_name(&self) -> &str {
+        self.server_config.name
+    }
+
+    pub fn open_document_uris(&self) -> Vec<String> {
+        self.open_documents.keys().cloned().collect()
     }
 
     pub async fn start_server(&mut self) -> Result<(), String> {
@@ -71,7 +82,7 @@ impl Workspace {
         }
     }
 
-    fn get_init_options(&self) -> Option<serde_json::Value> {
+    fn get_init_options(&self) -> Option<Value> {
         if self.server_config.name == "gopls" {
             Some(serde_json::json!({
                 "linksInHover": false,
@@ -126,7 +137,7 @@ impl Workspace {
         self.open_documents.clear();
     }
 
-    pub async fn ensure_document_open(&mut self, path: &Path) -> Result<OpenDocument, String> {
+    pub async fn ensure_document_open(&mut self, path: &Path) -> Result<(), String> {
         let uri = path_to_uri(path);
 
         if let Some(doc) = self.open_documents.get(&uri) {
@@ -134,7 +145,7 @@ impl Workspace {
             if current_content != doc.content {
                 self.close_document(path).await;
             } else {
-                return Ok(doc.clone());
+                return Ok(());
             }
         }
 
@@ -148,7 +159,7 @@ impl Workspace {
             language_id: language_id.clone(),
         };
         
-        self.open_documents.insert(uri.clone(), doc.clone());
+        self.open_documents.insert(uri.clone(), doc);
 
         if let Some(client) = &self.client {
             let params = serde_json::json!({
@@ -169,7 +180,7 @@ impl Workspace {
             }
         }
 
-        Ok(doc)
+        Ok(())
     }
 
     pub async fn close_document(&mut self, path: &Path) {
@@ -200,23 +211,27 @@ impl Workspace {
 }
 
 pub struct Session {
-    pub workspaces: RwLock<HashMap<PathBuf, HashMap<String, Workspace>>>,
-    pub config: RwLock<Config>,
+    workspaces: RwLock<HashMap<PathBuf, HashMap<String, Workspace>>>,
+    config: RwLock<Value>,
 }
 
 impl Session {
-    pub fn new(config: Config) -> Self {
+    pub fn new(config: Value) -> Self {
         Self {
             workspaces: RwLock::new(HashMap::new()),
             config: RwLock::new(config),
         }
     }
 
+    pub async fn config(&self) -> Value {
+        self.config.read().await.clone()
+    }
+
     pub async fn get_or_create_workspace(
         &self,
         file_path: &Path,
         workspace_root: &Path,
-    ) -> Result<(), String> {
+    ) -> Result<WorkspaceHandle, String> {
         let config = self.config.read().await;
         let server_config = get_server_for_file(file_path, Some(&*config))
             .ok_or_else(|| format!("No language server found for {}", file_path.display()))?;
@@ -228,7 +243,7 @@ impl Session {
         &self,
         language_id: &str,
         workspace_root: &Path,
-    ) -> Result<(), String> {
+    ) -> Result<WorkspaceHandle, String> {
         let config = self.config.read().await;
         let server_config = get_server_for_language(language_id, Some(&*config))
             .ok_or_else(|| format!("No language server found for language {}", language_id))?;
@@ -240,76 +255,84 @@ impl Session {
         &self,
         workspace_root: &Path,
         server_config: &'static ServerConfig,
-    ) -> Result<(), String> {
+    ) -> Result<WorkspaceHandle, String> {
         let workspace_root = workspace_root.canonicalize().unwrap_or_else(|_| workspace_root.to_path_buf());
 
-        let mut workspaces = self.workspaces.write().await;
-        let servers = workspaces.entry(workspace_root.clone()).or_insert_with(HashMap::new);
+        {
+            let mut workspaces = self.workspaces.write().await;
+            let servers = workspaces.entry(workspace_root.clone()).or_insert_with(HashMap::new);
 
-        if let Some(ws) = servers.get_mut(server_config.name) {
-            if ws.client.is_none() {
-                ws.start_server().await?;
+            if !servers.contains_key(server_config.name) {
+                let mut workspace = Workspace::new(workspace_root.clone(), server_config);
+                workspace.start_server().await?;
+                servers.insert(server_config.name.to_string(), workspace);
+            } else if servers.get(server_config.name).map(|w| w.client.is_none()).unwrap_or(false) {
+                if let Some(ws) = servers.get_mut(server_config.name) {
+                    ws.start_server().await?;
+                }
             }
-            return Ok(());
         }
 
-        let mut workspace = Workspace::new(workspace_root.clone(), server_config);
-        workspace.start_server().await?;
-        servers.insert(server_config.name.to_string(), workspace);
-
-        Ok(())
+        Ok(WorkspaceHandle {
+            session: self,
+            workspace_root,
+            server_name: server_config.name.to_string(),
+        })
     }
 
-    pub async fn get_workspace_client(
-        &self,
-        file_path: &Path,
-        workspace_root: &Path,
-    ) -> Option<Arc<LspClient>> {
+    pub async fn get_workspace_for_file(&self, file_path: &Path) -> Option<WorkspaceHandle> {
+        let file_path = file_path.canonicalize().unwrap_or_else(|_| file_path.to_path_buf());
         let config = self.config.read().await;
-        let server_config = get_server_for_file(file_path, Some(&*config))?;
-        let workspace_root = workspace_root.canonicalize().unwrap_or_else(|_| workspace_root.to_path_buf());
+        let server_config = get_server_for_file(&file_path, Some(&*config))?;
 
         let workspaces = self.workspaces.read().await;
-        let servers = workspaces.get(&workspace_root)?;
-        let workspace = servers.get(server_config.name)?;
-        workspace.client.clone()
+        for (root, servers) in workspaces.iter() {
+            if file_path.starts_with(root) && servers.contains_key(server_config.name) {
+                return Some(WorkspaceHandle {
+                    session: self,
+                    workspace_root: root.clone(),
+                    server_name: server_config.name.to_string(),
+                });
+            }
+        }
+        None
     }
 
-    pub async fn get_workspace_client_for_language(
-        &self,
-        language_id: &str,
-        workspace_root: &Path,
-    ) -> Option<Arc<LspClient>> {
-        let config = self.config.read().await;
-        let server_config = get_server_for_language(language_id, Some(&*config))?;
-        let workspace_root = workspace_root.canonicalize().unwrap_or_else(|_| workspace_root.to_path_buf());
-
+    pub async fn list_workspaces(&self) -> Vec<(String, String, Option<u32>, Vec<String>)> {
         let workspaces = self.workspaces.read().await;
-        let servers = workspaces.get(&workspace_root)?;
-        let workspace = servers.get(server_config.name)?;
-        workspace.client.clone()
+        let mut result = Vec::new();
+
+        for (root, servers) in workspaces.iter() {
+            for (name, ws) in servers.iter() {
+                let server_pid = ws.client.as_ref().and_then(|c| c.pid());
+                result.push((
+                    root.to_string_lossy().to_string(),
+                    name.clone(),
+                    server_pid,
+                    ws.open_document_uris(),
+                ));
+            }
+        }
+
+        result
     }
 
-    pub async fn ensure_document_open(
-        &self,
-        file_path: &Path,
-        workspace_root: &Path,
-    ) -> Result<OpenDocument, String> {
-        let config = self.config.read().await;
-        let server_config = get_server_for_file(file_path, Some(&*config))
-            .ok_or_else(|| format!("No language server found for {}", file_path.display()))?;
-        let workspace_root = workspace_root.canonicalize().unwrap_or_else(|_| workspace_root.to_path_buf());
-
+    pub async fn restart_workspace(&self, root: &Path) -> Result<Vec<String>, String> {
+        let root = root.canonicalize().unwrap_or_else(|_| root.to_path_buf());
         let mut workspaces = self.workspaces.write().await;
-        let servers = workspaces.get_mut(&workspace_root)
-            .ok_or_else(|| format!("Workspace not found: {}", workspace_root.display()))?;
-        let workspace = servers.get_mut(server_config.name)
-            .ok_or_else(|| format!("Server {} not found in workspace", server_config.name))?;
-
-        workspace.ensure_document_open(file_path).await
+        
+        let mut restarted = Vec::new();
+        if let Some(servers) = workspaces.get_mut(&root) {
+            for (name, workspace) in servers.iter_mut() {
+                workspace.stop_server().await;
+                workspace.start_server().await?;
+                restarted.push(name.clone());
+            }
+        }
+        Ok(restarted)
     }
 
-    pub async fn close_workspace(&self, root: &Path) -> Vec<String> {
+    pub async fn remove_workspace(&self, root: &Path) -> Result<Vec<String>, String> {
         let root = root.canonicalize().unwrap_or_else(|_| root.to_path_buf());
         let mut workspaces = self.workspaces.write().await;
         
@@ -320,23 +343,7 @@ impl Session {
                 stopped.push(name);
             }
         }
-        stopped
-    }
-
-    pub async fn restart_workspace(&self, root: &Path) -> Vec<String> {
-        let root = root.canonicalize().unwrap_or_else(|_| root.to_path_buf());
-        let mut workspaces = self.workspaces.write().await;
-        
-        let mut restarted = Vec::new();
-        if let Some(servers) = workspaces.get_mut(&root) {
-            for (name, workspace) in servers.iter_mut() {
-                workspace.stop_server().await;
-                if workspace.start_server().await.is_ok() {
-                    restarted.push(name.clone());
-                }
-            }
-        }
-        restarted
+        Ok(stopped)
     }
 
     pub async fn close_all(&self) {
@@ -347,23 +354,38 @@ impl Session {
             }
         }
     }
+}
 
-    pub async fn describe(&self) -> serde_json::Value {
-        let workspaces = self.workspaces.read().await;
-        let mut ws_list = Vec::new();
+pub struct WorkspaceHandle<'a> {
+    session: &'a Session,
+    workspace_root: PathBuf,
+    server_name: String,
+}
 
-        for (root, servers) in workspaces.iter() {
-            for (name, ws) in servers.iter() {
-                let server_pid = ws.client.as_ref().and_then(|c| c.pid());
-                ws_list.push(serde_json::json!({
-                    "root": root.to_string_lossy(),
-                    "language": name,
-                    "server_pid": server_pid,
-                    "open_documents": ws.open_documents.keys().collect::<Vec<_>>(),
-                }));
+impl<'a> WorkspaceHandle<'a> {
+    pub fn client(&self) -> Option<Arc<LspClient>> {
+        let workspaces = futures::executor::block_on(self.session.workspaces.read());
+        workspaces
+            .get(&self.workspace_root)
+            .and_then(|servers| servers.get(&self.server_name))
+            .and_then(|ws| ws.client.clone())
+    }
+
+    pub async fn ensure_document_open(&self, path: &Path) -> Result<(), String> {
+        let mut workspaces = self.session.workspaces.write().await;
+        let workspace = workspaces
+            .get_mut(&self.workspace_root)
+            .and_then(|servers| servers.get_mut(&self.server_name))
+            .ok_or_else(|| "Workspace not found".to_string())?;
+        workspace.ensure_document_open(path).await
+    }
+
+    pub async fn close_document(&self, path: &Path) {
+        let mut workspaces = self.session.workspaces.write().await;
+        if let Some(servers) = workspaces.get_mut(&self.workspace_root) {
+            if let Some(workspace) = servers.get_mut(&self.server_name) {
+                workspace.close_document(path).await;
             }
         }
-
-        serde_json::json!({"workspaces": ws_list})
     }
 }
