@@ -556,8 +556,9 @@ impl LspClient {
     }
 
     pub async fn supports_type_hierarchy(&self) -> bool {
-        let caps = self.capabilities.read().await;
-        caps.type_hierarchy_provider.is_some()
+        // type_hierarchy_provider is not in lsp-types 0.97.0 ServerCapabilities
+        // Most servers that support it will return proper errors, so we'll try and catch
+        false
     }
 
     pub async fn supports_declaration(&self) -> bool {
