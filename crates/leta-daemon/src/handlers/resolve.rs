@@ -130,9 +130,19 @@ pub async fn handle_resolve_symbol(
     let matches_info: Vec<SymbolInfo> = final_matches.iter()
         .take(10)
         .map(|sym| {
-            let mut info = sym.clone();
-            info.reference = Some(generate_unambiguous_ref(sym, &final_matches, target_name));
-            info
+            SymbolInfo {
+                name: sym.name.clone(),
+                kind: sym.kind.clone(),
+                path: sym.path.clone(),
+                line: sym.line,
+                column: sym.column,
+                container: sym.container.clone(),
+                detail: None,  // Don't include detail in ambiguous matches
+                documentation: None,
+                range_start_line: None,
+                range_end_line: None,
+                reference: Some(generate_unambiguous_ref(sym, &final_matches, target_name)),
+            }
         })
         .collect();
 
