@@ -16,8 +16,11 @@ async fn main() -> anyhow::Result<()> {
         .append(true)
         .open(log_dir.join("daemon.log"))?;
 
+    let filter = EnvFilter::try_from_default_env()
+        .unwrap_or_else(|_| EnvFilter::new("info"));
+    
     tracing_subscriber::fmt()
-        .with_env_filter(EnvFilter::from_default_env().add_directive("info".parse().unwrap()))
+        .with_env_filter(filter)
         .with_writer(log_file)
         .with_ansi(false)
         .init();
