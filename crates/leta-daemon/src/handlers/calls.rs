@@ -146,7 +146,7 @@ pub async fn handle_calls(
             let mut visited = HashSet::new();
 
             let path = find_call_path(
-                client,
+                client.clone(),
                 &from_items[0],
                 &target_key,
                 &workspace_root,
