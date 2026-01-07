@@ -103,6 +103,8 @@ async fn collect_symbols_for_paths(
             Err(_) => continue,
         };
 
+        workspace.wait_for_ready(30).await;
+
         for file_path in files {
             if let Ok(symbols) = get_file_symbols(ctx, &workspace, workspace_root, &file_path).await {
                 all_symbols.extend(symbols);
