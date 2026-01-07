@@ -1,261 +1,264 @@
 use std::path::PathBuf;
 
-use leta_fs::path_to_uri;
-use leta_lsp::lsp_types::{Location, TypeHierarchyItem};
-use serde_json::{json, Value};
+use leta_fs::uri_to_path;
+use leta_lsp::lsp_types::{
+    GotoDefinitionParams, GotoDefinitionResponse, Location, Position, ReferenceContext,
+    ReferenceParams, TextDocumentIdentifier, TextDocumentPositionParams,
+    TypeHierarchyItem, TypeHierarchyPrepareParams, TypeHierarchySubtypesParams,
+    TypeHierarchySupertypesParams,
+};
+use leta_types::{
+    DeclarationParams, DeclarationResult, ImplementationsParams, ImplementationsResult,
+    LocationInfo, ReferencesParams, ReferencesResult, SubtypesParams, SubtypesResult,
+    SupertypesParams, SupertypesResult,
+};
 
 use super::{format_locations, format_type_hierarchy_items, HandlerContext};
 
-pub async fn handle_references(ctx: &HandlerContext, params: Value) -> Result<Value, String> {
-    let workspace_root = PathBuf::from(
-        params.get("workspace_root")
-            .and_then(|v| v.as_str())
-            .ok_or("Missing workspace_root")?
-    );
-    let path = PathBuf::from(
-        params.get("path")
-            .and_then(|v| v.as_str())
-            .ok_or("Missing path")?
-    );
-    let line = params.get("line")
-        .and_then(|v| v.as_u64())
-        .ok_or("Missing line")? as u32;
-    let column = params.get("column")
-        .and_then(|v| v.as_u64())
-        .unwrap_or(0) as u32;
-    let context = params.get("context")
-        .and_then(|v| v.as_u64())
-        .unwrap_or(0) as u32;
+pub async fn handle_references(
+    ctx: &HandlerContext,
+    params: ReferencesParams,
+) -> Result<ReferencesResult, String> {
+    let workspace_root = PathBuf::from(&params.workspace_root);
+    let file_path = PathBuf::from(&params.path);
 
-    ctx.session.get_or_create_workspace(&path, &workspace_root).await?;
-    let _ = ctx.session.ensure_document_open(&path, &workspace_root).await?;
-    let client = ctx.session.get_workspace_client(&path, &workspace_root).await
-        .ok_or("Failed to get LSP client")?;
+    let workspace = ctx.session.get_or_create_workspace(&file_path, &workspace_root).await
+        .map_err(|e| e.to_string())?;
+    
+    workspace.ensure_document_open(&file_path).await?;
+    let client = workspace.client().ok_or("No LSP client")?;
+    let uri = leta_fs::path_to_uri(&file_path);
 
-    let uri = path_to_uri(&path);
-    let request_params = json!({
-        "textDocument": {"uri": uri},
-        "position": {"line": line - 1, "character": column},
-        "context": {"includeDeclaration": true}
-    });
+    let response: Option<Vec<Location>> = client
+        .send_request(
+            "textDocument/references",
+            ReferenceParams {
+                text_document_position: TextDocumentPositionParams {
+                    text_document: TextDocumentIdentifier { uri: uri.parse().unwrap() },
+                    position: Position {
+                        line: params.line - 1,
+                        character: params.column,
+                    },
+                },
+                work_done_progress_params: Default::default(),
+                partial_result_params: Default::default(),
+                context: ReferenceContext {
+                    include_declaration: true,
+                },
+            },
+        )
+        .await
+        .map_err(|e| e.to_string())?;
 
-    let result: Result<Vec<Location>, _> = client
-        .send_request("textDocument/references", request_params)
-        .await;
+    let locations = response
+        .map(|locs| format_locations(&locs, &workspace_root, params.context))
+        .unwrap_or_default();
 
-    let locations = match result {
-        Ok(locs) => format_locations(&locs, &workspace_root, context),
-        Err(e) => return Err(format!("LSP error: {}", e)),
+    Ok(ReferencesResult { locations })
+}
+
+pub async fn handle_declaration(
+    ctx: &HandlerContext,
+    params: DeclarationParams,
+) -> Result<DeclarationResult, String> {
+    let workspace_root = PathBuf::from(&params.workspace_root);
+    let file_path = PathBuf::from(&params.path);
+
+    let workspace = ctx.session.get_or_create_workspace(&file_path, &workspace_root).await
+        .map_err(|e| e.to_string())?;
+    
+    workspace.ensure_document_open(&file_path).await?;
+    let client = workspace.client().ok_or("No LSP client")?;
+    let uri = leta_fs::path_to_uri(&file_path);
+
+    let response: Option<GotoDefinitionResponse> = client
+        .send_request(
+            "textDocument/declaration",
+            GotoDefinitionParams {
+                text_document_position_params: TextDocumentPositionParams {
+                    text_document: TextDocumentIdentifier { uri: uri.parse().unwrap() },
+                    position: Position {
+                        line: params.line - 1,
+                        character: params.column,
+                    },
+                },
+                work_done_progress_params: Default::default(),
+                partial_result_params: Default::default(),
+            },
+        )
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let locations = response
+        .map(|resp| definition_response_to_locations(&resp, &workspace_root, params.context))
+        .unwrap_or_default();
+
+    Ok(DeclarationResult { locations })
+}
+
+pub async fn handle_implementations(
+    ctx: &HandlerContext,
+    params: ImplementationsParams,
+) -> Result<ImplementationsResult, String> {
+    let workspace_root = PathBuf::from(&params.workspace_root);
+    let file_path = PathBuf::from(&params.path);
+
+    let workspace = ctx.session.get_or_create_workspace(&file_path, &workspace_root).await
+        .map_err(|e| e.to_string())?;
+    
+    workspace.ensure_document_open(&file_path).await?;
+    let client = workspace.client().ok_or("No LSP client")?;
+    let uri = leta_fs::path_to_uri(&file_path);
+
+    let response: Option<GotoDefinitionResponse> = client
+        .send_request(
+            "textDocument/implementation",
+            GotoDefinitionParams {
+                text_document_position_params: TextDocumentPositionParams {
+                    text_document: TextDocumentIdentifier { uri: uri.parse().unwrap() },
+                    position: Position {
+                        line: params.line - 1,
+                        character: params.column,
+                    },
+                },
+                work_done_progress_params: Default::default(),
+                partial_result_params: Default::default(),
+            },
+        )
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let locations = response
+        .map(|resp| definition_response_to_locations(&resp, &workspace_root, params.context))
+        .unwrap_or_default();
+
+    Ok(ImplementationsResult { locations, error: None })
+}
+
+pub async fn handle_subtypes(
+    ctx: &HandlerContext,
+    params: SubtypesParams,
+) -> Result<SubtypesResult, String> {
+    let workspace_root = PathBuf::from(&params.workspace_root);
+    let file_path = PathBuf::from(&params.path);
+
+    let workspace = ctx.session.get_or_create_workspace(&file_path, &workspace_root).await
+        .map_err(|e| e.to_string())?;
+    
+    workspace.ensure_document_open(&file_path).await?;
+    let client = workspace.client().ok_or("No LSP client")?;
+    let uri = leta_fs::path_to_uri(&file_path);
+
+    let prepare_response: Option<Vec<TypeHierarchyItem>> = client
+        .send_request(
+            "textDocument/prepareTypeHierarchy",
+            TypeHierarchyPrepareParams {
+                text_document_position_params: TextDocumentPositionParams {
+                    text_document: TextDocumentIdentifier { uri: uri.parse().unwrap() },
+                    position: Position {
+                        line: params.line - 1,
+                        character: params.column,
+                    },
+                },
+                work_done_progress_params: Default::default(),
+            },
+        )
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let items = match prepare_response {
+        Some(items) if !items.is_empty() => items,
+        _ => return Ok(SubtypesResult { locations: vec![] }),
     };
 
-    Ok(json!({"locations": locations}))
+    let subtypes_response: Option<Vec<TypeHierarchyItem>> = client
+        .send_request(
+            "typeHierarchy/subtypes",
+            TypeHierarchySubtypesParams {
+                item: items[0].clone(),
+                work_done_progress_params: Default::default(),
+                partial_result_params: Default::default(),
+            },
+        )
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let locations = subtypes_response
+        .map(|items| format_type_hierarchy_items(&items, &workspace_root, params.context))
+        .unwrap_or_default();
+
+    Ok(SubtypesResult { locations })
 }
 
-pub async fn handle_declaration(ctx: &HandlerContext, params: Value) -> Result<Value, String> {
-    let workspace_root = PathBuf::from(
-        params.get("workspace_root")
-            .and_then(|v| v.as_str())
-            .ok_or("Missing workspace_root")?
-    );
-    let path = PathBuf::from(
-        params.get("path")
-            .and_then(|v| v.as_str())
-            .ok_or("Missing path")?
-    );
-    let line = params.get("line")
-        .and_then(|v| v.as_u64())
-        .ok_or("Missing line")? as u32;
-    let column = params.get("column")
-        .and_then(|v| v.as_u64())
-        .unwrap_or(0) as u32;
-    let context = params.get("context")
-        .and_then(|v| v.as_u64())
-        .unwrap_or(0) as u32;
+pub async fn handle_supertypes(
+    ctx: &HandlerContext,
+    params: SupertypesParams,
+) -> Result<SupertypesResult, String> {
+    let workspace_root = PathBuf::from(&params.workspace_root);
+    let file_path = PathBuf::from(&params.path);
 
-    ctx.session.get_or_create_workspace(&path, &workspace_root).await?;
-    let _ = ctx.session.ensure_document_open(&path, &workspace_root).await?;
-    let client = ctx.session.get_workspace_client(&path, &workspace_root).await
-        .ok_or("Failed to get LSP client")?;
+    let workspace = ctx.session.get_or_create_workspace(&file_path, &workspace_root).await
+        .map_err(|e| e.to_string())?;
+    
+    workspace.ensure_document_open(&file_path).await?;
+    let client = workspace.client().ok_or("No LSP client")?;
+    let uri = leta_fs::path_to_uri(&file_path);
 
-    let uri = path_to_uri(&path);
-    let request_params = json!({
-        "textDocument": {"uri": uri},
-        "position": {"line": line - 1, "character": column}
-    });
+    let prepare_response: Option<Vec<TypeHierarchyItem>> = client
+        .send_request(
+            "textDocument/prepareTypeHierarchy",
+            TypeHierarchyPrepareParams {
+                text_document_position_params: TextDocumentPositionParams {
+                    text_document: TextDocumentIdentifier { uri: uri.parse().unwrap() },
+                    position: Position {
+                        line: params.line - 1,
+                        character: params.column,
+                    },
+                },
+                work_done_progress_params: Default::default(),
+            },
+        )
+        .await
+        .map_err(|e| e.to_string())?;
 
-    let result: Result<Value, _> = client
-        .send_request("textDocument/declaration", request_params)
-        .await;
-
-    match result {
-        Ok(value) => {
-            let locations = parse_definition_response(&value, &workspace_root, context);
-            Ok(json!({"locations": locations}))
-        }
-        Err(e) => {
-            let msg = e.to_string();
-            if msg.contains("-32601") || msg.contains("not supported") {
-                Err("Declaration not supported by this language server".to_string())
-            } else {
-                Err(format!("LSP error: {}", e))
-            }
-        }
-    }
-}
-
-pub async fn handle_implementations(ctx: &HandlerContext, params: Value) -> Result<Value, String> {
-    let workspace_root = PathBuf::from(
-        params.get("workspace_root")
-            .and_then(|v| v.as_str())
-            .ok_or("Missing workspace_root")?
-    );
-    let path = PathBuf::from(
-        params.get("path")
-            .and_then(|v| v.as_str())
-            .ok_or("Missing path")?
-    );
-    let line = params.get("line")
-        .and_then(|v| v.as_u64())
-        .ok_or("Missing line")? as u32;
-    let column = params.get("column")
-        .and_then(|v| v.as_u64())
-        .unwrap_or(0) as u32;
-    let context = params.get("context")
-        .and_then(|v| v.as_u64())
-        .unwrap_or(0) as u32;
-
-    ctx.session.get_or_create_workspace(&path, &workspace_root).await?;
-    let _ = ctx.session.ensure_document_open(&path, &workspace_root).await?;
-    let client = ctx.session.get_workspace_client(&path, &workspace_root).await
-        .ok_or("Failed to get LSP client")?;
-
-    let uri = path_to_uri(&path);
-    let request_params = json!({
-        "textDocument": {"uri": uri},
-        "position": {"line": line - 1, "character": column}
-    });
-
-    let result: Result<Value, _> = client
-        .send_request("textDocument/implementation", request_params)
-        .await;
-
-    match result {
-        Ok(value) => {
-            let locations = parse_definition_response(&value, &workspace_root, context);
-            Ok(json!({"locations": locations}))
-        }
-        Err(e) => {
-            let msg = e.to_string();
-            if msg.contains("-32601") || msg.contains("not supported") {
-                Ok(json!({"locations": [], "error": "Implementations not supported by this language server"}))
-            } else {
-                Err(format!("LSP error: {}", e))
-            }
-        }
-    }
-}
-
-pub async fn handle_subtypes(ctx: &HandlerContext, params: Value) -> Result<Value, String> {
-    handle_type_hierarchy(ctx, params, "typeHierarchy/subtypes").await
-}
-
-pub async fn handle_supertypes(ctx: &HandlerContext, params: Value) -> Result<Value, String> {
-    handle_type_hierarchy(ctx, params, "typeHierarchy/supertypes").await
-}
-
-async fn handle_type_hierarchy(ctx: &HandlerContext, params: Value, method: &str) -> Result<Value, String> {
-    let workspace_root = PathBuf::from(
-        params.get("workspace_root")
-            .and_then(|v| v.as_str())
-            .ok_or("Missing workspace_root")?
-    );
-    let path = PathBuf::from(
-        params.get("path")
-            .and_then(|v| v.as_str())
-            .ok_or("Missing path")?
-    );
-    let line = params.get("line")
-        .and_then(|v| v.as_u64())
-        .ok_or("Missing line")? as u32;
-    let column = params.get("column")
-        .and_then(|v| v.as_u64())
-        .unwrap_or(0) as u32;
-    let context = params.get("context")
-        .and_then(|v| v.as_u64())
-        .unwrap_or(0) as u32;
-
-    ctx.session.get_or_create_workspace(&path, &workspace_root).await?;
-    let _ = ctx.session.ensure_document_open(&path, &workspace_root).await?;
-    let client = ctx.session.get_workspace_client(&path, &workspace_root).await
-        .ok_or("Failed to get LSP client")?;
-
-    let uri = path_to_uri(&path);
-    let prepare_params = json!({
-        "textDocument": {"uri": uri},
-        "position": {"line": line - 1, "character": column}
-    });
-
-    let prepare_result: Result<Vec<TypeHierarchyItem>, _> = client
-        .send_request("textDocument/prepareTypeHierarchy", prepare_params)
-        .await;
-
-    let items = match prepare_result {
-        Ok(items) if !items.is_empty() => items,
-        Ok(_) => return Ok(json!({"locations": []})),
-        Err(e) => {
-            let msg = e.to_string();
-            if msg.contains("-32601") || msg.contains("not supported") {
-                let kind = if method.contains("subtypes") { "Subtypes" } else { "Supertypes" };
-                return Err(format!("{} not supported by this language server", kind));
-            }
-            return Err(format!("LSP error: {}", e));
-        }
+    let items = match prepare_response {
+        Some(items) if !items.is_empty() => items,
+        _ => return Ok(SupertypesResult { locations: vec![] }),
     };
 
-    let hierarchy_params = json!({"item": items[0]});
-    let result: Result<Vec<TypeHierarchyItem>, _> = client
-        .send_request(method, hierarchy_params)
-        .await;
+    let supertypes_response: Option<Vec<TypeHierarchyItem>> = client
+        .send_request(
+            "typeHierarchy/supertypes",
+            TypeHierarchySupertypesParams {
+                item: items[0].clone(),
+                work_done_progress_params: Default::default(),
+                partial_result_params: Default::default(),
+            },
+        )
+        .await
+        .map_err(|e| e.to_string())?;
 
-    let locations = match result {
-        Ok(items) => format_type_hierarchy_items(&items, &workspace_root, context),
-        Err(e) => return Err(format!("LSP error: {}", e)),
-    };
+    let locations = supertypes_response
+        .map(|items| format_type_hierarchy_items(&items, &workspace_root, params.context))
+        .unwrap_or_default();
 
-    Ok(json!({"locations": locations}))
+    Ok(SupertypesResult { locations })
 }
 
-fn parse_definition_response(value: &Value, workspace_root: &PathBuf, context: u32) -> Vec<Value> {
-    if value.is_null() {
-        return vec![];
-    }
-
-    if let Some(array) = value.as_array() {
-        if array.is_empty() {
-            return vec![];
+fn definition_response_to_locations(
+    response: &GotoDefinitionResponse,
+    workspace_root: &PathBuf,
+    context: u32,
+) -> Vec<LocationInfo> {
+    let locations: Vec<Location> = match response {
+        GotoDefinitionResponse::Scalar(loc) => vec![loc.clone()],
+        GotoDefinitionResponse::Array(locs) => locs.clone(),
+        GotoDefinitionResponse::Link(links) => {
+            links.iter().map(|link| Location {
+                uri: link.target_uri.clone(),
+                range: link.target_selection_range,
+            }).collect()
         }
-
-        if array[0].get("targetUri").is_some() {
-            let locations: Vec<Location> = array.iter().filter_map(|item| {
-                let uri = item.get("targetUri")?.as_str()?;
-                let range = item.get("targetSelectionRange")?;
-                Some(Location {
-                    uri: uri.to_string(),
-                    range: serde_json::from_value(range.clone()).ok()?,
-                })
-            }).collect();
-            return format_locations(&locations, workspace_root, context);
-        }
-
-        let locations: Vec<Location> = array.iter().filter_map(|item| {
-            serde_json::from_value(item.clone()).ok()
-        }).collect();
-        return format_locations(&locations, workspace_root, context);
-    }
-
-    if let Ok(loc) = serde_json::from_value::<Location>(value.clone()) {
-        return format_locations(&[loc], workspace_root, context);
-    }
-
-    vec![]
+    };
+    format_locations(&locations, workspace_root, context)
 }
