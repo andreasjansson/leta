@@ -1,131 +1,99 @@
 use std::collections::HashSet;
 use std::path::PathBuf;
 
-use leta_fs::{path_to_uri, uri_to_path};
-use leta_lsp::lsp_types::{DocumentChangeOperation, WorkspaceEdit};
-use serde_json::{json, Value};
+use leta_fs::uri_to_path;
+use leta_lsp::lsp_types::{
+    DocumentChanges, FileRename, Position, RenameFilesParams, RenameParams as LspRenameParams,
+    TextDocumentEdit, TextDocumentIdentifier, TextEdit, WorkspaceEdit,
+};
+use leta_types::{MoveFileParams, MoveFileResult, RenameParams, RenameResult};
 
 use super::{relative_path, HandlerContext};
 
-pub async fn handle_rename(ctx: &HandlerContext, params: Value) -> Result<Value, String> {
-    let workspace_root = PathBuf::from(
-        params.get("workspace_root")
-            .and_then(|v| v.as_str())
-            .ok_or("Missing workspace_root")?
-    );
-    let path = PathBuf::from(
-        params.get("path")
-            .and_then(|v| v.as_str())
-            .ok_or("Missing path")?
-    );
-    let line = params.get("line")
-        .and_then(|v| v.as_u64())
-        .ok_or("Missing line")? as u32;
-    let column = params.get("column")
-        .and_then(|v| v.as_u64())
-        .unwrap_or(0) as u32;
-    let new_name = params.get("new_name")
-        .and_then(|v| v.as_str())
-        .ok_or("Missing new_name")?;
+pub async fn handle_rename(
+    ctx: &HandlerContext,
+    params: RenameParams,
+) -> Result<RenameResult, String> {
+    let workspace_root = PathBuf::from(&params.workspace_root);
+    let file_path = PathBuf::from(&params.path);
 
-    ctx.session.get_or_create_workspace(&path, &workspace_root).await?;
-    let _ = ctx.session.ensure_document_open(&path, &workspace_root).await?;
-    let client = ctx.session.get_workspace_client(&path, &workspace_root).await
-        .ok_or("Failed to get LSP client")?;
+    let workspace = ctx.session.get_or_create_workspace(&file_path, &workspace_root).await
+        .map_err(|e| e.to_string())?;
+    
+    workspace.ensure_document_open(&file_path).await?;
+    let client = workspace.client().ok_or("No LSP client")?;
+    let uri = leta_fs::path_to_uri(&file_path);
 
-    let uri = path_to_uri(&path);
-    let request_params = json!({
-        "textDocument": {"uri": uri},
-        "position": {"line": line - 1, "character": column},
-        "newName": new_name
-    });
+    let response: Option<WorkspaceEdit> = client
+        .send_request(
+            "textDocument/rename",
+            LspRenameParams {
+                text_document_position: leta_lsp::lsp_types::TextDocumentPositionParams {
+                    text_document: TextDocumentIdentifier { uri: uri.parse().unwrap() },
+                    position: Position {
+                        line: params.line - 1,
+                        character: params.column,
+                    },
+                },
+                new_name: params.new_name.clone(),
+                work_done_progress_params: Default::default(),
+            },
+        )
+        .await
+        .map_err(|e| e.to_string())?;
 
-    let result: Result<WorkspaceEdit, _> = client
-        .send_request("textDocument/rename", request_params)
-        .await;
+    let edit = response.ok_or("Rename not supported or no changes")?;
+    let files_changed = apply_workspace_edit(&edit, &workspace_root)?;
 
-    let workspace_edit = match result {
-        Ok(edit) => edit,
-        Err(e) => {
-            let msg = e.to_string();
-            if msg.contains("-32601") || msg.contains("not supported") {
-                return Err("Rename not supported by this language server".to_string());
-            }
-            return Err(format!("LSP error: {}", e));
-        }
-    };
-
-    let files_changed = apply_workspace_edit(&workspace_edit, &workspace_root)?;
-
-    Ok(json!({"files_changed": files_changed}))
+    Ok(RenameResult { files_changed })
 }
 
-pub async fn handle_move_file(ctx: &HandlerContext, params: Value) -> Result<Value, String> {
-    let workspace_root = PathBuf::from(
-        params.get("workspace_root")
-            .and_then(|v| v.as_str())
-            .ok_or("Missing workspace_root")?
-    );
-    let old_path = PathBuf::from(
-        params.get("old_path")
-            .and_then(|v| v.as_str())
-            .ok_or("Missing old_path")?
-    );
-    let new_path = PathBuf::from(
-        params.get("new_path")
-            .and_then(|v| v.as_str())
-            .ok_or("Missing new_path")?
-    );
+pub async fn handle_move_file(
+    ctx: &HandlerContext,
+    params: MoveFileParams,
+) -> Result<MoveFileResult, String> {
+    let workspace_root = PathBuf::from(&params.workspace_root);
+    let old_path = PathBuf::from(&params.old_path);
+    let new_path = PathBuf::from(&params.new_path);
 
-    ctx.session.get_or_create_workspace(&old_path, &workspace_root).await?;
-    let client = ctx.session.get_workspace_client(&old_path, &workspace_root).await
-        .ok_or("Failed to get LSP client")?;
+    let workspace = ctx.session.get_or_create_workspace(&old_path, &workspace_root).await
+        .map_err(|e| e.to_string())?;
+    
+    let client = workspace.client().ok_or("No LSP client")?;
+    let old_uri = leta_fs::path_to_uri(&old_path);
+    let new_uri = leta_fs::path_to_uri(&new_path);
 
-    let old_uri = path_to_uri(&old_path);
-    let new_uri = path_to_uri(&new_path);
-
-    let request_params = json!({
-        "files": [{
-            "oldUri": old_uri,
-            "newUri": new_uri
-        }]
-    });
-
-    let result: Result<WorkspaceEdit, _> = client
-        .send_request("workspace/willRenameFiles", request_params)
-        .await;
-
-    let (files_changed, imports_updated) = match result {
-        Ok(edit) => {
-            let changed = apply_workspace_edit(&edit, &workspace_root)?;
-            (changed, true)
-        }
-        Err(e) => {
-            let msg = e.to_string();
-            if msg.contains("-32601") || msg.contains("not supported") {
-                (vec![], false)
-            } else {
-                return Err(format!("LSP error: {}", e));
-            }
-        }
-    };
+    let response: Option<WorkspaceEdit> = client
+        .send_request(
+            "workspace/willRenameFiles",
+            RenameFilesParams {
+                files: vec![FileRename {
+                    old_uri: old_uri.clone(),
+                    new_uri: new_uri.clone(),
+                }],
+            },
+        )
+        .await
+        .ok()
+        .flatten();
 
     if let Some(parent) = new_path.parent() {
         std::fs::create_dir_all(parent).map_err(|e| format!("Failed to create directory: {}", e))?;
     }
     std::fs::rename(&old_path, &new_path).map_err(|e| format!("Failed to move file: {}", e))?;
 
-    let rel_new_path = relative_path(&new_path, &workspace_root);
-    let mut all_changed: Vec<String> = files_changed;
-    if !all_changed.contains(&rel_new_path) {
-        all_changed.push(rel_new_path);
-    }
-    all_changed.sort();
+    let (files_changed, imports_updated) = if let Some(edit) = response {
+        let files = apply_workspace_edit(&edit, &workspace_root)?;
+        let imports_updated = !files.is_empty();
+        (files, imports_updated)
+    } else {
+        (vec![relative_path(&new_path, &workspace_root)], false)
+    };
 
-    Ok(json!({
-        "files_changed": all_changed,
-        "imports_updated": imports_updated
-    }))
+    Ok(MoveFileResult {
+        files_changed,
+        imports_updated,
+    })
 }
 
 fn apply_workspace_edit(edit: &WorkspaceEdit, workspace_root: &PathBuf) -> Result<Vec<String>, String> {
@@ -133,142 +101,61 @@ fn apply_workspace_edit(edit: &WorkspaceEdit, workspace_root: &PathBuf) -> Resul
 
     if let Some(changes) = &edit.changes {
         for (uri, edits) in changes {
-            let file_path = uri_to_path(uri);
-            let content = std::fs::read_to_string(&file_path)
-                .map_err(|e| format!("Failed to read {}: {}", file_path.display(), e))?;
-
-            let mut lines: Vec<String> = content.lines().map(String::from).collect();
-
-            let mut sorted_edits = edits.clone();
-            sorted_edits.sort_by(|a, b| {
-                let line_cmp = b.range.start.line.cmp(&a.range.start.line);
-                if line_cmp == std::cmp::Ordering::Equal {
-                    b.range.start.character.cmp(&a.range.start.character)
-                } else {
-                    line_cmp
-                }
-            });
-
-            for text_edit in sorted_edits {
-                let start_line = text_edit.range.start.line as usize;
-                let end_line = text_edit.range.end.line as usize;
-                let start_char = text_edit.range.start.character as usize;
-                let end_char = text_edit.range.end.character as usize;
-
-                if start_line >= lines.len() {
-                    while lines.len() <= start_line {
-                        lines.push(String::new());
-                    }
-                }
-
-                if start_line == end_line {
-                    let line = &mut lines[start_line];
-                    let before = if start_char <= line.len() { &line[..start_char] } else { line.as_str() };
-                    let after = if end_char <= line.len() { &line[end_char..] } else { "" };
-                    *line = format!("{}{}{}", before, text_edit.new_text, after);
-                } else {
-                    let first_line = &lines[start_line];
-                    let last_line = if end_line < lines.len() { &lines[end_line] } else { "" };
-                    
-                    let before = if start_char <= first_line.len() { &first_line[..start_char] } else { first_line };
-                    let after = if end_char <= last_line.len() { &last_line[end_char..] } else { "" };
-                    
-                    let new_content = format!("{}{}{}", before, text_edit.new_text, after);
-                    let new_lines: Vec<String> = new_content.lines().map(String::from).collect();
-                    
-                    let end = (end_line + 1).min(lines.len());
-                    lines.splice(start_line..end, new_lines);
-                }
-            }
-
-            let new_content = lines.join("\n");
-            std::fs::write(&file_path, new_content)
-                .map_err(|e| format!("Failed to write {}: {}", file_path.display(), e))?;
-
+            let file_path = uri_to_path(uri.as_str());
+            apply_text_edits(&file_path, edits)?;
             changed_files.insert(relative_path(&file_path, workspace_root));
         }
     }
 
     if let Some(document_changes) = &edit.document_changes {
-        for change in document_changes {
-            match change {
-                DocumentChange::Edit(text_doc_edit) => {
-                    let file_path = uri_to_path(&text_doc_edit.text_document.uri);
-                    let content = std::fs::read_to_string(&file_path)
-                        .map_err(|e| format!("Failed to read {}: {}", file_path.display(), e))?;
-
-                    let mut lines: Vec<String> = content.lines().map(String::from).collect();
-
-                    let mut sorted_edits = text_doc_edit.edits.clone();
-                    sorted_edits.sort_by(|a, b| {
-                        let line_cmp = b.range.start.line.cmp(&a.range.start.line);
-                        if line_cmp == std::cmp::Ordering::Equal {
-                            b.range.start.character.cmp(&a.range.start.character)
-                        } else {
-                            line_cmp
-                        }
-                    });
-
-                    for text_edit in sorted_edits {
-                        let start_line = text_edit.range.start.line as usize;
-                        let end_line = text_edit.range.end.line as usize;
-                        let start_char = text_edit.range.start.character as usize;
-                        let end_char = text_edit.range.end.character as usize;
-
-                        if start_line >= lines.len() {
-                            while lines.len() <= start_line {
-                                lines.push(String::new());
-                            }
-                        }
-
-                        if start_line == end_line {
-                            let line = &mut lines[start_line];
-                            let before = if start_char <= line.len() { &line[..start_char] } else { line.as_str() };
-                            let after = if end_char <= line.len() { &line[end_char..] } else { "" };
-                            *line = format!("{}{}{}", before, text_edit.new_text, after);
-                        } else {
-                            let first_line = &lines[start_line];
-                            let last_line = if end_line < lines.len() { &lines[end_line] } else { "" };
-                            
-                            let before = if start_char <= first_line.len() { &first_line[..start_char] } else { first_line };
-                            let after = if end_char <= last_line.len() { &last_line[end_char..] } else { "" };
-                            
-                            let new_content = format!("{}{}{}", before, text_edit.new_text, after);
-                            let new_lines: Vec<String> = new_content.lines().map(String::from).collect();
-                            
-                            let end = (end_line + 1).min(lines.len());
-                            lines.splice(start_line..end, new_lines);
-                        }
-                    }
-
-                    let new_content = lines.join("\n");
-                    std::fs::write(&file_path, new_content)
-                        .map_err(|e| format!("Failed to write {}: {}", file_path.display(), e))?;
-
+        match document_changes {
+            DocumentChanges::Edits(edits) => {
+                for edit in edits {
+                    let file_path = uri_to_path(edit.text_document.uri.as_str());
+                    apply_text_edits(&file_path, &edit.edits.iter().map(|e| match e {
+                        leta_lsp::lsp_types::OneOf::Left(te) => te.clone(),
+                        leta_lsp::lsp_types::OneOf::Right(ate) => ate.text_edit.clone(),
+                    }).collect::<Vec<_>>())?;
                     changed_files.insert(relative_path(&file_path, workspace_root));
                 }
-                DocumentChange::Rename(rename) => {
-                    let old_path = uri_to_path(&rename.old_uri);
-                    let new_path = uri_to_path(&rename.new_uri);
-                    
-                    if let Some(parent) = new_path.parent() {
-                        std::fs::create_dir_all(parent).ok();
+            }
+            DocumentChanges::Operations(ops) => {
+                for op in ops {
+                    match op {
+                        leta_lsp::lsp_types::DocumentChangeOperation::Edit(edit) => {
+                            let file_path = uri_to_path(edit.text_document.uri.as_str());
+                            apply_text_edits(&file_path, &edit.edits.iter().map(|e| match e {
+                                leta_lsp::lsp_types::OneOf::Left(te) => te.clone(),
+                                leta_lsp::lsp_types::OneOf::Right(ate) => ate.text_edit.clone(),
+                            }).collect::<Vec<_>>())?;
+                            changed_files.insert(relative_path(&file_path, workspace_root));
+                        }
+                        leta_lsp::lsp_types::DocumentChangeOperation::Op(resource_op) => {
+                            match resource_op {
+                                leta_lsp::lsp_types::ResourceOp::Create(create) => {
+                                    let path = uri_to_path(create.uri.as_str());
+                                    if let Some(parent) = path.parent() {
+                                        let _ = std::fs::create_dir_all(parent);
+                                    }
+                                    let _ = std::fs::write(&path, "");
+                                    changed_files.insert(relative_path(&path, workspace_root));
+                                }
+                                leta_lsp::lsp_types::ResourceOp::Rename(rename) => {
+                                    let old_path = uri_to_path(rename.old_uri.as_str());
+                                    let new_path = uri_to_path(rename.new_uri.as_str());
+                                    if let Some(parent) = new_path.parent() {
+                                        let _ = std::fs::create_dir_all(parent);
+                                    }
+                                    let _ = std::fs::rename(&old_path, &new_path);
+                                    changed_files.insert(relative_path(&new_path, workspace_root));
+                                }
+                                leta_lsp::lsp_types::ResourceOp::Delete(delete) => {
+                                    let path = uri_to_path(delete.uri.as_str());
+                                    let _ = std::fs::remove_file(&path);
+                                }
+                            }
+                        }
                     }
-                    std::fs::rename(&old_path, &new_path).ok();
-                    
-                    changed_files.insert(relative_path(&new_path, workspace_root));
-                }
-                DocumentChange::Create(create) => {
-                    let path = uri_to_path(&create.uri);
-                    if let Some(parent) = path.parent() {
-                        std::fs::create_dir_all(parent).ok();
-                    }
-                    std::fs::write(&path, "").ok();
-                    changed_files.insert(relative_path(&path, workspace_root));
-                }
-                DocumentChange::Delete(delete) => {
-                    let path = uri_to_path(&delete.uri);
-                    std::fs::remove_file(&path).ok();
                 }
             }
         }
@@ -277,4 +164,78 @@ fn apply_workspace_edit(edit: &WorkspaceEdit, workspace_root: &PathBuf) -> Resul
     let mut result: Vec<String> = changed_files.into_iter().collect();
     result.sort();
     Ok(result)
+}
+
+fn apply_text_edits(file_path: &PathBuf, edits: &[TextEdit]) -> Result<(), String> {
+    let content = std::fs::read_to_string(file_path)
+        .map_err(|e| format!("Failed to read {}: {}", file_path.display(), e))?;
+    
+    let lines: Vec<&str> = content.lines().collect();
+    
+    let mut sorted_edits: Vec<&TextEdit> = edits.iter().collect();
+    sorted_edits.sort_by(|a, b| {
+        let a_start = (a.range.start.line, a.range.start.character);
+        let b_start = (b.range.start.line, b.range.start.character);
+        b_start.cmp(&a_start)
+    });
+
+    let mut result_lines: Vec<String> = lines.iter().map(|s| s.to_string()).collect();
+
+    for edit in sorted_edits {
+        let start_line = edit.range.start.line as usize;
+        let start_char = edit.range.start.character as usize;
+        let end_line = edit.range.end.line as usize;
+        let end_char = edit.range.end.character as usize;
+
+        if start_line >= result_lines.len() {
+            while result_lines.len() <= start_line {
+                result_lines.push(String::new());
+            }
+        }
+
+        let prefix = if start_char <= result_lines[start_line].len() {
+            result_lines[start_line][..start_char].to_string()
+        } else {
+            result_lines[start_line].clone()
+        };
+
+        let suffix = if end_line < result_lines.len() && end_char <= result_lines[end_line].len() {
+            result_lines[end_line][end_char..].to_string()
+        } else if end_line < result_lines.len() {
+            String::new()
+        } else {
+            String::new()
+        };
+
+        let new_text_lines: Vec<&str> = edit.new_text.lines().collect();
+        
+        for _ in start_line..=end_line.min(result_lines.len().saturating_sub(1)) {
+            if start_line < result_lines.len() {
+                result_lines.remove(start_line);
+            }
+        }
+
+        if new_text_lines.is_empty() {
+            result_lines.insert(start_line, format!("{}{}", prefix, suffix));
+        } else {
+            for (i, line) in new_text_lines.iter().enumerate() {
+                let new_line = if i == 0 && i == new_text_lines.len() - 1 {
+                    format!("{}{}{}", prefix, line, suffix)
+                } else if i == 0 {
+                    format!("{}{}", prefix, line)
+                } else if i == new_text_lines.len() - 1 {
+                    format!("{}{}", line, suffix)
+                } else {
+                    line.to_string()
+                };
+                result_lines.insert(start_line + i, new_line);
+            }
+        }
+    }
+
+    let new_content = result_lines.join("\n");
+    std::fs::write(file_path, new_content)
+        .map_err(|e| format!("Failed to write {}: {}", file_path.display(), e))?;
+
+    Ok(())
 }
