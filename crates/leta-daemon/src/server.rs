@@ -9,7 +9,6 @@ use tokio::sync::broadcast;
 use tracing::{error, info};
 
 use crate::handlers::{HandlerContext, handle_request};
-use crate::pidfile::{remove_pid, write_pid};
 use crate::session::Session;
 
 pub struct DaemonServer {
