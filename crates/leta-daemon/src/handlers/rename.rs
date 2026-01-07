@@ -168,8 +168,13 @@ fn apply_workspace_edit_for_move(
     let mut changed_files = Vec::new();
     let mut file_moved = false;
 
+    // edit.changes uses URI as key with array of text edits
     if let Some(changes) = &edit.changes {
         for (uri, edits) in changes {
+            // Only add to changed files if there are actual edits
+            if edits.is_empty() {
+                continue;
+            }
             let file_path = uri_to_path(uri.as_str());
             apply_text_edits(&file_path, edits)?;
             changed_files.push(relative_path(&file_path, workspace_root));
@@ -180,18 +185,22 @@ fn apply_workspace_edit_for_move(
         match document_changes {
             DocumentChanges::Edits(edits) => {
                 for edit in edits {
+                    let text_edits: Vec<_> = edit.edits.iter().map(|e| match e {
+                        leta_lsp::lsp_types::OneOf::Left(te) => te.clone(),
+                        leta_lsp::lsp_types::OneOf::Right(ate) => ate.text_edit.clone(),
+                    }).collect();
+                    
+                    // Only add to changed files if there are actual edits
+                    if text_edits.is_empty() {
+                        continue;
+                    }
+                    
                     let mut file_path = uri_to_path(edit.text_document.uri.as_str());
                     // If this edit targets the old path, apply to new path instead
                     if file_path == *move_old_path {
                         file_path = move_new_path.clone();
                     }
-                    let text_edits: Vec<_> = edit.edits.iter().map(|e| match e {
-                        leta_lsp::lsp_types::OneOf::Left(te) => te.clone(),
-                        leta_lsp::lsp_types::OneOf::Right(ate) => ate.text_edit.clone(),
-                    }).collect();
-                    if !text_edits.is_empty() {
-                        apply_text_edits(&file_path, &text_edits)?;
-                    }
+                    apply_text_edits(&file_path, &text_edits)?;
                     changed_files.push(relative_path(&file_path, workspace_root));
                 }
             }
@@ -199,17 +208,21 @@ fn apply_workspace_edit_for_move(
                 for op in ops {
                     match op {
                         leta_lsp::lsp_types::DocumentChangeOperation::Edit(edit) => {
-                            let mut file_path = uri_to_path(edit.text_document.uri.as_str());
-                            if file_path == *move_old_path {
-                                file_path = move_new_path.clone();
-                            }
                             let text_edits: Vec<_> = edit.edits.iter().map(|e| match e {
                                 leta_lsp::lsp_types::OneOf::Left(te) => te.clone(),
                                 leta_lsp::lsp_types::OneOf::Right(ate) => ate.text_edit.clone(),
                             }).collect();
-                            if !text_edits.is_empty() {
-                                apply_text_edits(&file_path, &text_edits)?;
+                            
+                            // Only add to changed files if there are actual edits
+                            if text_edits.is_empty() {
+                                continue;
                             }
+                            
+                            let mut file_path = uri_to_path(edit.text_document.uri.as_str());
+                            if file_path == *move_old_path {
+                                file_path = move_new_path.clone();
+                            }
+                            apply_text_edits(&file_path, &text_edits)?;
                             changed_files.push(relative_path(&file_path, workspace_root));
                         }
                         leta_lsp::lsp_types::DocumentChangeOperation::Op(resource_op) => {
