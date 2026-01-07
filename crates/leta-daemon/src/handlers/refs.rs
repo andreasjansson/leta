@@ -118,7 +118,7 @@ pub async fn handle_implementations(
 
     if !client.supports_implementation().await {
         return Err(format!(
-            "textDocument/implementation is not supported by {}",
+            "Server '{}' does not support implementations (may require a license)",
             workspace.server_name()
         ));
     }
