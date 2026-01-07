@@ -592,8 +592,14 @@ impl LspClient {
     }
 
     pub async fn supports_declaration(&self) -> bool {
+        use leta_lsp::lsp_types::DeclarationCapability;
         let caps = self.capabilities.read().await;
-        caps.declaration_provider.is_some()
+        match &caps.declaration_provider {
+            Some(DeclarationCapability::Simple(true)) => true,
+            Some(DeclarationCapability::Options(_)) => true,
+            Some(DeclarationCapability::RegistrationOptions(_)) => true,
+            _ => false,
+        }
     }
 
     pub async fn supports_implementation(&self) -> bool {
