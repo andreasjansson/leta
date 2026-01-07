@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LocationInfo {
@@ -39,7 +40,7 @@ pub struct FileInfo {
     pub lines: u32,
     pub bytes: u64,
     #[serde(default)]
-    pub symbols: std::collections::HashMap<String, u32>,
+    pub symbols: HashMap<String, u32>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -56,4 +57,38 @@ pub struct WorkspaceInfo {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub server_pid: Option<u32>,
     pub open_documents: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CallNode {
+    pub name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub kind: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub detail: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub path: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub line: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub column: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub calls: Option<Vec<CallNode>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub called_by: Option<Vec<CallNode>>,
+}
+
+impl CallNode {
+    pub fn new(name: String) -> Self {
+        Self {
+            name,
+            kind: None,
+            detail: None,
+            path: None,
+            line: None,
+            column: None,
+            calls: None,
+            called_by: None,
+        }
+    }
 }
