@@ -1,123 +1,93 @@
 use std::path::PathBuf;
 
-use leta_fs::{path_to_uri, read_file_content};
-use leta_lsp::lsp_types::{DocumentSymbol, DocumentSymbolResponse, SymbolInformation};
-use serde_json::{json, Value};
+use leta_fs::read_file_content;
+use leta_lsp::lsp_types::{DocumentSymbol, DocumentSymbolParams, DocumentSymbolResponse, SymbolInformation, TextDocumentIdentifier};
+use leta_types::ShowParams;
 
 use super::{relative_path, HandlerContext};
 
-pub async fn handle_show(ctx: &HandlerContext, params: Value) -> Result<Value, String> {
-    let workspace_root = PathBuf::from(
-        params.get("workspace_root")
-            .and_then(|v| v.as_str())
-            .ok_or("Missing workspace_root")?
-    );
-    let path = PathBuf::from(
-        params.get("path")
-            .and_then(|v| v.as_str())
-            .ok_or("Missing path")?
-    );
-    let line = params.get("line")
-        .and_then(|v| v.as_u64())
-        .ok_or("Missing line")? as u32;
-    let context = params.get("context")
-        .and_then(|v| v.as_u64())
-        .unwrap_or(0) as u32;
-    let head = params.get("head")
-        .and_then(|v| v.as_u64())
-        .unwrap_or(200) as u32;
-    let symbol_name = params.get("symbol")
-        .and_then(|v| v.as_str())
-        .map(String::from);
-    let symbol_kind = params.get("kind")
-        .and_then(|v| v.as_str())
-        .map(String::from);
-    let range_start_line = params.get("range_start_line")
-        .and_then(|v| v.as_u64())
-        .map(|v| v as u32);
-    let range_end_line = params.get("range_end_line")
-        .and_then(|v| v.as_u64())
-        .map(|v| v as u32);
-    let _direct_location = params.get("direct_location")
-        .and_then(|v| v.as_bool())
-        .unwrap_or(false);
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ShowResult {
+    pub path: String,
+    pub start_line: u32,
+    pub end_line: u32,
+    pub content: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub symbol: Option<String>,
+    #[serde(default)]
+    pub truncated: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub total_lines: Option<u32>,
+}
 
-    let path = path.canonicalize().unwrap_or(path);
-    let rel_path = relative_path(&path, &workspace_root);
+pub async fn handle_show(ctx: &HandlerContext, params: ShowParams) -> Result<ShowResult, String> {
+    let workspace_root = PathBuf::from(&params.workspace_root);
+    let file_path = PathBuf::from(&params.path);
+    let head = params.head.unwrap_or(200);
 
-    let content = read_file_content(&path).map_err(|e| format!("Failed to read file: {}", e))?;
+    let content = read_file_content(&file_path).map_err(|e| format!("Failed to read file: {}", e))?;
     let lines: Vec<&str> = content.lines().collect();
+    let rel_path = relative_path(&file_path, &workspace_root);
 
-    let (start, end) = if let (Some(range_start), Some(range_end)) = (range_start_line, range_end_line) {
-        let start = (range_start as usize).saturating_sub(1);
-        let mut end = (range_end as usize).saturating_sub(1);
+    let (mut start, mut end) = if let (Some(range_start), Some(range_end)) = (params.range_start_line, params.range_end_line) {
+        let start = (range_start - 1) as usize;
+        let mut end = (range_end - 1) as usize;
 
-        if start == end {
-            if let Some(ref kind) = symbol_kind {
-                if kind == "Constant" || kind == "Variable" {
-                    end = expand_variable_range(&lines, start);
-                }
-            }
+        if start == end && matches!(params.symbol_kind.as_deref(), Some("Constant") | Some("Variable")) {
+            end = expand_variable_range(&lines, start);
         }
 
         (start, end)
     } else {
-        ctx.session.get_or_create_workspace(&path, &workspace_root).await?;
-        let client = ctx.session.get_workspace_client(&path, &workspace_root).await
-            .ok_or("Failed to get LSP client")?;
+        let target_line = (params.line - 1) as usize;
+        
+        let workspace = ctx.session.get_or_create_workspace(&file_path, &workspace_root).await
+            .map_err(|e| e.to_string())?;
+        
+        workspace.ensure_document_open(&file_path).await?;
+        let client = workspace.client().ok_or("No LSP client")?;
+        let uri = leta_fs::path_to_uri(&file_path);
 
-        let uri = path_to_uri(&path);
-        let symbol_params = json!({
-            "textDocument": {"uri": uri}
-        });
+        let response: Option<DocumentSymbolResponse> = client
+            .send_request(
+                "textDocument/documentSymbol",
+                DocumentSymbolParams {
+                    text_document: TextDocumentIdentifier { uri: uri.parse().unwrap() },
+                    work_done_progress_params: Default::default(),
+                    partial_result_params: Default::default(),
+                },
+            )
+            .await
+            .map_err(|e| e.to_string())?;
 
-        let result: Result<DocumentSymbolResponse, _> = client
-            .send_request("textDocument/documentSymbol", symbol_params)
-            .await;
-
-        match result {
-            Ok(response) => {
-                if let Some((s, e)) = find_symbol_range(&response, (line as usize).saturating_sub(1)) {
-                    (s, e)
-                } else {
-                    let l = (line as usize).saturating_sub(1);
-                    (l, l)
-                }
-            }
-            Err(_) => {
-                let l = (line as usize).saturating_sub(1);
-                (l, l)
-            }
+        match response.and_then(|r| find_symbol_range(&r, target_line)) {
+            Some((s, e)) => (s, e),
+            None => (target_line, target_line),
         }
     };
 
-    let (start, end) = if context > 0 {
-        let start = start.saturating_sub(context as usize);
-        let end = (end + context as usize).min(lines.len().saturating_sub(1));
-        (start, end)
-    } else {
-        (start, end)
-    };
+    if params.context > 0 {
+        start = start.saturating_sub(params.context as usize);
+        end = (end + params.context as usize).min(lines.len().saturating_sub(1));
+    }
 
     let total_lines = (end - start + 1) as u32;
     let truncated = total_lines > head;
-    let end = if truncated {
-        start + (head as usize) - 1
-    } else {
-        end
-    };
+    if truncated {
+        end = start + (head as usize) - 1;
+    }
 
-    let content_slice: Vec<&str> = lines[start..=end.min(lines.len().saturating_sub(1))].to_vec();
+    let content = lines[start..=end.min(lines.len() - 1)].join("\n");
 
-    Ok(json!({
-        "path": rel_path,
-        "start_line": start + 1,
-        "end_line": end + 1,
-        "content": content_slice.join("\n"),
-        "truncated": truncated,
-        "total_lines": total_lines,
-        "symbol": symbol_name,
-    }))
+    Ok(ShowResult {
+        path: rel_path,
+        start_line: (start + 1) as u32,
+        end_line: (end + 1) as u32,
+        content,
+        symbol: params.symbol_name,
+        truncated,
+        total_lines: if truncated { Some(total_lines) } else { None },
+    })
 }
 
 fn find_symbol_range(response: &DocumentSymbolResponse, target_line: usize) -> Option<(usize, usize)> {
@@ -133,8 +103,8 @@ fn find_in_document_symbols(symbols: &[DocumentSymbol], target_line: usize) -> O
         let end = sym.range.end.line as usize;
 
         if start <= target_line && target_line <= end {
-            if !sym.children.is_empty() {
-                if let Some(child_range) = find_in_document_symbols(&sym.children, target_line) {
+            if let Some(children) = &sym.children {
+                if let Some(child_range) = find_in_document_symbols(children, target_line) {
                     return Some(child_range);
                 }
             }
@@ -148,7 +118,8 @@ fn find_in_symbol_information(symbols: &[SymbolInformation], target_line: usize)
     for sym in symbols {
         let line = sym.location.range.start.line as usize;
         if line == target_line {
-            return Some((line, sym.location.range.end.line as usize));
+            let end = sym.location.range.end.line as usize;
+            return Some((line, end));
         }
     }
     None
@@ -160,22 +131,18 @@ fn expand_variable_range(lines: &[&str], start_line: usize) -> usize {
     }
 
     let first_line = lines[start_line];
-
+    
     let mut open_parens = first_line.matches('(').count() as i32 - first_line.matches(')').count() as i32;
     let mut open_brackets = first_line.matches('[').count() as i32 - first_line.matches(']').count() as i32;
     let mut open_braces = first_line.matches('{').count() as i32 - first_line.matches('}').count() as i32;
-
-    let triple_double = first_line.matches("\"\"\"").count();
-    let triple_single = first_line.matches("'''").count();
-    let mut in_multiline_string = triple_double % 2 == 1 || triple_single % 2 == 1;
+    let mut in_multiline_string = first_line.matches("\"\"\"").count() % 2 == 1 
+        || first_line.matches("'''").count() % 2 == 1;
 
     if open_parens == 0 && open_brackets == 0 && open_braces == 0 && !in_multiline_string {
         return start_line;
     }
 
-    for i in (start_line + 1)..lines.len() {
-        let line = lines[i];
-
+    for (i, line) in lines.iter().enumerate().skip(start_line + 1) {
         if in_multiline_string {
             if line.contains("\"\"\"") || line.contains("'''") {
                 in_multiline_string = false;
@@ -190,9 +157,7 @@ fn expand_variable_range(lines: &[&str], start_line: usize) -> usize {
         open_brackets += line.matches('[').count() as i32 - line.matches(']').count() as i32;
         open_braces += line.matches('{').count() as i32 - line.matches('}').count() as i32;
 
-        let triple_double = line.matches("\"\"\"").count();
-        let triple_single = line.matches("'''").count();
-        if triple_double % 2 == 1 || triple_single % 2 == 1 {
+        if line.matches("\"\"\"").count() % 2 == 1 || line.matches("'''").count() % 2 == 1 {
             in_multiline_string = true;
             continue;
         }
