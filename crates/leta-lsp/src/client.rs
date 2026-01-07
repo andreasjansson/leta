@@ -204,27 +204,23 @@ impl LspClient {
 
     pub async fn send_request<P: serde::Serialize, R: serde::de::DeserializeOwned>(
         &self,
-        method: &str,
+        method: &'static str,
         params: P,
     ) -> Result<R, LspProtocolError> {
         let id = self.request_id.fetch_add(1, Ordering::SeqCst);
 
-        let message = json!({
-            "jsonrpc": "2.0",
-            "id": id,
-            "method": method,
-            "params": params,
-        });
+        let request = JsonRpcRequest {
+            jsonrpc: "2.0",
+            id,
+            method,
+            params,
+        };
 
         let (tx, rx) = oneshot::channel();
         self.pending_requests.insert(id, tx);
 
-        let encoded = encode_message(&message);
-        if method != "initialize" {
-            debug!("LSP REQUEST [{}] {} params={}", id, method, serde_json::to_string(&message.get("params")).unwrap_or_default());
-        } else {
-            debug!("LSP REQUEST [{}] {}", id, method);
-        }
+        let encoded = encode_message(&request);
+        debug!("LSP REQUEST [{}] {}", id, method);
 
         {
             let mut stdin = self.stdin.lock().await;
@@ -244,9 +240,7 @@ impl LspClient {
             .map_err(|_| LspProtocolError::ConnectionClosed)?;
 
         match result {
-            Ok(value) => {
-                serde_json::from_value(value).map_err(LspProtocolError::Json)
-            }
+            Ok(value) => serde_json::from_value(value).map_err(LspProtocolError::Json),
             Err(e) => Err(LspProtocolError::Response(e)),
         }
     }
