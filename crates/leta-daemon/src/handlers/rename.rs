@@ -21,7 +21,7 @@ pub async fn handle_rename(
         .map_err(|e| e.to_string())?;
     
     workspace.ensure_document_open(&file_path).await?;
-    let client = workspace.client().ok_or("No LSP client")?;
+    let client = workspace.client().await.ok_or("No LSP client")?;
     let uri = leta_fs::path_to_uri(&file_path);
 
     let response: Option<WorkspaceEdit> = client
@@ -42,7 +42,7 @@ pub async fn handle_rename(
         .await
         .map_err(|e| e.to_string())?;
 
-    let edit = response.ok_or("Rename not supported or no changes")?;
+    let edit = response.ok_or("Rename not supported or failed")?;
     let files_changed = apply_workspace_edit(&edit, &workspace_root)?;
 
     // ruby-lsp has issues refreshing its index after renames, restart to force reindex
@@ -72,7 +72,7 @@ pub async fn handle_move_file(
     let workspace = ctx.session.get_or_create_workspace(&old_path, &workspace_root).await
         .map_err(|e| e.to_string())?;
     
-    let client = workspace.client().ok_or("No LSP client")?;
+    let client = workspace.client().await.ok_or("No LSP client")?;
     let server_name = workspace.server_name();
     
     let caps = client.capabilities().await;
