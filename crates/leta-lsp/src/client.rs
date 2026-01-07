@@ -94,6 +94,7 @@ impl LspClient {
             .unwrap_or("workspace")
             .to_string();
 
+        #[allow(deprecated)] // root_uri and root_path needed for older LSP servers
         let params = InitializeParams {
             process_id: Some(std::process::id()),
             root_uri: Some(workspace_uri.clone()),
