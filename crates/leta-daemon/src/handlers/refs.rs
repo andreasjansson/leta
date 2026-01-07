@@ -175,7 +175,9 @@ pub async fn handle_subtypes(
 
     let uri = leta_fs::path_to_uri(&file_path);
 
-    let prepare_response: Option<Vec<TypeHierarchyItem>> = client
+    // Use serde_json::Value for prepareTypeHierarchy to work around lsp-types bug
+    // where tags is incorrectly typed as Option<SymbolTag> instead of Option<Vec<SymbolTag>>
+    let prepare_response: Option<Vec<serde_json::Value>> = client
         .send_request(
             "textDocument/prepareTypeHierarchy",
             TypeHierarchyPrepareParams {
@@ -197,20 +199,17 @@ pub async fn handle_subtypes(
         _ => return Ok(SubtypesResult { locations: vec![] }),
     };
 
-    let subtypes_response: Option<Vec<TypeHierarchyItem>> = client
+    // Send subtypes request with just the item field (no extra params that jdtls doesn't expect)
+    let subtypes_response: Option<Vec<serde_json::Value>> = client
         .send_request(
             "typeHierarchy/subtypes",
-            TypeHierarchySubtypesParams {
-                item: items[0].clone(),
-                work_done_progress_params: Default::default(),
-                partial_result_params: Default::default(),
-            },
+            serde_json::json!({ "item": items[0] }),
         )
         .await
         .map_err(|e| format!("{}", e))?;
 
     let locations = subtypes_response
-        .map(|items| format_type_hierarchy_items(&items, &workspace_root, params.context))
+        .map(|items| format_type_hierarchy_items_from_json(&items, &workspace_root, params.context))
         .unwrap_or_default();
 
     Ok(SubtypesResult { locations })
