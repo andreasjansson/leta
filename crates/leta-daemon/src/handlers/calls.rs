@@ -165,7 +165,7 @@ pub async fn handle_calls(
                 }),
                 None => Ok(CallsResult {
                     message: Some(format!(
-                        "No call path found from {} to {} within depth {}",
+                        "No call path found from '{}' to '{}' within depth {}",
                         params.from_symbol.unwrap_or_default(),
                         params.to_symbol.unwrap_or_default(),
                         params.max_depth
