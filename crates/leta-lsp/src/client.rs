@@ -259,7 +259,15 @@ impl LspClient {
             if message.get("method").is_some() {
                 self.handle_server_request(message).await;
             } else {
-                self.handle_response(id.as_u64().unwrap_or(0), message).await;
+                let id_num = id.as_u64().unwrap_or_else(|| {
+                    if let Some(id_str) = id.as_str() {
+                        id_str.parse().unwrap_or(0)
+                    } else {
+                        0
+                    }
+                });
+                debug!("Processing response for id={}", id_num);
+                self.handle_response(id_num, message).await;
             }
         } else {
             self.handle_notification(message).await;
