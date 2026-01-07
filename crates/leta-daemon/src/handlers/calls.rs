@@ -227,12 +227,25 @@ fn item_key(item: &CallHierarchyItem) -> String {
     format!("{}:{}:{}", item.uri.as_str(), item.range.start.line, item.name)
 }
 
-fn is_stdlib_path(uri: &str) -> bool {
-    uri.contains("/typeshed-fallback/stdlib/")
-        || uri.contains("/typeshed/stdlib/")
-        || (uri.contains("/libexec/src/") && !uri.contains("/mod/"))
-        || (uri.ends_with(".d.ts") && uri.split('/').last().map(|f| f.starts_with("lib.")).unwrap_or(false))
-        || uri.contains("/rustlib/src/rust/library/")
+/// Check if a URI path is within the workspace (not external like stdlib).
+/// This is more robust than pattern matching specific stdlib paths.
+fn is_path_in_workspace(uri: &str, workspace_root: &Path) -> bool {
+    let file_path = leta_fs::uri_to_path(uri);
+    
+    // Check if file is within workspace root
+    match file_path.strip_prefix(workspace_root) {
+        Ok(rel_path) => {
+            // Exclude common dependency directories
+            let excluded_dirs = [
+                ".venv", "venv", "node_modules", "vendor", ".git",
+                "__pycache__", "target", "build", "dist",
+            ];
+            !rel_path.iter().any(|part| {
+                excluded_dirs.iter().any(|d| part.to_str() == Some(*d))
+            })
+        }
+        Err(_) => false, // Path is outside workspace
+    }
 }
 
 async fn collect_outgoing_calls(
