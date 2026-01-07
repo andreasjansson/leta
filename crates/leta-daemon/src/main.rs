@@ -1,6 +1,4 @@
-use std::path::PathBuf;
-
-use leta_config::{get_cache_dir, get_log_dir, get_pid_path, get_socket_path, Config};
+use leta_config::{get_cache_dir, get_log_dir, Config};
 use tracing::info;
 use tracing_subscriber::EnvFilter;
 
