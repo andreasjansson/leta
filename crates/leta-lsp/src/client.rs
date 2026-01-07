@@ -519,14 +519,18 @@ impl LspClient {
         let start = std::time::Instant::now();
         let timeout = Duration::from_secs(timeout_secs);
 
+        debug!("wait_for_indexing({}): starting, timeout={}s", self.server_name, timeout_secs);
+        
         loop {
-            if *self.indexing_done.read().await {
+            let is_done = *self.indexing_done.read().await;
+            if is_done {
+                debug!("wait_for_indexing({}): done after {:?}", self.server_name, start.elapsed());
                 return true;
             }
             if start.elapsed() >= timeout {
                 warn!(
-                    "Timeout waiting for {} to finish indexing",
-                    self.server_name
+                    "Timeout waiting for {} to finish indexing after {:?}",
+                    self.server_name, start.elapsed()
                 );
                 return false;
             }
