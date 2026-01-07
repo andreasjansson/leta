@@ -247,22 +247,22 @@ impl LspClient {
 
     pub async fn send_request_raw(
         &self,
-        method: &str,
+        method: &'static str,
         params: Value,
     ) -> Result<Value, LspProtocolError> {
         let id = self.request_id.fetch_add(1, Ordering::SeqCst);
 
-        let message = json!({
-            "jsonrpc": "2.0",
-            "id": id,
-            "method": method,
-            "params": params,
-        });
+        let request = JsonRpcRequest {
+            jsonrpc: "2.0",
+            id,
+            method,
+            params,
+        };
 
         let (tx, rx) = oneshot::channel();
         self.pending_requests.insert(id, tx);
 
-        let encoded = encode_message(&message);
+        let encoded = encode_message(&request);
         debug!("LSP REQUEST [{}] {}", id, method);
 
         {
@@ -287,21 +287,17 @@ impl LspClient {
 
     pub async fn send_notification<P: serde::Serialize>(
         &self,
-        method: &str,
+        method: &'static str,
         params: P,
     ) -> Result<(), LspProtocolError> {
-        let message = json!({
-            "jsonrpc": "2.0",
-            "method": method,
-            "params": params,
-        });
+        let notification = JsonRpcNotification {
+            jsonrpc: "2.0",
+            method,
+            params,
+        };
 
-        let encoded = encode_message(&message);
-        if method == "textDocument/didOpen" {
-            debug!("[{}] LSP NOTIFICATION {} params={}", self.server_name, method, serde_json::to_string(&message.get("params")).unwrap_or_default());
-        } else {
-            debug!("LSP NOTIFICATION {}", method);
-        }
+        let encoded = encode_message(&notification);
+        debug!("LSP NOTIFICATION {}", method);
 
         let mut stdin = self.stdin.lock().await;
         stdin.write_all(&encoded).await?;
