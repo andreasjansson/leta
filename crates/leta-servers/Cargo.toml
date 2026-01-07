@@ -1,0 +1,9 @@
+[package]
+name = "leta-servers"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+leta-config = { workspace = true }
+leta-fs = { workspace = true }
