@@ -342,12 +342,18 @@ async fn resolve_symbol(symbol: &str, workspace_root: &Path) -> Result<ResolveSy
 }
 
 fn expand_path_pattern(pattern: &str) -> Result<Vec<PathBuf>> {
+    let glob_options = glob::MatchOptions {
+        case_sensitive: true,
+        require_literal_separator: false,
+        require_literal_leading_dot: true,
+    };
+
     if !pattern.contains('*') && !pattern.contains('?') {
         let path = PathBuf::from(pattern).canonicalize()
             .unwrap_or_else(|_| PathBuf::from(pattern));
         if path.exists() {
             if path.is_dir() {
-                let matches: Vec<PathBuf> = glob::glob(&format!("{}/**/*", path.display()))?
+                let matches: Vec<PathBuf> = glob::glob_with(&format!("{}/**/*", path.display()), glob_options)?
                     .filter_map(|e| e.ok())
                     .filter(|p| p.is_file())
                     .collect();
@@ -359,7 +365,7 @@ fn expand_path_pattern(pattern: &str) -> Result<Vec<PathBuf>> {
             return Ok(vec![path]);
         }
         if !pattern.contains('/') {
-            let matches: Vec<PathBuf> = glob::glob(&format!("**/{}", pattern))?
+            let matches: Vec<PathBuf> = glob::glob_with(&format!("**/{}", pattern), glob_options)?
                 .filter_map(|e| e.ok())
                 .filter(|p| p.is_file())
                 .collect();
@@ -376,7 +382,7 @@ fn expand_path_pattern(pattern: &str) -> Result<Vec<PathBuf>> {
         pattern.to_string()
     };
 
-    let matches: Vec<PathBuf> = glob::glob(&search_pattern)?
+    let matches: Vec<PathBuf> = glob::glob_with(&search_pattern, glob_options)?
         .filter_map(|e| e.ok())
         .filter(|p| p.is_file())
         .collect();
