@@ -438,7 +438,7 @@ impl<'a> WorkspaceHandle<'a> {
         let workspaces = self.session.workspaces.read().await;
         if let Some(servers) = workspaces.get(&self.workspace_root) {
             if let Some(workspace) = servers.get(&self.server_name) {
-                return workspace.open_documents.contains(&uri);
+                return workspace.open_documents.contains_key(&uri);
             }
         }
         false
