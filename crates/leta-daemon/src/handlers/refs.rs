@@ -4,7 +4,7 @@ use leta_fs::path_to_uri;
 use leta_lsp::{Location, TypeHierarchyItem};
 use serde_json::{json, Value};
 
-use super::{format_locations, format_type_hierarchy_items, relative_path, HandlerContext};
+use super::{format_locations, format_type_hierarchy_items, HandlerContext};
 
 pub async fn handle_references(ctx: &HandlerContext, params: Value) -> Result<Value, String> {
     let workspace_root = PathBuf::from(
