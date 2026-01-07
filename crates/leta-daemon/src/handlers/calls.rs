@@ -2,7 +2,7 @@ use std::collections::HashSet;
 use std::path::PathBuf;
 
 use leta_fs::{path_to_uri, uri_to_path};
-use leta_lsp::{CallHierarchyIncomingCall, CallHierarchyItem, CallHierarchyOutgoingCall};
+use leta_lsp::lsp_types::{CallHierarchyIncomingCall, CallHierarchyItem, CallHierarchyOutgoingCall};
 use leta_types::SymbolKind;
 use serde_json::{json, Value};
 
