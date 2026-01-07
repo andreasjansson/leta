@@ -93,6 +93,11 @@ impl Workspace {
         }
     }
 
+    /// Open and close all source files to ensure clangd indexes them.
+    /// 
+    /// clangd does lazy indexing - it only indexes files when they're opened.
+    /// This means documentSymbol won't work on files that haven't been opened yet.
+    /// We work around this by opening all source files during initialization.
     async fn ensure_workspace_indexed(&mut self, client: &Arc<LspClient>) {
         let source_extensions = [".c", ".h", ".cpp", ".hpp", ".cc", ".cxx", ".hxx"];
         let exclude_dirs = ["build", ".git", "node_modules"];
