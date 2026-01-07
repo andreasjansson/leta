@@ -2,7 +2,7 @@ use std::collections::HashSet;
 use std::path::PathBuf;
 
 use leta_fs::{path_to_uri, uri_to_path};
-use leta_lsp::{DocumentChange, WorkspaceEdit};
+use leta_lsp::lsp_types::{DocumentChangeOperation, WorkspaceEdit};
 use serde_json::{json, Value};
 
 use super::{relative_path, HandlerContext};
