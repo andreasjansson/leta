@@ -218,7 +218,7 @@ pub fn format_resolve_symbol_result(result: &ResolveSymbolResult) -> String {
                     .as_ref()
                     .map(|d| format!(" ({})", d))
                     .unwrap_or_default();
-                let ref_str = m.r#ref.as_deref().unwrap_or("");
+                let ref_str = m.reference.as_deref().unwrap_or("");
                 lines.push(format!("  {}", ref_str));
                 lines.push(format!(
                     "    {}:{} {}{}{}{}",
