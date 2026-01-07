@@ -6,6 +6,10 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use dashmap::DashMap;
+use lsp_types::{
+    ClientCapabilities, InitializeParams, InitializeResult, InitializedParams,
+    ServerCapabilities, Url, WorkspaceFolder,
+};
 use serde_json::{json, Value};
 use tokio::io::{AsyncWriteExt, BufReader};
 use tokio::process::{Child, ChildStdin, ChildStdout};
@@ -14,7 +18,6 @@ use tracing::{debug, error, info, warn};
 
 use crate::capabilities::get_client_capabilities;
 use crate::protocol::{encode_message, read_message, LspProtocolError, LspResponseError};
-use crate::types::*;
 
 const REQUEST_TIMEOUT_SECS: u64 = 30;
 
@@ -53,7 +56,8 @@ impl LspClient {
         let stdin = process.stdin.take().expect("Failed to get stdin");
         let stdout = process.stdout.take().expect("Failed to get stdout");
 
-        let workspace_uri = format!("file://{}", workspace_root.display());
+        let workspace_uri = Url::from_file_path(workspace_root)
+            .map_err(|_| LspProtocolError::InvalidHeader("Invalid workspace path".to_string()))?;
 
         let client = Arc::new(Self {
             process,
@@ -61,7 +65,7 @@ impl LspClient {
             pending_requests: DashMap::new(),
             request_id: AtomicU64::new(0),
             server_name: server_name.to_string(),
-            workspace_root: workspace_uri.clone(),
+            workspace_root: workspace_uri.to_string(),
             capabilities: RwLock::new(ServerCapabilities::default()),
             initialized: RwLock::new(false),
             service_ready: RwLock::new(server_name != "jdtls"),
@@ -79,23 +83,27 @@ impl LspClient {
         Ok(client)
     }
 
-    async fn initialize(&self, workspace_uri: &str, init_options: Option<Value>) -> Result<(), LspProtocolError> {
+    async fn initialize(&self, workspace_uri: &Url, init_options: Option<Value>) -> Result<(), LspProtocolError> {
+        let caps: ClientCapabilities = serde_json::from_value(get_client_capabilities())
+            .map_err(|e| LspProtocolError::Json(e))?;
+
         let params = InitializeParams {
             process_id: Some(std::process::id()),
-            root_uri: Some(workspace_uri.to_string()),
-            root_path: Some(workspace_uri.replace("file://", "")),
-            capabilities: get_client_capabilities(),
+            root_uri: Some(workspace_uri.clone()),
+            root_path: Some(workspace_uri.path().to_string()),
+            capabilities: caps,
             workspace_folders: Some(vec![WorkspaceFolder {
-                uri: workspace_uri.to_string(),
-                name: workspace_uri.split('/').last().unwrap_or("workspace").to_string(),
+                uri: workspace_uri.clone(),
+                name: workspace_uri.path().split('/').last().unwrap_or("workspace").to_string(),
             }]),
             initialization_options: init_options,
+            ..Default::default()
         };
 
         let result: InitializeResult = self.send_request("initialize", params).await?;
         *self.capabilities.write().await = result.capabilities;
 
-        self.send_notification("initialized", json!({})).await?;
+        self.send_notification("initialized", InitializedParams {}).await?;
         *self.initialized.write().await = true;
 
         Ok(())
@@ -131,7 +139,7 @@ impl LspClient {
             .await
             .map_err(|_| {
                 self.pending_requests.remove(&id);
-                LspProtocolError::InvalidHeader(format!(
+                LspProtocolError::Timeout(format!(
                     "Request {} timed out after {}s",
                     method, REQUEST_TIMEOUT_SECS
                 ))
@@ -140,9 +148,9 @@ impl LspClient {
 
         match result {
             Ok(value) => {
-                serde_json::from_value(value).map_err(|e| LspProtocolError::Json(e))
+                serde_json::from_value(value).map_err(LspProtocolError::Json)
             }
-            Err(e) => Err(LspProtocolError::InvalidHeader(e.message)),
+            Err(e) => Err(LspProtocolError::Response(e)),
         }
     }
 
@@ -176,14 +184,14 @@ impl LspClient {
             .await
             .map_err(|_| {
                 self.pending_requests.remove(&id);
-                LspProtocolError::InvalidHeader(format!(
+                LspProtocolError::Timeout(format!(
                     "Request {} timed out after {}s",
                     method, REQUEST_TIMEOUT_SECS
                 ))
             })?
             .map_err(|_| LspProtocolError::ConnectionClosed)?;
 
-        result.map_err(|e| LspProtocolError::InvalidHeader(e.message))
+        result.map_err(LspProtocolError::Response)
     }
 
     pub async fn send_notification<P: serde::Serialize>(
