@@ -38,7 +38,7 @@ pub async fn handle_show(ctx: &HandlerContext, params: Value) -> Result<Value, S
     let range_end_line = params.get("range_end_line")
         .and_then(|v| v.as_u64())
         .map(|v| v as u32);
-    let direct_location = params.get("direct_location")
+    let _direct_location = params.get("direct_location")
         .and_then(|v| v.as_bool())
         .unwrap_or(false);
 
@@ -49,7 +49,7 @@ pub async fn handle_show(ctx: &HandlerContext, params: Value) -> Result<Value, S
     let lines: Vec<&str> = content.lines().collect();
 
     let (start, end) = if let (Some(range_start), Some(range_end)) = (range_start_line, range_end_line) {
-        let mut start = (range_start as usize).saturating_sub(1);
+        let start = (range_start as usize).saturating_sub(1);
         let mut end = (range_end as usize).saturating_sub(1);
 
         if start == end {
