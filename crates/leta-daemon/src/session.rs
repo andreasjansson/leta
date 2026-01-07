@@ -370,7 +370,11 @@ impl<'a> WorkspaceHandle<'a> {
         workspaces
             .get(&self.workspace_root)
             .and_then(|servers| servers.get(&self.server_name))
-            .and_then(|ws| ws.client.clone())
+            .and_then(|ws| ws.client())
+    }
+
+    pub fn server_name(&self) -> &str {
+        &self.server_name
     }
 
     pub async fn ensure_document_open(&self, path: &Path) -> Result<(), String> {
