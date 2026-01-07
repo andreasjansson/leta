@@ -45,7 +45,28 @@ pub async fn handle_rename(
     let edit = response.ok_or("Rename not supported or failed")?;
     let files_changed = apply_workspace_edit(&edit, &workspace_root)?;
 
-    // ruby-lsp has issues refreshing its index after renames, restart to force reindex
+    // WORKAROUND: Restart ruby-lsp after rename to force a full reindex.
+    //
+    // ruby-lsp has a bug where the index doesn't properly update after rename operations.
+    // When we rename a symbol (e.g., Storage → StorageInterface), the old name remains
+    // in the index even after we send didChangeWatchedFiles notifications. This causes
+    // "The new name is already in use by X" errors on consecutive renames.
+    //
+    // The root cause is in how ruby-lsp processes didChangeWatchedFiles:
+    // https://github.com/Shopify/ruby-lsp/blob/main/lib/ruby_lsp/server.rb
+    //
+    // In workspace_did_change_watched_files(), ruby-lsp calls handle_ruby_file_change()
+    // which should update the index via index.delete() and index.index_single().
+    // However, the index entries for the OLD symbol name are not being deleted.
+    //
+    // We've tried several approaches that didn't work:
+    // - Sending DELETED + CREATED file change notifications
+    // - Sending CHANGED notifications  
+    // - Reopening documents and triggering documentSymbol
+    // - Adding delays between operations
+    //
+    // The only reliable fix is to restart ruby-lsp, which forces a complete reindex
+    // from disk. This is slower but guarantees correct behavior.
     if workspace.server_name() == "ruby-lsp" {
         tracing::info!("ruby-lsp: restarting server to refresh index after rename");
         let _ = ctx.session.restart_workspace(&workspace_root).await;
