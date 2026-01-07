@@ -529,8 +529,8 @@ fn format_call_path(path: &[CallNode]) -> String {
             parts.push(format!("[{}]", kind));
         }
         parts.push(item.name.clone());
-        if let Some(detail) = &item.detail {
-            parts.push(format!("({})", detail));
+        if should_show_detail(&item.detail) {
+            parts.push(format!("({})", item.detail.as_ref().unwrap()));
         }
 
         let arrow = if i == 0 { "" } else { "  → " };
