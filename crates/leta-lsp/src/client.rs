@@ -564,14 +564,20 @@ impl LspClient {
     }
 
     pub async fn stop(&self) -> Result<(), LspProtocolError> {
+        debug!("stop({}): checking initialized", self.server_name);
         if *self.initialized.read().await {
-            let _ = tokio::time::timeout(
+            debug!("stop({}): sending shutdown request with 5s timeout", self.server_name);
+            let result = tokio::time::timeout(
                 Duration::from_secs(5),
                 self.send_request::<_, Value>("shutdown", ()),
             )
             .await;
+            debug!("stop({}): shutdown result: {:?}", self.server_name, result.is_ok());
+            debug!("stop({}): sending exit notification", self.server_name);
             let _ = self.send_notification("exit", ()).await;
+            debug!("stop({}): exit notification sent", self.server_name);
         }
+        debug!("stop({}): done", self.server_name);
         Ok(())
     }
 
