@@ -15,13 +15,13 @@ pub enum CacheError {
     Io(#[from] std::io::Error),
 }
 
-pub struct LMDBCache {
+pub struct LmdbCache {
     env: Env,
     db: Database<Str, Str>,
     max_bytes: u64,
 }
 
-impl LMDBCache {
+impl LmdbCache {
     pub fn new(path: &Path, max_bytes: u64) -> Result<Self, CacheError> {
         std::fs::create_dir_all(path)?;
 
@@ -39,46 +39,41 @@ impl LMDBCache {
         Ok(Self { env, db, max_bytes })
     }
 
-    pub fn get<K, V>(&self, key: &K) -> Option<V>
+    pub fn get<V>(&self, key: &str) -> Option<V>
     where
-        K: Serialize,
         V: DeserializeOwned,
     {
-        let key_str = self.serialize_key(key).ok()?;
+        let key_hash = self.hash_key(key);
         let rtxn = self.env.read_txn().ok()?;
-        let value_str = self.db.get(&rtxn, &key_str).ok()??;
+        let value_str = self.db.get(&rtxn, &key_hash).ok()??;
         serde_json::from_str(value_str).ok()
     }
 
-    pub fn set<K, V>(&self, key: &K, value: &V) -> Result<(), CacheError>
+    pub fn set<V>(&self, key: &str, value: &V)
     where
-        K: Serialize,
         V: Serialize,
     {
-        let key_str = self.serialize_key(key)?;
-        let value_str = serde_json::to_string(value)?;
+        let key_hash = self.hash_key(key);
+        let Ok(value_str) = serde_json::to_string(value) else {
+            return;
+        };
 
-        let mut wtxn = self.env.write_txn()?;
-        self.db.put(&mut wtxn, &key_str, &value_str)?;
-        wtxn.commit()?;
-
-        Ok(())
+        let Ok(mut wtxn) = self.env.write_txn() else {
+            return;
+        };
+        let _ = self.db.put(&mut wtxn, &key_hash, &value_str);
+        let _ = wtxn.commit();
     }
 
-    pub fn contains<K>(&self, key: &K) -> bool
-    where
-        K: Serialize,
-    {
-        let Ok(key_str) = self.serialize_key(key) else {
-            return false;
-        };
+    pub fn contains(&self, key: &str) -> bool {
+        let key_hash = self.hash_key(key);
         let Ok(rtxn) = self.env.read_txn() else {
             return false;
         };
-        self.db.get(&rtxn, &key_str).ok().flatten().is_some()
+        self.db.get(&rtxn, &key_hash).ok().flatten().is_some()
     }
 
-    pub fn info(&self) -> CacheInfo {
+    pub fn stats(&self) -> (u64, u64) {
         let entries = self
             .env
             .read_txn()
@@ -88,28 +83,19 @@ impl LMDBCache {
         let info = self.env.info();
         let current_bytes = info.last_page_number as u64 * 4096;
 
-        CacheInfo {
-            current_bytes,
-            max_bytes: self.max_bytes,
-            entries,
-        }
+        (current_bytes, entries)
+    }
+
+    pub fn max_bytes(&self) -> u64 {
+        self.max_bytes
     }
 
     pub fn close(self) {
-        let _ = self.db;
         drop(self.env);
     }
 
-    fn serialize_key<K: Serialize>(&self, key: &K) -> Result<String, CacheError> {
-        let json = serde_json::to_string(key)?;
-        let hash = blake3::hash(json.as_bytes());
-        Ok(hash.to_hex().to_string())
+    fn hash_key(&self, key: &str) -> String {
+        let hash = blake3::hash(key.as_bytes());
+        hash.to_hex().to_string()
     }
-}
-
-#[derive(Debug, Clone)]
-pub struct CacheInfo {
-    pub current_bytes: u64,
-    pub max_bytes: u64,
-    pub entries: u64,
 }
