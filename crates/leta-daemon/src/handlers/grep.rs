@@ -184,6 +184,8 @@ async fn collect_all_workspace_symbols(
             }
         };
 
+        workspace.wait_for_ready(30).await;
+
         debug!("collect_all_workspace_symbols: got workspace for {}, processing files", lang);
 
         for file_path in files {
