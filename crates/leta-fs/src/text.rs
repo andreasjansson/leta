@@ -57,6 +57,16 @@ pub fn read_file_content(path: &Path) -> Result<String, TextError> {
     Ok(content)
 }
 
+pub fn file_sha(path: &Path) -> String {
+    match std::fs::read(path) {
+        Ok(bytes) => {
+            let hash = blake3::hash(&bytes);
+            hash.to_hex()[..16].to_string()
+        }
+        Err(_) => String::new(),
+    }
+}
+
 pub fn get_lines_around(
     content: &str,
     center_line: usize,
