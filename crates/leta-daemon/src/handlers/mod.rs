@@ -92,7 +92,7 @@ async fn handle_describe_session(ctx: &HandlerContext) -> Result<Value, String> 
     }))
 }
 
-async fn handle_files(ctx: &HandlerContext, params: Value) -> Result<Value, String> {
+async fn handle_files(_ctx: &HandlerContext, params: Value) -> Result<Value, String> {
     let workspace_root = PathBuf::from(
         params.get("workspace_root")
             .and_then(|v| v.as_str())
