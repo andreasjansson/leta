@@ -151,7 +151,10 @@ impl LspClient {
             capabilities: RwLock::new(ServerCapabilities::default()),
             raw_capabilities: RwLock::new(Value::Null),
             initialized: RwLock::new(false),
+            // jdtls uses language/status ServiceReady notification instead of progress
             service_ready: RwLock::new(server_name != "jdtls"),
+            // rust-analyzer uses experimental/serverStatus to signal quiescence
+            // other servers may not send progress notifications, so assume ready
             indexing_done: RwLock::new(server_name != "rust-analyzer"),
             active_progress_tokens: Mutex::new(HashSet::new()),
         });
