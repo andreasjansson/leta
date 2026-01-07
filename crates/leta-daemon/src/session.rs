@@ -213,18 +213,18 @@ impl Workspace {
 
 pub struct Session {
     workspaces: RwLock<HashMap<PathBuf, HashMap<String, Workspace>>>,
-    config: RwLock<Value>,
+    config: RwLock<Config>,
 }
 
 impl Session {
-    pub fn new(config: Value) -> Self {
+    pub fn new(config: Config) -> Self {
         Self {
             workspaces: RwLock::new(HashMap::new()),
             config: RwLock::new(config),
         }
     }
 
-    pub async fn config(&self) -> Value {
+    pub async fn config(&self) -> Config {
         self.config.read().await.clone()
     }
 
