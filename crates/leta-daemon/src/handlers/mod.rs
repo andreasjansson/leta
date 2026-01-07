@@ -242,7 +242,35 @@ pub fn format_type_hierarchy_items_from_json(
         }
         seen.insert(key);
 
-        let lsp_kind = leta_lsp::lsp_types::SymbolKind::from(kind_num as leta_lsp::lsp_types::SymbolKind);
+        let lsp_kind = match kind_num {
+            1 => leta_lsp::lsp_types::SymbolKind::FILE,
+            2 => leta_lsp::lsp_types::SymbolKind::MODULE,
+            3 => leta_lsp::lsp_types::SymbolKind::NAMESPACE,
+            4 => leta_lsp::lsp_types::SymbolKind::PACKAGE,
+            5 => leta_lsp::lsp_types::SymbolKind::CLASS,
+            6 => leta_lsp::lsp_types::SymbolKind::METHOD,
+            7 => leta_lsp::lsp_types::SymbolKind::PROPERTY,
+            8 => leta_lsp::lsp_types::SymbolKind::FIELD,
+            9 => leta_lsp::lsp_types::SymbolKind::CONSTRUCTOR,
+            10 => leta_lsp::lsp_types::SymbolKind::ENUM,
+            11 => leta_lsp::lsp_types::SymbolKind::INTERFACE,
+            12 => leta_lsp::lsp_types::SymbolKind::FUNCTION,
+            13 => leta_lsp::lsp_types::SymbolKind::VARIABLE,
+            14 => leta_lsp::lsp_types::SymbolKind::CONSTANT,
+            15 => leta_lsp::lsp_types::SymbolKind::STRING,
+            16 => leta_lsp::lsp_types::SymbolKind::NUMBER,
+            17 => leta_lsp::lsp_types::SymbolKind::BOOLEAN,
+            18 => leta_lsp::lsp_types::SymbolKind::ARRAY,
+            19 => leta_lsp::lsp_types::SymbolKind::OBJECT,
+            20 => leta_lsp::lsp_types::SymbolKind::KEY,
+            21 => leta_lsp::lsp_types::SymbolKind::NULL,
+            22 => leta_lsp::lsp_types::SymbolKind::ENUM_MEMBER,
+            23 => leta_lsp::lsp_types::SymbolKind::STRUCT,
+            24 => leta_lsp::lsp_types::SymbolKind::EVENT,
+            25 => leta_lsp::lsp_types::SymbolKind::OPERATOR,
+            26 => leta_lsp::lsp_types::SymbolKind::TYPE_PARAMETER,
+            _ => leta_lsp::lsp_types::SymbolKind::VARIABLE,
+        };
         let mut info = LocationInfo::new(rel_path, line);
         info.column = start_char;
         info.name = Some(name);
