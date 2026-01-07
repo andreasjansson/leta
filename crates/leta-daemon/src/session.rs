@@ -281,7 +281,8 @@ impl Session {
         })
     }
 
-    pub async fn get_workspace_for_file(&self, file_path: &Path) -> Option<WorkspaceHandle> {
+    #[allow(dead_code)]
+    pub async fn get_workspace_for_file(&self, file_path: &Path) -> Option<WorkspaceHandle<'_>> {
         let file_path = file_path.canonicalize().unwrap_or_else(|_| file_path.to_path_buf());
         let config = self.config.read().await;
         let server_config = get_server_for_file(&file_path, Some(&config))?;
