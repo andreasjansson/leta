@@ -13,7 +13,7 @@ use crate::handlers::{
     HandlerContext, handle_grep, handle_show, handle_references, handle_declaration,
     handle_implementations, handle_subtypes, handle_supertypes, handle_calls,
     handle_rename, handle_move_file, handle_files, handle_resolve_symbol,
-    handle_describe_session, handle_shutdown, handle_restart_workspace, handle_remove_workspace,
+    handle_describe_session, handle_restart_workspace, handle_remove_workspace,
 };
 use crate::session::Session;
 
@@ -114,22 +114,34 @@ impl DaemonServer {
     }
 
     async fn dispatch(&self, ctx: &HandlerContext, method: &str, params: Value) -> Value {
+        macro_rules! handle {
+            ($params_ty:ty, $handler:expr) => {{
+                match serde_json::from_value::<$params_ty>(params) {
+                    Ok(p) => match $handler(ctx, p).await {
+                        Ok(result) => json!({"result": result}),
+                        Err(e) => json!({"error": e}),
+                    },
+                    Err(e) => json!({"error": format!("Invalid params: {}", e)}),
+                }
+            }};
+        }
+
         match method {
-            "grep" => self.handle::<GrepParams, GrepResult>(ctx, params, handle_grep).await,
-            "show" => self.handle::<ShowParams, _>(ctx, params, handle_show).await,
-            "references" => self.handle::<ReferencesParams, ReferencesResult>(ctx, params, handle_references).await,
-            "declaration" => self.handle::<DeclarationParams, DeclarationResult>(ctx, params, handle_declaration).await,
-            "implementations" => self.handle::<ImplementationsParams, ImplementationsResult>(ctx, params, handle_implementations).await,
-            "subtypes" => self.handle::<SubtypesParams, SubtypesResult>(ctx, params, handle_subtypes).await,
-            "supertypes" => self.handle::<SupertypesParams, SupertypesResult>(ctx, params, handle_supertypes).await,
-            "calls" => self.handle::<CallsParams, CallsResult>(ctx, params, handle_calls).await,
-            "rename" => self.handle::<RenameParams, RenameResult>(ctx, params, handle_rename).await,
-            "move-file" => self.handle::<MoveFileParams, MoveFileResult>(ctx, params, handle_move_file).await,
-            "files" => self.handle::<FilesParams, FilesResult>(ctx, params, handle_files).await,
-            "resolve-symbol" => self.handle::<ResolveSymbolParams, ResolveSymbolResult>(ctx, params, handle_resolve_symbol).await,
-            "describe-session" => self.handle::<DescribeSessionParams, DescribeSessionResult>(ctx, params, handle_describe_session).await,
-            "restart-workspace" => self.handle::<RestartWorkspaceParams, RestartWorkspaceResult>(ctx, params, handle_restart_workspace).await,
-            "remove-workspace" => self.handle::<RemoveWorkspaceParams, RemoveWorkspaceResult>(ctx, params, handle_remove_workspace).await,
+            "grep" => handle!(GrepParams, handle_grep),
+            "show" => handle!(ShowParams, handle_show),
+            "references" => handle!(ReferencesParams, handle_references),
+            "declaration" => handle!(DeclarationParams, handle_declaration),
+            "implementations" => handle!(ImplementationsParams, handle_implementations),
+            "subtypes" => handle!(SubtypesParams, handle_subtypes),
+            "supertypes" => handle!(SupertypesParams, handle_supertypes),
+            "calls" => handle!(CallsParams, handle_calls),
+            "rename" => handle!(RenameParams, handle_rename),
+            "move-file" => handle!(MoveFileParams, handle_move_file),
+            "files" => handle!(FilesParams, handle_files),
+            "resolve-symbol" => handle!(ResolveSymbolParams, handle_resolve_symbol),
+            "describe-session" => handle!(DescribeSessionParams, handle_describe_session),
+            "restart-workspace" => handle!(RestartWorkspaceParams, handle_restart_workspace),
+            "remove-workspace" => handle!(RemoveWorkspaceParams, handle_remove_workspace),
             "shutdown" => {
                 let _ = self.shutdown_tx.send(());
                 json!({"result": {"status": "shutting_down"}})
@@ -138,24 +150,6 @@ impl DaemonServer {
                 json!({"error": "raw-lsp-request not yet implemented"})
             }
             _ => json!({"error": format!("Unknown method: {}", method)}),
-        }
-    }
-
-    async fn handle<P, R, F, Fut>(&self, ctx: &HandlerContext, params: Value, handler: F) -> Value
-    where
-        P: serde::de::DeserializeOwned,
-        R: serde::Serialize,
-        F: FnOnce(&HandlerContext, P) -> Fut,
-        Fut: std::future::Future<Output = Result<R, String>>,
-    {
-        let typed_params: P = match serde_json::from_value(params) {
-            Ok(p) => p,
-            Err(e) => return json!({"error": format!("Invalid params: {}", e)}),
-        };
-
-        match handler(ctx, typed_params).await {
-            Ok(result) => json!({"result": result}),
-            Err(e) => json!({"error": e}),
         }
     }
 
