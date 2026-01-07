@@ -233,9 +233,12 @@ impl Session {
         file_path: &Path,
         workspace_root: &Path,
     ) -> Result<WorkspaceHandle<'_>, String> {
-        let config = self.config.read().await;
-        let server_config = get_server_for_file(file_path, Some(&config))
-            .ok_or_else(|| format!("No language server found for {}", file_path.display()))?;
+        let server_config = {
+            let config = self.config.read().await;
+            get_server_for_file(file_path, Some(&config))
+                .ok_or_else(|| format!("No language server found for {}", file_path.display()))?
+        };
+        // config lock dropped here before acquiring workspace lock
 
         self.get_or_create_workspace_for_server(workspace_root, server_config).await
     }
@@ -245,9 +248,12 @@ impl Session {
         language_id: &str,
         workspace_root: &Path,
     ) -> Result<WorkspaceHandle<'_>, String> {
-        let config = self.config.read().await;
-        let server_config = get_server_for_language(language_id, Some(&config))
-            .ok_or_else(|| format!("No language server found for language {}", language_id))?;
+        let server_config = {
+            let config = self.config.read().await;
+            get_server_for_language(language_id, Some(&config))
+                .ok_or_else(|| format!("No language server found for language {}", language_id))?
+        };
+        // config lock dropped here before acquiring workspace lock
 
         self.get_or_create_workspace_for_server(workspace_root, server_config).await
     }
