@@ -806,7 +806,8 @@ async fn handle_rename(config: &Config, json_output: bool, symbol: String, new_n
 
 async fn handle_mv(config: &Config, json_output: bool, old_path: String, new_path: String) -> Result<()> {
     let old_path = PathBuf::from(&old_path).canonicalize()?;
-    let new_path = PathBuf::from(&new_path);
+    // new_path doesn't exist yet, so we resolve it relative to current dir
+    let new_path = std::env::current_dir()?.join(&new_path);
     let workspace_root = get_workspace_root_for_path(config, &old_path)?;
 
     let result = send_request("move-file", json!({
