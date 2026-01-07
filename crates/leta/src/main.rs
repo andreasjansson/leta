@@ -11,9 +11,30 @@ use serde_json::{json, Value};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::UnixStream;
 
+const MAIN_HELP: &str = r#"Leta (LSP Enabled Tools for Agents) is a command line LSP client. It can
+quickly search for symbols across large code bases with regular expressions,
+print full function and method bodies, find references, implementations,
+subtypes, etc. It also has refactoring tools, like renaming symbols across the
+entire code base.
+
+`leta grep` can be much better than naive text search tools when you want to
+understand a code base. Note that `leta grep` only exposes symbols that are
+declared in its workspace, so use (rip)grep or other search tools when you're
+looking for specific multi-symbol strings, puncuation, or library functions.
+`leta grep PATTERN [PATH] --docs` prints function and method documentation for
+all matching symbols.
+
+`leta files` is a good starting point when starting work on a project.
+
+Use `leta show SYMBOL` to print the full body of a symbol. Use `leta refs
+SYMBOL` to find all uses of a symbol. These two (and other) commands accept
+`--context N` for surrounding lines.
+
+See `leta COMMAND --help` for more documentation and command-specific options."#;
+
 #[derive(Parser)]
 #[command(name = "leta")]
-#[command(about = "LSP Enabled Tools for Agents - Command line LSP client")]
+#[command(about = MAIN_HELP)]
 #[command(version)]
 struct Cli {
     #[arg(long, global = true, help = "Output as JSON")]
@@ -25,7 +46,7 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    #[command(about = "Search for symbols matching a regex pattern")]
+    #[command(about = "Search for symbols matching a regex pattern.")]
     Grep {
         #[arg(help = "Regex pattern to match against symbol names")]
         pattern: String,
@@ -41,7 +62,7 @@ enum Commands {
         case_sensitive: bool,
     },
 
-    #[command(about = "Show source file tree with symbol counts")]
+    #[command(about = "Show source file tree with symbol and line counts.")]
     Files {
         #[arg(help = "Path to list")]
         path: Option<String>,
@@ -51,7 +72,7 @@ enum Commands {
         include: Vec<String>,
     },
 
-    #[command(about = "Print the definition of a symbol")]
+    #[command(about = "Print the definition of a symbol.")]
     Show {
         #[arg(help = "Symbol to show")]
         symbol: String,
@@ -61,7 +82,7 @@ enum Commands {
         head: u32,
     },
 
-    #[command(about = "Find all references to a symbol")]
+    #[command(about = "Find all references to a symbol.")]
     Refs {
         #[arg(help = "Symbol to find references for")]
         symbol: String,
@@ -69,39 +90,7 @@ enum Commands {
         context: u32,
     },
 
-    #[command(about = "Find declaration of a symbol")]
-    Declaration {
-        #[arg(help = "Symbol to find declaration for")]
-        symbol: String,
-        #[arg(short = 'n', long, default_value = "0", help = "Lines of context")]
-        context: u32,
-    },
-
-    #[command(about = "Find implementations of an interface")]
-    Implementations {
-        #[arg(help = "Symbol to find implementations for")]
-        symbol: String,
-        #[arg(short = 'n', long, default_value = "0", help = "Lines of context")]
-        context: u32,
-    },
-
-    #[command(about = "Find subtypes of a type")]
-    Subtypes {
-        #[arg(help = "Symbol to find subtypes for")]
-        symbol: String,
-        #[arg(short = 'n', long, default_value = "0", help = "Lines of context")]
-        context: u32,
-    },
-
-    #[command(about = "Find supertypes of a type")]
-    Supertypes {
-        #[arg(help = "Symbol to find supertypes for")]
-        symbol: String,
-        #[arg(short = 'n', long, default_value = "0", help = "Lines of context")]
-        context: u32,
-    },
-
-    #[command(about = "Show call hierarchy")]
+    #[command(about = "Show call hierarchy for a symbol.")]
     Calls {
         #[arg(long, help = "Starting symbol (outgoing calls)")]
         from: Option<String>,
@@ -113,7 +102,39 @@ enum Commands {
         include_non_workspace: bool,
     },
 
-    #[command(about = "Rename a symbol")]
+    #[command(about = "Find implementations of an interface or abstract method.")]
+    Implementations {
+        #[arg(help = "Symbol to find implementations for")]
+        symbol: String,
+        #[arg(short = 'n', long, default_value = "0", help = "Lines of context")]
+        context: u32,
+    },
+
+    #[command(about = "Find direct supertypes of a type.")]
+    Supertypes {
+        #[arg(help = "Symbol to find supertypes for")]
+        symbol: String,
+        #[arg(short = 'n', long, default_value = "0", help = "Lines of context")]
+        context: u32,
+    },
+
+    #[command(about = "Find direct subtypes of a type.")]
+    Subtypes {
+        #[arg(help = "Symbol to find subtypes for")]
+        symbol: String,
+        #[arg(short = 'n', long, default_value = "0", help = "Lines of context")]
+        context: u32,
+    },
+
+    #[command(about = "Find declaration of a symbol.")]
+    Declaration {
+        #[arg(help = "Symbol to find declaration for")]
+        symbol: String,
+        #[arg(short = 'n', long, default_value = "0", help = "Lines of context")]
+        context: u32,
+    },
+
+    #[command(about = "Rename a symbol across the workspace.")]
     Rename {
         #[arg(help = "Symbol to rename")]
         symbol: String,
@@ -121,7 +142,7 @@ enum Commands {
         new_name: String,
     },
 
-    #[command(about = "Move/rename a file and update imports")]
+    #[command(about = "Move/rename a file and update all imports.")]
     Mv {
         #[arg(help = "Old path")]
         old_path: String,
@@ -129,47 +150,50 @@ enum Commands {
         new_path: String,
     },
 
-    #[command(about = "Manage the leta daemon")]
-    Daemon {
-        #[command(subcommand)]
-        command: DaemonCommands,
-    },
-
-    #[command(about = "Manage workspaces")]
+    #[command(about = "Manage workspaces.")]
     Workspace {
         #[command(subcommand)]
         command: WorkspaceCommands,
     },
 
-    #[command(about = "Show configuration")]
+    #[command(about = "Manage the leta daemon.")]
+    Daemon {
+        #[command(subcommand)]
+        command: DaemonCommands,
+    },
+
+    #[command(about = "Print config file location and contents.")]
     Config,
+
+    #[command(about = "Print help for all commands.")]
+    HelpAll,
 }
 
 #[derive(Subcommand)]
 enum DaemonCommands {
-    #[command(about = "Start the daemon")]
-    Start,
-    #[command(about = "Stop the daemon")]
-    Stop,
-    #[command(about = "Restart the daemon")]
-    Restart,
-    #[command(about = "Show daemon info")]
+    #[command(about = "Show current daemon state.")]
     Info,
+    #[command(about = "Restart the leta daemon.")]
+    Restart,
+    #[command(about = "Start the leta daemon.")]
+    Start,
+    #[command(about = "Stop the leta daemon.")]
+    Stop,
 }
 
 #[derive(Subcommand)]
 enum WorkspaceCommands {
-    #[command(about = "Add a workspace")]
+    #[command(about = "Add a workspace for LSP operations.")]
     Add {
         #[arg(long, help = "Workspace root directory")]
         root: Option<String>,
     },
-    #[command(about = "Remove a workspace")]
+    #[command(about = "Remove a workspace and stop its language servers.")]
     Remove {
         #[arg(help = "Workspace path")]
         path: Option<String>,
     },
-    #[command(about = "Restart workspace servers")]
+    #[command(about = "Restart the language server for a workspace.")]
     Restart {
         #[arg(help = "Workspace path")]
         path: Option<String>,
