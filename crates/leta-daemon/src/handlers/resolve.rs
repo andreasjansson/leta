@@ -89,14 +89,26 @@ pub async fn handle_resolve_symbol(
     };
 
     if matches.is_empty() {
-        let mut error_parts = vec![format!("Symbol '{}' not found", symbol_name)];
-        if path_filter.is_some() {
-            error_parts.push(format!("in files matching '{}'", path_filter.unwrap()));
+        let mut error_msg = format!("Symbol '{}' not found", symbol_name);
+        if let Some(pf) = &path_filter {
+            error_msg.push_str(&format!(" in files matching '{}'", pf));
         }
         if let Some(line) = line_filter {
-            error_parts.push(format!("on line {}", line));
+            error_msg.push_str(&format!(" on line {}", line));
         }
-        return Ok(ResolveSymbolResult::not_found(&error_parts.join(" ")));
+        return Ok(ResolveSymbolResult {
+            error: Some(error_msg),
+            path: None,
+            line: None,
+            column: None,
+            name: None,
+            kind: None,
+            container: None,
+            range_start_line: None,
+            range_end_line: None,
+            matches: None,
+            total_matches: None,
+        });
     }
 
     let preferred_kinds: HashSet<&str> = [
