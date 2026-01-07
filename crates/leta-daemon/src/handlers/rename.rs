@@ -10,7 +10,7 @@ use leta_types::{MoveFileParams, MoveFileResult, RenameParams, RenameResult};
 
 use super::{relative_path, HandlerContext};
 
-fn get_files_from_workspace_edit(edit: &WorkspaceEdit, workspace_root: &Path) -> Vec<PathBuf> {
+fn get_files_from_workspace_edit(edit: &WorkspaceEdit) -> Vec<PathBuf> {
     let mut files = Vec::new();
     
     if let Some(changes) = &edit.changes {
@@ -88,7 +88,7 @@ pub async fn handle_rename(
     
     // Close ALL documents that will be modified BEFORE applying edits
     // This is critical for servers that won't reindex files if the document is still open
-    let files_to_modify = get_files_from_workspace_edit(&edit, &workspace_root);
+    let files_to_modify = get_files_from_workspace_edit(&edit);
     tracing::info!("Closing {} documents before rename: {:?}", files_to_modify.len(), files_to_modify);
     for file_path in &files_to_modify {
         let _ = workspace.close_document(file_path).await;
@@ -120,30 +120,20 @@ pub async fn handle_rename(
     }
 
     // WORKAROUND: Restart ruby-lsp after rename to force a full reindex.
-    //
-    // ruby-lsp has a bug where the index doesn't properly update after rename operations.
-    // When we rename a symbol (e.g., Storage → StorageInterface), the old name remains
-    // in the index even after we send didChangeWatchedFiles notifications. This causes
-    // "The new name is already in use by X" errors on consecutive renames.
-    //
-    // The root cause is in how ruby-lsp processes didChangeWatchedFiles:
-    // https://github.com/Shopify/ruby-lsp/blob/main/lib/ruby_lsp/server.rb
-    //
-    // In workspace_did_change_watched_files(), ruby-lsp calls handle_ruby_file_change()
-    // which should update the index via index.delete() and index.index_single().
-    // However, the index entries for the OLD symbol name are not being deleted.
-    //
-    // We've tried several approaches that didn't work:
-    // - Sending DELETED + CREATED file change notifications
-    // - Sending CHANGED notifications  
-    // - Reopening documents and triggering documentSymbol
-    // - Adding delays between operations
-    //
-    // The only reliable fix is to restart ruby-lsp, which forces a complete reindex
-    // from disk. This is slower but guarantees correct behavior.
     if workspace.server_name() == "ruby-lsp" {
         tracing::info!("ruby-lsp: restarting server to refresh index after rename");
         let _ = ctx.session.restart_workspace(&workspace_root).await;
+    } else {
+        // For other servers, just reopen documents
+        for (_, new_path) in &renamed_files {
+            let _ = workspace.ensure_document_open(new_path).await;
+        }
+        for rel_path in &files_changed {
+            let abs_path = workspace_root.join(rel_path);
+            if abs_path.exists() && !renamed_new_paths.contains(&abs_path) {
+                let _ = workspace.ensure_document_open(&abs_path).await;
+            }
+        }
     }
 
     Ok(RenameResult { files_changed })
@@ -221,8 +211,8 @@ pub async fn handle_move_file(
     tracing::info!("workspace/willRenameFiles response: {:?}", response);
     
     // Close the documents we opened for indexing
-    for file_path in opened_for_indexing {
-        let _ = workspace.close_document(&file_path).await;
+    for file_path in &opened_for_indexing {
+        let _ = workspace.close_document(file_path).await;
     }
 
     let mut files_changed = Vec::new();
@@ -253,6 +243,16 @@ pub async fn handle_move_file(
         f != &relative_path(&new_path, &workspace_root)
     });
 
+    // Sync the LSP with the changes so subsequent operations see the updated state
+    let _ = workspace.close_document(&old_path).await;
+    for rel_path in &files_changed {
+        let abs_path = workspace_root.join(rel_path);
+        if abs_path.exists() && abs_path != new_path {
+            let _ = workspace.ensure_document_open(&abs_path).await;
+        }
+    }
+    let _ = workspace.ensure_document_open(&new_path).await;
+
     Ok(MoveFileResult {
         files_changed,
         imports_updated,
@@ -260,20 +260,17 @@ pub async fn handle_move_file(
 }
 
 /// Apply a workspace edit for a move operation, returning (changed_files, file_was_moved).
-/// This tracks whether the file was moved by the edit so we don't move it twice.
 fn apply_workspace_edit_for_move(
     edit: &WorkspaceEdit,
-    workspace_root: &PathBuf,
-    move_old_path: &PathBuf,
-    move_new_path: &PathBuf,
+    workspace_root: &Path,
+    move_old_path: &Path,
+    move_new_path: &Path,
 ) -> Result<(Vec<String>, bool), String> {
     let mut changed_files = Vec::new();
     let mut file_moved = false;
 
-    // edit.changes uses URI as key with array of text edits
     if let Some(changes) = &edit.changes {
         for (uri, edits) in changes {
-            // Only add to changed files if there are actual edits
             if edits.is_empty() {
                 continue;
             }
@@ -292,15 +289,13 @@ fn apply_workspace_edit_for_move(
                         leta_lsp::lsp_types::OneOf::Right(ate) => ate.text_edit.clone(),
                     }).collect();
                     
-                    // Only add to changed files if there are actual edits
                     if text_edits.is_empty() {
                         continue;
                     }
                     
                     let mut file_path = uri_to_path(edit.text_document.uri.as_str());
-                    // If this edit targets the old path, apply to new path instead
-                    if file_path == *move_old_path {
-                        file_path = move_new_path.clone();
+                    if file_path == move_old_path {
+                        file_path = move_new_path.to_path_buf();
                     }
                     apply_text_edits(&file_path, &text_edits)?;
                     changed_files.push(relative_path(&file_path, workspace_root));
@@ -315,14 +310,13 @@ fn apply_workspace_edit_for_move(
                                 leta_lsp::lsp_types::OneOf::Right(ate) => ate.text_edit.clone(),
                             }).collect();
                             
-                            // Only add to changed files if there are actual edits
                             if text_edits.is_empty() {
                                 continue;
                             }
                             
                             let mut file_path = uri_to_path(edit.text_document.uri.as_str());
-                            if file_path == *move_old_path {
-                                file_path = move_new_path.clone();
+                            if file_path == move_old_path {
+                                file_path = move_new_path.to_path_buf();
                             }
                             apply_text_edits(&file_path, &text_edits)?;
                             changed_files.push(relative_path(&file_path, workspace_root));
@@ -341,8 +335,7 @@ fn apply_workspace_edit_for_move(
                                     let old_path = uri_to_path(rename.old_uri.as_str());
                                     let new_path = uri_to_path(rename.new_uri.as_str());
                                     
-                                    // Check if this is the file we're trying to move
-                                    if old_path == *move_old_path && new_path == *move_new_path {
+                                    if old_path == move_old_path && new_path == move_new_path {
                                         file_moved = true;
                                     }
                                     
@@ -369,8 +362,10 @@ fn apply_workspace_edit_for_move(
     Ok((changed_files, file_moved))
 }
 
-fn apply_workspace_edit(edit: &WorkspaceEdit, workspace_root: &PathBuf) -> Result<Vec<String>, String> {
+/// Apply a workspace edit for rename, returning (changed_files, renamed_file_pairs).
+fn apply_workspace_edit(edit: &WorkspaceEdit, workspace_root: &Path) -> Result<(Vec<String>, Vec<(PathBuf, PathBuf)>), String> {
     let mut changed_files = HashSet::new();
+    let mut renamed_files = Vec::new();
 
     if let Some(changes) = &edit.changes {
         for (uri, edits) in changes {
@@ -421,6 +416,7 @@ fn apply_workspace_edit(edit: &WorkspaceEdit, workspace_root: &PathBuf) -> Resul
                                     }
                                     let _ = std::fs::rename(&old_path, &new_path);
                                     changed_files.insert(relative_path(&new_path, workspace_root));
+                                    renamed_files.push((old_path, new_path));
                                 }
                                 leta_lsp::lsp_types::ResourceOp::Delete(delete) => {
                                     let path = uri_to_path(delete.uri.as_str());
@@ -436,10 +432,10 @@ fn apply_workspace_edit(edit: &WorkspaceEdit, workspace_root: &PathBuf) -> Resul
 
     let mut result: Vec<String> = changed_files.into_iter().collect();
     result.sort();
-    Ok(result)
+    Ok((result, renamed_files))
 }
 
-fn apply_text_edits(file_path: &PathBuf, edits: &[TextEdit]) -> Result<(), String> {
+fn apply_text_edits(file_path: &Path, edits: &[TextEdit]) -> Result<(), String> {
     let content = std::fs::read_to_string(file_path)
         .map_err(|e| format!("Failed to read {}: {}", file_path.display(), e))?;
     
