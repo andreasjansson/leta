@@ -149,6 +149,7 @@ impl LspClient {
             server_name: server_name.to_string(),
             workspace_root: workspace_uri.to_string(),
             capabilities: RwLock::new(ServerCapabilities::default()),
+            raw_capabilities: RwLock::new(Value::Null),
             initialized: RwLock::new(false),
             service_ready: RwLock::new(server_name != "jdtls"),
             indexing_done: RwLock::new(server_name != "rust-analyzer"),
