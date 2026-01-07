@@ -106,6 +106,9 @@ pub struct LspClient {
     server_name: String,
     workspace_root: String,
     capabilities: RwLock<ServerCapabilities>,
+    // Store raw JSON capabilities for fields not in lsp-types ServerCapabilities struct
+    // (e.g. typeHierarchyProvider was added in LSP 3.17 but lsp-types 0.97.0 doesn't have it)
+    raw_capabilities: RwLock<Value>,
     initialized: RwLock<bool>,
     service_ready: RwLock<bool>,
     indexing_done: RwLock<bool>,
