@@ -6,11 +6,13 @@ use leta_lsp::lsp_types::{DocumentSymbolParams, TextDocumentIdentifier};
 use leta_servers::get_server_for_language;
 use leta_types::{GrepParams, GrepResult, SymbolInfo};
 use regex::Regex;
+use tracing::{debug, warn};
 
 use super::{flatten_document_symbols, relative_path, HandlerContext};
 use crate::session::WorkspaceHandle;
 
 pub async fn handle_grep(ctx: &HandlerContext, params: GrepParams) -> Result<GrepResult, String> {
+    debug!("handle_grep: pattern={} workspace={}", params.pattern, params.workspace_root);
     let workspace_root = PathBuf::from(&params.workspace_root);
     
     let flags = if params.case_sensitive {
