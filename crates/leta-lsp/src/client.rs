@@ -204,10 +204,14 @@ impl LspClient {
         // (e.g. typeHierarchyProvider was added in LSP 3.17 but lsp-types 0.97.0 omits it)
         if let Some(caps) = raw_result.get("capabilities") {
             *self.raw_capabilities.write().await = caps.clone();
+            debug!("Raw capabilities for {}: implementationProvider={:?}", 
+                   self.server_name, caps.get("implementationProvider"));
         }
         
         let result: InitializeResult = serde_json::from_value(raw_result)
             .map_err(LspProtocolError::Json)?;
+        debug!("Parsed capabilities for {}: implementation_provider={:?}",
+               self.server_name, result.capabilities.implementation_provider);
         *self.capabilities.write().await = result.capabilities;
 
         self.send_notification("initialized", InitializedParams {}).await?;
