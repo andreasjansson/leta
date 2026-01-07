@@ -443,4 +443,25 @@ impl<'a> WorkspaceHandle<'a> {
         }
         false
     }
+
+    pub async fn notify_files_changed(&self, changes: &[(PathBuf, leta_lsp::lsp_types::FileChangeType)]) {
+        let client = match self.client().await {
+            Some(c) => c,
+            None => return,
+        };
+        
+        let file_events: Vec<leta_lsp::lsp_types::FileEvent> = changes
+            .iter()
+            .map(|(path, change_type)| leta_lsp::lsp_types::FileEvent {
+                uri: path_to_uri(path).parse().unwrap(),
+                typ: *change_type,
+            })
+            .collect();
+        
+        let params = leta_lsp::lsp_types::DidChangeWatchedFilesParams {
+            changes: file_events,
+        };
+        
+        let _ = client.send_notification("workspace/didChangeWatchedFiles", params).await;
+    }
 }
