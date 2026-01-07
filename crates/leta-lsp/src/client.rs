@@ -579,9 +579,10 @@ impl LspClient {
     pub async fn supports_type_hierarchy(&self) -> bool {
         // type_hierarchy_provider is not in lsp-types 0.97.0 ServerCapabilities struct,
         // but servers do advertise it. Check the raw_capabilities JSON.
+        // Need to check for truthy values (not null, not false)
         self.raw_capabilities.read().await
             .get("typeHierarchyProvider")
-            .map(|v| !v.is_null())
+            .map(|v| !v.is_null() && v.as_bool() != Some(false))
             .unwrap_or(false)
     }
 
