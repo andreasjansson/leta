@@ -437,6 +437,13 @@ fn is_stdlib_path(path: &str) -> bool {
         || path.contains("/rustlib/src/rust/library/")
 }
 
+fn should_show_detail(detail: &Option<String>) -> bool {
+    detail
+        .as_ref()
+        .map(|d| !d.is_empty() && d != "()")
+        .unwrap_or(false)
+}
+
 fn format_call_tree(node: &CallNode) -> String {
     let mut lines = Vec::new();
 
@@ -448,8 +455,8 @@ fn format_call_tree(node: &CallNode) -> String {
         parts.push(format!("[{}]", kind));
     }
     parts.push(node.name.clone());
-    if let Some(detail) = &node.detail {
-        parts.push(format!("({})", detail));
+    if should_show_detail(&node.detail) {
+        parts.push(format!("({})", node.detail.as_ref().unwrap()));
     }
     lines.push(parts.join(" "));
 
@@ -491,8 +498,8 @@ fn render_calls_tree(items: &[CallNode], lines: &mut Vec<String>, prefix: &str, 
             }
         }
         parts.push(item.name.clone());
-        if let Some(detail) = &item.detail {
-            parts.push(format!("({})", detail));
+        if should_show_detail(&item.detail) {
+            parts.push(format!("({})", item.detail.as_ref().unwrap()));
         }
         lines.push(format!("{}{}{}", prefix, connector, parts.join(" ")));
 
