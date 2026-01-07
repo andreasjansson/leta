@@ -8,8 +8,10 @@ use std::time::Duration;
 use dashmap::DashMap;
 use lsp_types::{
     ClientCapabilities, InitializeParams, InitializeResult, InitializedParams,
-    ServerCapabilities, Uri, WorkspaceFolder,
+    NumberOrString, ProgressParams, ProgressParamsValue, ServerCapabilities, 
+    Uri, WorkDoneProgress, WorkspaceFolder,
 };
+use serde::Deserialize;
 use serde_json::{json, Value};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::{Child, ChildStderr, ChildStdin, ChildStdout};
@@ -18,6 +20,18 @@ use tracing::{debug, error, info, warn};
 
 use crate::capabilities::get_client_capabilities;
 use crate::protocol::{encode_message, read_message, LspProtocolError, LspResponseError};
+
+#[derive(Debug, Deserialize)]
+struct LanguageStatusParams {
+    #[serde(rename = "type")]
+    status_type: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct ServerStatusParams {
+    quiescent: Option<bool>,
+    health: Option<String>,
+}
 
 const REQUEST_TIMEOUT_SECS: u64 = 30;
 
@@ -242,7 +256,11 @@ impl LspClient {
         });
 
         let encoded = encode_message(&message);
-        debug!("LSP NOTIFICATION {}", method);
+        if method == "textDocument/didOpen" {
+            debug!("[{}] LSP NOTIFICATION {} params={}", self.server_name, method, serde_json::to_string(&message.get("params")).unwrap_or_default());
+        } else {
+            debug!("LSP NOTIFICATION {}", method);
+        }
 
         let mut stdin = self.stdin.lock().await;
         stdin.write_all(&encoded).await?;
