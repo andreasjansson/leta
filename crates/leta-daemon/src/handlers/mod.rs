@@ -9,11 +9,12 @@ mod session;
 mod index;
 
 use std::path::Path;
+use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::Arc;
 
 use leta_fs::{get_lines_around, read_file_content, uri_to_path};
 use leta_lsp::lsp_types::{DocumentSymbol, DocumentSymbolResponse, Location, SymbolInformation, TypeHierarchyItem};
-use leta_types::{LocationInfo, SymbolInfo, SymbolKind};
+use leta_types::{CacheStats, LocationInfo, SymbolInfo, SymbolKind};
 
 pub use grep::{handle_grep, get_file_symbols};
 pub use index::handle_add_workspace;
@@ -28,10 +29,37 @@ pub use session::{handle_describe_session, handle_restart_workspace, handle_remo
 use crate::session::Session;
 use leta_cache::LmdbCache;
 
+#[derive(Default)]
+pub struct CacheStatsTracker {
+    pub symbol_hits: AtomicU32,
+    pub symbol_misses: AtomicU32,
+    pub hover_hits: AtomicU32,
+    pub hover_misses: AtomicU32,
+}
+
+impl CacheStatsTracker {
+    pub fn to_cache_stats(&self) -> CacheStats {
+        CacheStats {
+            symbol_hits: self.symbol_hits.load(Ordering::Relaxed),
+            symbol_misses: self.symbol_misses.load(Ordering::Relaxed),
+            hover_hits: self.hover_hits.load(Ordering::Relaxed),
+            hover_misses: self.hover_misses.load(Ordering::Relaxed),
+        }
+    }
+    
+    pub fn reset(&self) {
+        self.symbol_hits.store(0, Ordering::Relaxed);
+        self.symbol_misses.store(0, Ordering::Relaxed);
+        self.hover_hits.store(0, Ordering::Relaxed);
+        self.hover_misses.store(0, Ordering::Relaxed);
+    }
+}
+
 pub struct HandlerContext {
     pub session: Arc<Session>,
     pub hover_cache: Arc<LmdbCache>,
     pub symbol_cache: Arc<LmdbCache>,
+    pub cache_stats: Arc<CacheStatsTracker>,
 }
 
 impl HandlerContext {
@@ -40,6 +68,7 @@ impl HandlerContext {
             session,
             hover_cache,
             symbol_cache,
+            cache_stats: Arc::new(CacheStatsTracker::default()),
         }
     }
 }
