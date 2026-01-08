@@ -14,7 +14,7 @@ use leta_fs::{get_lines_around, read_file_content, uri_to_path};
 use leta_lsp::lsp_types::{DocumentSymbol, DocumentSymbolResponse, Location, SymbolInformation, TypeHierarchyItem};
 use leta_types::{LocationInfo, SymbolInfo, SymbolKind};
 
-pub use grep::handle_grep;
+pub use grep::{handle_grep, get_file_symbols};
 pub use show::handle_show;
 pub use refs::{handle_references, handle_declaration, handle_implementations, handle_subtypes, handle_supertypes};
 pub use calls::handle_calls;
