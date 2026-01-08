@@ -427,13 +427,18 @@ fn get_workspace_root_for_path(config: &Config, path: &Path) -> Result<PathBuf> 
         .ok_or_else(|| anyhow!("No workspace found for {}\nRun: leta workspace add", path.display()))
 }
 
-async fn resolve_symbol(symbol: &str, workspace_root: &Path) -> Result<ResolveSymbolResult> {
-    let result = send_request("resolve-symbol", json!({
+struct ResolveResult {
+    resolved: ResolveSymbolResult,
+    profiling: Option<ProfilingData>,
+}
+
+async fn resolve_symbol(symbol: &str, workspace_root: &Path, profile: bool) -> Result<ResolveResult> {
+    let response = send_request_with_profile("resolve-symbol", json!({
         "workspace_root": workspace_root.to_string_lossy(),
         "symbol_path": symbol,
-    })).await?;
+    }), profile).await?;
 
-    let resolved: ResolveSymbolResult = serde_json::from_value(result)?;
+    let resolved: ResolveSymbolResult = serde_json::from_value(response.result)?;
 
     if let Some(error) = &resolved.error {
         let mut msg = error.clone();
@@ -456,7 +461,7 @@ async fn resolve_symbol(symbol: &str, workspace_root: &Path) -> Result<ResolveSy
         return Err(anyhow!("{}", msg));
     }
 
-    Ok(resolved)
+    Ok(ResolveResult { resolved, profiling: response.profiling })
 }
 
 fn expand_path_pattern(pattern: &str) -> Result<Vec<PathBuf>> {
@@ -723,34 +728,50 @@ async fn handle_files(
     Ok(())
 }
 
-fn format_profiling(stats: &[FunctionStats]) -> String {
-    if stats.is_empty() {
-        return String::new();
+fn format_profiling(data: &ProfilingData) -> String {
+    let mut output = String::new();
+    
+    let cache = &data.cache;
+    let symbol_total = cache.symbol_hits + cache.symbol_misses;
+    let hover_total = cache.hover_hits + cache.hover_misses;
+    
+    if symbol_total > 0 || hover_total > 0 {
+        output.push_str("CACHE\n");
+        if symbol_total > 0 {
+            output.push_str(&format!("  symbols: {}/{} hits ({:.1}%)\n", 
+                cache.symbol_hits, symbol_total, cache.symbol_hit_rate()));
+        }
+        if hover_total > 0 {
+            output.push_str(&format!("  hover:   {}/{} hits ({:.1}%)\n", 
+                cache.hover_hits, hover_total, cache.hover_hit_rate()));
+        }
+        output.push('\n');
     }
     
-    let mut output = String::new();
-    output.push_str("PROFILING\n");
-    output.push_str(&format!("{:<60} {:>6} {:>10} {:>10} {:>12}\n", 
-        "Function", "Calls", "Avg", "P90", "Total"));
-    output.push_str(&"-".repeat(100));
-    output.push('\n');
-    
-    for stat in stats {
-        let name = stat.name
-            .strip_prefix("leta_daemon::handlers::")
-            .or_else(|| stat.name.strip_prefix("leta_daemon::"))
-            .or_else(|| stat.name.strip_prefix("leta_"))
-            .unwrap_or(&stat.name)
-            .trim_end_matches("::{{closure}}");
+    if !data.functions.is_empty() {
+        output.push_str("TIMING\n");
+        output.push_str(&format!("{:<60} {:>6} {:>10} {:>10} {:>12}\n", 
+            "Function", "Calls", "Avg", "P90", "Total"));
+        output.push_str(&"-".repeat(100));
+        output.push('\n');
         
-        output.push_str(&format!(
-            "{:<60} {:>6} {:>10} {:>10} {:>12}\n",
-            name,
-            stat.calls,
-            format_duration_us(stat.avg_us),
-            format_duration_us(stat.p90_us),
-            format_duration_us(stat.total_us),
-        ));
+        for stat in &data.functions {
+            let name = stat.name
+                .strip_prefix("leta_daemon::handlers::")
+                .or_else(|| stat.name.strip_prefix("leta_daemon::"))
+                .or_else(|| stat.name.strip_prefix("leta_"))
+                .unwrap_or(&stat.name)
+                .trim_end_matches("::{{closure}}");
+            
+            output.push_str(&format!(
+                "{:<60} {:>6} {:>10} {:>10} {:>12}\n",
+                name,
+                stat.calls,
+                format_duration_us(stat.avg_us),
+                format_duration_us(stat.p90_us),
+                format_duration_us(stat.total_us),
+            ));
+        }
     }
     
     output
