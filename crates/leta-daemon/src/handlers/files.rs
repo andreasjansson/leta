@@ -5,7 +5,7 @@ use leta_fs::get_language_id;
 use leta_lsp::lsp_types::{DocumentSymbolParams, DocumentSymbolResponse, TextDocumentIdentifier};
 use leta_servers::get_server_for_language;
 use leta_types::{FileInfo, FilesParams, FilesResult, SymbolKind};
-use tracing::{info, instrument};
+use tracing::{debug, info, instrument};
 
 use super::{relative_path, HandlerContext};
 
