@@ -245,7 +245,7 @@ async fn main() -> Result<()> {
                     handle_files(&config, cli.json, cli.profile, path, exclude, include).await
                 }
                 Commands::Show { symbol, context, head } => {
-                    handle_show(&config, cli.json, symbol, context, head).await
+                    handle_show(&config, cli.json, cli.profile, symbol, context, head).await
                 }
                 Commands::Refs { symbol, context } => {
                     handle_refs(&config, cli.json, symbol, context).await
