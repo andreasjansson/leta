@@ -720,10 +720,7 @@ async fn handle_files(
         println!("{}", format_files_result(&files_result));
     }
 
-    if let Some(profiling) = response.profiling {
-        eprintln!("\n{}", format_profiling(&profiling));
-    }
-
+    display_profiling(response.profiling);
     Ok(())
 }
 
