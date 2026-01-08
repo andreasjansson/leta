@@ -161,6 +161,7 @@ pub async fn handle_files(
                 lsp_files_processed += 1;
                 continue;
             }
+            debug!("cache miss for {}", cache_key);
             
             if let Err(_) = workspace.ensure_document_open(file_path).await {
                 continue;
