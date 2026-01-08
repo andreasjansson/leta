@@ -647,6 +647,7 @@ fn handle_config() -> Result<()> {
 async fn handle_grep(
     config: &Config,
     json_output: bool,
+    profile: bool,
     pattern: String,
     path: Option<String>,
     kind: Option<String>,
@@ -669,7 +670,7 @@ async fn handle_grep(
         (get_workspace_root(config)?, None)
     };
 
-    let result = send_request("grep", json!({
+    let response = send_request_with_profile("grep", json!({
         "workspace_root": workspace_root.to_string_lossy(),
         "pattern": pattern,
         "kinds": kinds,
@@ -677,15 +678,17 @@ async fn handle_grep(
         "include_docs": docs,
         "paths": paths,
         "exclude_patterns": exclude,
-    })).await?;
+    }), profile).await?;
 
-    let grep_result: GrepResult = serde_json::from_value(result)?;
+    let grep_result: GrepResult = serde_json::from_value(response.result)?;
 
     if json_output {
         println!("{}", serde_json::to_string_pretty(&grep_result)?);
     } else {
         println!("{}", format_grep_result(&grep_result));
     }
+    
+    display_profiling(response.profiling);
     Ok(())
 }
 
