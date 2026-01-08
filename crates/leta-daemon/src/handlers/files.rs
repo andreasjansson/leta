@@ -53,6 +53,7 @@ pub async fn handle_files(
 
     let mut source_files_by_lang: HashMap<String, Vec<PathBuf>> = HashMap::new();
 
+    let walk_start = std::time::Instant::now();
     for entry in walkdir::WalkDir::new(&target_path)
         .into_iter()
         .filter_entry(|e| {
@@ -111,6 +112,8 @@ pub async fn handle_files(
         total_lines += lines;
         files_info.insert(rel_path, file_info);
     }
+    info!("walk_dir took {:?}, found {} files, {} source files by language", 
+          walk_start.elapsed(), files_info.len(), source_files_by_lang.len());
 
     for (lang, files) in source_files_by_lang {
         let workspace = match ctx.session.get_or_create_workspace_for_language(&lang, &workspace_root).await {
