@@ -254,6 +254,7 @@ impl Session {
         self.get_or_create_workspace_for_server(workspace_root, server_config).await
     }
 
+    #[trace]
     pub async fn get_or_create_workspace_for_language(
         &self,
         language_id: &str,
@@ -269,6 +270,7 @@ impl Session {
         self.get_or_create_workspace_for_server(workspace_root, server_config).await
     }
 
+    #[trace]
     async fn get_or_create_workspace_for_server(
         &self,
         workspace_root: &Path,
