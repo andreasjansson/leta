@@ -2,9 +2,10 @@ use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+use leta_config::Config;
 use leta_fs::get_language_id;
 use leta_servers::get_server_for_language;
-use leta_types::{IndexWorkspaceParams, IndexWorkspaceResult};
+use leta_types::{AddWorkspaceParams, AddWorkspaceResult};
 use tokio::sync::Semaphore;
 use tracing::{info, warn};
 
@@ -29,13 +30,50 @@ const BINARY_EXTENSIONS: &[&str] = &[
     ".db", ".sqlite", ".sqlite3", ".bin", ".dat", ".pak", ".bundle", ".lock",
 ];
 
-pub async fn handle_index_workspace(
+pub async fn handle_add_workspace(
     ctx: &HandlerContext,
-    params: IndexWorkspaceParams,
-) -> Result<IndexWorkspaceResult, String> {
-    let workspace_root = PathBuf::from(&params.workspace_root);
+    params: AddWorkspaceParams,
+) -> Result<AddWorkspaceResult, String> {
+    let workspace_root = PathBuf::from(&params.workspace_root)
+        .canonicalize()
+        .map_err(|e| format!("Invalid path: {}", e))?;
+    let workspace_str = workspace_root.to_string_lossy().to_string();
+
+    let mut config = Config::load().map_err(|e| e.to_string())?;
     
-    info!("Scanning workspace for indexing: {}", workspace_root.display());
+    if config.workspaces.roots.contains(&workspace_str) {
+        return Ok(AddWorkspaceResult {
+            added: false,
+            workspace_root: workspace_str,
+            message: "Workspace already exists".to_string(),
+        });
+    }
+
+    config.add_workspace_root(&workspace_root).map_err(|e| e.to_string())?;
+    
+    info!("Added workspace: {}", workspace_root.display());
+
+    let ctx_clone = HandlerContext::new(
+        Arc::clone(&ctx.session),
+        Arc::clone(&ctx.hover_cache),
+        Arc::clone(&ctx.symbol_cache),
+    );
+    let workspace_root_clone = workspace_root.clone();
+    
+    tokio::spawn(async move {
+        index_workspace_background(ctx_clone, workspace_root_clone).await;
+    });
+
+    Ok(AddWorkspaceResult {
+        added: true,
+        workspace_root: workspace_str,
+        message: "Workspace added, indexing started in background".to_string(),
+    })
+}
+
+async fn index_workspace_background(ctx: HandlerContext, workspace_root: PathBuf) {
+    let start = std::time::Instant::now();
+    info!("Starting background indexing for {}", workspace_root.display());
 
     let exclude_dirs: HashSet<&str> = DEFAULT_EXCLUDE_DIRS.iter().copied().collect();
     let binary_exts: HashSet<&str> = BINARY_EXTENSIONS.iter().copied().collect();
@@ -74,35 +112,9 @@ pub async fn handle_index_workspace(
         }
     }
 
-    let languages: Vec<String> = files_by_lang.keys().cloned().collect();
-    let files_to_index: u32 = files_by_lang.values().map(|v| v.len() as u32).sum();
-    
-    info!("Found {} source files across {} languages, starting background indexing", 
-          files_to_index, languages.len());
+    let total_files: usize = files_by_lang.values().map(|v| v.len()).sum();
+    info!("Found {} source files across {} languages", total_files, files_by_lang.len());
 
-    let ctx = HandlerContext::new(
-        Arc::clone(&ctx.session),
-        Arc::clone(&ctx.hover_cache),
-        Arc::clone(&ctx.symbol_cache),
-    );
-
-    tokio::spawn(async move {
-        index_files_background(ctx, workspace_root, files_by_lang).await;
-    });
-
-    Ok(IndexWorkspaceResult {
-        status: "indexing_started".to_string(),
-        files_to_index,
-        languages,
-    })
-}
-
-async fn index_files_background(
-    ctx: HandlerContext,
-    workspace_root: PathBuf,
-    files_by_lang: std::collections::HashMap<String, Vec<PathBuf>>,
-) {
-    let start = std::time::Instant::now();
     let num_cpus = std::thread::available_parallelism()
         .map(|n| n.get())
         .unwrap_or(4);
@@ -112,7 +124,6 @@ async fn index_files_background(
 
     for (lang, files) in files_by_lang {
         let file_count = files.len();
-        info!("Background indexing {} {} files with {} parallel workers", file_count, lang, num_cpus);
         
         let workspace = match ctx.session.get_or_create_workspace_for_language(&lang, &workspace_root).await {
             Ok(ws) => ws,
@@ -149,13 +160,13 @@ async fn index_files_background(
         for handle in handles {
             match handle.await {
                 Ok(Ok(())) => lang_indexed += 1,
-                Ok(Err(e)) => warn!("Failed to index file: {}", e),
-                Err(e) => warn!("Task failed: {}", e),
+                Ok(Err(_)) => {}
+                Err(_) => {}
             }
         }
         
         total_indexed += lang_indexed;
-        info!("Background indexed {} {} files in {:?}", lang_indexed, lang, lang_start.elapsed());
+        info!("Indexed {} {} files in {:?}", lang_indexed, lang, lang_start.elapsed());
     }
 
     info!("Background indexing complete: {} files in {:?}", total_indexed, start.elapsed());
