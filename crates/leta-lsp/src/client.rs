@@ -224,6 +224,7 @@ impl LspClient {
         Ok(())
     }
 
+    #[trace]
     pub async fn send_request<P: serde::Serialize, R: serde::de::DeserializeOwned>(
         &self,
         method: &'static str,
