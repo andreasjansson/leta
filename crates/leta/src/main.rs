@@ -803,11 +803,12 @@ fn format_duration_us(us: u64) -> String {
     }
 }
 
-async fn handle_show(config: &Config, json_output: bool, symbol: String, context: u32, head: u32) -> Result<()> {
+async fn handle_show(config: &Config, json_output: bool, profile: bool, symbol: String, context: u32, head: u32) -> Result<()> {
     let workspace_root = get_workspace_root(config)?;
-    let resolved = resolve_symbol(&symbol, &workspace_root).await?;
+    let resolve_result = resolve_symbol(&symbol, &workspace_root, profile).await?;
+    let resolved = resolve_result.resolved;
 
-    let result = send_request("show", json!({
+    let response = send_request_with_profile("show", json!({
         "path": resolved.path,
         "workspace_root": workspace_root.to_string_lossy(),
         "line": resolved.line,
@@ -819,15 +820,17 @@ async fn handle_show(config: &Config, json_output: bool, symbol: String, context
         "head": head,
         "symbol": symbol,
         "kind": resolved.kind,
-    })).await?;
+    }), profile).await?;
 
-    let show_result: ShowResult = serde_json::from_value(result)?;
+    let show_result: ShowResult = serde_json::from_value(response.result)?;
 
     if json_output {
         println!("{}", serde_json::to_string_pretty(&show_result)?);
     } else {
         println!("{}", format_show_result(&show_result));
     }
+    
+    display_profiling(merge_profiling(resolve_result.profiling, response.profiling));
     Ok(())
 }
 
