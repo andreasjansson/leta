@@ -13,6 +13,40 @@ pub struct FunctionStats {
     pub max_us: u64,
 }
 
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct CacheStats {
+    pub symbol_hits: u32,
+    pub symbol_misses: u32,
+    pub hover_hits: u32,
+    pub hover_misses: u32,
+}
+
+impl CacheStats {
+    pub fn symbol_hit_rate(&self) -> f64 {
+        let total = self.symbol_hits + self.symbol_misses;
+        if total == 0 {
+            0.0
+        } else {
+            self.symbol_hits as f64 / total as f64 * 100.0
+        }
+    }
+
+    pub fn hover_hit_rate(&self) -> f64 {
+        let total = self.hover_hits + self.hover_misses;
+        if total == 0 {
+            0.0
+        } else {
+            self.hover_hits as f64 / total as f64 * 100.0
+        }
+    }
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct ProfilingData {
+    pub functions: Vec<FunctionStats>,
+    pub cache: CacheStats,
+}
+
 // ============================================================================
 // RPC Protocol
 // ============================================================================
