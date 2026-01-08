@@ -527,6 +527,7 @@ impl LspClient {
         }
     }
 
+    #[trace]
     pub async fn wait_for_indexing(&self, timeout_secs: u64) -> bool {
         let start = std::time::Instant::now();
         let timeout = Duration::from_secs(timeout_secs);
