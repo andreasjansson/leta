@@ -206,7 +206,7 @@ async fn collect_all_workspace_symbols(
     Ok(all_symbols)
 }
 
-async fn get_file_symbols(
+pub async fn get_file_symbols(
     ctx: &HandlerContext,
     workspace: &WorkspaceHandle<'_>,
     workspace_root: &Path,
