@@ -85,7 +85,7 @@ pub async fn handle_files(
 
     Ok(FilesResult {
         files: files_info,
-        total_files: files_info.len() as u32,
+        total_files,
         total_bytes,
         total_lines,
     })
