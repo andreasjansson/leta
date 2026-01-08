@@ -686,13 +686,11 @@ async fn handle_grep(
 async fn handle_files(
     config: &Config,
     json_output: bool,
+    profile: bool,
     path: Option<String>,
     exclude: Vec<String>,
     include: Vec<String>,
 ) -> Result<()> {
-    let _p = profile_start("handle_files");
-
-    let ws_start = profile_start("get_workspace_root");
     let (workspace_root, subpath) = if let Some(path) = path {
         let target = PathBuf::from(&path).canonicalize()?;
         let workspace_root = get_workspace_root_for_path(config, &target)?;
@@ -700,29 +698,69 @@ async fn handle_files(
     } else {
         (get_workspace_root(config)?, None)
     };
-    profile_end(ws_start);
 
-    let result = send_request("files", json!({
+    let response = send_request_with_profile("files", json!({
         "workspace_root": workspace_root.to_string_lossy(),
         "subpath": subpath,
         "exclude_patterns": exclude,
         "include_patterns": include,
-    })).await?;
+    }), profile).await?;
 
-    let deser_start = profile_start("deserialize_result");
-    let files_result: FilesResult = serde_json::from_value(result)?;
-    profile_end(deser_start);
+    let files_result: FilesResult = serde_json::from_value(response.result)?;
 
-    let format_start = profile_start("format_output");
     if json_output {
         println!("{}", serde_json::to_string_pretty(&files_result)?);
     } else {
         println!("{}", format_files_result(&files_result));
     }
-    profile_end(format_start);
 
-    profile_end(_p);
+    if let Some(profiling) = response.profiling {
+        eprintln!("\n{}", format_profiling(&profiling));
+    }
+
     Ok(())
+}
+
+fn format_profiling(stats: &[FunctionStats]) -> String {
+    if stats.is_empty() {
+        return String::new();
+    }
+    
+    let mut output = String::new();
+    output.push_str("┌─────────────────────────────────────────────────────────────────────────────┐\n");
+    output.push_str("│ PROFILING                                                                   │\n");
+    output.push_str("├──────────────────────────────────┬───────┬─────────┬─────────┬─────────────┤\n");
+    output.push_str("│ Function                         │ Calls │  Avg    │   P90   │    Total    │\n");
+    output.push_str("├──────────────────────────────────┼───────┼─────────┼─────────┼─────────────┤\n");
+    
+    for stat in stats.iter().take(20) {
+        let name = if stat.name.len() > 32 {
+            format!("{}…", &stat.name[..31])
+        } else {
+            stat.name.clone()
+        };
+        output.push_str(&format!(
+            "│ {:<32} │ {:>5} │ {:>7} │ {:>7} │ {:>11} │\n",
+            name,
+            stat.calls,
+            format_duration_us(stat.avg_us),
+            format_duration_us(stat.p90_us),
+            format_duration_us(stat.total_us),
+        ));
+    }
+    
+    output.push_str("└──────────────────────────────────┴───────┴─────────┴─────────┴─────────────┘");
+    output
+}
+
+fn format_duration_us(us: u64) -> String {
+    if us >= 1_000_000 {
+        format!("{:.2}s", us as f64 / 1_000_000.0)
+    } else if us >= 1_000 {
+        format!("{:.1}ms", us as f64 / 1_000.0)
+    } else {
+        format!("{}µs", us)
+    }
 }
 
 async fn handle_show(config: &Config, json_output: bool, symbol: String, context: u32, head: u32) -> Result<()> {
