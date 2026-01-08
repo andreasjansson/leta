@@ -28,12 +28,11 @@ const BINARY_EXTENSIONS: &[&str] = &[
     ".db", ".sqlite", ".sqlite3", ".bin", ".dat", ".pak", ".bundle", ".lock",
 ];
 
-#[instrument(skip(ctx), fields(workspace_root = %params.workspace_root))]
+#[trace]
 pub async fn handle_files(
     ctx: &HandlerContext,
     params: FilesParams,
 ) -> Result<FilesResult, String> {
-    let start = std::time::Instant::now();
     let workspace_root = PathBuf::from(&params.workspace_root);
     let target_path = params.subpath
         .map(PathBuf::from)
