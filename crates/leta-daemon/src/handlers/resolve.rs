@@ -16,12 +16,23 @@ pub async fn handle_resolve_symbol(
     let workspace_root = PathBuf::from(&params.workspace_root);
     let symbol_path = params.symbol_path.clone();
 
+    let all_symbols = collect_all_symbols(ctx, &workspace_root).await?;
+
+    // First, try exact match on the full symbol path (handles Lua User:isAdult style)
+    if looks_like_lua_method(&symbol_path) {
+        let matches: Vec<SymbolInfo> = all_symbols.iter()
+            .filter(|s| s.name == symbol_path)
+            .cloned()
+            .collect();
+        if !matches.is_empty() {
+            return finalize_matches(matches, &all_symbols, &symbol_path, None, None);
+        }
+    }
+
     let (path_filter, line_filter, symbol_name) = parse_symbol_path(&symbol_path)?;
     let parts: Vec<&str> = symbol_name.split('.').collect();
 
-    let all_symbols = collect_all_symbols(ctx, &workspace_root).await?;
-
-    let mut filtered = all_symbols;
+    let mut filtered = all_symbols.clone();
 
     if let Some(ref pf) = path_filter {
         filtered = filtered.into_iter()
