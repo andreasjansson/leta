@@ -242,7 +242,7 @@ async fn main() -> Result<()> {
                     handle_grep(&config, cli.json, pattern, path, kind, exclude, docs, case_sensitive).await
                 }
                 Commands::Files { path, exclude, include } => {
-                    handle_files(&config, cli.json, path, exclude, include).await
+                    handle_files(&config, cli.json, cli.profile, path, exclude, include).await
                 }
                 Commands::Show { symbol, context, head } => {
                     handle_show(&config, cli.json, symbol, context, head).await
