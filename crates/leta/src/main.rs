@@ -343,16 +343,16 @@ async fn can_connect_to_daemon(socket_path: &std::path::Path) -> bool {
 
 struct DaemonResponse {
     result: Value,
-    profiling: Option<Vec<FunctionStats>>,
+    profiling: Option<ProfilingData>,
 }
 
 async fn send_request(method: &str, params: Value) -> Result<Value> {
     send_request_with_profile(method, params, false).await.map(|r| r.result)
 }
 
-fn display_profiling(profiling: Option<Vec<FunctionStats>>) {
-    if let Some(stats) = profiling {
-        eprintln!("\n{}", format_profiling(&stats));
+fn display_profiling(profiling: Option<ProfilingData>) {
+    if let Some(data) = profiling {
+        eprintln!("\n{}", format_profiling(&data));
     }
 }
 
