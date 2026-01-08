@@ -2,6 +2,7 @@ use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+use fastrace::trace;
 use leta_fs::uri_to_path;
 use leta_lsp::lsp_types::{
     CallHierarchyIncomingCall, CallHierarchyIncomingCallsParams, CallHierarchyItem,
@@ -13,6 +14,7 @@ use leta_types::{CallNode, CallsMode, CallsParams, CallsResult, SymbolKind};
 
 use super::{relative_path, HandlerContext};
 
+#[trace]
 pub async fn handle_calls(
     ctx: &HandlerContext,
     params: CallsParams,
