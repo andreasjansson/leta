@@ -191,6 +191,23 @@ pub async fn handle_resolve_symbol(
     Ok(ResolveSymbolResult::ambiguous(&symbol_name, matches_info, final_matches.len() as u32))
 }
 
+fn looks_like_lua_method(s: &str) -> bool {
+    // Lua methods look like "User:isAdult" - identifier:identifier with exactly one colon
+    // and no file extension patterns
+    if s.matches(':').count() != 1 {
+        return false;
+    }
+    let parts: Vec<&str> = s.split(':').collect();
+    if parts.len() != 2 {
+        return false;
+    }
+    // Both parts should be identifiers (alphanumeric + underscore, not starting with digit)
+    let is_ident = |p: &str| !p.is_empty() && !p.chars().next().unwrap().is_numeric()
+        && p.chars().all(|c| c.is_alphanumeric() || c == '_');
+    // First part should not look like a filename (no dots)
+    !parts[0].contains('.') && is_ident(parts[0]) && is_ident(parts[1])
+}
+
 fn parse_symbol_path(symbol_path: &str) -> Result<(Option<String>, Option<u32>, String), String> {
     let colon_count = symbol_path.matches(':').count();
     
