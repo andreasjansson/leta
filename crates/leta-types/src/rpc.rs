@@ -398,6 +398,22 @@ pub struct RemoveWorkspaceResult {
 }
 
 // ============================================================================
+// Index Workspace
+// ============================================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct IndexWorkspaceParams {
+    pub workspace_root: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct IndexWorkspaceResult {
+    pub status: String,
+    pub files_indexed: u32,
+    pub languages: Vec<String>,
+}
+
+// ============================================================================
 // Resolve Symbol
 // ============================================================================
 
