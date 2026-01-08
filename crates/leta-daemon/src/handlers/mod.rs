@@ -6,6 +6,7 @@ mod rename;
 mod files;
 mod resolve;
 mod session;
+mod index;
 
 use std::path::Path;
 use std::sync::Arc;
