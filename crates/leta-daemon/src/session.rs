@@ -48,6 +48,7 @@ impl Workspace {
         self.open_documents.keys().cloned().collect()
     }
 
+    #[trace]
     pub async fn start_server(&mut self) -> Result<(), String> {
         if self.client.is_some() {
             return Ok(());
