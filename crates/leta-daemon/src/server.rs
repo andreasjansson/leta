@@ -125,6 +125,8 @@ impl DaemonServer {
     async fn dispatch_with_profiling(&self, ctx: &HandlerContext, method: &str, params: Value) -> Value {
         let (reporter, collector) = CollectingReporter::new();
         fastrace::set_reporter(reporter, FastraceConfig::default());
+        
+        ctx.cache_stats.reset();
 
         let method_owned: &'static str = Box::leak(method.to_string().into_boxed_str());
         let root = Span::root(method_owned, SpanContext::random());
@@ -133,10 +135,12 @@ impl DaemonServer {
         
         fastrace::flush();
 
-        let profiling = collector.collect_and_aggregate();
+        let functions = collector.collect_and_aggregate();
+        let cache = ctx.cache_stats.to_cache_stats();
         
         if let Some(obj) = response.as_object_mut() {
-            if obj.contains_key("result") && !profiling.is_empty() {
+            if obj.contains_key("result") {
+                let profiling = leta_types::ProfilingData { functions, cache };
                 obj.insert("profiling".to_string(), serde_json::to_value(&profiling).unwrap());
             }
         }
