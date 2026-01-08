@@ -727,20 +727,21 @@ fn format_profiling(stats: &[FunctionStats]) -> String {
     }
     
     let mut output = String::new();
-    output.push_str("┌─────────────────────────────────────────────────────────────────────────────┐\n");
-    output.push_str("│ PROFILING                                                                   │\n");
-    output.push_str("├──────────────────────────────────┬───────┬─────────┬─────────┬─────────────┤\n");
-    output.push_str("│ Function                         │ Calls │  Avg    │   P90   │    Total    │\n");
-    output.push_str("├──────────────────────────────────┼───────┼─────────┼─────────┼─────────────┤\n");
+    output.push_str("PROFILING\n");
+    output.push_str(&format!("{:<60} {:>6} {:>10} {:>10} {:>12}\n", 
+        "Function", "Calls", "Avg", "P90", "Total"));
+    output.push_str(&"-".repeat(100));
+    output.push('\n');
     
-    for stat in stats.iter().take(20) {
-        let name = if stat.name.len() > 32 {
-            format!("{}…", &stat.name[..31])
-        } else {
-            stat.name.clone()
-        };
+    for stat in stats {
+        let name = stat.name
+            .strip_prefix("leta_daemon::handlers::")
+            .or_else(|| stat.name.strip_prefix("leta_daemon::"))
+            .or_else(|| stat.name.strip_prefix("leta_"))
+            .unwrap_or(&stat.name);
+        
         output.push_str(&format!(
-            "│ {:<32} │ {:>5} │ {:>7} │ {:>7} │ {:>11} │\n",
+            "{:<60} {:>6} {:>10} {:>10} {:>12}\n",
             name,
             stat.calls,
             format_duration_us(stat.avg_us),
@@ -749,7 +750,6 @@ fn format_profiling(stats: &[FunctionStats]) -> String {
         ));
     }
     
-    output.push_str("└──────────────────────────────────┴───────┴─────────┴─────────┴─────────────┘");
     output
 }
 
