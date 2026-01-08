@@ -324,11 +324,11 @@ async fn ensure_daemon_running() -> Result<()> {
         .stderr(Stdio::null())
         .spawn()?;
 
-    for _ in 0..50 {
+    for _ in 0..100 {
         if can_connect_to_daemon(&socket_path).await {
             return Ok(());
         }
-        tokio::time::sleep(Duration::from_millis(100)).await;
+        tokio::time::sleep(Duration::from_millis(20)).await;
     }
 
     Err(anyhow!("Failed to start daemon"))
