@@ -128,12 +128,9 @@ impl DaemonServer {
 
         let method_owned: &'static str = Box::leak(method.to_string().into_boxed_str());
         let root = Span::root(method_owned, SpanContext::random());
-        let _guard = root.set_local_parent();
 
-        let mut response = self.dispatch(ctx, method, params).await;
+        let mut response = self.dispatch(ctx, method, params).in_span(root).await;
         
-        drop(_guard);
-        drop(root);
         fastrace::flush();
 
         let profiling = collector.collect_and_aggregate();
