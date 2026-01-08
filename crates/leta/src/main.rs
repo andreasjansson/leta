@@ -219,9 +219,14 @@ enum WorkspaceCommands {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    let total_start = profile_start("total");
     let cli = Cli::parse();
 
-    match cli.command {
+    if cli.profile {
+        PROFILING_ENABLED.store(true, Ordering::Relaxed);
+    }
+
+    let result = match cli.command {
         Commands::Daemon { command } => handle_daemon_command(command).await,
         Commands::Workspace { command } => handle_workspace_command(command).await,
         Commands::Config => handle_config(),
