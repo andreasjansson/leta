@@ -398,19 +398,19 @@ pub struct RemoveWorkspaceResult {
 }
 
 // ============================================================================
-// Index Workspace
+// Add Workspace
 // ============================================================================
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct IndexWorkspaceParams {
+pub struct AddWorkspaceParams {
     pub workspace_root: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct IndexWorkspaceResult {
-    pub status: String,
-    pub files_to_index: u32,
-    pub languages: Vec<String>,
+pub struct AddWorkspaceResult {
+    pub added: bool,
+    pub workspace_root: String,
+    pub message: String,
 }
 
 // ============================================================================
