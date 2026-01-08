@@ -559,6 +559,21 @@ async fn handle_workspace_command(command: WorkspaceCommands) -> Result<()> {
                 config.add_workspace_root(&workspace_root)?;
                 println!("Added workspace: {}", workspace_root.display());
             }
+            
+            println!("Indexing workspace (this may take a moment)...");
+            ensure_daemon_running().await?;
+            
+            let result = send_request("index-workspace", json!({
+                "workspace_root": workspace_root.to_string_lossy(),
+            })).await?;
+            
+            let index_result: IndexWorkspaceResult = serde_json::from_value(result)?;
+            println!(
+                "Indexed {} files across {} languages: {}",
+                index_result.files_indexed,
+                index_result.languages.len(),
+                index_result.languages.join(", ")
+            );
         }
         WorkspaceCommands::Remove { path } => {
             let workspace_root = if let Some(path) = path {
