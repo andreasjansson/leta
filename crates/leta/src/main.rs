@@ -836,13 +836,13 @@ async fn handle_show(config: &Config, json_output: bool, profile: bool, symbol: 
 
 async fn handle_refs(config: &Config, json_output: bool, symbol: String, context: u32) -> Result<()> {
     let workspace_root = get_workspace_root(config)?;
-    let resolved = resolve_symbol(&symbol, &workspace_root).await?;
+    let resolved = resolve_symbol(&symbol, &workspace_root, false).await?;
 
     let result = send_request("references", json!({
-        "path": resolved.path,
+        "path": resolved.resolved.path,
         "workspace_root": workspace_root.to_string_lossy(),
-        "line": resolved.line,
-        "column": resolved.column.unwrap_or(0),
+        "line": resolved.resolved.line,
+        "column": resolved.resolved.column.unwrap_or(0),
         "context": context,
     })).await?;
 
@@ -858,13 +858,13 @@ async fn handle_refs(config: &Config, json_output: bool, symbol: String, context
 
 async fn handle_declaration(config: &Config, json_output: bool, symbol: String, context: u32) -> Result<()> {
     let workspace_root = get_workspace_root(config)?;
-    let resolved = resolve_symbol(&symbol, &workspace_root).await?;
+    let resolved = resolve_symbol(&symbol, &workspace_root, false).await?;
 
     let result = send_request("declaration", json!({
-        "path": resolved.path,
+        "path": resolved.resolved.path,
         "workspace_root": workspace_root.to_string_lossy(),
-        "line": resolved.line,
-        "column": resolved.column.unwrap_or(0),
+        "line": resolved.resolved.line,
+        "column": resolved.resolved.column.unwrap_or(0),
         "context": context,
     })).await?;
 
@@ -880,13 +880,13 @@ async fn handle_declaration(config: &Config, json_output: bool, symbol: String, 
 
 async fn handle_implementations(config: &Config, json_output: bool, symbol: String, context: u32) -> Result<()> {
     let workspace_root = get_workspace_root(config)?;
-    let resolved = resolve_symbol(&symbol, &workspace_root).await?;
+    let resolved = resolve_symbol(&symbol, &workspace_root, false).await?;
 
     let result = send_request("implementations", json!({
-        "path": resolved.path,
+        "path": resolved.resolved.path,
         "workspace_root": workspace_root.to_string_lossy(),
-        "line": resolved.line,
-        "column": resolved.column.unwrap_or(0),
+        "line": resolved.resolved.line,
+        "column": resolved.resolved.column.unwrap_or(0),
         "context": context,
     })).await?;
 
@@ -902,13 +902,13 @@ async fn handle_implementations(config: &Config, json_output: bool, symbol: Stri
 
 async fn handle_subtypes(config: &Config, json_output: bool, symbol: String, context: u32) -> Result<()> {
     let workspace_root = get_workspace_root(config)?;
-    let resolved = resolve_symbol(&symbol, &workspace_root).await?;
+    let resolved = resolve_symbol(&symbol, &workspace_root, false).await?;
 
     let result = send_request("subtypes", json!({
-        "path": resolved.path,
+        "path": resolved.resolved.path,
         "workspace_root": workspace_root.to_string_lossy(),
-        "line": resolved.line,
-        "column": resolved.column.unwrap_or(0),
+        "line": resolved.resolved.line,
+        "column": resolved.resolved.column.unwrap_or(0),
         "context": context,
     })).await?;
 
@@ -924,13 +924,13 @@ async fn handle_subtypes(config: &Config, json_output: bool, symbol: String, con
 
 async fn handle_supertypes(config: &Config, json_output: bool, symbol: String, context: u32) -> Result<()> {
     let workspace_root = get_workspace_root(config)?;
-    let resolved = resolve_symbol(&symbol, &workspace_root).await?;
+    let resolved = resolve_symbol(&symbol, &workspace_root, false).await?;
 
     let result = send_request("supertypes", json!({
-        "path": resolved.path,
+        "path": resolved.resolved.path,
         "workspace_root": workspace_root.to_string_lossy(),
-        "line": resolved.line,
-        "column": resolved.column.unwrap_or(0),
+        "line": resolved.resolved.line,
+        "column": resolved.resolved.column.unwrap_or(0),
         "context": context,
     })).await?;
 
@@ -968,27 +968,27 @@ async fn handle_calls(
         let from_resolved = resolve_symbol(from_sym, &workspace_root).await?;
         let to_resolved = resolve_symbol(to_sym, &workspace_root).await?;
         
-        params["from_path"] = json!(from_resolved.path);
-        params["from_line"] = json!(from_resolved.line);
-        params["from_column"] = json!(from_resolved.column.unwrap_or(0));
+        params["from_path"] = json!(from_resolved.resolved.path);
+        params["from_line"] = json!(from_resolved.resolved.line);
+        params["from_column"] = json!(from_resolved.resolved.column.unwrap_or(0));
         params["from_symbol"] = json!(from_sym);
-        params["to_path"] = json!(to_resolved.path);
-        params["to_line"] = json!(to_resolved.line);
-        params["to_column"] = json!(to_resolved.column.unwrap_or(0));
+        params["to_path"] = json!(to_resolved.resolved.path);
+        params["to_line"] = json!(to_resolved.resolved.line);
+        params["to_column"] = json!(to_resolved.resolved.column.unwrap_or(0));
         params["to_symbol"] = json!(to_sym);
         params["mode"] = json!("path");
     } else if let Some(from_sym) = &from {
         let resolved = resolve_symbol(from_sym, &workspace_root).await?;
-        params["from_path"] = json!(resolved.path);
-        params["from_line"] = json!(resolved.line);
-        params["from_column"] = json!(resolved.column.unwrap_or(0));
+        params["from_path"] = json!(resolved.resolved.path);
+        params["from_line"] = json!(resolved.resolved.line);
+        params["from_column"] = json!(resolved.resolved.column.unwrap_or(0));
         params["from_symbol"] = json!(from_sym);
         params["mode"] = json!("outgoing");
     } else if let Some(to_sym) = &to {
         let resolved = resolve_symbol(to_sym, &workspace_root).await?;
-        params["to_path"] = json!(resolved.path);
-        params["to_line"] = json!(resolved.line);
-        params["to_column"] = json!(resolved.column.unwrap_or(0));
+        params["to_path"] = json!(resolved.resolved.path);
+        params["to_line"] = json!(resolved.resolved.line);
+        params["to_column"] = json!(resolved.resolved.column.unwrap_or(0));
         params["to_symbol"] = json!(to_sym);
         params["mode"] = json!("incoming");
     }
@@ -1006,13 +1006,13 @@ async fn handle_calls(
 
 async fn handle_rename(config: &Config, json_output: bool, symbol: String, new_name: String) -> Result<()> {
     let workspace_root = get_workspace_root(config)?;
-    let resolved = resolve_symbol(&symbol, &workspace_root).await?;
+    let resolved = resolve_symbol(&symbol, &workspace_root, false).await?;
 
     let result = send_request("rename", json!({
-        "path": resolved.path,
+        "path": resolved.resolved.path,
         "workspace_root": workspace_root.to_string_lossy(),
-        "line": resolved.line,
-        "column": resolved.column.unwrap_or(0),
+        "line": resolved.resolved.line,
+        "column": resolved.resolved.column.unwrap_or(0),
         "new_name": new_name,
     })).await?;
 
