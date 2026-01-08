@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 
+use leta_config::Config;
 use leta_types::{
     CacheInfo, DescribeSessionParams, DescribeSessionResult, RemoveWorkspaceParams,
     RemoveWorkspaceResult, RestartWorkspaceParams, RestartWorkspaceResult, WorkspaceInfo,
@@ -60,6 +61,10 @@ pub async fn handle_remove_workspace(
     params: RemoveWorkspaceParams,
 ) -> Result<RemoveWorkspaceResult, String> {
     let workspace_root = PathBuf::from(&params.workspace_root);
+    
+    let mut config = Config::load().map_err(|e| e.to_string())?;
+    config.remove_workspace_root(&workspace_root).map_err(|e| e.to_string())?;
+    
     let servers_stopped = ctx.session.remove_workspace(&workspace_root).await?;
     
     Ok(RemoveWorkspaceResult { servers_stopped })
