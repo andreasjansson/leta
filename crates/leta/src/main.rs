@@ -11,6 +11,19 @@ use serde_json::{json, Value};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::UnixStream;
 
+#[cfg(feature = "profile")]
+use tracing::instrument;
+
+#[cfg(feature = "profile")]
+macro_rules! profile_fn {
+    () => { #[instrument] };
+}
+
+#[cfg(not(feature = "profile"))]
+macro_rules! profile_fn {
+    () => {};
+}
+
 const MAIN_HELP: &str = r#"Leta (LSP Enabled Tools for Agents) is a command line LSP client. It can
 quickly search for symbols across large code bases with regular expressions,
 print full function and method bodies, find references, implementations,
