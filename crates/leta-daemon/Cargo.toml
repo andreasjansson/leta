@@ -30,3 +30,4 @@ anyhow = { workspace = true }
 libc = "0.2"
 blake3 = { workspace = true }
 ignore.workspace = true
+fastrace = { version = "0.7", features = ["enable"] }
