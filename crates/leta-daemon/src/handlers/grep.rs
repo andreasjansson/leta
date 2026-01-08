@@ -262,6 +262,8 @@ async fn get_symbol_documentation(
     line: u32,
     column: u32,
 ) -> Option<String> {
+    use std::sync::atomic::Ordering;
+    
     let file_path = workspace_root.join(rel_path);
     let workspace = ctx.session.get_workspace_for_file(&file_path).await?;
     let client = workspace.client().await?;
@@ -270,8 +272,10 @@ async fn get_symbol_documentation(
     let cache_key = format!("hover:{}:{}:{}:{}", file_path.display(), line, column, file_sha);
 
     if let Some(cached) = ctx.hover_cache.get::<String>(&cache_key) {
+        ctx.cache_stats.hover_hits.fetch_add(1, Ordering::Relaxed);
         return if cached.is_empty() { None } else { Some(cached) };
     }
+    ctx.cache_stats.hover_misses.fetch_add(1, Ordering::Relaxed);
 
     workspace.ensure_document_open(&file_path).await.ok()?;
     let uri = leta_fs::path_to_uri(&file_path);
