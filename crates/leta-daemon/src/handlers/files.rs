@@ -5,7 +5,6 @@ use fastrace::prelude::*;
 use leta_fs::get_language_id;
 use leta_servers::get_server_for_language;
 use leta_types::{FileInfo, FilesParams, FilesResult, SymbolInfo};
-use tracing::info;
 
 use super::{get_file_symbols, relative_path, HandlerContext};
 
@@ -46,14 +45,64 @@ pub async fn handle_files(
 
     let binary_exts: HashSet<&str> = BINARY_EXTENSIONS.iter().copied().collect();
 
+    let (files_info, source_files_by_lang, total_bytes, total_lines) = {
+        let _span = LocalSpan::enter_with_local_parent("walk_dir");
+        walk_directory(&target_path, &workspace_root, &exclude_dirs, &binary_exts, &params)
+    };
+
+    let mut files_info = files_info;
+    
+    {
+        let _span = LocalSpan::enter_with_local_parent("fetch_symbols");
+        for (lang, files) in &source_files_by_lang {
+            let _lang_span = LocalSpan::enter_with_local_parent(&format!("lang:{}", lang));
+            
+            let workspace = {
+                let _span = LocalSpan::enter_with_local_parent("get_workspace");
+                match ctx.session.get_or_create_workspace_for_language(lang, &workspace_root).await {
+                    Ok(ws) => ws,
+                    Err(_) => continue,
+                }
+            };
+
+            {
+                let _span = LocalSpan::enter_with_local_parent("wait_for_ready");
+                workspace.wait_for_ready(30).await;
+            }
+
+            for file_path in files {
+                let rel_path = relative_path(file_path, &workspace_root);
+                
+                if let Ok(symbols) = get_file_symbols(ctx, &workspace, &workspace_root, file_path).await {
+                    if let Some(file_info) = files_info.get_mut(&rel_path) {
+                        file_info.symbols = count_symbols(&symbols);
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(FilesResult {
+        files: files_info,
+        total_files: files_info.len() as u32,
+        total_bytes,
+        total_lines,
+    })
+}
+
+fn walk_directory(
+    target_path: &Path,
+    workspace_root: &Path,
+    exclude_dirs: &HashSet<&str>,
+    binary_exts: &HashSet<&str>,
+    params: &FilesParams,
+) -> (HashMap<String, FileInfo>, HashMap<String, Vec<PathBuf>>, u64, u32) {
     let mut files_info: HashMap<String, FileInfo> = HashMap::new();
+    let mut source_files_by_lang: HashMap<String, Vec<PathBuf>> = HashMap::new();
     let mut total_bytes: u64 = 0;
     let mut total_lines: u32 = 0;
 
-    let mut source_files_by_lang: HashMap<String, Vec<PathBuf>> = HashMap::new();
-
-    let walk_start = std::time::Instant::now();
-    for entry in walkdir::WalkDir::new(&target_path)
+    for entry in walkdir::WalkDir::new(target_path)
         .into_iter()
         .filter_entry(|e| {
             let name = e.file_name().to_string_lossy();
@@ -66,7 +115,7 @@ pub async fn handle_files(
             if name.ends_with(".egg-info") {
                 return false;
             }
-            !is_excluded_by_patterns(e.path(), &workspace_root, &params.exclude_patterns)
+            !is_excluded_by_patterns(e.path(), workspace_root, &params.exclude_patterns)
         })
     {
         let entry = match entry {
@@ -85,7 +134,7 @@ pub async fn handle_files(
             continue;
         }
 
-        let rel_path = relative_path(path, &workspace_root);
+        let rel_path = relative_path(path, workspace_root);
         
         let metadata = match std::fs::metadata(path) {
             Ok(m) => m,
@@ -111,58 +160,8 @@ pub async fn handle_files(
         total_lines += lines;
         files_info.insert(rel_path, file_info);
     }
-    info!("walk_dir took {:?}, found {} files, {} source files by language", 
-          walk_start.elapsed(), files_info.len(), source_files_by_lang.len());
 
-    let lsp_start = std::time::Instant::now();
-    let mut lsp_files_processed = 0;
-    for (lang, files) in &source_files_by_lang {
-        let lang_start = std::time::Instant::now();
-        let file_count = files.len();
-        
-        let workspace = match ctx.session.get_or_create_workspace_for_language(lang, &workspace_root).await {
-            Ok(ws) => ws,
-            Err(e) => {
-                info!("Failed to get workspace for {}: {}", lang, e);
-                continue;
-            }
-        };
-        info!("get_or_create_workspace for {} took {:?}", lang, lang_start.elapsed());
-
-        let ready_start = std::time::Instant::now();
-        workspace.wait_for_ready(30).await;
-        info!("wait_for_ready for {} took {:?}", lang, ready_start.elapsed());
-
-        let symbols_start = std::time::Instant::now();
-        
-        for file_path in files {
-            let rel_path = relative_path(file_path, &workspace_root);
-            
-            match get_file_symbols(ctx, &workspace, &workspace_root, file_path).await {
-                Ok(symbols) => {
-                    if let Some(file_info) = files_info.get_mut(&rel_path) {
-                        file_info.symbols = count_symbols(&symbols);
-                    }
-                }
-                Err(e) => {
-                    info!("Failed to get symbols for {}: {}", rel_path, e);
-                }
-            }
-            lsp_files_processed += 1;
-        }
-        info!("documentSymbol for {} ({} files): {:?}", lang, file_count, symbols_start.elapsed());
-    }
-    info!("total LSP processing took {:?}, processed {} files", lsp_start.elapsed(), lsp_files_processed);
-
-    let total_files = files_info.len() as u32;
-
-    info!("handle_files total time: {:?}", start.elapsed());
-    Ok(FilesResult {
-        files: files_info,
-        total_files,
-        total_bytes,
-        total_lines,
-    })
+    (files_info, source_files_by_lang, total_bytes, total_lines)
 }
 
 fn count_lines(path: &Path) -> u32 {
