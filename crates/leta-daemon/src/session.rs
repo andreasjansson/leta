@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+use fastrace::trace;
 use leta_config::Config;
 use leta_fs::{get_language_id, path_to_uri, read_file_content};
 use leta_lsp::LspClient;
