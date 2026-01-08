@@ -226,7 +226,8 @@ fn normalize_symbol_name(name: &str) -> String {
     if let Some(captures) = Regex::new(r"^(\w+)\([^)]*\)$").ok().and_then(|r| r.captures(name)) {
         return captures.get(1).map(|m| m.as_str().to_string()).unwrap_or_else(|| name.to_string());
     }
-    if let Some(captures) = Regex::new(r"^\(\*?\w+\)\.(\w+)$").ok().and_then(|r| r.captures(name)) {
+    // Go method: (*Type).Method or (Type).Method, including generics like (*Result[T]).IsOk
+    if let Some(captures) = Regex::new(r"^\(\*?[^)]+\)\.(\w+)$").ok().and_then(|r| r.captures(name)) {
         return captures.get(1).map(|m| m.as_str().to_string()).unwrap_or_else(|| name.to_string());
     }
     if name.contains(':') {
