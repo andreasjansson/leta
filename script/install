@@ -1,0 +1,13 @@
+#!/bin/bash
+set -e
+
+cd "$(dirname "$0")/.."
+
+cargo build --profile profiling -p leta -p leta-daemon
+
+cp ./target/profiling/leta ~/.local/bin/
+cp ./target/profiling/leta-daemon ~/.local/bin/
+
+pkill -9 -f leta-daemon 2>/dev/null || true
+
+echo "Installed leta and leta-daemon to ~/.local/bin/"
