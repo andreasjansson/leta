@@ -1,7 +1,7 @@
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
-use fastrace::prelude::*;
+use fastrace::trace;
 use leta_fs::get_language_id;
 use leta_servers::get_server_for_language;
 use leta_types::{FileInfo, FilesParams, FilesResult, SymbolInfo};
