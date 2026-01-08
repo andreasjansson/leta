@@ -58,7 +58,7 @@ pub async fn handle_resolve_symbol(
 
                 // Go generics: (*Result[T]).IsOk should match Result.IsOk
                 if let Some(go_match) = extract_go_method_parts(sym_name) {
-                    if go_match.method == target_name && strip_generics(&go_match.receiver) == container_str {
+                    if go_match.method == *target_name && strip_generics(&go_match.receiver) == container_str {
                         return true;
                     }
                 }
