@@ -21,18 +21,39 @@ pub struct FunctionStats {
 pub struct RpcRequest<P> {
     pub method: String,
     pub params: P,
+    #[serde(default)]
+    pub profile: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RpcSuccessResponse<R> {
+    pub result: R,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub profiling: Option<Vec<FunctionStats>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum RpcResponse<R> {
-    Success { result: R },
+    Success(RpcSuccessResponse<R>),
     Error { error: String },
 }
 
 impl<R> RpcResponse<R> {
     pub fn success(result: R) -> Self {
-        RpcResponse::Success { result }
+        RpcResponse::Success(RpcSuccessResponse {
+            result,
+            profiling: None,
+        })
+    }
+
+    pub fn success_with_profiling(result: R, profiling: Vec<FunctionStats>) -> Self {
+        let profiling = if profiling.is_empty() {
+            None
+        } else {
+            Some(profiling)
+        };
+        RpcResponse::Success(RpcSuccessResponse { result, profiling })
     }
 
     pub fn error(message: impl Into<String>) -> Self {
@@ -43,7 +64,7 @@ impl<R> RpcResponse<R> {
 
     pub fn into_result(self) -> Result<R, String> {
         match self {
-            RpcResponse::Success { result } => Ok(result),
+            RpcResponse::Success(s) => Ok(s.result),
             RpcResponse::Error { error } => Err(error),
         }
     }
