@@ -350,6 +350,12 @@ async fn send_request(method: &str, params: Value) -> Result<Value> {
     send_request_with_profile(method, params, false).await.map(|r| r.result)
 }
 
+fn display_profiling(profiling: Option<Vec<FunctionStats>>) {
+    if let Some(stats) = profiling {
+        eprintln!("\n{}", format_profiling(&stats));
+    }
+}
+
 async fn send_request_with_profile(method: &str, params: Value, profile: bool) -> Result<DaemonResponse> {
     let socket_path = get_socket_path();
 
