@@ -3,6 +3,13 @@ use std::collections::HashMap;
 
 use crate::{CacheInfo, CallNode, FileInfo, LocationInfo, SymbolInfo, WorkspaceInfo};
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SpanInfo {
+    pub name: String,
+    pub duration_us: u64,
+    pub depth: u32,
+}
+
 // ============================================================================
 // RPC Protocol
 // ============================================================================
