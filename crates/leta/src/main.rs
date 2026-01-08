@@ -1,6 +1,7 @@
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
-use std::time::Duration;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::time::{Duration, Instant};
 
 use anyhow::{anyhow, Result};
 use clap::{Parser, Subcommand};
@@ -11,17 +12,17 @@ use serde_json::{json, Value};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::UnixStream;
 
-#[cfg(feature = "profile")]
-use tracing::instrument;
+static PROFILING_ENABLED: AtomicBool = AtomicBool::new(false);
 
-#[cfg(feature = "profile")]
-macro_rules! profile_fn {
-    () => { #[instrument] };
+fn profile_start(name: &str) -> (Instant, &str) {
+    (Instant::now(), name)
 }
 
-#[cfg(not(feature = "profile"))]
-macro_rules! profile_fn {
-    () => {};
+fn profile_end((start, name): (Instant, &str)) {
+    if PROFILING_ENABLED.load(Ordering::Relaxed) {
+        let elapsed = start.elapsed();
+        eprintln!("[profile] {:>8.2}ms  {}", elapsed.as_secs_f64() * 1000.0, name);
+    }
 }
 
 const MAIN_HELP: &str = r#"Leta (LSP Enabled Tools for Agents) is a command line LSP client. It can
