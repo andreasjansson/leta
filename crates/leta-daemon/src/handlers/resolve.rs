@@ -18,14 +18,24 @@ pub async fn handle_resolve_symbol(
 
     let all_symbols = collect_all_symbols(ctx, &workspace_root).await?;
 
-    // First, try exact match on the full symbol path (handles Lua User:isAdult style)
+    // Handle Lua-style symbols like "User:isAdult" - try exact match first
     if looks_like_lua_method(&symbol_path) {
         let matches: Vec<SymbolInfo> = all_symbols.iter()
             .filter(|s| s.name == symbol_path)
             .cloned()
             .collect();
-        if !matches.is_empty() {
-            return finalize_matches(matches, &all_symbols, &symbol_path, None, None);
+        if matches.len() == 1 {
+            let sym = &matches[0];
+            return Ok(ResolveSymbolResult::success(
+                format!("{}/{}", workspace_root.display(), sym.path),
+                sym.line,
+                sym.column,
+                Some(sym.name.clone()),
+                Some(sym.kind.clone()),
+                sym.container.clone(),
+                sym.range_start_line,
+                sym.range_end_line,
+            ));
         }
     }
 
