@@ -546,9 +546,9 @@ async fn handle_workspace_command(command: WorkspaceCommands) -> Result<()> {
     let config = Config::load()?;
 
     match command {
-        WorkspaceCommands::Add { root } => {
-            let workspace_root = if let Some(root) = root {
-                PathBuf::from(root).canonicalize()?
+        WorkspaceCommands::Add { path } => {
+            let workspace_root = if let Some(path) = path {
+                PathBuf::from(path).canonicalize()?
             } else {
                 let cwd = std::env::current_dir()?;
                 let detected = leta_config::detect_workspace_root(&cwd);
