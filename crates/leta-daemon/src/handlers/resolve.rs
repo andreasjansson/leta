@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
+use fastrace::trace;
 use leta_fs::get_language_id;
 use leta_lsp::lsp_types::{DocumentSymbolParams, TextDocumentIdentifier};
 use leta_servers::get_server_for_language;
@@ -9,6 +10,7 @@ use regex::Regex;
 
 use super::{flatten_document_symbols, relative_path, HandlerContext};
 
+#[trace]
 pub async fn handle_resolve_symbol(
     ctx: &HandlerContext,
     params: ResolveSymbolParams,
