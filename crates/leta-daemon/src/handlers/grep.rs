@@ -1,6 +1,7 @@
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
+use fastrace::trace;
 use leta_fs::get_language_id;
 use leta_lsp::lsp_types::{DocumentSymbolParams, TextDocumentIdentifier};
 use leta_servers::get_server_for_language;
@@ -11,6 +12,7 @@ use tracing::{debug, warn};
 use super::{flatten_document_symbols, relative_path, HandlerContext};
 use crate::session::WorkspaceHandle;
 
+#[trace]
 pub async fn handle_grep(ctx: &HandlerContext, params: GrepParams) -> Result<GrepResult, String> {
     debug!("handle_grep: pattern={} workspace={}", params.pattern, params.workspace_root);
     let workspace_root = PathBuf::from(&params.workspace_root);
