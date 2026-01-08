@@ -56,6 +56,13 @@ pub async fn handle_resolve_symbol(
                     return true;
                 }
 
+                // Go generics: (*Result[T]).IsOk should match Result.IsOk
+                if let Some(go_match) = extract_go_method_parts(sym_name) {
+                    if go_match.method == target_name && strip_generics(&go_match.receiver) == container_str {
+                        return true;
+                    }
+                }
+
                 if sym_name == &full_qualified {
                     return true;
                 }
@@ -81,6 +88,8 @@ pub async fn handle_resolve_symbol(
 
                 normalized_container == container_str
                     || sym_container == container_str
+                    || strip_generics(&normalized_container) == container_str
+                    || strip_generics(sym_container) == container_str
                     || full_container == container_str
                     || full_container.ends_with(&format!(".{}", container_str))
                     || (container_parts.len() == 1 && container_parts[0] == module_name)
