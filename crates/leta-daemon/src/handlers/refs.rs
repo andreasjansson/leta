@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 
+use fastrace::trace;
 use leta_lsp::lsp_types::{
     GotoDefinitionParams, GotoDefinitionResponse, Location, Position, ReferenceContext,
     ReferenceParams, TextDocumentIdentifier, TextDocumentPositionParams,
@@ -13,6 +14,7 @@ use leta_types::{
 
 use super::{format_locations, format_type_hierarchy_items_from_json, HandlerContext};
 
+#[trace]
 pub async fn handle_references(
     ctx: &HandlerContext,
     params: ReferencesParams,
