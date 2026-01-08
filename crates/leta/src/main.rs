@@ -311,7 +311,7 @@ fn handle_help_all() -> Result<()> {
 async fn ensure_daemon_running() -> Result<()> {
     let socket_path = get_socket_path();
 
-    if is_daemon_running() && socket_path.exists() {
+    if can_connect_to_daemon(&socket_path).await {
         return Ok(());
     }
 
@@ -325,13 +325,20 @@ async fn ensure_daemon_running() -> Result<()> {
         .spawn()?;
 
     for _ in 0..50 {
-        if socket_path.exists() {
+        if can_connect_to_daemon(&socket_path).await {
             return Ok(());
         }
         tokio::time::sleep(Duration::from_millis(100)).await;
     }
 
     Err(anyhow!("Failed to start daemon"))
+}
+
+async fn can_connect_to_daemon(socket_path: &std::path::Path) -> bool {
+    if !socket_path.exists() {
+        return false;
+    }
+    tokio::net::UnixStream::connect(socket_path).await.is_ok()
 }
 
 async fn send_request(method: &str, params: Value) -> Result<Value> {
