@@ -55,14 +55,21 @@ impl LmdbCache {
     {
         let key_hash = self.hash_key(key);
         let Ok(value_str) = serde_json::to_string(value) else {
+            tracing::warn!("Cache set: serialization failed for key {}", key);
             return;
         };
 
         let Ok(mut wtxn) = self.env.write_txn() else {
+            tracing::warn!("Cache set: write_txn failed for key {}", key);
             return;
         };
-        let _ = self.db.put(&mut wtxn, &key_hash, &value_str);
-        let _ = wtxn.commit();
+        if let Err(e) = self.db.put(&mut wtxn, &key_hash, &value_str) {
+            tracing::warn!("Cache set: put failed for key {}: {}", key, e);
+            return;
+        }
+        if let Err(e) = wtxn.commit() {
+            tracing::warn!("Cache set: commit failed for key {}: {}", key, e);
+        }
     }
 
     pub fn contains(&self, key: &str) -> bool {
