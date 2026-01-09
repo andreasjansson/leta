@@ -116,6 +116,11 @@ pub struct Config {
 
 impl Config {
     pub fn load() -> Result<Self, ConfigError> {
+        let _lock = ConfigLock::acquire_exclusive()?;
+        Self::load_unlocked()
+    }
+
+    fn load_unlocked() -> Result<Self, ConfigError> {
         let config_path = get_config_path();
         if !config_path.exists() {
             return Ok(Config::default());
@@ -126,6 +131,11 @@ impl Config {
     }
 
     pub fn save(&self) -> Result<(), ConfigError> {
+        let _lock = ConfigLock::acquire_exclusive()?;
+        self.save_unlocked()
+    }
+
+    fn save_unlocked(&self) -> Result<(), ConfigError> {
         let config_path = get_config_path();
         let config_dir = get_config_dir();
         std::fs::create_dir_all(&config_dir)?;
