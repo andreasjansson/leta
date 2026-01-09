@@ -47,6 +47,26 @@ pub struct ProfilingData {
     pub cache: CacheStats,
 }
 
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct ServerStartupStats {
+    pub server_name: String,
+    pub workspace_root: String,
+    pub start_time_ms: u64,
+    pub init_time_ms: u64,
+    pub ready_time_ms: u64,
+    pub total_time_ms: u64,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct IndexingStats {
+    pub workspace_root: String,
+    pub total_files: u32,
+    pub files_by_language: HashMap<String, u32>,
+    pub total_time_ms: u64,
+    pub time_by_language: HashMap<String, u64>,
+    pub server_startups: Vec<ServerStartupStats>,
+}
+
 // ============================================================================
 // RPC Protocol
 // ============================================================================
