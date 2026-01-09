@@ -123,6 +123,7 @@ async fn index_workspace_background(ctx: HandlerContext, workspace_root: PathBuf
 
         let (reporter, collector) = CollectingReporter::new();
         fastrace::set_reporter(reporter, FastraceConfig::default());
+        ctx.cache_stats.reset();
 
         let root_name: &'static str = Box::leak(format!("index_{}", lang).into_boxed_str());
         let root = Span::root(root_name, SpanContext::random());
@@ -133,6 +134,7 @@ async fn index_workspace_background(ctx: HandlerContext, workspace_root: PathBuf
 
         fastrace::flush();
         let functions = collector.collect_and_aggregate();
+        let cache = ctx.cache_stats.to_cache_stats();
 
         total_indexed += indexed;
 
@@ -143,6 +145,7 @@ async fn index_workspace_background(ctx: HandlerContext, workspace_root: PathBuf
             file_count,
             total_time_ms: functions.first().map(|f| f.total_us / 1000).unwrap_or(0),
             functions: functions.clone(),
+            cache,
         };
 
         let startup = startup_stats.map(|mut s| {
