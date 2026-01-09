@@ -21,7 +21,7 @@ use leta_types::{CacheStats, LocationInfo, SymbolInfo, SymbolKind};
 
 pub use calls::handle_calls;
 pub use files::handle_files;
-pub use grep::{get_file_symbols, handle_grep};
+pub use grep::{get_cached_symbols, get_file_symbols, handle_grep};
 pub use index::handle_add_workspace;
 pub use refs::{
     handle_declaration, handle_implementations, handle_references, handle_subtypes,
