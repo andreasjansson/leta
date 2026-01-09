@@ -382,8 +382,7 @@ struct GoMethodParts {
 }
 
 fn extract_go_method_parts(name: &str) -> Option<GoMethodParts> {
-    let re = Regex::new(r"^\(\*?([^)]+)\)\.(\w+)$").ok()?;
-    let captures = re.captures(name)?;
+    let captures = RE_GO_METHOD_PARTS.captures(name)?;
     Some(GoMethodParts {
         receiver: captures.get(1)?.as_str().to_string(),
         method: captures.get(2)?.as_str().to_string(),
