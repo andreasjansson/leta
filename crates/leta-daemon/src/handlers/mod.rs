@@ -326,3 +326,73 @@ pub fn format_type_hierarchy_items_from_json(
     result.sort_by(|a, b| (&a.path, a.line).cmp(&(&b.path, b.line)));
     result
 }
+
+#[trace]
+pub async fn collect_all_workspace_symbols(
+    ctx: &HandlerContext,
+    workspace_root: &Path,
+) -> Result<Vec<SymbolInfo>, String> {
+    let skip_dirs: HashSet<&str> = [
+        "node_modules", "__pycache__", ".git", "venv", ".venv",
+        "build", "dist", ".tox", ".eggs", "target",
+    ].into_iter().collect();
+
+    let config = ctx.session.config().await;
+    let excluded_languages: HashSet<String> = config
+        .workspaces
+        .excluded_languages
+        .iter()
+        .cloned()
+        .collect();
+
+    let mut files_by_lang: HashMap<String, Vec<PathBuf>> = HashMap::new();
+
+    for entry in walkdir::WalkDir::new(workspace_root)
+        .into_iter()
+        .filter_entry(|e| {
+            let name = e.file_name().to_string_lossy();
+            !name.starts_with('.') && !skip_dirs.contains(name.as_ref()) && !name.ends_with(".egg-info")
+        })
+    {
+        let entry = match entry {
+            Ok(e) => e,
+            Err(_) => continue,
+        };
+
+        if !entry.file_type().is_file() {
+            continue;
+        }
+
+        let path = entry.path();
+        let lang = get_language_id(path);
+        
+        if lang == "plaintext" || excluded_languages.contains(lang) {
+            continue;
+        }
+        
+        if get_server_for_language(lang, None).is_none() {
+            continue;
+        }
+
+        files_by_lang.entry(lang.to_string()).or_default().push(path.to_path_buf());
+    }
+
+    let mut all_symbols = Vec::new();
+
+    for (lang, files) in files_by_lang {
+        let workspace = match ctx.session.get_or_create_workspace_for_language(&lang, workspace_root).await {
+            Ok(ws) => ws,
+            Err(_) => continue,
+        };
+
+        workspace.wait_for_ready(30).await;
+
+        for file_path in files {
+            if let Ok(symbols) = get_file_symbols(ctx, &workspace, workspace_root, &file_path).await {
+                all_symbols.extend(symbols);
+            }
+        }
+    }
+
+    Ok(all_symbols)
+}
