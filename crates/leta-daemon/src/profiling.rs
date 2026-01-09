@@ -1,9 +1,7 @@
 use std::collections::HashMap;
-use std::future::Future;
 use std::sync::{Arc, Mutex};
 
-use fastrace::collector::{Config as FastraceConfig, Reporter, SpanRecord};
-use fastrace::prelude::*;
+use fastrace::collector::{Reporter, SpanRecord};
 use leta_types::FunctionStats;
 
 pub struct CollectingReporter {
