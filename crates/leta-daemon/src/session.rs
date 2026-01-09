@@ -408,21 +408,20 @@ pub struct WorkspaceHandle<'a> {
 }
 
 impl<'a> WorkspaceHandle<'a> {
+    #[trace]
     pub async fn client(&self) -> Option<Arc<LspClient>> {
-        tracing::trace!("WorkspaceHandle::client acquiring read lock");
         let workspaces = self.session.workspaces.read().await;
-        let result = workspaces
+        workspaces
             .get(&self.workspace_root)
             .and_then(|servers| servers.get(&self.server_name))
-            .and_then(|ws| ws.client());
-        tracing::trace!("WorkspaceHandle::client releasing read lock");
-        result
+            .and_then(|ws| ws.client())
     }
 
     pub fn server_name(&self) -> &str {
         &self.server_name
     }
 
+    #[trace]
     pub async fn wait_for_ready(&self, timeout_secs: u64) -> bool {
         if let Some(client) = self.client().await {
             client.wait_for_indexing(timeout_secs).await
@@ -431,6 +430,7 @@ impl<'a> WorkspaceHandle<'a> {
         }
     }
 
+    #[trace]
     pub async fn ensure_document_open(&self, path: &Path) -> Result<(), String> {
         let uri = path_to_uri(path);
         
