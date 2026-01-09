@@ -901,16 +901,6 @@ fn format_profiling(data: &ProfilingData) -> String {
     lines.join("\n")
 }
 
-fn format_duration_us(us: u64) -> String {
-    if us >= 1_000_000 {
-        format!("{:.2}s", us as f64 / 1_000_000.0)
-    } else if us >= 1_000 {
-        format!("{:.1}ms", us as f64 / 1_000.0)
-    } else {
-        format!("{}µs", us)
-    }
-}
-
 async fn handle_show(
     config: &Config,
     json_output: bool,
