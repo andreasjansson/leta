@@ -358,19 +358,13 @@ fn name_matches(sym_name: &str, target: &str) -> bool {
 }
 
 fn normalize_symbol_name(name: &str) -> String {
-    if let Some(captures) = Regex::new(r"^(\w+)\([^)]*\)$")
-        .ok()
-        .and_then(|r| r.captures(name))
-    {
+    if let Some(captures) = RE_FUNC_WITH_PARAMS.captures(name) {
         return captures
             .get(1)
             .map(|m| m.as_str().to_string())
             .unwrap_or_else(|| name.to_string());
     }
-    if let Some(captures) = Regex::new(r"^\(\*?[^)]+\)\.(\w+)$")
-        .ok()
-        .and_then(|r| r.captures(name))
-    {
+    if let Some(captures) = RE_GO_METHOD.captures(name) {
         return captures
             .get(1)
             .map(|m| m.as_str().to_string())
