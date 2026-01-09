@@ -167,57 +167,84 @@ pub fn format_describe_session_result(
         }
     }
 
-    if result.workspaces.is_empty() {
+    let indexing_stats_map: std::collections::HashMap<&str, &leta_types::IndexingStats> = result
+        .indexing_stats
+        .as_ref()
+        .map(|stats| {
+            stats
+                .iter()
+                .map(|s| (s.workspace_root.as_str(), s))
+                .collect()
+        })
+        .unwrap_or_default();
+
+    let mut workspace_roots: std::collections::HashSet<&str> = result
+        .workspaces
+        .iter()
+        .map(|ws| ws.root.as_str())
+        .collect();
+
+    for root in indexing_stats_map.keys() {
+        workspace_roots.insert(root);
+    }
+
+    if workspace_roots.is_empty() {
         lines.push("\nNo active workspaces".to_string());
     } else {
         lines.push("\nActive workspaces:".to_string());
-        for ws in &result.workspaces {
-            let status = if ws.server_pid.is_some() {
-                "running"
-            } else {
-                "stopped"
-            };
-            let pid_str = ws
-                .server_pid
-                .map(|p| format!(", PID {}", p))
-                .unwrap_or_default();
 
-            lines.push(format!("\n  {}", ws.root));
-            lines.push(format!(
-                "    Server: {} ({}{})",
-                ws.language, status, pid_str
-            ));
-            if !ws.open_documents.is_empty() {
-                lines.push(format!("    Open documents ({}):", ws.open_documents.len()));
-                for doc in ws.open_documents.iter().take(5) {
-                    lines.push(format!("      {}", doc));
-                }
-                if ws.open_documents.len() > 5 {
-                    lines.push(format!(
-                        "      ... and {} more",
-                        ws.open_documents.len() - 5
-                    ));
+        let mut sorted_roots: Vec<_> = workspace_roots.into_iter().collect();
+        sorted_roots.sort();
+
+        for root in sorted_roots {
+            lines.push(format!("\n  {}", root));
+
+            let workspaces_for_root: Vec<_> = result
+                .workspaces
+                .iter()
+                .filter(|ws| ws.root == root)
+                .collect();
+
+            for ws in &workspaces_for_root {
+                let status = if ws.server_pid.is_some() {
+                    "running"
+                } else {
+                    "stopped"
+                };
+                let pid_str = ws
+                    .server_pid
+                    .map(|p| format!(", PID {}", p))
+                    .unwrap_or_default();
+
+                lines.push(format!(
+                    "    Server: {} ({}{})",
+                    ws.language, status, pid_str
+                ));
+                if !ws.open_documents.is_empty() {
+                    lines.push(format!("    Open documents ({}):", ws.open_documents.len()));
+                    for doc in ws.open_documents.iter().take(5) {
+                        lines.push(format!("      {}", doc));
+                    }
+                    if ws.open_documents.len() > 5 {
+                        lines.push(format!(
+                            "      ... and {} more",
+                            ws.open_documents.len() - 5
+                        ));
+                    }
                 }
             }
-        }
-    }
 
-    if show_profiling {
-        if let Some(ref indexing_stats) = result.indexing_stats {
-            if !indexing_stats.is_empty() {
-                lines.push("\nStartup & Indexing Profiling:".to_string());
-                for stats in indexing_stats {
-                    lines.push(format!("\n  {}", stats.workspace_root));
+            if show_profiling {
+                if let Some(stats) = indexing_stats_map.get(root) {
                     lines.push(format!(
-                        "    Total: {}ms ({} files)",
+                        "    Startup: {}ms total ({} files indexed)",
                         stats.total_time_ms, stats.total_files
                     ));
 
                     if !stats.server_startups.is_empty() {
-                        lines.push("    Server startups:".to_string());
                         for startup in &stats.server_startups {
                             lines.push(format!(
-                                "      {}: {}ms (init: {}ms, ready: {}ms)",
+                                "      {}: {}ms (init: {}ms, wait for ready: {}ms)",
                                 startup.server_name,
                                 startup.total_time_ms,
                                 startup.init_time_ms,
@@ -227,26 +254,20 @@ pub fn format_describe_session_result(
                     }
 
                     if !stats.time_by_language.is_empty() {
-                        lines.push("    Indexing by language:".to_string());
                         let mut lang_times: Vec<_> = stats.time_by_language.iter().collect();
                         lang_times.sort_by(|a, b| b.1.cmp(a.1));
                         for (lang, time_ms) in lang_times {
                             let file_count = stats.files_by_language.get(lang).unwrap_or(&0);
                             lines.push(format!(
-                                "      {}: {}ms ({} files)",
+                                "      {} indexing: {}ms ({} files)",
                                 lang, time_ms, file_count
                             ));
                         }
                     }
+                } else if workspaces_for_root.is_empty() {
+                    lines.push("    (no profiling data - workspace removed)".to_string());
                 }
-            } else {
-                lines.push(
-                    "\nNo indexing profiling data available (add a workspace to collect data)"
-                        .to_string(),
-                );
             }
-        } else {
-            lines.push("\nNo indexing profiling data available".to_string());
         }
     }
 
