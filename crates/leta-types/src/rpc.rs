@@ -141,13 +141,18 @@ pub struct ShutdownResult {
 // ============================================================================
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
-pub struct DescribeSessionParams {}
+pub struct DescribeSessionParams {
+    #[serde(default)]
+    pub include_profiling: bool,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DescribeSessionResult {
     pub daemon_pid: u32,
     pub caches: HashMap<String, CacheInfo>,
     pub workspaces: Vec<WorkspaceInfo>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub indexing_stats: Option<Vec<IndexingStats>>,
 }
 
 // ============================================================================
