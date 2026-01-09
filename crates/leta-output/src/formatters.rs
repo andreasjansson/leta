@@ -3,7 +3,6 @@ use std::collections::HashMap;
 use leta_types::{
     CallNode, CallsResult, DescribeSessionResult, FileInfo, FilesResult, GrepResult,
     ImplementationsResult, LocationInfo, ReferencesResult, ResolveSymbolResult, ShowResult,
-    SymbolInfo,
 };
 
 pub fn format_size(bytes: u64) -> String {
