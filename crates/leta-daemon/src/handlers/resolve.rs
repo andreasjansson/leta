@@ -1,11 +1,25 @@
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
+use std::sync::LazyLock;
 
 use fastrace::trace;
 use leta_types::{ResolveSymbolParams, ResolveSymbolResult, SymbolInfo};
 use regex::Regex;
 
 use super::{collect_all_workspace_symbols, relative_path, HandlerContext};
+
+static RE_FUNC_WITH_PARAMS: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^(\w+)\([^)]*\)$").unwrap());
+static RE_GO_METHOD: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^\(\*?[^)]+\)\.(\w+)$").unwrap());
+static RE_GO_METHOD_PARTS: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^\(\*?([^)]+)\)\.(\w+)$").unwrap());
+static RE_CONTAINER_PTR: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^\(\*?(\w+)\)$").unwrap());
+static RE_IMPL_FOR: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^impl\s+\w+(?:<[^>]+>)?\s+for\s+(\w+)").unwrap());
+static RE_IMPL: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^impl\s+(\w+)").unwrap());
+static RE_EFFECTIVE_CONTAINER: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^\(\*?(\w+)\)\.").unwrap());
 
 #[trace]
 pub async fn handle_resolve_symbol(
