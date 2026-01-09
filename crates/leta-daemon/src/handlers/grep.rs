@@ -138,7 +138,7 @@ pub async fn handle_grep(ctx: &HandlerContext, params: GrepParams) -> Result<Gre
             .cloned()
             .collect();
         let candidates = find_candidate_files(&workspace_root, &pattern, &excluded_languages);
-        tracing::info!(
+        debug!(
             "Prefilter found {} candidate files for pattern '{}'",
             candidates.len(),
             params.pattern
@@ -153,7 +153,7 @@ pub async fn handle_grep(ctx: &HandlerContext, params: GrepParams) -> Result<Gre
             collect_symbols_for_paths(ctx, &paths, &workspace_root).await?
         }
     } else {
-        tracing::info!("Skipping prefilter for pattern '{}'", params.pattern);
+        debug!("Skipping prefilter for pattern '{}'", params.pattern);
         super::collect_all_workspace_symbols(ctx, &workspace_root).await?
     };
 
