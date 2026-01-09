@@ -1,9 +1,31 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::fs::File;
+use std::os::unix::io::AsRawFd;
 use std::path::{Path, PathBuf};
 use thiserror::Error;
 
 use crate::paths::{get_config_dir, get_config_path};
+
+struct ConfigLock {
+    _file: File,
+}
+
+impl ConfigLock {
+    fn acquire_exclusive() -> Result<Self, std::io::Error> {
+        let lock_path = get_config_path().with_extension("lock");
+        if let Some(parent) = lock_path.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+        let file = File::options().write(true).create(true).open(&lock_path)?;
+        let fd = file.as_raw_fd();
+        let result = unsafe { libc::flock(fd, libc::LOCK_EX) };
+        if result != 0 {
+            return Err(std::io::Error::last_os_error());
+        }
+        Ok(ConfigLock { _file: file })
+    }
+}
 
 #[derive(Error, Debug)]
 pub enum ConfigError {
