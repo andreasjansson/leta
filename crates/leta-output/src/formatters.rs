@@ -137,9 +137,9 @@ pub fn format_files_result(result: &FilesResult) -> String {
             let child_prefix = if is_last { "    " } else { "│   " };
 
             if let Some(info) = file_info {
-                let size = format_size(info.size_bytes);
+                let size = format_size(info.bytes);
                 let symbols: Vec<String> = info
-                    .symbol_counts
+                    .symbols
                     .iter()
                     .filter(|(_, &count)| count > 0)
                     .map(|(kind, count)| format!("{} {}", count, kind))
@@ -151,7 +151,7 @@ pub fn format_files_result(result: &FilesResult) -> String {
                 };
                 lines.push(format!(
                     "{}{}{} ({}, {} lines{})",
-                    prefix, connector, name, size, info.line_count, symbols_str
+                    prefix, connector, name, size, info.lines, symbols_str
                 ));
             } else {
                 lines.push(format!("{}{}{}", prefix, connector, name));
