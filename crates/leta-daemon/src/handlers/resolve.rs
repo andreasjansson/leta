@@ -8,7 +8,7 @@ use regex::Regex;
 use tracing::debug;
 
 use super::grep::collect_symbols_with_prefilter;
-use super::{collect_all_workspace_symbols, HandlerContext};
+use super::HandlerContext;
 
 static RE_FUNC_WITH_PARAMS: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^(\w+)\([^)]*\)$").unwrap());
