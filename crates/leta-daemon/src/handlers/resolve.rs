@@ -434,10 +434,7 @@ fn get_effective_container(sym: &SymbolInfo) -> String {
         }
     }
 
-    if let Some(captures) = Regex::new(r"^\(\*?(\w+)\)\.")
-        .ok()
-        .and_then(|r| r.captures(&sym.name))
-    {
+    if let Some(captures) = RE_EFFECTIVE_CONTAINER.captures(&sym.name) {
         return captures
             .get(1)
             .map(|m| m.as_str().to_string())
