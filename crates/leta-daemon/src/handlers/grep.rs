@@ -302,7 +302,7 @@ async fn collect_symbols_for_paths(
     Ok(all_symbols)
 }
 
-fn get_cached_symbols(
+pub fn get_cached_symbols(
     ctx: &HandlerContext,
     workspace_root: &Path,
     file_path: &Path,
