@@ -193,7 +193,10 @@ enum Commands {
 #[derive(Subcommand)]
 enum DaemonCommands {
     #[command(about = "Show current daemon state.")]
-    Info,
+    Info {
+        #[arg(long, help = "Show startup and indexing profiling data")]
+        profile: bool,
+    },
     #[command(about = "Restart the leta daemon.")]
     Restart,
     #[command(about = "Start the leta daemon.")]
