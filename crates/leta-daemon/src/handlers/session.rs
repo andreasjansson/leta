@@ -50,8 +50,8 @@ pub async fn handle_describe_session(
         })
         .collect();
 
-    let indexing_stats = if params.include_profiling {
-        Some(ctx.session.get_indexing_stats().await)
+    let profiling = if params.include_profiling {
+        Some(ctx.session.get_workspace_profiling().await)
     } else {
         None
     };
@@ -60,7 +60,7 @@ pub async fn handle_describe_session(
         daemon_pid: std::process::id(),
         caches,
         workspaces,
-        indexing_stats,
+        profiling,
     })
 }
 
