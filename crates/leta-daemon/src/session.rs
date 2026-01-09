@@ -54,7 +54,11 @@ impl Workspace {
             return Ok(());
         }
 
-        info!("Starting {} for {}", self.server_config.name, self.root.display());
+        info!(
+            "Starting {} for {}",
+            self.server_config.name,
+            self.root.display()
+        );
 
         let env = get_server_env();
         let init_options = self.get_init_options();
@@ -64,24 +68,22 @@ impl Workspace {
         match LspClient::start(&cmd, &self.root, self.server_config.name, env, init_options).await {
             Ok(client) => {
                 client.wait_for_indexing(60).await;
-                
+
                 if self.server_config.name == "clangd" {
                     self.ensure_workspace_indexed(&client).await;
                 }
-                
+
                 self.client = Some(client);
                 info!("Server {} initialized and ready", self.server_config.name);
                 Ok(())
             }
-            Err(e) => {
-                Err(format!(
-                    "Language server '{}' for {} failed to start in workspace {}: {}",
-                    self.server_config.name,
-                    self.server_config.languages.join(", "),
-                    self.root.display(),
-                    e
-                ))
-            }
+            Err(e) => Err(format!(
+                "Language server '{}' for {} failed to start in workspace {}: {}",
+                self.server_config.name,
+                self.server_config.languages.join(", "),
+                self.root.display(),
+                e
+            )),
         }
     }
 
@@ -96,7 +98,7 @@ impl Workspace {
     }
 
     /// Open and close all source files to ensure clangd indexes them.
-    /// 
+    ///
     /// clangd does lazy indexing - it only indexes files when they're opened.
     /// This means documentSymbol won't work on files that haven't been opened yet.
     /// We work around this by opening all source files during initialization.
@@ -109,13 +111,18 @@ impl Workspace {
         for entry in walkdir::WalkDir::new(&self.root)
             .into_iter()
             .filter_entry(|e| {
-                !exclude_dirs.iter().any(|d| e.file_name().to_str() == Some(*d))
+                !exclude_dirs
+                    .iter()
+                    .any(|d| e.file_name().to_str() == Some(*d))
             })
             .filter_map(|e| e.ok())
         {
             if entry.file_type().is_file() {
                 if let Some(ext) = entry.path().extension().and_then(|e| e.to_str()) {
-                    if source_extensions.iter().any(|s| s.trim_start_matches('.') == ext) {
+                    if source_extensions
+                        .iter()
+                        .any(|s| s.trim_start_matches('.') == ext)
+                    {
                         files_to_index.push(entry.path().to_path_buf());
                     }
                 }
@@ -134,7 +141,10 @@ impl Workspace {
 
         client.wait_for_indexing(30).await;
 
-        info!("Pre-indexing complete, closing {} documents", self.open_documents.len());
+        info!(
+            "Pre-indexing complete, closing {} documents",
+            self.open_documents.len()
+        );
         self.close_all_documents().await;
     }
 
@@ -162,14 +172,14 @@ impl Workspace {
 
         let content = read_file_content(path).map_err(|e| e.to_string())?;
         let language_id = get_language_id(path).to_string();
-        
+
         let doc = OpenDocument {
             _uri: uri.clone(),
             _version: 1,
             content: content.clone(),
             _language_id: language_id.clone(),
         };
-        
+
         self.open_documents.insert(uri.clone(), doc);
 
         if let Some(client) = &self.client {
@@ -181,7 +191,9 @@ impl Workspace {
                     "text": content,
                 }
             });
-            let _ = client.send_notification("textDocument/didOpen", params).await;
+            let _ = client
+                .send_notification("textDocument/didOpen", params)
+                .await;
 
             // ruby-lsp processes messages asynchronously in a queue, so we need to ensure
             // the didOpen is fully processed before subsequent operations can succeed.
@@ -190,7 +202,9 @@ impl Workspace {
                 let symbol_params = serde_json::json!({
                     "textDocument": {"uri": uri}
                 });
-                let _ = client.send_request_raw("textDocument/documentSymbol", symbol_params).await;
+                let _ = client
+                    .send_request_raw("textDocument/documentSymbol", symbol_params)
+                    .await;
             }
         }
 
@@ -208,7 +222,9 @@ impl Workspace {
             let params = serde_json::json!({
                 "textDocument": {"uri": uri}
             });
-            let _ = client.send_notification("textDocument/didClose", params).await;
+            let _ = client
+                .send_notification("textDocument/didClose", params)
+                .await;
         }
     }
 
@@ -219,7 +235,9 @@ impl Workspace {
                 let params = serde_json::json!({
                     "textDocument": {"uri": uri}
                 });
-                let _ = client.send_notification("textDocument/didClose", params).await;
+                let _ = client
+                    .send_notification("textDocument/didClose", params)
+                    .await;
             }
         }
         self.open_documents.clear();
@@ -229,6 +247,7 @@ impl Workspace {
 pub struct Session {
     workspaces: RwLock<HashMap<PathBuf, HashMap<String, Workspace>>>,
     config: RwLock<Config>,
+    indexing_stats: RwLock<Vec<leta_types::IndexingStats>>,
 }
 
 impl Session {
@@ -236,7 +255,18 @@ impl Session {
         Self {
             workspaces: RwLock::new(HashMap::new()),
             config: RwLock::new(config),
+            indexing_stats: RwLock::new(Vec::new()),
         }
+    }
+
+    pub async fn add_indexing_stats(&self, stats: leta_types::IndexingStats) {
+        let mut indexing_stats = self.indexing_stats.write().await;
+        indexing_stats.retain(|s| s.workspace_root != stats.workspace_root);
+        indexing_stats.push(stats);
+    }
+
+    pub async fn get_indexing_stats(&self) -> Vec<leta_types::IndexingStats> {
+        self.indexing_stats.read().await.clone()
     }
 
     #[trace]
@@ -257,7 +287,8 @@ impl Session {
         };
         // config lock dropped here before acquiring workspace lock
 
-        self.get_or_create_workspace_for_server(workspace_root, server_config).await
+        self.get_or_create_workspace_for_server(workspace_root, server_config)
+            .await
     }
 
     #[trace]
@@ -273,7 +304,8 @@ impl Session {
         };
         // config lock dropped here before acquiring workspace lock
 
-        self.get_or_create_workspace_for_server(workspace_root, server_config).await
+        self.get_or_create_workspace_for_server(workspace_root, server_config)
+            .await
     }
 
     #[trace]
@@ -282,11 +314,16 @@ impl Session {
         workspace_root: &Path,
         server_config: &'static ServerConfig,
     ) -> Result<WorkspaceHandle<'_>, String> {
-        let workspace_root = workspace_root.canonicalize().unwrap_or_else(|_| workspace_root.to_path_buf());
+        let workspace_root = workspace_root
+            .canonicalize()
+            .unwrap_or_else(|_| workspace_root.to_path_buf());
 
-        debug!("get_or_create_workspace_for_server: {} for {} - acquiring read lock", 
-               server_config.name, workspace_root.display());
-        
+        debug!(
+            "get_or_create_workspace_for_server: {} for {} - acquiring read lock",
+            server_config.name,
+            workspace_root.display()
+        );
+
         // Check if workspace exists (read lock only)
         let needs_create = {
             let workspaces = self.workspaces.read().await;
@@ -301,10 +338,16 @@ impl Session {
                 true // needs create
             }
         };
-        debug!("get_or_create_workspace_for_server: released read lock, needs_create={}", needs_create);
+        debug!(
+            "get_or_create_workspace_for_server: released read lock, needs_create={}",
+            needs_create
+        );
 
         if needs_create {
-            debug!("get_or_create_workspace_for_server: starting server {}", server_config.name);
+            debug!(
+                "get_or_create_workspace_for_server: starting server {}",
+                server_config.name
+            );
             // Start server outside of lock to avoid blocking other operations
             let mut new_workspace = Workspace::new(workspace_root.clone(), server_config);
             new_workspace.start_server().await?;
@@ -313,11 +356,17 @@ impl Session {
             // Now insert with write lock (quick operation)
             let mut workspaces = self.workspaces.write().await;
             debug!("get_or_create_workspace_for_server: got write lock");
-            let servers = workspaces.entry(workspace_root.clone()).or_insert_with(HashMap::new);
-            
+            let servers = workspaces
+                .entry(workspace_root.clone())
+                .or_insert_with(HashMap::new);
+
             // Check again in case another task created it while we were starting
-            if !servers.contains_key(server_config.name) || 
-               servers.get(server_config.name).map(|w| w.client.is_none()).unwrap_or(false) {
+            if !servers.contains_key(server_config.name)
+                || servers
+                    .get(server_config.name)
+                    .map(|w| w.client.is_none())
+                    .unwrap_or(false)
+            {
                 servers.insert(server_config.name.to_string(), new_workspace);
             }
             debug!("get_or_create_workspace_for_server: releasing write lock");
@@ -333,7 +382,9 @@ impl Session {
     #[allow(dead_code)]
     #[trace]
     pub async fn get_workspace_for_file(&self, file_path: &Path) -> Option<WorkspaceHandle<'_>> {
-        let file_path = file_path.canonicalize().unwrap_or_else(|_| file_path.to_path_buf());
+        let file_path = file_path
+            .canonicalize()
+            .unwrap_or_else(|_| file_path.to_path_buf());
         let config = self.config.read().await;
         let server_config = get_server_for_file(&file_path, Some(&config))?;
 
@@ -374,7 +425,7 @@ impl Session {
     pub async fn restart_workspace(&self, root: &Path) -> Result<Vec<String>, String> {
         let root = root.canonicalize().unwrap_or_else(|_| root.to_path_buf());
         let mut workspaces = self.workspaces.write().await;
-        
+
         let mut restarted = Vec::new();
         if let Some(servers) = workspaces.get_mut(&root) {
             for (name, workspace) in servers.iter_mut() {
@@ -390,7 +441,7 @@ impl Session {
     pub async fn remove_workspace(&self, root: &Path) -> Result<Vec<String>, String> {
         let root = root.canonicalize().unwrap_or_else(|_| root.to_path_buf());
         let mut workspaces = self.workspaces.write().await;
-        
+
         let mut stopped = Vec::new();
         if let Some(mut servers) = workspaces.remove(&root) {
             for (name, mut workspace) in servers.drain() {
@@ -444,7 +495,7 @@ impl<'a> WorkspaceHandle<'a> {
     #[trace]
     pub async fn ensure_document_open(&self, path: &Path) -> Result<(), String> {
         let uri = path_to_uri(path);
-        
+
         // First check if document needs updating (read lock only)
         let (needs_open, needs_reopen, client) = {
             let workspaces = self.session.workspaces.read().await;
@@ -452,9 +503,9 @@ impl<'a> WorkspaceHandle<'a> {
                 .get(&self.workspace_root)
                 .and_then(|servers| servers.get(&self.server_name))
                 .ok_or_else(|| "Workspace not found".to_string())?;
-            
+
             let client = workspace.client();
-            
+
             if let Some(doc) = workspace.open_documents.get(&uri) {
                 let current_content = read_file_content(path).map_err(|e| e.to_string())?;
                 if current_content != doc.content {
@@ -466,20 +517,20 @@ impl<'a> WorkspaceHandle<'a> {
                 (true, false, client) // needs open
             }
         };
-        
+
         if !needs_open && !needs_reopen {
             return Ok(());
         }
-        
+
         // Close first if needed
         if needs_reopen {
             self.close_document(path).await;
         }
-        
+
         // Read file content
         let content = read_file_content(path).map_err(|e| e.to_string())?;
         let language_id = get_language_id(path).to_string();
-        
+
         // Insert document record (write lock, but no LSP call)
         {
             let mut workspaces = self.session.workspaces.write().await;
@@ -487,7 +538,7 @@ impl<'a> WorkspaceHandle<'a> {
                 .get_mut(&self.workspace_root)
                 .and_then(|servers| servers.get_mut(&self.server_name))
                 .ok_or_else(|| "Workspace not found".to_string())?;
-            
+
             let doc = OpenDocument {
                 _uri: uri.clone(),
                 _version: 1,
@@ -496,7 +547,7 @@ impl<'a> WorkspaceHandle<'a> {
             };
             workspace.open_documents.insert(uri.clone(), doc);
         }
-        
+
         // Send LSP notification OUTSIDE the lock
         if let Some(client) = client {
             let params = serde_json::json!({
@@ -507,14 +558,18 @@ impl<'a> WorkspaceHandle<'a> {
                     "text": content,
                 }
             });
-            let _ = client.send_notification("textDocument/didOpen", params).await;
+            let _ = client
+                .send_notification("textDocument/didOpen", params)
+                .await;
 
             // ruby-lsp processes messages asynchronously in a queue
             if client.server_name() == "ruby-lsp" {
                 let symbol_params = serde_json::json!({
                     "textDocument": {"uri": uri}
                 });
-                let _ = client.send_request_raw("textDocument/documentSymbol", symbol_params).await;
+                let _ = client
+                    .send_request_raw("textDocument/documentSymbol", symbol_params)
+                    .await;
             }
         }
 
@@ -546,12 +601,15 @@ impl<'a> WorkspaceHandle<'a> {
     }
 
     #[trace]
-    pub async fn notify_files_changed(&self, changes: &[(PathBuf, leta_lsp::lsp_types::FileChangeType)]) {
+    pub async fn notify_files_changed(
+        &self,
+        changes: &[(PathBuf, leta_lsp::lsp_types::FileChangeType)],
+    ) {
         let client = match self.client().await {
             Some(c) => c,
             None => return,
         };
-        
+
         let file_events: Vec<leta_lsp::lsp_types::FileEvent> = changes
             .iter()
             .map(|(path, change_type)| leta_lsp::lsp_types::FileEvent {
@@ -559,11 +617,13 @@ impl<'a> WorkspaceHandle<'a> {
                 typ: *change_type,
             })
             .collect();
-        
+
         let params = leta_lsp::lsp_types::DidChangeWatchedFilesParams {
             changes: file_events,
         };
-        
-        let _ = client.send_notification("workspace/didChangeWatchedFiles", params).await;
+
+        let _ = client
+            .send_notification("workspace/didChangeWatchedFiles", params)
+            .await;
     }
 }
