@@ -277,7 +277,7 @@ fn format_duration_us(us: u64) -> String {
     }
 }
 
-fn format_function_name(name: &str) -> &str {
+pub fn format_function_name(name: &str) -> &str {
     name.strip_prefix("leta_daemon::handlers::")
         .or_else(|| name.strip_prefix("leta_daemon::"))
         .or_else(|| name.strip_prefix("leta_lsp::"))
