@@ -652,11 +652,17 @@ async fn handle_daemon_command(command: DaemonCommands) -> Result<()> {
             ensure_daemon_running().await?;
             println!("Daemon restarted");
         }
-        DaemonCommands::Info => {
+        DaemonCommands::Info { profile } => {
             ensure_daemon_running().await?;
-            let result = send_request("describe-session", json!({})).await?;
+            let result = send_request(
+                "describe-session",
+                json!({
+                    "include_profiling": profile,
+                }),
+            )
+            .await?;
             let session: DescribeSessionResult = serde_json::from_value(result)?;
-            println!("{}", format_describe_session_result(&session));
+            println!("{}", format_describe_session_result(&session, profile));
         }
     }
     Ok(())
