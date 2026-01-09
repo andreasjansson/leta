@@ -5,7 +5,9 @@ use std::sync::LazyLock;
 use fastrace::trace;
 use leta_types::{ResolveSymbolParams, ResolveSymbolResult, SymbolInfo};
 use regex::Regex;
+use tracing::debug;
 
+use super::grep::collect_symbols_with_prefilter;
 use super::{collect_all_workspace_symbols, HandlerContext};
 
 static RE_FUNC_WITH_PARAMS: LazyLock<Regex> =
@@ -21,6 +23,26 @@ static RE_IMPL: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^impl\s+(\w+)").
 static RE_EFFECTIVE_CONTAINER: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^\(\*?(\w+)\)\.").unwrap());
 
+fn extract_search_term(symbol_path: &str) -> Option<String> {
+    let symbol_part = if symbol_path.contains(':') {
+        symbol_path.rsplit(':').next()?
+    } else {
+        symbol_path
+    };
+
+    let target = if symbol_part.contains('.') {
+        symbol_part.rsplit('.').next()?
+    } else {
+        symbol_part
+    };
+
+    if target.len() > 2 {
+        Some(target.to_string())
+    } else {
+        None
+    }
+}
+
 #[trace]
 pub async fn handle_resolve_symbol(
     ctx: &HandlerContext,
@@ -29,7 +51,14 @@ pub async fn handle_resolve_symbol(
     let workspace_root = PathBuf::from(&params.workspace_root);
     let symbol_path = params.symbol_path.clone();
 
-    let all_symbols = collect_all_workspace_symbols(ctx, &workspace_root).await?;
+    let search_term = extract_search_term(&symbol_path);
+    debug!(
+        "resolve_symbol: path={} search_term={:?}",
+        symbol_path, search_term
+    );
+
+    let all_symbols =
+        collect_symbols_with_prefilter(ctx, &workspace_root, search_term.as_deref()).await?;
 
     if looks_like_lua_method(&symbol_path) {
         let matches: Vec<SymbolInfo> = all_symbols
