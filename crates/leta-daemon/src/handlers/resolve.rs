@@ -53,18 +53,11 @@ pub async fn handle_resolve_symbol(
     }
 
     let (path_filter, line_filter, symbol_name) = parse_symbol_path(&symbol_path)?;
-
-    tracing::info!("resolve: before filter_symbols {:?}", start.elapsed());
     let matches = filter_symbols(
         &all_symbols,
         path_filter.as_deref(),
         line_filter,
         &symbol_name,
-    );
-    tracing::info!(
-        "resolve: after filter_symbols {:?}, {} matches",
-        start.elapsed(),
-        matches.len()
     );
 
     if matches.is_empty() {
