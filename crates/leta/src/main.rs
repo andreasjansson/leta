@@ -369,6 +369,7 @@ async fn ensure_daemon_running() -> Result<()> {
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::null())
+        .envs(std::env::vars())
         .spawn()?;
 
     for _ in 0..100 {
