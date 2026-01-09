@@ -359,11 +359,7 @@ pub fn format_resolve_symbol_result(result: &ResolveSymbolResult) -> String {
                     .as_ref()
                     .map(|d| format!(" ({})", d))
                     .unwrap_or_default();
-                let path = m
-                    .path
-                    .as_ref()
-                    .map(|p| format!("{}:{}", p, m.line))
-                    .unwrap_or_default();
+                let path = format!("{}:{}", m.path, m.line);
                 lines.push(format!(
                     "  {:<50} {}{}{}{}",
                     path, kind, m.name, container, detail
