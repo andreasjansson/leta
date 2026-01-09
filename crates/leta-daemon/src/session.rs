@@ -282,7 +282,7 @@ impl Workspace {
 pub struct Session {
     workspaces: RwLock<HashMap<PathBuf, HashMap<String, Workspace>>>,
     config: RwLock<Config>,
-    indexing_stats: RwLock<Vec<leta_types::IndexingStats>>,
+    workspace_profiling: RwLock<Vec<leta_types::WorkspaceProfilingData>>,
 }
 
 impl Session {
@@ -290,18 +290,18 @@ impl Session {
         Self {
             workspaces: RwLock::new(HashMap::new()),
             config: RwLock::new(config),
-            indexing_stats: RwLock::new(Vec::new()),
+            workspace_profiling: RwLock::new(Vec::new()),
         }
     }
 
-    pub async fn add_indexing_stats(&self, stats: leta_types::IndexingStats) {
-        let mut indexing_stats = self.indexing_stats.write().await;
-        indexing_stats.retain(|s| s.workspace_root != stats.workspace_root);
-        indexing_stats.push(stats);
+    pub async fn add_workspace_profiling(&self, data: leta_types::WorkspaceProfilingData) {
+        let mut profiling = self.workspace_profiling.write().await;
+        profiling.retain(|p| p.workspace_root != data.workspace_root);
+        profiling.push(data);
     }
 
-    pub async fn get_indexing_stats(&self) -> Vec<leta_types::IndexingStats> {
-        self.indexing_stats.read().await.clone()
+    pub async fn get_workspace_profiling(&self) -> Vec<leta_types::WorkspaceProfilingData> {
+        self.workspace_profiling.read().await.clone()
     }
 
     #[trace]
