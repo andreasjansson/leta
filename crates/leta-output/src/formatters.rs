@@ -481,18 +481,23 @@ pub fn format_calls_result(result: &CallsResult, path_prefix: Option<&str>) -> S
                 "├── "
             };
 
-            let path = if let Some(pfx) = path_prefix {
-                node.path
-                    .strip_prefix(pfx)
-                    .unwrap_or(&node.path)
-                    .trim_start_matches('/')
-            } else {
-                &node.path
-            };
+            let path = node
+                .path
+                .as_ref()
+                .map(|p| {
+                    if let Some(pfx) = path_prefix {
+                        p.strip_prefix(pfx).unwrap_or(p).trim_start_matches('/')
+                    } else {
+                        p.as_str()
+                    }
+                })
+                .unwrap_or("");
+
+            let line = node.line.unwrap_or(0);
 
             lines.push(format!(
                 "{}{}{}:{} {}",
-                prefix, connector, path, node.line, node.name
+                prefix, connector, path, line, node.name
             ));
 
             let child_prefix = if prefix.is_empty() {
@@ -503,9 +508,9 @@ pub fn format_calls_result(result: &CallsResult, path_prefix: Option<&str>) -> S
                 format!("{}│   ", prefix)
             };
 
-            if let Some(children) = &node.children {
-                for (i, child) in children.iter().enumerate() {
-                    let is_child_last = i == children.len() - 1;
+            if let Some(calls) = &node.calls {
+                for (i, child) in calls.iter().enumerate() {
+                    let is_child_last = i == calls.len() - 1;
                     format_node(child, &child_prefix, is_child_last, lines, path_prefix);
                 }
             }
