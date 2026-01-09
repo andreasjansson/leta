@@ -27,7 +27,6 @@ pub async fn handle_resolve_symbol(
         all_symbols.len()
     );
 
-    // Handle Lua-style symbols like "User:isAdult" - try exact match first
     if looks_like_lua_method(&symbol_path) {
         let matches: Vec<SymbolInfo> = all_symbols
             .iter()
@@ -50,17 +49,16 @@ pub async fn handle_resolve_symbol(
     }
 
     let (path_filter, line_filter, symbol_name) = parse_symbol_path(&symbol_path)?;
-    
-    tracing::info!("resolve: before filter_symbols {:?}", start.elapsed());
-    let matches = filter_symbols(all_symbols, path_filter.as_deref(), line_filter, &symbol_name);
-    tracing::info!("resolve: after filter_symbols {:?}, {} matches", start.elapsed(), matches.len());
-                    || (container_parts.len() == 1 && container_parts[0] == module_name)
-            })
-            .collect()
-    };
 
+    tracing::info!("resolve: before filter_symbols {:?}", start.elapsed());
+    let matches = filter_symbols(
+        &all_symbols,
+        path_filter.as_deref(),
+        line_filter,
+        &symbol_name,
+    );
     tracing::info!(
-        "resolve: after filtering {:?}, {} matches",
+        "resolve: after filter_symbols {:?}, {} matches",
         start.elapsed(),
         matches.len()
     );
@@ -125,23 +123,24 @@ pub async fn handle_resolve_symbol(
         ));
     }
 
+    let parts: Vec<&str> = symbol_name.split('.').collect();
+    let target_name = parts.last().unwrap_or(&"");
+
     let matches_info: Vec<SymbolInfo> = final_matches
         .iter()
         .take(10)
-        .map(|sym| {
-            SymbolInfo {
-                name: sym.name.clone(),
-                kind: sym.kind.clone(),
-                path: sym.path.clone(),
-                line: sym.line,
-                column: sym.column,
-                container: sym.container.clone(),
-                detail: None, // Don't include detail in ambiguous matches
-                documentation: None,
-                range_start_line: None,
-                range_end_line: None,
-                reference: Some(generate_unambiguous_ref(sym, &final_matches, target_name)),
-            }
+        .map(|sym| SymbolInfo {
+            name: sym.name.clone(),
+            kind: sym.kind.clone(),
+            path: sym.path.clone(),
+            line: sym.line,
+            column: sym.column,
+            container: sym.container.clone(),
+            detail: None,
+            documentation: None,
+            range_start_line: None,
+            range_end_line: None,
+            reference: Some(generate_unambiguous_ref(sym, &final_matches, target_name)),
         })
         .collect();
 
@@ -152,9 +151,115 @@ pub async fn handle_resolve_symbol(
     ))
 }
 
+#[trace]
+fn filter_symbols(
+    all_symbols: &[SymbolInfo],
+    path_filter: Option<&str>,
+    line_filter: Option<u32>,
+    symbol_name: &str,
+) -> Vec<SymbolInfo> {
+    let parts: Vec<&str> = symbol_name.split('.').collect();
+    let target_name = parts.last().unwrap_or(&"");
+
+    tracing::info!("filter_symbols: path_filter step");
+    let mut filtered: Vec<&SymbolInfo> = if let Some(pf) = path_filter {
+        all_symbols
+            .iter()
+            .filter(|s| matches_path(&s.path, pf))
+            .collect()
+    } else {
+        all_symbols.iter().collect()
+    };
+
+    tracing::info!(
+        "filter_symbols: line_filter step, {} symbols",
+        filtered.len()
+    );
+    if let Some(line) = line_filter {
+        filtered = filtered.into_iter().filter(|s| s.line == line).collect();
+    }
+
+    tracing::info!(
+        "filter_symbols: name matching step, {} symbols",
+        filtered.len()
+    );
+    if parts.len() == 1 {
+        filtered
+            .into_iter()
+            .filter(|s| name_matches(&s.name, target_name))
+            .cloned()
+            .collect()
+    } else {
+        let container_parts = &parts[..parts.len() - 1];
+        let container_str = container_parts.join(".");
+        let full_qualified = symbol_name.to_string();
+
+        filtered
+            .into_iter()
+            .filter(|sym| {
+                symbol_matches_qualified(sym, target_name, &container_str, &full_qualified)
+            })
+            .cloned()
+            .collect()
+    }
+}
+
+#[trace]
+fn symbol_matches_qualified(
+    sym: &SymbolInfo,
+    target_name: &str,
+    container_str: &str,
+    full_qualified: &str,
+) -> bool {
+    let sym_name = &sym.name;
+
+    let go_style = format!("(*{}).{}", container_str, target_name);
+    let go_style_val = format!("({}).{}", container_str, target_name);
+    if sym_name == &go_style || sym_name == &go_style_val {
+        return true;
+    }
+
+    if let Some(go_match) = extract_go_method_parts(sym_name) {
+        if go_match.method == target_name && strip_generics(&go_match.receiver) == container_str {
+            return true;
+        }
+    }
+
+    if sym_name == full_qualified {
+        return true;
+    }
+
+    let lua_colon = format!("{}:{}", container_str, target_name);
+    if sym_name == &lua_colon {
+        return true;
+    }
+
+    if !name_matches(sym_name, target_name) {
+        return false;
+    }
+
+    let sym_container = sym.container.as_deref().unwrap_or("");
+    let normalized_container = normalize_container(sym_container);
+    let module_name = get_module_name(&sym.path);
+
+    let full_container = if normalized_container.is_empty() {
+        module_name.clone()
+    } else {
+        format!("{}.{}", module_name, normalized_container)
+    };
+
+    let container_parts: Vec<&str> = container_str.split('.').collect();
+
+    normalized_container == container_str
+        || sym_container == container_str
+        || strip_generics(&normalized_container) == container_str
+        || strip_generics(sym_container) == container_str
+        || full_container == container_str
+        || full_container.ends_with(&format!(".{}", container_str))
+        || (container_parts.len() == 1 && container_parts[0] == module_name)
+}
+
 fn looks_like_lua_method(s: &str) -> bool {
-    // Lua methods look like "User:isAdult" - identifier:identifier with exactly one colon
-    // and no file extension patterns
     if s.matches(':').count() != 1 {
         return false;
     }
@@ -162,13 +267,11 @@ fn looks_like_lua_method(s: &str) -> bool {
     if parts.len() != 2 {
         return false;
     }
-    // Both parts should be identifiers (alphanumeric + underscore, not starting with digit)
     let is_ident = |p: &str| {
         !p.is_empty()
             && !p.chars().next().unwrap().is_numeric()
             && p.chars().all(|c| c.is_alphanumeric() || c == '_')
     };
-    // First part should not look like a filename (no dots)
     !parts[0].contains('.') && is_ident(parts[0]) && is_ident(parts[1])
 }
 
@@ -250,7 +353,6 @@ fn normalize_symbol_name(name: &str) -> String {
             .map(|m| m.as_str().to_string())
             .unwrap_or_else(|| name.to_string());
     }
-    // Go method: (*Type).Method or (Type).Method, including generics like (*Result[T]).IsOk
     if let Some(captures) = Regex::new(r"^\(\*?[^)]+\)\.(\w+)$")
         .ok()
         .and_then(|r| r.captures(name))
@@ -272,7 +374,6 @@ struct GoMethodParts {
 }
 
 fn extract_go_method_parts(name: &str) -> Option<GoMethodParts> {
-    // Match (*Type).Method or (Type).Method, including generics like (*Result[T]).IsOk
     let re = Regex::new(r"^\(\*?([^)]+)\)\.(\w+)$").ok()?;
     let captures = re.captures(name)?;
     Some(GoMethodParts {
@@ -488,10 +589,9 @@ mod tests {
         assert!(looks_like_lua_method("User:isAdult"));
         assert!(looks_like_lua_method("Storage:save"));
         assert!(looks_like_lua_method("MemoryStorage:load"));
-        // Not Lua methods
-        assert!(!looks_like_lua_method("User.isAdult")); // dot instead of colon
-        assert!(!looks_like_lua_method("file.lua:User")); // file path
-        assert!(!looks_like_lua_method("main.go:123:func")); // two colons
-        assert!(!looks_like_lua_method("User")); // no colon
+        assert!(!looks_like_lua_method("User.isAdult"));
+        assert!(!looks_like_lua_method("file.lua:User"));
+        assert!(!looks_like_lua_method("main.go:123:func"));
+        assert!(!looks_like_lua_method("User"));
     }
 }
