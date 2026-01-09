@@ -518,6 +518,14 @@ impl<'a> WorkspaceHandle<'a> {
         &self.server_name
     }
 
+    pub async fn get_startup_stats(&self) -> Option<leta_types::ServerStartupStats> {
+        let workspaces = self.session.workspaces.read().await;
+        workspaces
+            .get(&self.workspace_root)
+            .and_then(|servers| servers.get(&self.server_name))
+            .and_then(|ws| ws.startup_stats())
+    }
+
     #[trace]
     pub async fn wait_for_ready(&self, timeout_secs: u64) -> bool {
         if let Some(client) = self.client().await {
