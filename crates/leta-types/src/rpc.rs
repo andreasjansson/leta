@@ -51,20 +51,33 @@ pub struct ProfilingData {
 pub struct ServerStartupStats {
     pub server_name: String,
     pub workspace_root: String,
-    pub start_time_ms: u64,
     pub init_time_ms: u64,
     pub ready_time_ms: u64,
     pub total_time_ms: u64,
+    pub functions: Vec<FunctionStats>,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
-pub struct IndexingStats {
+pub struct ServerIndexingStats {
+    pub server_name: String,
+    pub file_count: u32,
+    pub total_time_ms: u64,
+    pub functions: Vec<FunctionStats>,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct WorkspaceProfilingData {
     pub workspace_root: String,
     pub total_files: u32,
-    pub files_by_language: HashMap<String, u32>,
     pub total_time_ms: u64,
-    pub time_by_language: HashMap<String, u64>,
-    pub server_startups: Vec<ServerStartupStats>,
+    pub server_profiles: Vec<ServerProfilingData>,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct ServerProfilingData {
+    pub server_name: String,
+    pub startup: Option<ServerStartupStats>,
+    pub indexing: Option<ServerIndexingStats>,
 }
 
 // ============================================================================
