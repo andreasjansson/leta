@@ -236,36 +236,18 @@ pub fn format_describe_session_result(
                                 "      Startup: {}ms (init: {}ms, ready: {}ms)",
                                 startup.total_time_ms, startup.init_time_ms, startup.ready_time_ms
                             ));
-                            for func in startup.functions.iter().take(5) {
-                                lines.push(format!(
-                                    "        {:50} {:>8}",
-                                    func.name,
-                                    format_duration_us(func.total_us)
-                                ));
-                            }
+                            lines.extend(format_function_stats(&startup.functions, "        ", 5));
                         }
                         if let Some(indexing) = &profile.indexing {
                             lines.push(format!(
                                 "      Indexing: {}ms ({} files)",
                                 indexing.total_time_ms, indexing.file_count
                             ));
-                            for func in indexing.functions.iter().take(10) {
-                                let calls_str = if func.calls > 1 {
-                                    format!(
-                                        " ({}x, avg {})",
-                                        func.calls,
-                                        format_duration_us(func.avg_us)
-                                    )
-                                } else {
-                                    String::new()
-                                };
-                                lines.push(format!(
-                                    "        {:50} {:>8}{}",
-                                    func.name,
-                                    format_duration_us(func.total_us),
-                                    calls_str
-                                ));
-                            }
+                            lines.extend(format_function_stats(
+                                &indexing.functions,
+                                "        ",
+                                10,
+                            ));
                         }
                     }
                 }
