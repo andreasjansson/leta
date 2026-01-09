@@ -139,11 +139,12 @@ pub async fn handle_resolve_symbol(
         .filter(|m| preferred_kinds.contains(m.kind.as_str()))
         .collect();
 
-    let final_matches = if type_matches.len() == 1 && matches.len() > 1 {
+    let mut final_matches = if type_matches.len() == 1 && matches.len() > 1 {
         vec![type_matches[0].clone()]
     } else {
         matches.clone()
     };
+    final_matches.sort_by(|a, b| (&a.path, a.line).cmp(&(&b.path, b.line)));
 
     if final_matches.len() == 1 {
         let sym = &final_matches[0];
