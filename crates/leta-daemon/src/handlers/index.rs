@@ -286,11 +286,7 @@ async fn index_files_parallel(
 
     for file_path in files {
         let permit = semaphore.clone().acquire_owned().await.unwrap();
-        let ctx = HandlerContext::new(
-            Arc::clone(&ctx.session),
-            Arc::clone(&ctx.hover_cache),
-            Arc::clone(&ctx.symbol_cache),
-        );
+        let ctx = ctx.with_shared_stats();
         let workspace_root = workspace_root.to_path_buf();
         let lang = lang.to_string();
         let file_path = file_path.clone();
