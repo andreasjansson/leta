@@ -65,7 +65,7 @@ pub async fn handle_add_workspace(
         .map_err(|e| format!("Invalid path: {}", e))?;
     let workspace_str = workspace_root.to_string_lossy().to_string();
 
-    let mut config = Config::load().map_err(|e| e.to_string())?;
+    let config = Config::load().map_err(|e| e.to_string())?;
 
     if config.workspaces.roots.contains(&workspace_str) {
         return Ok(AddWorkspaceResult {

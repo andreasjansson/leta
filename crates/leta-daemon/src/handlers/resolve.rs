@@ -6,7 +6,7 @@ use fastrace::trace;
 use leta_types::{ResolveSymbolParams, ResolveSymbolResult, SymbolInfo};
 use regex::Regex;
 
-use super::{collect_all_workspace_symbols, relative_path, HandlerContext};
+use super::{collect_all_workspace_symbols, HandlerContext};
 
 static RE_FUNC_WITH_PARAMS: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^(\w+)\([^)]*\)$").unwrap());

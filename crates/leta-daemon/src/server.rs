@@ -94,10 +94,8 @@ impl DaemonServer {
 
     #[trace]
     async fn handle_client(&self, mut stream: UnixStream) -> anyhow::Result<()> {
-        let start = std::time::Instant::now();
         let mut data = Vec::new();
         stream.read_to_end(&mut data).await?;
-        tracing::info!("read_to_end took {:?}", start.elapsed());
 
         if data.is_empty() {
             return Ok(());
@@ -117,19 +115,16 @@ impl DaemonServer {
             Arc::clone(&self.symbol_cache),
         );
 
-        tracing::info!("Starting dispatch for {} at {:?}", method, start.elapsed());
         let response = if profile {
             self.dispatch_with_profiling(&ctx, method, params).await
         } else {
             self.dispatch(&ctx, method, params).await
         };
-        tracing::info!("Dispatch for {} completed at {:?}", method, start.elapsed());
 
         stream
             .write_all(serde_json::to_vec(&response)?.as_slice())
             .await?;
         stream.shutdown().await?;
-        tracing::info!("Response written at {:?}", start.elapsed());
 
         Ok(())
     }

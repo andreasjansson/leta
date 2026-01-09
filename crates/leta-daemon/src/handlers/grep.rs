@@ -7,7 +7,7 @@ use leta_lsp::lsp_types::{DocumentSymbolParams, TextDocumentIdentifier};
 use leta_servers::get_server_for_language;
 use leta_types::{GrepParams, GrepResult, SymbolInfo};
 use regex::Regex;
-use tracing::{debug, warn};
+use tracing::debug;
 
 use super::{flatten_document_symbols, relative_path, HandlerContext};
 use crate::session::WorkspaceHandle;
