@@ -2,6 +2,7 @@ use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+use fastrace::trace;
 use leta_config::Config;
 use leta_fs::get_language_id;
 use leta_servers::get_server_for_language;
