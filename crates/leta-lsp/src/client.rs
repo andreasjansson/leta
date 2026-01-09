@@ -6,17 +6,17 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use dashmap::DashMap;
+use fastrace::trace;
 use lsp_types::{
-    ClientCapabilities, InitializeParams, InitializeResult, InitializedParams,
-    NumberOrString, ProgressParams, ProgressParamsValue, ServerCapabilities, Uri,
-    WorkDoneProgress, WorkspaceFolder,
+    ClientCapabilities, InitializeParams, InitializeResult, InitializedParams, NumberOrString,
+    ProgressParams, ProgressParamsValue, ServerCapabilities, Uri, WorkDoneProgress,
+    WorkspaceFolder,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::{Child, ChildStderr, ChildStdin, ChildStdout};
 use tokio::sync::{oneshot, Mutex, RwLock};
-use fastrace::trace;
 use tracing::{debug, error, info, warn};
 
 use crate::capabilities::get_client_capabilities;
@@ -87,13 +87,19 @@ const REQUEST_TIMEOUT_SECS: u64 = 30;
 async fn drain_stderr(stderr: ChildStderr, server_name: &str) {
     let mut reader = BufReader::new(stderr);
     let mut line = String::new();
-    
+    let ra_profile_enabled = std::env::var("RA_PROFILE").is_ok();
+
     loop {
         line.clear();
         match reader.read_line(&mut line).await {
             Ok(0) => break,
             Ok(_) => {
-                debug!("[{}] stderr: {}", server_name, line.trim_end());
+                let trimmed = line.trim_end();
+                if ra_profile_enabled && server_name == "rust-analyzer" && trimmed.contains("ms ") {
+                    info!("[{}] {}", server_name, trimmed);
+                } else {
+                    debug!("[{}] stderr: {}", server_name, trimmed);
+                }
             }
             Err(_) => break,
         }
@@ -174,15 +180,22 @@ impl LspClient {
             });
         }
 
-        client.initialize(workspace_root, &workspace_uri, init_options).await?;
+        client
+            .initialize(workspace_root, &workspace_uri, init_options)
+            .await?;
 
         Ok(client)
     }
 
     #[trace]
-    async fn initialize(&self, workspace_root: &Path, workspace_uri: &Uri, init_options: Option<Value>) -> Result<(), LspProtocolError> {
-        let caps: ClientCapabilities = serde_json::from_value(get_client_capabilities())
-            .map_err(LspProtocolError::Json)?;
+    async fn initialize(
+        &self,
+        workspace_root: &Path,
+        workspace_uri: &Uri,
+        init_options: Option<Value>,
+    ) -> Result<(), LspProtocolError> {
+        let caps: ClientCapabilities =
+            serde_json::from_value(get_client_capabilities()).map_err(LspProtocolError::Json)?;
 
         let workspace_name = workspace_root
             .file_name()
@@ -205,23 +218,31 @@ impl LspClient {
         };
 
         // Use raw request to preserve all capability fields including ones not in lsp-types
-        let raw_result = self.send_request_raw("initialize", serde_json::to_value(params).unwrap()).await?;
-        
+        let raw_result = self
+            .send_request_raw("initialize", serde_json::to_value(params).unwrap())
+            .await?;
+
         // Store raw capabilities for fields not in lsp-types ServerCapabilities struct
         // (e.g. typeHierarchyProvider was added in LSP 3.17 but lsp-types 0.97.0 omits it)
         if let Some(caps) = raw_result.get("capabilities") {
             *self.raw_capabilities.write().await = caps.clone();
-            debug!("Raw capabilities for {}: implementationProvider={:?}", 
-                   self.server_name, caps.get("implementationProvider"));
+            debug!(
+                "Raw capabilities for {}: implementationProvider={:?}",
+                self.server_name,
+                caps.get("implementationProvider")
+            );
         }
-        
-        let result: InitializeResult = serde_json::from_value(raw_result)
-            .map_err(LspProtocolError::Json)?;
-        debug!("Parsed capabilities for {}: implementation_provider={:?}",
-               self.server_name, result.capabilities.implementation_provider);
+
+        let result: InitializeResult =
+            serde_json::from_value(raw_result).map_err(LspProtocolError::Json)?;
+        debug!(
+            "Parsed capabilities for {}: implementation_provider={:?}",
+            self.server_name, result.capabilities.implementation_provider
+        );
         *self.capabilities.write().await = result.capabilities;
 
-        self.send_notification("initialized", InitializedParams {}).await?;
+        self.send_notification("initialized", InitializedParams {})
+            .await?;
         *self.initialized.write().await = true;
 
         Ok(())
@@ -256,12 +277,18 @@ impl LspClient {
             debug!("LSP REQUEST [{}] {} - written, releasing lock", id, method);
         }
 
-        debug!("LSP REQUEST [{}] {} - waiting for response (timeout={}s)", id, method, REQUEST_TIMEOUT_SECS);
+        debug!(
+            "LSP REQUEST [{}] {} - waiting for response (timeout={}s)",
+            id, method, REQUEST_TIMEOUT_SECS
+        );
         let result = tokio::time::timeout(Duration::from_secs(REQUEST_TIMEOUT_SECS), rx)
             .await
             .map_err(|_| {
                 self.pending_requests.remove(&id);
-                warn!("LSP REQUEST [{}] {} - TIMEOUT after {}s", id, method, REQUEST_TIMEOUT_SECS);
+                warn!(
+                    "LSP REQUEST [{}] {} - TIMEOUT after {}s",
+                    id, method, REQUEST_TIMEOUT_SECS
+                );
                 LspProtocolError::Timeout(format!(
                     "Request {} timed out after {}s",
                     method, REQUEST_TIMEOUT_SECS
@@ -382,12 +409,13 @@ impl LspClient {
 
         match (&msg.id, &msg.method) {
             (Some(id), Some(method)) => {
-                self.handle_server_request(id.clone(), method, msg.params).await;
+                self.handle_server_request(id.clone(), method, msg.params)
+                    .await;
             }
             (Some(id), None) => {
-                let id_num = id.as_u64().unwrap_or_else(|| {
-                    id.as_str().and_then(|s| s.parse().ok()).unwrap_or(0)
-                });
+                let id_num = id
+                    .as_u64()
+                    .unwrap_or_else(|| id.as_str().and_then(|s| s.parse().ok()).unwrap_or(0));
                 self.handle_response(id_num, msg.result, msg.error).await;
             }
             (None, Some(method)) => {
@@ -433,29 +461,34 @@ impl LspClient {
                 JsonRpcResponse {
                     jsonrpc: "2.0",
                     id,
-                    result: Some(serde_json::to_value(vec![Value::Object(Default::default()); items_count]).unwrap()),
+                    result: Some(
+                        serde_json::to_value(vec![Value::Object(Default::default()); items_count])
+                            .unwrap(),
+                    ),
                     error: None,
                 }
             }
-            "window/workDoneProgress/create" | "client/registerCapability" => {
-                JsonRpcResponse { jsonrpc: "2.0", id, result: Some(Value::Null), error: None }
-            }
-            "workspace/applyEdit" => {
-                JsonRpcResponse {
-                    jsonrpc: "2.0",
-                    id,
-                    result: Some(serde_json::json!({"applied": true})),
-                    error: None,
-                }
-            }
-            _ => {
-                JsonRpcResponse {
-                    jsonrpc: "2.0",
-                    id,
-                    result: None,
-                    error: Some(JsonRpcError { code: -32601, message: format!("Method not found: {}", method) }),
-                }
-            }
+            "window/workDoneProgress/create" | "client/registerCapability" => JsonRpcResponse {
+                jsonrpc: "2.0",
+                id,
+                result: Some(Value::Null),
+                error: None,
+            },
+            "workspace/applyEdit" => JsonRpcResponse {
+                jsonrpc: "2.0",
+                id,
+                result: Some(serde_json::json!({"applied": true})),
+                error: None,
+            },
+            _ => JsonRpcResponse {
+                jsonrpc: "2.0",
+                id,
+                result: None,
+                error: Some(JsonRpcError {
+                    code: -32601,
+                    message: format!("Method not found: {}", method),
+                }),
+            },
         };
 
         let encoded = encode_message(&response);
@@ -470,7 +503,9 @@ impl LspClient {
     async fn handle_notification(&self, method: &str, params: Option<Value>) {
         match method {
             "language/status" => {
-                if let Some(p) = params.and_then(|v| serde_json::from_value::<LanguageStatusParams>(v).ok()) {
+                if let Some(p) =
+                    params.and_then(|v| serde_json::from_value::<LanguageStatusParams>(v).ok())
+                {
                     if p.status_type == "ServiceReady" {
                         info!("Server {} is now ServiceReady", self.server_name);
                         *self.service_ready.write().await = true;
@@ -478,26 +513,36 @@ impl LspClient {
                 }
             }
             "experimental/serverStatus" => {
-                if let Some(p) = params.and_then(|v| serde_json::from_value::<ServerStatusParams>(v).ok()) {
+                if let Some(p) =
+                    params.and_then(|v| serde_json::from_value::<ServerStatusParams>(v).ok())
+                {
                     let quiescent = p.quiescent.unwrap_or(false);
                     let health = p.health.as_deref().unwrap_or("ok");
-                    
-                    debug!("Server {} serverStatus: quiescent={}, health={}", self.server_name, quiescent, health);
-                    
+
+                    debug!(
+                        "Server {} serverStatus: quiescent={}, health={}",
+                        self.server_name, quiescent, health
+                    );
+
                     if quiescent && health != "error" {
                         *self.indexing_done.write().await = true;
                         info!("Server {} is quiescent (ready)", self.server_name);
                     } else {
                         let was_done = *self.indexing_done.read().await;
                         if was_done {
-                            info!("Server {} is no longer quiescent (was ready, now busy)", self.server_name);
+                            info!(
+                                "Server {} is no longer quiescent (was ready, now busy)",
+                                self.server_name
+                            );
                         }
                         *self.indexing_done.write().await = false;
                     }
                 }
             }
             "$/progress" => {
-                if let Some(p) = params.and_then(|v| serde_json::from_value::<ProgressParams>(v).ok()) {
+                if let Some(p) =
+                    params.and_then(|v| serde_json::from_value::<ProgressParams>(v).ok())
+                {
                     self.handle_progress(p).await;
                 }
             }
@@ -512,7 +557,7 @@ impl LspClient {
         if self.server_name == "rust-analyzer" {
             return;
         }
-        
+
         let token = match &params.token {
             NumberOrString::Number(n) => n.to_string(),
             NumberOrString::String(s) => s.clone(),
@@ -543,18 +588,26 @@ impl LspClient {
         let start = std::time::Instant::now();
         let timeout = Duration::from_secs(timeout_secs);
 
-        debug!("wait_for_indexing({}): starting, timeout={}s", self.server_name, timeout_secs);
-        
+        debug!(
+            "wait_for_indexing({}): starting, timeout={}s",
+            self.server_name, timeout_secs
+        );
+
         loop {
             let is_done = *self.indexing_done.read().await;
             if is_done {
-                debug!("wait_for_indexing({}): done after {:?}", self.server_name, start.elapsed());
+                debug!(
+                    "wait_for_indexing({}): done after {:?}",
+                    self.server_name,
+                    start.elapsed()
+                );
                 return true;
             }
             if start.elapsed() >= timeout {
                 warn!(
                     "Timeout waiting for {} to finish indexing after {:?}",
-                    self.server_name, start.elapsed()
+                    self.server_name,
+                    start.elapsed()
                 );
                 return false;
             }
@@ -586,13 +639,20 @@ impl LspClient {
     pub async fn stop(&self) -> Result<(), LspProtocolError> {
         debug!("stop({}): checking initialized", self.server_name);
         if *self.initialized.read().await {
-            debug!("stop({}): sending shutdown request with 5s timeout", self.server_name);
+            debug!(
+                "stop({}): sending shutdown request with 5s timeout",
+                self.server_name
+            );
             let result = tokio::time::timeout(
                 Duration::from_secs(5),
                 self.send_request::<_, Value>("shutdown", ()),
             )
             .await;
-            debug!("stop({}): shutdown result: {:?}", self.server_name, result.is_ok());
+            debug!(
+                "stop({}): shutdown result: {:?}",
+                self.server_name,
+                result.is_ok()
+            );
             debug!("stop({}): sending exit notification", self.server_name);
             let _ = self.send_notification("exit", ()).await;
             debug!("stop({}): exit notification sent", self.server_name);
@@ -630,7 +690,9 @@ impl LspClient {
         // type_hierarchy_provider is not in lsp-types 0.97.0 ServerCapabilities struct,
         // but servers do advertise it. Check the raw_capabilities JSON.
         // Need to check for truthy values (not null, not false)
-        self.raw_capabilities.read().await
+        self.raw_capabilities
+            .read()
+            .await
             .get("typeHierarchyProvider")
             .map(|v| !v.is_null() && v.as_bool() != Some(false))
             .unwrap_or(false)
