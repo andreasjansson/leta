@@ -31,6 +31,7 @@ const BINARY_EXTENSIONS: &[&str] = &[
     ".db", ".sqlite", ".sqlite3", ".bin", ".dat", ".pak", ".bundle", ".lock",
 ];
 
+#[trace]
 pub async fn handle_add_workspace(
     ctx: &HandlerContext,
     params: AddWorkspaceParams,
