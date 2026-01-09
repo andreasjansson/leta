@@ -398,28 +398,19 @@ fn strip_generics(name: &str) -> String {
 }
 
 fn normalize_container(container: &str) -> String {
-    if let Some(captures) = Regex::new(r"^\(\*?(\w+)\)$")
-        .ok()
-        .and_then(|r| r.captures(container))
-    {
+    if let Some(captures) = RE_CONTAINER_PTR.captures(container) {
         return captures
             .get(1)
             .map(|m| m.as_str().to_string())
             .unwrap_or_else(|| container.to_string());
     }
-    if let Some(captures) = Regex::new(r"^impl\s+\w+(?:<[^>]+>)?\s+for\s+(\w+)")
-        .ok()
-        .and_then(|r| r.captures(container))
-    {
+    if let Some(captures) = RE_IMPL_FOR.captures(container) {
         return captures
             .get(1)
             .map(|m| m.as_str().to_string())
             .unwrap_or_else(|| container.to_string());
     }
-    if let Some(captures) = Regex::new(r"^impl\s+(\w+)")
-        .ok()
-        .and_then(|r| r.captures(container))
-    {
+    if let Some(captures) = RE_IMPL.captures(container) {
         return captures
             .get(1)
             .map(|m| m.as_str().to_string())
