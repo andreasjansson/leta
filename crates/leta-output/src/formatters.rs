@@ -1,144 +1,196 @@
 use std::collections::HashMap;
-use std::path::PathBuf;
 
-use leta_types::*;
+use leta_types::{
+    CallNode, CallsResult, DescribeSessionResult, FileInfo, FilesResult, GrepResult,
+    ImplementationsResult, LocationInfo, ReferencesResult, ResolveSymbolResult, ShowResult,
+    SymbolInfo,
+};
 
-pub fn format_grep_result(result: &GrepResult) -> String {
-    if let Some(warning) = &result.warning {
-        return format!("Warning: {}", warning);
-    }
-    format_symbols(&result.symbols)
-}
+pub fn format_size(bytes: u64) -> String {
+    const KB: u64 = 1024;
+    const MB: u64 = KB * 1024;
+    const GB: u64 = MB * 1024;
 
-pub fn format_references_result(result: &ReferencesResult) -> String {
-    format_locations(&result.locations)
-}
-
-pub fn format_declaration_result(result: &DeclarationResult) -> String {
-    format_locations(&result.locations)
-}
-
-pub fn format_implementations_result(result: &ImplementationsResult) -> String {
-    if let Some(error) = &result.error {
-        return format!("Error: {}", error);
-    }
-    format_locations(&result.locations)
-}
-
-pub fn format_subtypes_result(result: &SubtypesResult) -> String {
-    format_locations(&result.locations)
-}
-
-pub fn format_supertypes_result(result: &SupertypesResult) -> String {
-    format_locations(&result.locations)
-}
-
-pub fn format_show_result(result: &ShowResult) -> String {
-    let location = if result.start_line == result.end_line {
-        format!("{}:{}", result.path, result.start_line)
+    if bytes >= GB {
+        format!("{:.1}GB", bytes as f64 / GB as f64)
+    } else if bytes >= MB {
+        format!("{:.1}MB", bytes as f64 / MB as f64)
+    } else if bytes >= KB {
+        format!("{:.1}KB", bytes as f64 / KB as f64)
     } else {
-        format!("{}:{}-{}", result.path, result.start_line, result.end_line)
-    };
+        format!("{}B", bytes)
+    }
+}
 
-    let mut lines = vec![location, String::new(), result.content.clone()];
+pub fn format_profiling(profiling: &leta_types::ProfilingData) -> String {
+    let mut lines = Vec::new();
 
-    if result.truncated {
-        let head = 200;
-        let total_lines = result.total_lines.unwrap_or(head);
-        let symbol = result.symbol.as_deref().unwrap_or("SYMBOL");
-        lines.push(String::new());
-        lines.push(format!(
-            "[truncated after {} lines, use `leta show \"{}\" --head {}` to show the full {} lines]",
-            head, symbol, total_lines, total_lines
-        ));
+    let total_us: u64 = profiling.functions.first().map(|f| f.total_us).unwrap_or(0);
+    lines.push(format!(
+        "[profile] {:>8}  total",
+        format_duration_us(total_us)
+    ));
+
+    let cache = &profiling.cache;
+    let symbol_total = cache.symbol_hits + cache.symbol_misses;
+    let hover_total = cache.hover_hits + cache.hover_misses;
+
+    if symbol_total > 0 || hover_total > 0 {
+        if symbol_total > 0 {
+            lines.push(format!(
+                "[cache]   symbol: {}/{} ({:.0}% hit)",
+                cache.symbol_hits,
+                symbol_total,
+                cache.symbol_hit_rate()
+            ));
+        }
+        if hover_total > 0 {
+            lines.push(format!(
+                "[cache]   hover:  {}/{} ({:.0}% hit)",
+                cache.hover_hits,
+                hover_total,
+                cache.hover_hit_rate()
+            ));
+        }
     }
 
     lines.join("\n")
 }
 
-pub fn format_rename_result(result: &RenameResult) -> String {
-    let mut files: Vec<_> = result.files_changed.iter().collect();
-    files.sort();
-    format!(
-        "Renamed in {} file(s):\n{}",
-        files.len(),
-        files
-            .iter()
-            .map(|f| format!("  {}", f))
-            .collect::<Vec<_>>()
-            .join("\n")
-    )
-}
+pub fn format_grep_result(result: &GrepResult, include_docs: bool) -> String {
+    let mut lines = Vec::new();
+    for sym in &result.symbols {
+        let path = sym
+            .path
+            .as_ref()
+            .map(|p| format!("{}:{}", p, sym.line))
+            .unwrap_or_default();
+        let container = sym
+            .container
+            .as_ref()
+            .map(|c| format!(" in {}", c))
+            .unwrap_or_default();
+        let kind = format!("[{}] ", sym.kind);
 
-pub fn format_move_file_result(result: &MoveFileResult) -> String {
-    let mut files: Vec<_> = result.files_changed.iter().collect();
-    files.sort();
-    if result.imports_updated {
-        format!(
-            "Moved file and updated imports in {} file(s):\n{}",
-            files.len(),
-            files
-                .iter()
-                .map(|f| format!("  {}", f))
-                .collect::<Vec<_>>()
-                .join("\n")
-        )
-    } else if let Some(first) = files.first() {
-        format!("Moved file (imports not updated):\n  {}", first)
-    } else {
-        "File moved".to_string()
+        lines.push(format!("{:<60} {}{}{}", path, kind, sym.name, container));
+
+        if include_docs {
+            if let Some(doc) = &sym.documentation {
+                let doc_lines: Vec<&str> = doc.lines().take(3).collect();
+                for doc_line in doc_lines {
+                    lines.push(format!("    {}", doc_line));
+                }
+            }
+        }
     }
-}
-
-pub fn format_restart_workspace_result(result: &RestartWorkspaceResult) -> String {
-    format!(
-        "Restarted {} server(s): {}",
-        result.restarted.len(),
-        result.restarted.join(", ")
-    )
-}
-
-pub fn format_remove_workspace_result(result: &RemoveWorkspaceResult) -> String {
-    format!(
-        "Stopped {} server(s): {}",
-        result.servers_stopped.len(),
-        result.servers_stopped.join(", ")
-    )
+    if let Some(warning) = &result.warning {
+        lines.push(format!("\nWarning: {}", warning));
+    }
+    lines.join("\n")
 }
 
 pub fn format_files_result(result: &FilesResult) -> String {
-    if result.files.is_empty() {
-        return "0 files, 0B".to_string();
+    fn format_tree(
+        files: &HashMap<String, FileInfo>,
+        prefix: &str,
+        lines: &mut Vec<String>,
+        base_path: &str,
+    ) {
+        let mut entries: Vec<_> = files
+            .iter()
+            .filter(|(path, _)| {
+                let relative = path.strip_prefix(base_path).unwrap_or(path);
+                let relative = relative.trim_start_matches('/');
+                !relative.contains('/')
+            })
+            .collect();
+        entries.sort_by(|a, b| a.0.cmp(b.0));
+
+        let dirs: std::collections::HashSet<String> = files
+            .keys()
+            .filter_map(|path| {
+                let relative = path.strip_prefix(base_path).unwrap_or(path);
+                let relative = relative.trim_start_matches('/');
+                relative
+                    .split('/')
+                    .next()
+                    .filter(|_| relative.contains('/'))
+            })
+            .map(|s| s.to_string())
+            .collect();
+
+        let mut all_entries: Vec<(&str, Option<&FileInfo>)> = entries
+            .iter()
+            .map(|(p, f)| {
+                let name = p
+                    .strip_prefix(base_path)
+                    .unwrap_or(p)
+                    .trim_start_matches('/');
+                (name, Some(*f))
+            })
+            .collect();
+
+        for dir in &dirs {
+            all_entries.push((dir.as_str(), None));
+        }
+        all_entries.sort_by(|a, b| a.0.cmp(b.0));
+        all_entries.dedup_by(|a, b| a.0 == b.0);
+
+        for (i, (name, file_info)) in all_entries.iter().enumerate() {
+            let is_last = i == all_entries.len() - 1;
+            let connector = if is_last { "└── " } else { "├── " };
+            let child_prefix = if is_last { "    " } else { "│   " };
+
+            if let Some(info) = file_info {
+                let size = format_size(info.size_bytes);
+                let symbols: Vec<String> = info
+                    .symbol_counts
+                    .iter()
+                    .filter(|(_, &count)| count > 0)
+                    .map(|(kind, count)| format!("{} {}", count, kind))
+                    .collect();
+                let symbols_str = if symbols.is_empty() {
+                    String::new()
+                } else {
+                    format!(", {}", symbols.join(", "))
+                };
+                lines.push(format!(
+                    "{}{}{} ({}, {} lines{})",
+                    prefix, connector, name, size, info.line_count, symbols_str
+                ));
+            } else {
+                lines.push(format!("{}{}{}", prefix, connector, name));
+                let new_base = if base_path.is_empty() {
+                    name.to_string()
+                } else {
+                    format!("{}/{}", base_path, name)
+                };
+                let sub_files: HashMap<String, FileInfo> = files
+                    .iter()
+                    .filter(|(p, _)| p.starts_with(&format!("{}/", new_base)))
+                    .map(|(p, f)| (p.clone(), f.clone()))
+                    .collect();
+                format_tree(
+                    &sub_files,
+                    &format!("{}{}", prefix, child_prefix),
+                    lines,
+                    &new_base,
+                );
+            }
+        }
     }
 
-    let tree = build_tree(&result.files);
     let mut lines = Vec::new();
-    render_tree(&tree, &mut lines, "", true);
-    lines.push(String::new());
+    format_tree(&result.files, "", &mut lines, "");
+
     lines.push(format!(
-        "{} files, {}, {} lines",
+        "\n{} files, {}, {} lines",
         result.total_files,
         format_size(result.total_bytes),
         result.total_lines
     ));
 
     lines.join("\n")
-}
-
-pub fn format_calls_result(result: &CallsResult) -> String {
-    if let Some(error) = &result.error {
-        return format!("Error: {}", error);
-    }
-    if let Some(message) = &result.message {
-        return message.clone();
-    }
-    if let Some(root) = &result.root {
-        return format_call_tree(root);
-    }
-    if let Some(path) = &result.path {
-        return format_call_path(path);
-    }
-    String::new()
 }
 
 pub fn format_describe_session_result(
@@ -167,16 +219,16 @@ pub fn format_describe_session_result(
         }
     }
 
-    let indexing_stats_map: std::collections::HashMap<&str, &leta_types::IndexingStats> = result
-        .indexing_stats
-        .as_ref()
-        .map(|stats| {
-            stats
-                .iter()
-                .map(|s| (s.workspace_root.as_str(), s))
-                .collect()
-        })
-        .unwrap_or_default();
+    let profiling_map: std::collections::HashMap<&str, &leta_types::WorkspaceProfilingData> =
+        result
+            .profiling
+            .as_ref()
+            .map(|data| {
+                data.iter()
+                    .map(|p| (p.workspace_root.as_str(), p))
+                    .collect()
+            })
+            .unwrap_or_default();
 
     let mut workspace_roots: std::collections::HashSet<&str> = result
         .workspaces
@@ -184,7 +236,7 @@ pub fn format_describe_session_result(
         .map(|ws| ws.root.as_str())
         .collect();
 
-    for root in indexing_stats_map.keys() {
+    for root in profiling_map.keys() {
         workspace_roots.insert(root);
     }
 
@@ -205,6 +257,8 @@ pub fn format_describe_session_result(
                 .filter(|ws| ws.root == root)
                 .collect();
 
+            let profiling_data = profiling_map.get(root);
+
             for ws in &workspaces_for_root {
                 let status = if ws.server_pid.is_some() {
                     "running"
@@ -217,61 +271,81 @@ pub fn format_describe_session_result(
                     .unwrap_or_default();
 
                 lines.push(format!(
-                    "    Server: {} ({}{})",
-                    ws.language, status, pid_str
+                    "    {} ({}{}) [{} open files]",
+                    ws.language,
+                    status,
+                    pid_str,
+                    ws.open_documents.len()
                 ));
-                if !ws.open_documents.is_empty() {
-                    lines.push(format!("    Open documents ({}):", ws.open_documents.len()));
-                    for doc in ws.open_documents.iter().take(5) {
-                        lines.push(format!("      {}", doc));
-                    }
-                    if ws.open_documents.len() > 5 {
-                        lines.push(format!(
-                            "      ... and {} more",
-                            ws.open_documents.len() - 5
-                        ));
+
+                if show_profiling {
+                    if let Some(profile) = profiling_data.and_then(|p| {
+                        p.server_profiles
+                            .iter()
+                            .find(|sp| sp.server_name == ws.language)
+                    }) {
+                        if let Some(startup) = &profile.startup {
+                            lines.push(format!(
+                                "      Startup: {}ms (init: {}ms, ready: {}ms)",
+                                startup.total_time_ms, startup.init_time_ms, startup.ready_time_ms
+                            ));
+                            for func in startup.functions.iter().take(5) {
+                                lines.push(format!(
+                                    "        {:50} {:>8}",
+                                    func.name,
+                                    format_duration_us(func.total_us)
+                                ));
+                            }
+                        }
+                        if let Some(indexing) = &profile.indexing {
+                            lines.push(format!(
+                                "      Indexing: {}ms ({} files)",
+                                indexing.total_time_ms, indexing.file_count
+                            ));
+                            for func in indexing.functions.iter().take(10) {
+                                let calls_str = if func.calls > 1 {
+                                    format!(
+                                        " ({}x, avg {})",
+                                        func.calls,
+                                        format_duration_us(func.avg_us)
+                                    )
+                                } else {
+                                    String::new()
+                                };
+                                lines.push(format!(
+                                    "        {:50} {:>8}{}",
+                                    func.name,
+                                    format_duration_us(func.total_us),
+                                    calls_str
+                                ));
+                            }
+                        }
                     }
                 }
             }
 
             if show_profiling {
-                if let Some(stats) = indexing_stats_map.get(root) {
+                if let Some(profile) = profiling_data {
                     lines.push(format!(
-                        "    Startup: {}ms total ({} files indexed)",
-                        stats.total_time_ms, stats.total_files
+                        "    Total: {}ms ({} files)",
+                        profile.total_time_ms, profile.total_files
                     ));
-
-                    if !stats.server_startups.is_empty() {
-                        for startup in &stats.server_startups {
-                            lines.push(format!(
-                                "      {}: {}ms (init: {}ms, wait for ready: {}ms)",
-                                startup.server_name,
-                                startup.total_time_ms,
-                                startup.init_time_ms,
-                                startup.ready_time_ms
-                            ));
-                        }
-                    }
-
-                    if !stats.time_by_language.is_empty() {
-                        let mut lang_times: Vec<_> = stats.time_by_language.iter().collect();
-                        lang_times.sort_by(|a, b| b.1.cmp(a.1));
-                        for (lang, time_ms) in lang_times {
-                            let file_count = stats.files_by_language.get(lang).unwrap_or(&0);
-                            lines.push(format!(
-                                "      {} indexing: {}ms ({} files)",
-                                lang, time_ms, file_count
-                            ));
-                        }
-                    }
-                } else if workspaces_for_root.is_empty() {
-                    lines.push("    (no profiling data - workspace removed)".to_string());
                 }
             }
         }
     }
 
     lines.join("\n")
+}
+
+fn format_duration_us(us: u64) -> String {
+    if us >= 1_000_000 {
+        format!("{:.2}s", us as f64 / 1_000_000.0)
+    } else if us >= 1_000 {
+        format!("{:.1}ms", us as f64 / 1_000.0)
+    } else {
+        format!("{}µs", us)
+    }
 }
 
 pub fn format_resolve_symbol_result(result: &ResolveSymbolResult) -> String {
@@ -290,323 +364,163 @@ pub fn format_resolve_symbol_result(result: &ResolveSymbolResult) -> String {
                     .as_ref()
                     .map(|d| format!(" ({})", d))
                     .unwrap_or_default();
-                let ref_str = m.reference.as_deref().unwrap_or("");
-                lines.push(format!("  {}", ref_str));
+                let path = m
+                    .path
+                    .as_ref()
+                    .map(|p| format!("{}:{}", p, m.line))
+                    .unwrap_or_default();
                 lines.push(format!(
-                    "    {}:{} {}{}{}{}",
-                    m.path, m.line, kind, m.name, detail, container
+                    "  {:<50} {}{}{}{}",
+                    path, kind, m.name, container, detail
                 ));
             }
-            if let Some(total) = result.total_matches {
-                let shown = matches.len() as u32;
-                if total > shown {
-                    lines.push(format!("  ... and {} more", total - shown));
-                }
-            }
         }
-        return lines.join("\n");
-    }
-    format!(
-        "{}:{}",
-        result.path.as_deref().unwrap_or(""),
-        result.line.unwrap_or(0)
-    )
-}
-
-fn format_locations(locations: &[LocationInfo]) -> String {
-    let mut lines = Vec::new();
-    for loc in locations {
-        if loc.name.is_some() && loc.kind.is_some() {
-            let mut parts = vec![
-                format!("{}:{}", loc.path, loc.line),
-                format!("[{}]", loc.kind.as_ref().unwrap()),
-                loc.name.clone().unwrap(),
-            ];
-            // Don't show empty parentheses
-            if let Some(detail) = &loc.detail {
-                if !detail.is_empty() && detail != "()" {
-                    parts.push(format!("({})", detail));
-                }
-            }
-            lines.push(parts.join(" "));
-        } else if let Some(context) = &loc.context_lines {
-            let context_start = loc.context_start.unwrap_or(loc.line);
-            let context_end = context_start + context.len() as u32 - 1;
-            lines.push(format!("{}:{}-{}", loc.path, context_start, context_end));
-            for line in context {
-                lines.push(line.clone());
-            }
-            lines.push(String::new());
-        } else {
-            let line_content = get_line_content(&loc.path, loc.line);
-            if let Some(content) = line_content {
-                lines.push(format!("{}:{} {}", loc.path, loc.line, content));
-            } else {
-                lines.push(format!("{}:{}", loc.path, loc.line));
-            }
-        }
-    }
-    lines.join("\n")
-}
-
-fn get_line_content(path: &str, line: u32) -> Option<String> {
-    let file_path = PathBuf::from(path);
-    let file_path = if file_path.is_absolute() {
-        file_path
+        lines.join("\n")
     } else {
-        std::env::current_dir().ok()?.join(&file_path)
+        String::new()
+    }
+}
+
+pub fn format_show_result(result: &ShowResult, path_prefix: Option<&str>) -> String {
+    let path = if let Some(prefix) = path_prefix {
+        result
+            .path
+            .strip_prefix(prefix)
+            .unwrap_or(&result.path)
+            .trim_start_matches('/')
+    } else {
+        &result.path
     };
 
-    let content = std::fs::read_to_string(&file_path).ok()?;
-    let lines: Vec<&str> = content.lines().collect();
-    if line > 0 && (line as usize) <= lines.len() {
-        Some(lines[line as usize - 1].to_string())
-    } else {
-        None
+    let mut lines = vec![format!(
+        "{}:{}-{}",
+        path, result.start_line, result.end_line
+    )];
+    if result.truncated {
+        if let Some(total) = result.total_lines {
+            lines.push(format!(
+                "(truncated, showing {} of {} lines)",
+                result.end_line - result.start_line + 1,
+                total
+            ));
+        }
     }
+    lines.push(String::new());
+    lines.push(result.content.clone());
+    lines.join("\n")
 }
 
-fn format_symbols(symbols: &[SymbolInfo]) -> String {
-    let mut lines = Vec::new();
-    for sym in symbols {
-        let location = format!("{}:{}", sym.path, sym.line);
-        let mut parts = vec![location, format!("[{}]", sym.kind), sym.name.clone()];
-        // Don't show empty parentheses - some LSP servers return "()" as detail
-        if let Some(detail) = &sym.detail {
-            if !detail.is_empty() && detail != "()" {
-                parts.push(format!("({})", detail));
-            }
-        }
-        if let Some(container) = &sym.container {
-            parts.push(format!("in {}", container));
-        }
-        lines.push(parts.join(" "));
+pub fn format_references_result(result: &ReferencesResult, path_prefix: Option<&str>) -> String {
+    format_locations(&result.locations, path_prefix)
+}
 
-        if let Some(doc) = &sym.documentation {
-            for doc_line in doc.trim().lines() {
-                lines.push(format!("    {}", doc_line));
-            }
+pub fn format_implementations_result(
+    result: &ImplementationsResult,
+    path_prefix: Option<&str>,
+) -> String {
+    if let Some(error) = &result.error {
+        return format!("Error: {}", error);
+    }
+    format_locations(&result.locations, path_prefix)
+}
+
+fn format_locations(locations: &[LocationInfo], path_prefix: Option<&str>) -> String {
+    let mut lines = Vec::new();
+    for loc in locations {
+        let path = if let Some(prefix) = path_prefix {
+            loc.path
+                .strip_prefix(prefix)
+                .unwrap_or(&loc.path)
+                .trim_start_matches('/')
+        } else {
+            &loc.path
+        };
+
+        if let Some(content) = &loc.content {
+            lines.push(format!("{}:{}", path, loc.line));
+            lines.push(content.clone());
             lines.push(String::new());
+        } else {
+            lines.push(format!("{}:{}", path, loc.line));
         }
+    }
+    if lines.last() == Some(&String::new()) {
+        lines.pop();
     }
     lines.join("\n")
 }
 
-fn format_size(size: u64) -> String {
-    if size < 1024 {
-        format!("{}B", size)
-    } else if size < 1024 * 1024 {
-        format!("{:.1}KB", size as f64 / 1024.0)
-    } else {
-        format!("{:.1}MB", size as f64 / (1024.0 * 1024.0))
+pub fn format_calls_result(result: &CallsResult, path_prefix: Option<&str>) -> String {
+    if let Some(error) = &result.error {
+        return format!("Error: {}", error);
     }
-}
-
-enum TreeNode {
-    File(FileInfo),
-    Dir(HashMap<String, TreeNode>),
-}
-
-fn build_tree(files: &HashMap<String, FileInfo>) -> HashMap<String, TreeNode> {
-    let mut tree: HashMap<String, TreeNode> = HashMap::new();
-
-    for (rel_path, info) in files {
-        let parts: Vec<&str> = rel_path.split('/').collect();
-        let mut current = &mut tree;
-
-        for (i, part) in parts.iter().enumerate() {
-            if i == parts.len() - 1 {
-                current.insert(part.to_string(), TreeNode::File(info.clone()));
-            } else {
-                current = match current
-                    .entry(part.to_string())
-                    .or_insert_with(|| TreeNode::Dir(HashMap::new()))
-                {
-                    TreeNode::Dir(map) => map,
-                    _ => unreachable!(),
-                };
-            }
-        }
+    if let Some(message) = &result.message {
+        return message.clone();
     }
 
-    tree
-}
-
-fn render_tree(
-    node: &HashMap<String, TreeNode>,
-    lines: &mut Vec<String>,
-    prefix: &str,
-    is_root: bool,
-) {
-    let mut entries: Vec<_> = node.keys().collect();
-    entries.sort_by(|a, b| {
-        let a_is_dir = matches!(node.get(*a), Some(TreeNode::Dir(_)));
-        let b_is_dir = matches!(node.get(*b), Some(TreeNode::Dir(_)));
-        match (a_is_dir, b_is_dir) {
-            (true, false) => std::cmp::Ordering::Less,
-            (false, true) => std::cmp::Ordering::Greater,
-            _ => a.cmp(b),
-        }
-    });
-
-    for (i, name) in entries.iter().enumerate() {
-        let is_last = i == entries.len() - 1;
-        let child = node.get(*name).unwrap();
-
-        let (connector, new_prefix) = if is_root {
-            ("".to_string(), "".to_string())
-        } else {
-            let connector = if is_last { "└── " } else { "├── " };
-            let new_prefix = format!("{}{}", prefix, if is_last { "    " } else { "│   " });
-            (connector.to_string(), new_prefix)
-        };
-
-        match child {
-            TreeNode::File(info) => {
-                let info_str = format_file_info(info);
-                lines.push(format!("{}{}{} ({})", prefix, connector, name, info_str));
-            }
-            TreeNode::Dir(children) => {
-                lines.push(format!("{}{}{}", prefix, connector, name));
-                render_tree(children, lines, &new_prefix, false);
-            }
-        }
-    }
-}
-
-fn format_file_info(info: &FileInfo) -> String {
-    let mut parts = vec![format_size(info.bytes), format!("{} lines", info.lines)];
-
-    let symbol_order = ["class", "struct", "interface", "enum", "function", "method"];
-    for kind in &symbol_order {
-        if let Some(&count) = info.symbols.get(*kind) {
-            if count > 0 {
-                let label = if count == 1 {
-                    kind.to_string()
-                } else if *kind == "class" {
-                    "classes".to_string()
-                } else {
-                    format!("{}s", kind)
-                };
-                parts.push(format!("{} {}", count, label));
-            }
-        }
-    }
-
-    parts.join(", ")
-}
-
-fn is_stdlib_path(path: &str) -> bool {
-    path.contains("/typeshed-fallback/stdlib/")
-        || path.contains("/typeshed/stdlib/")
-        || (path.contains("/libexec/src/") && !path.contains("/mod/"))
-        || (path.ends_with(".d.ts")
-            && path
-                .split('/')
-                .last()
-                .map(|f| f.starts_with("lib."))
-                .unwrap_or(false))
-        || path.contains("/rustlib/src/rust/library/")
-}
-
-fn should_show_detail(detail: &Option<String>) -> bool {
-    detail
-        .as_ref()
-        .map(|d| !d.is_empty() && d != "()")
-        .unwrap_or(false)
-}
-
-fn format_call_tree(node: &CallNode) -> String {
     let mut lines = Vec::new();
 
-    let mut parts: Vec<String> = Vec::new();
-    if let Some(path) = &node.path {
-        parts.push(format!("{}:{}", path, node.line.unwrap_or(0)));
-    }
-    if let Some(kind) = &node.kind {
-        parts.push(format!("[{}]", kind));
-    }
-    parts.push(node.name.clone());
-    if should_show_detail(&node.detail) {
-        parts.push(format!("({})", node.detail.as_ref().unwrap()));
-    }
-    lines.push(parts.join(" "));
-
-    if let Some(calls) = &node.calls {
-        lines.push(String::new());
-        lines.push("Outgoing calls:".to_string());
-        if !calls.is_empty() {
-            render_calls_tree(calls, &mut lines, "  ", true);
+    if let Some(path) = &result.path {
+        lines.push("Call path found:".to_string());
+        for (i, node) in path.iter().enumerate() {
+            let indent = "  ".repeat(i);
+            let path = if let Some(prefix) = path_prefix {
+                node.path
+                    .strip_prefix(prefix)
+                    .unwrap_or(&node.path)
+                    .trim_start_matches('/')
+            } else {
+                &node.path
+            };
+            lines.push(format!("{}{}:{} {}", indent, path, node.line, node.name));
         }
-    } else if let Some(called_by) = &node.called_by {
-        lines.push(String::new());
-        lines.push("Incoming calls:".to_string());
-        if !called_by.is_empty() {
-            render_calls_tree(called_by, &mut lines, "  ", false);
-        }
-    }
+    } else if let Some(root) = &result.root {
+        fn format_node(
+            node: &CallNode,
+            prefix: &str,
+            is_last: bool,
+            lines: &mut Vec<String>,
+            path_prefix: Option<&str>,
+        ) {
+            let connector = if prefix.is_empty() {
+                ""
+            } else if is_last {
+                "└── "
+            } else {
+                "├── "
+            };
 
-    lines.join("\n")
-}
+            let path = if let Some(pfx) = path_prefix {
+                node.path
+                    .strip_prefix(pfx)
+                    .unwrap_or(&node.path)
+                    .trim_start_matches('/')
+            } else {
+                &node.path
+            };
 
-fn render_calls_tree(items: &[CallNode], lines: &mut Vec<String>, prefix: &str, is_outgoing: bool) {
-    for (i, item) in items.iter().enumerate() {
-        let is_last = i == items.len() - 1;
-        let connector = if is_last { "└── " } else { "├── " };
-        let child_prefix = format!("{}{}", prefix, if is_last { "    " } else { "│   " });
+            lines.push(format!(
+                "{}{}{}:{} {}",
+                prefix, connector, path, node.line, node.name
+            ));
 
-        let path = item.path.as_deref().unwrap_or("");
-        let line = item.line.unwrap_or(0);
+            let child_prefix = if prefix.is_empty() {
+                String::new()
+            } else if is_last {
+                format!("{}    ", prefix)
+            } else {
+                format!("{}│   ", prefix)
+            };
 
-        let mut parts: Vec<String> = Vec::new();
-        if is_stdlib_path(path) {
-            if let Some(kind) = &item.kind {
-                parts.push(format!("[{}]", kind));
+            if let Some(children) = &node.children {
+                for (i, child) in children.iter().enumerate() {
+                    let is_child_last = i == children.len() - 1;
+                    format_node(child, &child_prefix, is_child_last, lines, path_prefix);
+                }
             }
-        } else {
-            parts.push(format!("{}:{}", path, line));
-            if let Some(kind) = &item.kind {
-                parts.push(format!("[{}]", kind));
-            }
-        }
-        parts.push(item.name.clone());
-        if should_show_detail(&item.detail) {
-            parts.push(format!("({})", item.detail.as_ref().unwrap()));
-        }
-        lines.push(format!("{}{}{}", prefix, connector, parts.join(" ")));
-
-        let children = if is_outgoing {
-            &item.calls
-        } else {
-            &item.called_by
-        };
-        if let Some(children) = children {
-            render_calls_tree(children, lines, &child_prefix, is_outgoing);
-        }
-    }
-}
-
-fn format_call_path(path: &[CallNode]) -> String {
-    if path.is_empty() {
-        return "Empty path".to_string();
-    }
-
-    let mut lines = vec!["Call path:".to_string()];
-    for (i, item) in path.iter().enumerate() {
-        let file_path = item.path.as_deref().unwrap_or("");
-        let line = item.line.unwrap_or(0);
-
-        let mut parts = vec![format!("{}:{}", file_path, line)];
-        if let Some(kind) = &item.kind {
-            parts.push(format!("[{}]", kind));
-        }
-        parts.push(item.name.clone());
-        if should_show_detail(&item.detail) {
-            parts.push(format!("({})", item.detail.as_ref().unwrap()));
         }
 
-        let arrow = if i == 0 { "" } else { "  → " };
-        lines.push(format!("{}{}", arrow, parts.join(" ")));
+        format_node(root, "", true, &mut lines, path_prefix);
     }
 
     lines.join("\n")
