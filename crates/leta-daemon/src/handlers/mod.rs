@@ -1,12 +1,12 @@
-mod grep;
-mod show;
-mod refs;
 mod calls;
-mod rename;
 mod files;
+mod grep;
+mod index;
+mod refs;
+mod rename;
 mod resolve;
 mod session;
-mod index;
+mod show;
 
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
@@ -15,19 +15,24 @@ use std::sync::Arc;
 
 use fastrace::trace;
 use leta_fs::{get_language_id, get_lines_around, read_file_content, uri_to_path};
-use leta_lsp::lsp_types::{DocumentSymbol, DocumentSymbolResponse, Location, SymbolInformation, TypeHierarchyItem};
+use leta_lsp::lsp_types::{
+    DocumentSymbol, DocumentSymbolResponse, Location, SymbolInformation, TypeHierarchyItem,
+};
 use leta_servers::get_server_for_language;
 use leta_types::{CacheStats, LocationInfo, SymbolInfo, SymbolKind};
 
-pub use grep::{handle_grep, get_file_symbols};
-pub use index::handle_add_workspace;
-pub use show::handle_show;
-pub use refs::{handle_references, handle_declaration, handle_implementations, handle_subtypes, handle_supertypes};
 pub use calls::handle_calls;
-pub use rename::{handle_rename, handle_move_file};
 pub use files::handle_files;
+pub use grep::{get_file_symbols, handle_grep};
+pub use index::handle_add_workspace;
+pub use refs::{
+    handle_declaration, handle_implementations, handle_references, handle_subtypes,
+    handle_supertypes,
+};
+pub use rename::{handle_move_file, handle_rename};
 pub use resolve::handle_resolve_symbol;
-pub use session::{handle_describe_session, handle_restart_workspace, handle_remove_workspace};
+pub use session::{handle_describe_session, handle_remove_workspace, handle_restart_workspace};
+pub use show::handle_show;
 
 use crate::session::Session;
 use leta_cache::LmdbCache;
@@ -49,7 +54,7 @@ impl CacheStatsTracker {
             hover_misses: self.hover_misses.load(Ordering::Relaxed),
         }
     }
-    
+
     pub fn reset(&self) {
         self.symbol_hits.store(0, Ordering::Relaxed);
         self.symbol_misses.store(0, Ordering::Relaxed);
@@ -66,7 +71,11 @@ pub struct HandlerContext {
 }
 
 impl HandlerContext {
-    pub fn new(session: Arc<Session>, hover_cache: Arc<LmdbCache>, symbol_cache: Arc<LmdbCache>) -> Self {
+    pub fn new(
+        session: Arc<Session>,
+        hover_cache: Arc<LmdbCache>,
+        symbol_cache: Arc<LmdbCache>,
+    ) -> Self {
         Self {
             session,
             hover_cache,
@@ -82,13 +91,16 @@ pub fn relative_path(path: &Path, workspace_root: &Path) -> String {
         .unwrap_or_else(|_| path.to_string_lossy().to_string())
 }
 
-pub fn find_source_files_with_extension(workspace_root: &Path, extension: &str) -> Vec<std::path::PathBuf> {
+pub fn find_source_files_with_extension(
+    workspace_root: &Path,
+    extension: &str,
+) -> Vec<std::path::PathBuf> {
     let mut files = Vec::new();
     let walker = ignore::WalkBuilder::new(workspace_root)
         .hidden(true)
         .git_ignore(true)
         .build();
-    
+
     for entry in walker.flatten() {
         let path = entry.path();
         if path.is_file() {
@@ -179,47 +191,8 @@ pub fn format_locations(
 
         if context > 0 && file_path.exists() {
             if let Ok(content) = read_file_content(&file_path) {
-                let (lines, start, _) = get_lines_around(&content, loc.range.start.line as usize, context as usize);
-                info.context_lines = Some(lines);
-                info.context_start = Some(start as u32 + 1);
-            }
-        }
-
-        result.push(info);
-    }
-
-    result.sort_by(|a, b| (&a.path, a.line).cmp(&(&b.path, b.line)));
-    result
-}
-
-pub fn format_type_hierarchy_items(
-    items: &[TypeHierarchyItem],
-    workspace_root: &Path,
-    context: u32,
-) -> Vec<LocationInfo> {
-    let mut result = Vec::new();
-    let mut seen = std::collections::HashSet::new();
-
-    for item in items {
-        let file_path = uri_to_path(item.uri.as_str());
-        let rel_path = relative_path(&file_path, workspace_root);
-        let line = item.selection_range.start.line + 1;
-
-        let key = (rel_path.clone(), line);
-        if seen.contains(&key) {
-            continue;
-        }
-        seen.insert(key);
-
-        let mut info = LocationInfo::new(rel_path, line);
-        info.column = item.selection_range.start.character;
-        info.name = Some(item.name.clone());
-        info.kind = Some(SymbolKind::from_lsp(item.kind).to_string());
-        info.detail = item.detail.clone();
-
-        if context > 0 && file_path.exists() {
-            if let Ok(content) = read_file_content(&file_path) {
-                let (lines, start, _) = get_lines_around(&content, item.selection_range.start.line as usize, context as usize);
+                let (lines, start, _) =
+                    get_lines_around(&content, loc.range.start.line as usize, context as usize);
                 info.context_lines = Some(lines);
                 info.context_start = Some(start as u32 + 1);
             }
@@ -264,7 +237,10 @@ pub fn format_type_hierarchy_items_from_json(
             .and_then(|s| s.get("character"))
             .and_then(|c| c.as_u64())
             .unwrap_or(0) as u32;
-        let detail = item.get("detail").and_then(|v| v.as_str()).map(String::from);
+        let detail = item
+            .get("detail")
+            .and_then(|v| v.as_str())
+            .map(String::from);
 
         let file_path = uri_to_path(uri);
         let rel_path = relative_path(&file_path, workspace_root);
@@ -313,7 +289,8 @@ pub fn format_type_hierarchy_items_from_json(
 
         if context > 0 && file_path.exists() {
             if let Ok(content) = read_file_content(&file_path) {
-                let (lines, start, _) = get_lines_around(&content, start_line as usize, context as usize);
+                let (lines, start, _) =
+                    get_lines_around(&content, start_line as usize, context as usize);
                 info.context_lines = Some(lines);
                 info.context_start = Some(start as u32 + 1);
             }
@@ -332,9 +309,19 @@ pub async fn collect_all_workspace_symbols(
     workspace_root: &Path,
 ) -> Result<Vec<SymbolInfo>, String> {
     let skip_dirs: HashSet<&str> = [
-        "node_modules", "__pycache__", ".git", "venv", ".venv",
-        "build", "dist", ".tox", ".eggs", "target",
-    ].into_iter().collect();
+        "node_modules",
+        "__pycache__",
+        ".git",
+        "venv",
+        ".venv",
+        "build",
+        "dist",
+        ".tox",
+        ".eggs",
+        "target",
+    ]
+    .into_iter()
+    .collect();
 
     let config = ctx.session.config().await;
     let excluded_languages: HashSet<String> = config
@@ -350,7 +337,9 @@ pub async fn collect_all_workspace_symbols(
         .into_iter()
         .filter_entry(|e| {
             let name = e.file_name().to_string_lossy();
-            !name.starts_with('.') && !skip_dirs.contains(name.as_ref()) && !name.ends_with(".egg-info")
+            !name.starts_with('.')
+                && !skip_dirs.contains(name.as_ref())
+                && !name.ends_with(".egg-info")
         })
     {
         let entry = match entry {
@@ -364,22 +353,29 @@ pub async fn collect_all_workspace_symbols(
 
         let path = entry.path();
         let lang = get_language_id(path);
-        
+
         if lang == "plaintext" || excluded_languages.contains(lang) {
             continue;
         }
-        
+
         if get_server_for_language(lang, None).is_none() {
             continue;
         }
 
-        files_by_lang.entry(lang.to_string()).or_default().push(path.to_path_buf());
+        files_by_lang
+            .entry(lang.to_string())
+            .or_default()
+            .push(path.to_path_buf());
     }
 
     let mut all_symbols = Vec::new();
 
     for (lang, files) in files_by_lang {
-        let workspace = match ctx.session.get_or_create_workspace_for_language(&lang, workspace_root).await {
+        let workspace = match ctx
+            .session
+            .get_or_create_workspace_for_language(&lang, workspace_root)
+            .await
+        {
             Ok(ws) => ws,
             Err(_) => continue,
         };
@@ -387,7 +383,8 @@ pub async fn collect_all_workspace_symbols(
         workspace.wait_for_ready(30).await;
 
         for file_path in files {
-            if let Ok(symbols) = get_file_symbols(ctx, &workspace, workspace_root, &file_path).await {
+            if let Ok(symbols) = get_file_symbols(ctx, &workspace, workspace_root, &file_path).await
+            {
                 all_symbols.extend(symbols);
             }
         }
