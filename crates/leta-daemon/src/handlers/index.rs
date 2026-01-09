@@ -253,11 +253,11 @@ async fn index_language_files(
 }
 
 #[trace]
-async fn get_workspace_for_language(
-    ctx: &HandlerContext,
+async fn get_workspace_for_language<'a>(
+    ctx: &'a HandlerContext,
     lang: &str,
     workspace_root: &Path,
-) -> Result<crate::session::WorkspaceHandle<'_>, String> {
+) -> Result<crate::session::WorkspaceHandle<'a>, String> {
     ctx.session
         .get_or_create_workspace_for_language(lang, workspace_root)
         .await
