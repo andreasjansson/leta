@@ -201,6 +201,93 @@ pub fn enumerate_source_files(
     files
 }
 
+/// Collect and filter symbols with early termination when limit is reached.
+#[trace]
+async fn collect_and_filter_symbols(
+    ctx: &HandlerContext,
+    workspace_root: &Path,
+    files: &[PathBuf],
+    text_pattern: Option<&str>,
+    excluded_languages: &HashSet<String>,
+    filter: &GrepFilter<'_>,
+    limit: usize,
+) -> Result<Vec<SymbolInfo>, String> {
+    let text_regex = text_pattern.and_then(pattern_to_text_regex);
+    let mut results = Vec::new();
+    let mut files_by_lang: HashMap<String, Vec<&PathBuf>> = HashMap::new();
+
+    for file_path in files {
+        let lang = get_language_id(file_path);
+        if lang == "plaintext" || excluded_languages.contains(lang) {
+            continue;
+        }
+        if get_server_for_language(lang, None).is_none() {
+            continue;
+        }
+
+        if let Some(symbols) = get_cached_symbols(ctx, workspace_root, file_path) {
+            for sym in symbols {
+                if filter.matches(&sym) {
+                    results.push(sym);
+                    if results.len() >= limit {
+                        return Ok(results);
+                    }
+                }
+            }
+        } else {
+            let should_fetch = match &text_regex {
+                Some(re) => {
+                    if let Ok(content) = read_file_content(file_path) {
+                        re.is_match(&content)
+                    } else {
+                        false
+                    }
+                }
+                None => true,
+            };
+
+            if should_fetch {
+                files_by_lang
+                    .entry(lang.to_string())
+                    .or_default()
+                    .push(file_path);
+            }
+        }
+    }
+
+    for (lang, uncached_files) in files_by_lang {
+        if results.len() >= limit {
+            break;
+        }
+
+        let workspace = match ctx
+            .session
+            .get_or_create_workspace_for_language(&lang, workspace_root)
+            .await
+        {
+            Ok(ws) => ws,
+            Err(_) => continue,
+        };
+
+        for file_path in uncached_files {
+            if let Ok(symbols) =
+                get_file_symbols_no_wait(ctx, &workspace, workspace_root, file_path).await
+            {
+                for sym in symbols {
+                    if filter.matches(&sym) {
+                        results.push(sym);
+                        if results.len() >= limit {
+                            return Ok(results);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(results)
+}
+
 /// Collect symbols from files, using cache when available and text prefilter for uncached files.
 ///
 /// For each file:
