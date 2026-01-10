@@ -12,7 +12,30 @@ use tracing::debug;
 use super::{flatten_document_symbols, relative_path, HandlerContext};
 use crate::session::WorkspaceHandle;
 
-const SKIP_DIRS: &[&str] = &[
+struct GrepFilter<'a> {
+    regex: &'a Regex,
+    kinds: Option<&'a HashSet<String>>,
+    exclude_patterns: &'a [String],
+}
+
+impl GrepFilter<'_> {
+    fn matches(&self, sym: &SymbolInfo) -> bool {
+        if !self.regex.is_match(&sym.name) {
+            return false;
+        }
+        if let Some(kinds) = self.kinds {
+            if !kinds.contains(&sym.kind.to_lowercase()) {
+                return false;
+            }
+        }
+        if !self.exclude_patterns.is_empty() && is_excluded(&sym.path, self.exclude_patterns) {
+            return false;
+        }
+        true
+    }
+}
+
+pub const SKIP_DIRS: &[&str] = &[
     "node_modules",
     "__pycache__",
     ".git",
