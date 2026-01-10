@@ -780,6 +780,7 @@ async fn handle_grep(
     path: Option<String>,
     kind: Option<String>,
     exclude: Vec<String>,
+    head: u32,
     docs: bool,
     case_sensitive: bool,
 ) -> Result<()> {
@@ -813,6 +814,7 @@ async fn handle_grep(
             "include_docs": docs,
             "paths": paths,
             "exclude_patterns": exclude,
+            "limit": head,
         }),
         profile,
     )
