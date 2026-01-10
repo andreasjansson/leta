@@ -6,7 +6,8 @@ use leta_fs::get_language_id;
 use leta_servers::get_server_for_language;
 use leta_types::{FileInfo, FilesParams, FilesResult, SymbolInfo};
 
-use super::{get_file_symbols, relative_path, HandlerContext};
+use super::grep::{get_cached_symbols, get_file_symbols_no_wait};
+use super::{relative_path, HandlerContext};
 
 const DEFAULT_EXCLUDE_DIRS: &[&str] = &[
     ".git",
