@@ -60,8 +60,8 @@ fn pattern_to_text_regex(pattern: &str) -> Option<Regex> {
 #[trace]
 pub async fn handle_grep(ctx: &HandlerContext, params: GrepParams) -> Result<GrepResult, String> {
     debug!(
-        "handle_grep: pattern={} workspace={}",
-        params.pattern, params.workspace_root
+        "handle_grep: pattern={} workspace={} limit={}",
+        params.pattern, params.workspace_root, params.limit
     );
     let workspace_root = PathBuf::from(&params.workspace_root);
 
@@ -72,6 +72,7 @@ pub async fn handle_grep(ctx: &HandlerContext, params: GrepParams) -> Result<Gre
 
     let kinds_set: Option<HashSet<String>> = params
         .kinds
+        .clone()
         .map(|k| k.into_iter().map(|s| s.to_lowercase()).collect());
 
     let config = ctx.session.config().await;
@@ -82,52 +83,35 @@ pub async fn handle_grep(ctx: &HandlerContext, params: GrepParams) -> Result<Gre
         .cloned()
         .collect();
 
-    let symbols = if let Some(paths) = params.paths {
-        let files: Vec<PathBuf> = paths.iter().map(PathBuf::from).collect();
-        collect_symbols_smart(
-            ctx,
-            &workspace_root,
-            &files,
-            Some(&pattern),
-            &excluded_languages,
-        )
-        .await?
-    } else {
-        let files = enumerate_source_files(&workspace_root, &excluded_languages);
-        let text_pattern = if should_use_prefilter(&pattern) {
-            Some(pattern.as_str())
-        } else {
-            None
-        };
-        collect_symbols_smart(
-            ctx,
-            &workspace_root,
-            &files,
-            text_pattern,
-            &excluded_languages,
-        )
-        .await?
+    let limit = params.limit as usize;
+    let filter = GrepFilter {
+        regex: &regex,
+        kinds: kinds_set.as_ref(),
+        exclude_patterns: &params.exclude_patterns,
     };
 
-    let mut filtered: Vec<SymbolInfo> = symbols
-        .into_iter()
-        .filter(|s| {
-            if !regex.is_match(&s.name) {
-                return false;
-            }
-            if let Some(ref kinds) = kinds_set {
-                if !kinds.contains(&s.kind.to_lowercase()) {
-                    return false;
-                }
-            }
-            if !params.exclude_patterns.is_empty() {
-                if is_excluded(&s.path, &params.exclude_patterns) {
-                    return false;
-                }
-            }
-            true
-        })
-        .collect();
+    let files = if let Some(paths) = &params.paths {
+        paths.iter().map(PathBuf::from).collect()
+    } else {
+        enumerate_source_files(&workspace_root, &excluded_languages)
+    };
+
+    let text_pattern = if should_use_prefilter(&pattern) {
+        Some(pattern.as_str())
+    } else {
+        None
+    };
+
+    let mut filtered = collect_and_filter_symbols(
+        ctx,
+        &workspace_root,
+        &files,
+        text_pattern,
+        &excluded_languages,
+        &filter,
+        limit,
+    )
+    .await?;
 
     if params.include_docs {
         for sym in &mut filtered {
