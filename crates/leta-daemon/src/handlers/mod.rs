@@ -315,21 +315,6 @@ pub async fn collect_all_workspace_symbols(
     ctx: &HandlerContext,
     workspace_root: &Path,
 ) -> Result<Vec<SymbolInfo>, String> {
-    let skip_dirs: HashSet<&str> = [
-        "node_modules",
-        "__pycache__",
-        ".git",
-        "venv",
-        ".venv",
-        "build",
-        "dist",
-        ".tox",
-        ".eggs",
-        "target",
-    ]
-    .into_iter()
-    .collect();
-
     let config = ctx.session.config().await;
     let excluded_languages: HashSet<String> = config
         .workspaces
@@ -338,75 +323,6 @@ pub async fn collect_all_workspace_symbols(
         .cloned()
         .collect();
 
-    let mut files_by_lang: HashMap<String, Vec<PathBuf>> = HashMap::new();
-
-    for entry in walkdir::WalkDir::new(workspace_root)
-        .into_iter()
-        .filter_entry(|e| {
-            let name = e.file_name().to_string_lossy();
-            !name.starts_with('.')
-                && !skip_dirs.contains(name.as_ref())
-                && !name.ends_with(".egg-info")
-        })
-    {
-        let entry = match entry {
-            Ok(e) => e,
-            Err(_) => continue,
-        };
-
-        if !entry.file_type().is_file() {
-            continue;
-        }
-
-        let path = entry.path();
-        let lang = get_language_id(path);
-
-        if lang == "plaintext" || excluded_languages.contains(lang) {
-            continue;
-        }
-
-        if get_server_for_language(lang, None).is_none() {
-            continue;
-        }
-
-        files_by_lang
-            .entry(lang.to_string())
-            .or_default()
-            .push(path.to_path_buf());
-    }
-
-    let mut all_symbols = Vec::new();
-
-    for (lang, files) in files_by_lang {
-        let workspace = match ctx
-            .session
-            .get_or_create_workspace_for_language(&lang, workspace_root)
-            .await
-        {
-            Ok(ws) => ws,
-            Err(_) => continue,
-        };
-
-        let mut uncached_files = Vec::new();
-        for file_path in &files {
-            if let Some(symbols) = get_cached_symbols(ctx, workspace_root, file_path) {
-                all_symbols.extend(symbols);
-            } else {
-                uncached_files.push(file_path.clone());
-            }
-        }
-
-        if !uncached_files.is_empty() {
-            workspace.wait_for_ready(30).await;
-            for file_path in uncached_files {
-                if let Ok(symbols) =
-                    get_file_symbols(ctx, &workspace, workspace_root, &file_path).await
-                {
-                    all_symbols.extend(symbols);
-                }
-            }
-        }
-    }
-
-    Ok(all_symbols)
+    let files = grep::enumerate_source_files(workspace_root, &excluded_languages);
+    grep::collect_symbols_smart(ctx, workspace_root, &files, None, &excluded_languages).await
 }
