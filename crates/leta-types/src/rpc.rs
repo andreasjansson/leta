@@ -188,6 +188,12 @@ pub struct GrepParams {
     pub paths: Option<Vec<String>>,
     #[serde(default)]
     pub exclude_patterns: Vec<String>,
+    #[serde(default = "default_grep_limit")]
+    pub limit: u32,
+}
+
+fn default_grep_limit() -> u32 {
+    200
 }
 
 fn default_pattern() -> String {
