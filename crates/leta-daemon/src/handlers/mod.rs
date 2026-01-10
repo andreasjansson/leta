@@ -8,20 +8,19 @@ mod resolve;
 mod session;
 mod show;
 
-use std::collections::{HashMap, HashSet};
-use std::path::{Path, PathBuf};
+use std::collections::HashSet;
+use std::path::Path;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::Arc;
 
 use fastrace::trace;
-use leta_fs::{get_language_id, get_lines_around, read_file_content, uri_to_path};
+use leta_fs::{get_lines_around, read_file_content, uri_to_path};
 use leta_lsp::lsp_types::{DocumentSymbol, DocumentSymbolResponse, Location, SymbolInformation};
-use leta_servers::get_server_for_language;
 use leta_types::{CacheStats, LocationInfo, SymbolInfo, SymbolKind};
 
 pub use calls::handle_calls;
 pub use files::handle_files;
-pub use grep::{get_cached_symbols, get_file_symbols, handle_grep};
+pub use grep::{get_file_symbols, handle_grep};
 pub use index::handle_add_workspace;
 pub use refs::{
     handle_declaration, handle_implementations, handle_references, handle_subtypes,
