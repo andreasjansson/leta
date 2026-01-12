@@ -1140,6 +1140,7 @@ async fn handle_supertypes(
     json_output: bool,
     symbol: String,
     context: u32,
+    head: u32,
 ) -> Result<()> {
     let workspace_root = get_workspace_root(config)?;
     let resolved = resolve_symbol(&symbol, &workspace_root, false).await?;
@@ -1152,6 +1153,7 @@ async fn handle_supertypes(
             "line": resolved.resolved.line,
             "column": resolved.resolved.column.unwrap_or(0),
             "context": context,
+            "head": head,
         }),
     )
     .await?;
@@ -1161,7 +1163,15 @@ async fn handle_supertypes(
     if json_output {
         println!("{}", serde_json::to_string_pretty(&supertypes_result)?);
     } else {
-        println!("{}", format_supertypes_result(&supertypes_result));
+        let mut cmd_parts = vec![format!("leta supertypes \"{}\"", symbol)];
+        if context > 0 {
+            cmd_parts.push(format!("-n {}", context));
+        }
+        let command_base = cmd_parts.join(" ");
+        println!(
+            "{}",
+            format_supertypes_result(&supertypes_result, head, &command_base)
+        );
     }
     Ok(())
 }
