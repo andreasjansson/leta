@@ -366,12 +366,14 @@ fn definition_response_to_locations(
     response: &GotoDefinitionResponse,
     workspace_root: &PathBuf,
     context: u32,
+    head: u32,
 ) -> Vec<LocationInfo> {
     let locations: Vec<Location> = match response {
         GotoDefinitionResponse::Scalar(loc) => vec![loc.clone()],
-        GotoDefinitionResponse::Array(locs) => locs.clone(),
+        GotoDefinitionResponse::Array(locs) => locs.iter().take(head as usize).cloned().collect(),
         GotoDefinitionResponse::Link(links) => links
             .iter()
+            .take(head as usize)
             .map(|link| Location {
                 uri: link.target_uri.clone(),
                 range: link.target_selection_range,
