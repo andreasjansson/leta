@@ -441,26 +441,42 @@ fn classify_all_files(
     let mut uncached_by_lang: HashMap<String, Vec<PathBuf>> = HashMap::new();
 
     for file_path in files {
-        match classify_file(
+        let status = classify_file(
             ctx,
             workspace_root,
             file_path,
             text_regex,
             excluded_languages,
-        ) {
-            FileStatus::Cached(symbols) => cached_symbols.extend(symbols),
-            FileStatus::NeedsFetch => {
-                let lang = get_language_id(file_path);
-                uncached_by_lang
-                    .entry(lang.to_string())
-                    .or_default()
-                    .push(file_path.clone());
-            }
-            FileStatus::Skipped => {}
-        }
+        );
+        process_file_status(
+            status,
+            file_path,
+            &mut cached_symbols,
+            &mut uncached_by_lang,
+        );
     }
 
     (cached_symbols, uncached_by_lang)
+}
+
+#[trace]
+fn process_file_status(
+    status: FileStatus,
+    file_path: &Path,
+    cached_symbols: &mut Vec<SymbolInfo>,
+    uncached_by_lang: &mut HashMap<String, Vec<PathBuf>>,
+) {
+    match status {
+        FileStatus::Cached(symbols) => cached_symbols.extend(symbols),
+        FileStatus::NeedsFetch => {
+            let lang = get_language_id(file_path);
+            uncached_by_lang
+                .entry(lang.to_string())
+                .or_default()
+                .push(file_path.clone());
+        }
+        FileStatus::Skipped => {}
+    }
 }
 
 #[trace]
