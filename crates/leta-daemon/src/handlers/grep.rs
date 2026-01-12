@@ -863,7 +863,6 @@ async fn stream_and_filter_symbols(
     include_docs: bool,
     tx: &mpsc::Sender<StreamMessage>,
 ) -> Result<(u32, bool), String> {
-    let _span = LocalSpan::enter_with_local_parent("stream_and_filter_symbols");
     let text_regex = text_pattern.and_then(pattern_to_text_regex);
 
     let mut count = 0u32;
