@@ -7,7 +7,7 @@ use leta_cache::LmdbCache;
 use leta_config::{get_pid_path, get_socket_path, remove_pid, write_pid, Config};
 use leta_types::*;
 use serde_json::{json, Value};
-use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader};
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{UnixListener, UnixStream};
 use tokio::sync::{broadcast, mpsc};
 use tracing::{error, info};
