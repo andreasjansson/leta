@@ -24,11 +24,33 @@ pub fn format_truncation_unknown_total(
     )
 }
 
-pub fn format_grep_result(result: &GrepResult) -> String {
+pub fn format_grep_result(result: &GrepResult, head: u32, command_base: &str) -> String {
     if let Some(warning) = &result.warning {
         return format!("Warning: {}", warning);
     }
-    format_symbols(&result.symbols)
+    let mut output = format_symbols(&result.symbols);
+
+    if result.truncated {
+        if !output.is_empty() {
+            output.push_str("\n\n");
+        }
+        let next_head = head * 2;
+        let cmd = format!("{} --head {}", command_base, next_head);
+        if let Some(total) = result.total_count {
+            output.push_str(&format_truncation_with_count(
+                &cmd,
+                result.symbols.len() as u32,
+                total,
+            ));
+        } else {
+            output.push_str(&format_truncation_unknown_total(
+                &cmd,
+                result.symbols.len() as u32,
+            ));
+        }
+    }
+
+    output
 }
 
 pub fn format_references_result(result: &ReferencesResult) -> String {
