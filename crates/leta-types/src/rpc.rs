@@ -1,7 +1,9 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-use crate::{CacheInfo, CallNode, FileInfo, LocationInfo, SymbolInfo, WorkspaceInfo};
+use crate::{
+    CacheInfo, CallNode, FileInfo, LocationInfo, SymbolInfo, WorkspaceInfo, DEFAULT_HEAD_LIMIT,
+};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FunctionStats {
