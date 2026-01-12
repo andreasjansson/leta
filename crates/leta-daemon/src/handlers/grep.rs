@@ -318,7 +318,6 @@ async fn fetch_and_filter_symbols(
     Ok(false)
 }
 
-#[trace]
 async fn collect_and_filter_symbols(
     ctx: &HandlerContext,
     workspace_root: &Path,
@@ -328,6 +327,9 @@ async fn collect_and_filter_symbols(
     filter: &GrepFilter<'_>,
     limit: usize,
 ) -> Result<Vec<SymbolInfo>, String> {
+    let span = Span::enter_with_local_parent("collect_and_filter_symbols");
+    let _guard = span.set_local_parent();
+
     let text_regex = text_pattern.and_then(pattern_to_text_regex);
 
     let (mut results, uncached_by_lang, limit_reached) = classify_and_filter_cached(
