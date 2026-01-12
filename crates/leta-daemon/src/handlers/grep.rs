@@ -460,89 +460,21 @@ fn classify_all_files(
     let mut cached_symbols = Vec::new();
     let mut uncached_by_lang: HashMap<String, Vec<PathBuf>> = HashMap::new();
 
-    let start = std::time::Instant::now();
-    let mut get_lang_time = std::time::Duration::ZERO;
-    let mut get_server_time = std::time::Duration::ZERO;
-    let mut check_cache_time = std::time::Duration::ZERO;
-    let mut prefilter_time = std::time::Duration::ZERO;
-    let mut extend_time = std::time::Duration::ZERO;
-
-    let mut skipped_plaintext = 0u32;
-    let mut skipped_no_server = 0u32;
-    let mut cached_count = 0u32;
-    let mut needs_fetch_count = 0u32;
-    let mut skipped_prefilter = 0u32;
-
     for file_path in files {
-        let t0 = std::time::Instant::now();
-        let lang = get_language_id(file_path);
-        get_lang_time += t0.elapsed();
-
-        if lang == "plaintext" || excluded_languages.contains(lang) {
-            skipped_plaintext += 1;
-            continue;
-        }
-
-        let t1 = std::time::Instant::now();
-        let has_server = get_server_for_language(lang, None).is_some();
-        get_server_time += t1.elapsed();
-
-        if !has_server {
-            skipped_no_server += 1;
-            continue;
-        }
-
-        let t2 = std::time::Instant::now();
-        let cached = check_file_cache(ctx, workspace_root, file_path);
-        check_cache_time += t2.elapsed();
-
-        if let Some(symbols) = cached {
-            cached_count += 1;
-            let t3 = std::time::Instant::now();
-            cached_symbols.extend(symbols);
-            extend_time += t3.elapsed();
-            continue;
-        }
-
-        match text_regex {
-            Some(re) => {
-                let t4 = std::time::Instant::now();
-                let matches = prefilter_file(file_path, re);
-                prefilter_time += t4.elapsed();
-
-                if matches {
-                    needs_fetch_count += 1;
-                    uncached_by_lang
-                        .entry(lang.to_string())
-                        .or_default()
-                        .push(file_path.to_path_buf());
-                } else {
-                    skipped_prefilter += 1;
-                }
-            }
-            None => {
-                needs_fetch_count += 1;
-                uncached_by_lang
-                    .entry(lang.to_string())
-                    .or_default()
-                    .push(file_path.to_path_buf());
-            }
-        }
+        let status = classify_file(
+            ctx,
+            workspace_root,
+            file_path,
+            text_regex,
+            excluded_languages,
+        );
+        handle_file_status(
+            status,
+            file_path,
+            &mut cached_symbols,
+            &mut uncached_by_lang,
+        );
     }
-
-    let total = start.elapsed();
-    let accounted =
-        get_lang_time + get_server_time + check_cache_time + prefilter_time + extend_time;
-    let unaccounted = total.saturating_sub(accounted);
-
-    warn!(
-        "classify_all_files: total={:?} | lang={:?} server={:?} cache={:?} prefilter={:?} extend={:?} | unaccounted={:?}",
-        total, get_lang_time, get_server_time, check_cache_time, prefilter_time, extend_time, unaccounted
-    );
-    warn!(
-        "classify_all_files: {} files | {} plaintext, {} no_server, {} cached, {} fetch, {} prefilter_skip",
-        files.len(), skipped_plaintext, skipped_no_server, cached_count, needs_fetch_count, skipped_prefilter
-    );
 
     (cached_symbols, uncached_by_lang)
 }
