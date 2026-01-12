@@ -595,34 +595,12 @@ fn extract_hover_content(contents: &leta_lsp::lsp_types::HoverContents) -> Optio
 }
 
 fn is_excluded(path: &str, patterns: &[String]) -> bool {
-    let path_parts: Vec<&str> = Path::new(path).iter().filter_map(|s| s.to_str()).collect();
-    let filename = Path::new(path)
-        .file_name()
-        .and_then(|s| s.to_str())
-        .unwrap_or("");
-
     for pattern in patterns {
-        if glob_match(path, pattern) {
-            return true;
-        }
-        if !pattern.contains('/') && !pattern.contains('*') && !pattern.contains('?') {
-            if path_parts.contains(&pattern.as_str()) {
+        if let Ok(re) = Regex::new(pattern) {
+            if re.is_match(path) {
                 return true;
             }
         }
-        if glob_match(filename, pattern) {
-            return true;
-        }
     }
     false
-}
-
-fn glob_match(text: &str, pattern: &str) -> bool {
-    let regex_pattern = pattern
-        .replace('.', r"\.")
-        .replace('*', ".*")
-        .replace('?', ".");
-    Regex::new(&format!("^{}$", regex_pattern))
-        .map(|r| r.is_match(text))
-        .unwrap_or(false)
 }
