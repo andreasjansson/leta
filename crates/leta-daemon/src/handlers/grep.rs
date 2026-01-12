@@ -16,6 +16,7 @@ struct GrepFilter<'a> {
     regex: &'a Regex,
     kinds: Option<&'a HashSet<String>>,
     exclude_patterns: &'a [String],
+    path_regex: Option<&'a Regex>,
 }
 
 impl GrepFilter<'_> {
@@ -31,7 +32,20 @@ impl GrepFilter<'_> {
         if !self.exclude_patterns.is_empty() && is_excluded(&sym.path, self.exclude_patterns) {
             return false;
         }
+        if let Some(path_re) = self.path_regex {
+            if !path_re.is_match(&sym.path) {
+                return false;
+            }
+        }
         true
+    }
+
+    fn path_matches(&self, rel_path: &str) -> bool {
+        if let Some(path_re) = self.path_regex {
+            path_re.is_match(rel_path)
+        } else {
+            true
+        }
     }
 }
 
