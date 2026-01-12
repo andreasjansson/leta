@@ -808,17 +808,7 @@ async fn handle_grep(
     let kinds: Option<Vec<String>> =
         kind.map(|k| k.split(',').map(|s| s.trim().to_string()).collect());
 
-    let (workspace_root, paths) = if let Some(path) = path {
-        let files = expand_path_pattern(&path)?;
-        let workspace_root = get_workspace_root_for_path(config, &files[0])?;
-        let paths: Vec<String> = files
-            .iter()
-            .map(|p| p.to_string_lossy().to_string())
-            .collect();
-        (workspace_root, Some(paths))
-    } else {
-        (get_workspace_root(config)?, None)
-    };
+    let workspace_root = get_workspace_root(config)?;
 
     let response = send_request_with_profile(
         "grep",
@@ -828,7 +818,7 @@ async fn handle_grep(
             "kinds": kinds,
             "case_sensitive": case_sensitive,
             "include_docs": docs,
-            "paths": paths,
+            "path_pattern": path,
             "exclude_patterns": exclude,
             "limit": head,
         }),
