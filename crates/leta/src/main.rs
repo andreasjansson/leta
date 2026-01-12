@@ -1029,40 +1029,8 @@ async fn handle_files(
     Ok(())
 }
 
-fn format_profiling(data: &ProfilingData) -> String {
-    let mut lines = Vec::new();
-
-    let cache = &data.cache;
-    let symbol_total = cache.symbol_hits + cache.symbol_misses;
-    let hover_total = cache.hover_hits + cache.hover_misses;
-
-    if symbol_total > 0 || hover_total > 0 {
-        lines.push("CACHE".to_string());
-        if symbol_total > 0 {
-            lines.push(format!(
-                "  symbols: {}/{} hits ({:.1}%)",
-                cache.symbol_hits,
-                symbol_total,
-                cache.symbol_hit_rate()
-            ));
-        }
-        if hover_total > 0 {
-            lines.push(format!(
-                "  hover:   {}/{} hits ({:.1}%)",
-                cache.hover_hits,
-                hover_total,
-                cache.hover_hit_rate()
-            ));
-        }
-        lines.push(String::new());
-    }
-
-    if !data.functions.is_empty() {
-        lines.push("TIMING".to_string());
-        lines.extend(format_function_stats(&data.functions, "", usize::MAX));
-    }
-
-    lines.join("\n")
+fn format_profiling_data(data: &ProfilingData) -> String {
+    leta_output::format_profiling(data)
 }
 
 async fn handle_show(
