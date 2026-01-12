@@ -106,15 +106,22 @@ fn walk_directory(
     binary_exts: &HashSet<&str>,
     params: &FilesParams,
     filter_regex: Option<&Regex>,
-) -> (HashMap<String, FileInfo>, Vec<String>, u64, u32) {
+    head: usize,
+) -> (HashMap<String, FileInfo>, Vec<String>, u64, u32, bool) {
     let mut files_info: HashMap<String, FileInfo> = HashMap::new();
     let mut found_excluded: HashSet<String> = HashSet::new();
     let mut total_bytes: u64 = 0;
     let mut total_lines: u32 = 0;
+    let mut truncated = false;
 
     let mut iter = walkdir::WalkDir::new(target_path).into_iter();
 
     while let Some(entry_result) = iter.next() {
+        if files_info.len() >= head {
+            truncated = true;
+            break;
+        }
+
         let entry = match entry_result {
             Ok(e) => e,
             Err(_) => continue,
@@ -187,7 +194,13 @@ fn walk_directory(
     let mut excluded_dirs: Vec<String> = found_excluded.into_iter().collect();
     excluded_dirs.sort();
 
-    (files_info, excluded_dirs, total_bytes, total_lines)
+    (
+        files_info,
+        excluded_dirs,
+        total_bytes,
+        total_lines,
+        truncated,
+    )
 }
 
 fn count_lines(path: &Path) -> u32 {
