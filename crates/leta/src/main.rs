@@ -344,6 +344,7 @@ async fn main() -> Result<()> {
                     to,
                     max_depth,
                     include_non_workspace,
+                    head,
                 } => {
                     handle_calls(
                         &config,
@@ -352,6 +353,7 @@ async fn main() -> Result<()> {
                         to,
                         max_depth,
                         include_non_workspace,
+                        head,
                     )
                     .await
                 }
