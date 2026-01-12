@@ -208,6 +208,10 @@ pub struct GrepResult {
     pub symbols: Vec<SymbolInfo>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub warning: Option<String>,
+    #[serde(default)]
+    pub truncated: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub total_count: Option<u32>,
 }
 
 // ============================================================================
