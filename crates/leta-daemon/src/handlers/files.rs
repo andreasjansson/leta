@@ -77,6 +77,11 @@ pub async fn handle_files(
         .transpose()
         .map_err(|e| format!("Invalid filter pattern: {}", e))?;
 
+    let head_limit = if params.head == 0 {
+        usize::MAX
+    } else {
+        params.head as usize
+    };
     let (files_info, excluded_dirs, total_bytes, total_lines, truncated) = walk_directory(
         &target_path,
         &workspace_root,
@@ -84,7 +89,7 @@ pub async fn handle_files(
         &binary_exts,
         &params,
         filter_regex.as_ref(),
-        params.head as usize,
+        head_limit,
     );
 
     let total_files = files_info.len() as u32;
