@@ -277,10 +277,12 @@ fn classify_and_filter_cached(
     filter: &GrepFilter<'_>,
     limit: usize,
 ) -> (Vec<SymbolInfo>, HashMap<String, Vec<PathBuf>>, bool) {
+    tracing::info!("classify_and_filter_cached START: {} files", files.len());
     let mut results = Vec::new();
     let mut uncached_files: Vec<&PathBuf> = Vec::new();
 
     // Phase 1: Check cache and collect results from cached files
+    tracing::info!("classify_and_filter_cached: phase 1 - filter_cached_symbols");
     filter_cached_symbols(
         ctx,
         workspace_root,
@@ -290,16 +292,34 @@ fn classify_and_filter_cached(
         &mut results,
         &mut uncached_files,
     );
+    tracing::info!(
+        "classify_and_filter_cached: phase 1 done - {} results, {} uncached",
+        results.len(),
+        uncached_files.len()
+    );
 
     if results.len() >= limit {
         return (results, HashMap::new(), true);
     }
 
     // Phase 2: Prefilter uncached files (read file contents to check for pattern)
+    tracing::info!(
+        "classify_and_filter_cached: phase 2 - prefilter_uncached_files (text_regex={:?})",
+        text_regex.is_some()
+    );
     let files_to_fetch = prefilter_uncached_files(&uncached_files, text_regex);
+    tracing::info!(
+        "classify_and_filter_cached: phase 2 done - {} files to fetch",
+        files_to_fetch.len()
+    );
 
     // Phase 3: Group by language
+    tracing::info!("classify_and_filter_cached: phase 3 - group_files_by_language");
     let uncached_by_lang = group_files_by_language(&files_to_fetch);
+    tracing::info!(
+        "classify_and_filter_cached: phase 3 done - {} languages",
+        uncached_by_lang.len()
+    );
 
     (results, uncached_by_lang, false)
 }
@@ -1195,4 +1215,10 @@ async fn stream_and_filter_symbols(
                 }
             }
             Err(e) => {
-     
+                warn!("Failed to get symbols for {}: {}", file_path.display(), e);
+            }
+        }
+    }
+
+    Ok((count, false))
+}
