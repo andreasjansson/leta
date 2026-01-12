@@ -129,7 +129,7 @@ enum Commands {
         max_depth: u32,
         #[arg(long, help = "Include stdlib/dependency calls")]
         include_non_workspace: bool,
-        #[arg(long, default_value_t = DEFAULT_HEAD_LIMIT, help = "Maximum results to return")]
+        #[arg(short = 'N', long, default_value_t = DEFAULT_HEAD_LIMIT, help = "Maximum results (0 = unlimited)")]
         head: u32,
     },
 
