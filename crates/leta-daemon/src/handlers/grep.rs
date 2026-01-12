@@ -319,12 +319,126 @@ async fn collect_and_filter_symbols(
     Ok(results)
 }
 
-/// Collect symbols from files, using cache when available and text prefilter for uncached files.
-///
-/// For each file:
-/// 1. If cached: return cached symbols immediately
-/// 2. If not cached AND text_pattern is Some: only fetch from LSP if file content matches pattern
-/// 3. If not cached AND text_pattern is None: fetch from LSP unconditionally
+enum FileStatus {
+    Cached(Vec<SymbolInfo>),
+    NeedsFetch,
+    Skipped,
+}
+
+#[trace]
+fn check_file_cache(
+    ctx: &HandlerContext,
+    workspace_root: &Path,
+    file_path: &Path,
+) -> Option<Vec<SymbolInfo>> {
+    get_cached_symbols(ctx, workspace_root, file_path)
+}
+
+#[trace]
+fn prefilter_file(file_path: &Path, text_regex: &Regex) -> bool {
+    match read_file_content(file_path) {
+        Ok(content) => text_regex.is_match(&content),
+        Err(e) => {
+            warn!(
+                "Failed to read file for prefilter {}: {}",
+                file_path.display(),
+                e
+            );
+            false
+        }
+    }
+}
+
+#[trace]
+fn classify_file(
+    ctx: &HandlerContext,
+    workspace_root: &Path,
+    file_path: &Path,
+    text_regex: Option<&Regex>,
+    excluded_languages: &HashSet<String>,
+) -> FileStatus {
+    let lang = get_language_id(file_path);
+    if lang == "plaintext" || excluded_languages.contains(lang) {
+        return FileStatus::Skipped;
+    }
+    if get_server_for_language(lang, None).is_none() {
+        return FileStatus::Skipped;
+    }
+
+    if let Some(symbols) = check_file_cache(ctx, workspace_root, file_path) {
+        return FileStatus::Cached(symbols);
+    }
+
+    match text_regex {
+        Some(re) => {
+            if prefilter_file(file_path, re) {
+                FileStatus::NeedsFetch
+            } else {
+                FileStatus::Skipped
+            }
+        }
+        None => FileStatus::NeedsFetch,
+    }
+}
+
+#[trace]
+fn classify_all_files(
+    ctx: &HandlerContext,
+    workspace_root: &Path,
+    files: &[PathBuf],
+    text_regex: Option<&Regex>,
+    excluded_languages: &HashSet<String>,
+) -> (Vec<SymbolInfo>, HashMap<String, Vec<PathBuf>>) {
+    let mut cached_symbols = Vec::new();
+    let mut uncached_by_lang: HashMap<String, Vec<PathBuf>> = HashMap::new();
+
+    for file_path in files {
+        match classify_file(
+            ctx,
+            workspace_root,
+            file_path,
+            text_regex,
+            excluded_languages,
+        ) {
+            FileStatus::Cached(symbols) => cached_symbols.extend(symbols),
+            FileStatus::NeedsFetch => {
+                let lang = get_language_id(file_path);
+                uncached_by_lang
+                    .entry(lang.to_string())
+                    .or_default()
+                    .push(file_path.clone());
+            }
+            FileStatus::Skipped => {}
+        }
+    }
+
+    (cached_symbols, uncached_by_lang)
+}
+
+#[trace]
+async fn fetch_symbols_for_language(
+    ctx: &HandlerContext,
+    workspace_root: &Path,
+    lang: &str,
+    files: &[PathBuf],
+) -> Result<Vec<SymbolInfo>, String> {
+    let workspace = ctx
+        .session
+        .get_or_create_workspace_for_language(lang, workspace_root)
+        .await?;
+
+    let mut symbols = Vec::new();
+    for file_path in files {
+        match get_file_symbols_no_wait(ctx, &workspace, workspace_root, file_path).await {
+            Ok(file_symbols) => symbols.extend(file_symbols),
+            Err(e) => {
+                warn!("Failed to get symbols for {}: {}", file_path.display(), e);
+            }
+        }
+    }
+    Ok(symbols)
+}
+
 #[trace]
 pub async fn collect_symbols_smart(
     ctx: &HandlerContext,
@@ -335,40 +449,13 @@ pub async fn collect_symbols_smart(
 ) -> Result<Vec<SymbolInfo>, String> {
     let text_regex = text_pattern.and_then(pattern_to_text_regex);
 
-    let mut all_symbols = Vec::new();
-    let mut uncached_by_lang: HashMap<String, Vec<PathBuf>> = HashMap::new();
-
-    for file_path in files {
-        let lang = get_language_id(file_path);
-        if lang == "plaintext" || excluded_languages.contains(lang) {
-            continue;
-        }
-        if get_server_for_language(lang, None).is_none() {
-            continue;
-        }
-
-        if let Some(symbols) = get_cached_symbols(ctx, workspace_root, file_path) {
-            all_symbols.extend(symbols);
-        } else {
-            let should_fetch = match &text_regex {
-                Some(re) => {
-                    if let Ok(content) = read_file_content(file_path) {
-                        re.is_match(&content)
-                    } else {
-                        false
-                    }
-                }
-                None => true,
-            };
-
-            if should_fetch {
-                uncached_by_lang
-                    .entry(lang.to_string())
-                    .or_default()
-                    .push(file_path.clone());
-            }
-        }
-    }
+    let (mut all_symbols, uncached_by_lang) = classify_all_files(
+        ctx,
+        workspace_root,
+        files,
+        text_regex.as_ref(),
+        excluded_languages,
+    );
 
     let uncached_count: usize = uncached_by_lang.values().map(|v| v.len()).sum();
     if uncached_count > 0 {
@@ -379,20 +466,10 @@ pub async fn collect_symbols_smart(
     }
 
     for (lang, uncached_files) in uncached_by_lang {
-        let workspace = match ctx
-            .session
-            .get_or_create_workspace_for_language(&lang, workspace_root)
-            .await
-        {
-            Ok(ws) => ws,
-            Err(_) => continue,
-        };
-
-        for file_path in uncached_files {
-            if let Ok(symbols) =
-                get_file_symbols_no_wait(ctx, &workspace, workspace_root, &file_path).await
-            {
-                all_symbols.extend(symbols);
+        match fetch_symbols_for_language(ctx, workspace_root, &lang, &uncached_files).await {
+            Ok(symbols) => all_symbols.extend(symbols),
+            Err(e) => {
+                warn!("Failed to fetch symbols for language {}: {}", lang, e);
             }
         }
     }
