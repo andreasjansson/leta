@@ -490,9 +490,13 @@ pub fn format_profiling(profiling: &ProfilingData) -> String {
 enum TreeNode {
     File(FileInfo),
     Dir(HashMap<String, TreeNode>),
+    ExcludedDir,
 }
 
-fn build_tree(files: &HashMap<String, FileInfo>) -> HashMap<String, TreeNode> {
+fn build_tree(
+    files: &HashMap<String, FileInfo>,
+    excluded_dirs: &[String],
+) -> HashMap<String, TreeNode> {
     let mut tree: HashMap<String, TreeNode> = HashMap::new();
 
     for (rel_path, info) in files {
@@ -509,6 +513,27 @@ fn build_tree(files: &HashMap<String, FileInfo>) -> HashMap<String, TreeNode> {
                 {
                     TreeNode::Dir(map) => map,
                     _ => unreachable!(),
+                };
+            }
+        }
+    }
+
+    for excluded_path in excluded_dirs {
+        let parts: Vec<&str> = excluded_path.split('/').collect();
+        let mut current = &mut tree;
+
+        for (i, part) in parts.iter().enumerate() {
+            if i == parts.len() - 1 {
+                current
+                    .entry(part.to_string())
+                    .or_insert(TreeNode::ExcludedDir);
+            } else {
+                current = match current
+                    .entry(part.to_string())
+                    .or_insert_with(|| TreeNode::Dir(HashMap::new()))
+                {
+                    TreeNode::Dir(map) => map,
+                    _ => break,
                 };
             }
         }
