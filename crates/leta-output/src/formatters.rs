@@ -202,7 +202,7 @@ pub fn format_supertypes_result(
     output
 }
 
-pub fn format_show_result(result: &ShowResult) -> String {
+pub fn format_show_result(result: &ShowResult, head: u32) -> String {
     let location = if result.start_line == result.end_line {
         format!("{}:{}", result.path, result.start_line)
     } else {
@@ -212,7 +212,6 @@ pub fn format_show_result(result: &ShowResult) -> String {
     let mut lines = vec![location, String::new(), result.content.clone()];
 
     if result.truncated {
-        let head = 200;
         let total_lines = result.total_lines.unwrap_or(head);
         let symbol = result.symbol.as_deref().unwrap_or("SYMBOL");
         lines.push(String::new());
