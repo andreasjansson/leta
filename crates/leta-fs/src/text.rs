@@ -1,4 +1,6 @@
 use std::path::Path;
+
+use fastrace::trace;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -9,6 +11,7 @@ pub enum TextError {
     Utf8(#[from] std::string::FromUtf8Error),
 }
 
+#[trace]
 pub fn get_language_id(path: &Path) -> &'static str {
     let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
     let filename = path.file_name().and_then(|f| f.to_str()).unwrap_or("");
@@ -51,12 +54,14 @@ pub fn get_language_id(path: &Path) -> &'static str {
     }
 }
 
+#[trace]
 pub fn read_file_content(path: &Path) -> Result<String, TextError> {
     let bytes = std::fs::read(path)?;
     let content = String::from_utf8(bytes)?;
     Ok(content)
 }
 
+#[trace]
 pub fn file_mtime(path: &Path) -> String {
     match std::fs::metadata(path) {
         Ok(meta) => match meta.modified() {
@@ -70,6 +75,7 @@ pub fn file_mtime(path: &Path) -> String {
     }
 }
 
+#[trace]
 pub fn get_lines_around(
     content: &str,
     center_line: usize,
@@ -90,6 +96,7 @@ pub fn get_lines_around(
     (extracted, start, end)
 }
 
+#[trace]
 pub fn count_lines(content: &str) -> usize {
     if content.is_empty() {
         0
