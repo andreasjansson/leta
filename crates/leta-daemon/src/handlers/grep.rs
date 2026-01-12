@@ -437,6 +437,7 @@ fn classify_all_files(
     text_regex: Option<&Regex>,
     excluded_languages: &HashSet<String>,
 ) -> (Vec<SymbolInfo>, HashMap<String, Vec<PathBuf>>) {
+    debug!("classify_all_files: processing {} files", files.len());
     let mut cached_symbols = Vec::new();
     let mut uncached_by_lang: HashMap<String, Vec<PathBuf>> = HashMap::new();
 
