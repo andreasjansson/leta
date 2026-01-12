@@ -275,7 +275,7 @@ pub fn format_remove_workspace_result(result: &RemoveWorkspaceResult) -> String 
     )
 }
 
-pub fn format_files_result(result: &FilesResult) -> String {
+pub fn format_files_result(result: &FilesResult, head: u32, command_base: &str) -> String {
     if result.files.is_empty() && result.excluded_dirs.is_empty() {
         return "0 files, 0B".to_string();
     }
@@ -290,6 +290,16 @@ pub fn format_files_result(result: &FilesResult) -> String {
         format_size(result.total_bytes),
         result.total_lines
     ));
+
+    if result.truncated {
+        lines.push(String::new());
+        let next_head = head * 2;
+        let cmd = format!("{} --head {}", command_base, next_head);
+        lines.push(format_truncation_unknown_total(
+            &cmd,
+            result.files.len() as u32,
+        ));
+    }
 
     lines.join("\n")
 }
