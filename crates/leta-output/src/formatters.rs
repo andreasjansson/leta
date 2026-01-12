@@ -107,11 +107,11 @@ pub fn format_remove_workspace_result(result: &RemoveWorkspaceResult) -> String 
 }
 
 pub fn format_files_result(result: &FilesResult) -> String {
-    if result.files.is_empty() {
+    if result.files.is_empty() && result.excluded_dirs.is_empty() {
         return "0 files, 0B".to_string();
     }
 
-    let tree = build_tree(&result.files);
+    let tree = build_tree(&result.files, &result.excluded_dirs);
     let mut lines = Vec::new();
     render_tree(&tree, &mut lines, "", true);
     lines.push(String::new());
