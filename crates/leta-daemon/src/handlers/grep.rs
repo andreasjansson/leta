@@ -210,14 +210,20 @@ pub fn enumerate_source_files(
     let mut entries_seen = 0u64;
     let mut files_checked = 0u64;
 
-    for entry in walkdir::WalkDir::new(workspace_root)
-        .sort_by_file_name()
-        .into_iter()
-        .filter_entry(|e| {
-            let name = e.file_name().to_string_lossy();
-            !name.starts_with('.')
-                && !skip_dirs.contains(name.as_ref())
-                && !name.ends_with(".egg-info")
+    for entry in jwalk::WalkDir::new(workspace_root)
+        .sort(true)
+        .process_read_dir(move |_depth, _path, _state, children| {
+            children.retain(|entry| {
+                entry
+                    .as_ref()
+                    .map(|e| {
+                        let name = e.file_name().to_string_lossy();
+                        !name.starts_with('.')
+                            && !skip_dirs.contains(name.as_ref())
+                            && !name.ends_with(".egg-info")
+                    })
+                    .unwrap_or(false)
+            });
         })
     {
         entries_seen += 1;
@@ -232,14 +238,14 @@ pub fn enumerate_source_files(
 
         files_checked += 1;
         let path = entry.path();
-        let lang = get_language_id(path);
+        let lang = get_language_id(&path);
 
         if lang == "plaintext" || excluded_languages.contains(lang) {
             continue;
         }
 
         if get_server_for_language(lang, None).is_some() {
-            files.push(path.to_path_buf());
+            files.push(path);
         }
     }
 
