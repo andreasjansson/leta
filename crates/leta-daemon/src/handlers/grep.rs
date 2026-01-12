@@ -286,17 +286,45 @@ fn filter_cached_symbols<'a>(
     results: &mut Vec<SymbolInfo>,
     uncached_files: &mut Vec<&'a PathBuf>,
 ) {
+    let mut cache_check_time = std::time::Duration::ZERO;
+    let mut cache_hits = 0u64;
+    let mut symbols_checked = 0u64;
+    let mut match_time = std::time::Duration::ZERO;
+
     for file_path in files {
         let rel_path = relative_path(file_path, workspace_root);
         if !filter.path_matches(&rel_path) {
             continue;
         }
 
-        if let Some(symbols) = check_file_cache(ctx, workspace_root, file_path) {
+        let start = std::time::Instant::now();
+        let cached = check_file_cache(ctx, workspace_root, file_path);
+        cache_check_time += start.elapsed();
+
+        if let Some(symbols) = cached {
+            cache_hits += 1;
             for sym in symbols {
-                if filter.matches(&sym) {
+                symbols_checked += 1;
+                let start = std::time::Instant::now();
+                let matched = filter.matches(&sym);
+                match_time += start.elapsed();
+                if matched {
                     results.push(sym);
                     if results.len() >= limit {
+                        fastrace::local::LocalSpan::add_properties(|| {
+                            [
+                                (
+                                    "cache_check_ms",
+                                    format!("{:.1}", cache_check_time.as_secs_f64() * 1000.0),
+                                ),
+                                ("cache_hits", cache_hits.to_string()),
+                                ("symbols_checked", symbols_checked.to_string()),
+                                (
+                                    "match_ms",
+                                    format!("{:.1}", match_time.as_secs_f64() * 1000.0),
+                                ),
+                            ]
+                        });
                         return;
                     }
                 }
@@ -305,6 +333,21 @@ fn filter_cached_symbols<'a>(
             uncached_files.push(file_path);
         }
     }
+
+    fastrace::local::LocalSpan::add_properties(|| {
+        [
+            (
+                "cache_check_ms",
+                format!("{:.1}", cache_check_time.as_secs_f64() * 1000.0),
+            ),
+            ("cache_hits", cache_hits.to_string()),
+            ("symbols_checked", symbols_checked.to_string()),
+            (
+                "match_ms",
+                format!("{:.1}", match_time.as_secs_f64() * 1000.0),
+            ),
+        ]
+    });
 }
 
 #[trace]
