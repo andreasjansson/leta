@@ -40,9 +40,13 @@ anyhow = "1.0"
 
 # File system
 walkdir = "2.5"
+jwalk = "0.8"
 ignore = "0.4"
 globset = "0.4"
 tempfile = "3.14"
+
+# Parallelism
+rayon = "1.10"
 
 # Caching
 heed = "0.20"
