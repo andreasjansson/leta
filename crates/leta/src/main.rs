@@ -276,7 +276,19 @@ async fn main() -> Result<()> {
                     path,
                     exclude,
                     include,
-                } => handle_files(&config, cli.json, cli.profile, path, exclude, include).await,
+                    filter,
+                } => {
+                    handle_files(
+                        &config,
+                        cli.json,
+                        cli.profile,
+                        path,
+                        exclude,
+                        include,
+                        filter,
+                    )
+                    .await
+                }
                 Commands::Show {
                     symbol,
                     context,
