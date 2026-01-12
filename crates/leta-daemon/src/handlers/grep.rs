@@ -296,6 +296,16 @@ fn classify_and_filter_cached(
     (results, uncached_by_lang, false)
 }
 
+fn build_cache_key(workspace_root: &Path, file_path: &Path) -> String {
+    let file_mtime = leta_fs::file_mtime(file_path);
+    format!(
+        "{}:{}:{}",
+        file_path.display(),
+        workspace_root.display(),
+        file_mtime
+    )
+}
+
 #[trace]
 fn filter_cached_symbols<'a>(
     ctx: &HandlerContext,
@@ -306,33 +316,48 @@ fn filter_cached_symbols<'a>(
     results: &mut Vec<SymbolInfo>,
     uncached_files: &mut Vec<&'a PathBuf>,
 ) {
-    let mut cache_check_time = std::time::Duration::ZERO;
+    use std::sync::atomic::Ordering;
+
+    let key_build_start = std::time::Instant::now();
+    let filtered_files: Vec<_> = files
+        .iter()
+        .filter(|file_path| {
+            let rel_path = relative_path(file_path, workspace_root);
+            filter.path_matches(&rel_path)
+        })
+        .collect();
+
+    let cache_keys: Vec<String> = filtered_files
+        .iter()
+        .map(|file_path| build_cache_key(workspace_root, file_path))
+        .collect();
+    let key_build_time = key_build_start.elapsed();
+
+    let cache_start = std::time::Instant::now();
+    let cache_key_refs: Vec<&str> = cache_keys.iter().map(|s| s.as_str()).collect();
+    let cached_values: Vec<Option<Vec<SymbolInfo>>> = ctx.symbol_cache.get_many(&cache_key_refs);
+    let cache_check_time = cache_start.elapsed();
+
     let mut cache_hits = 0u64;
     let mut symbols_checked = 0u64;
-    let mut match_time = std::time::Duration::ZERO;
+    let match_start = std::time::Instant::now();
 
-    for file_path in files {
-        let rel_path = relative_path(file_path, workspace_root);
-        if !filter.path_matches(&rel_path) {
-            continue;
-        }
-
-        let start = std::time::Instant::now();
-        let cached = check_file_cache(ctx, workspace_root, file_path);
-        cache_check_time += start.elapsed();
-
+    for (file_path, cached) in filtered_files.into_iter().zip(cached_values.into_iter()) {
         if let Some(symbols) = cached {
             cache_hits += 1;
+            ctx.cache_stats.symbol_hits.fetch_add(1, Ordering::Relaxed);
             for sym in symbols {
                 symbols_checked += 1;
-                let start = std::time::Instant::now();
-                let matched = filter.matches(&sym);
-                match_time += start.elapsed();
-                if matched {
+                if filter.matches(&sym) {
                     results.push(sym);
                     if results.len() >= limit {
+                        let match_time = match_start.elapsed();
                         fastrace::local::LocalSpan::add_properties(|| {
                             [
+                                (
+                                    "key_build_ms",
+                                    format!("{:.1}", key_build_time.as_secs_f64() * 1000.0),
+                                ),
                                 (
                                     "cache_check_ms",
                                     format!("{:.1}", cache_check_time.as_secs_f64() * 1000.0),
@@ -353,9 +378,14 @@ fn filter_cached_symbols<'a>(
             uncached_files.push(file_path);
         }
     }
+    let match_time = match_start.elapsed();
 
     fastrace::local::LocalSpan::add_properties(|| {
         [
+            (
+                "key_build_ms",
+                format!("{:.1}", key_build_time.as_secs_f64() * 1000.0),
+            ),
             (
                 "cache_check_ms",
                 format!("{:.1}", cache_check_time.as_secs_f64() * 1000.0),
