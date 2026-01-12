@@ -560,6 +560,12 @@ struct ResolveError {
     profiling: Option<ProfilingData>,
 }
 
+impl ResolveError {
+    fn into_anyhow(self) -> anyhow::Error {
+        anyhow!("{}", self.message)
+    }
+}
+
 async fn resolve_symbol(
     symbol: &str,
     workspace_root: &Path,
