@@ -190,22 +190,17 @@ impl DaemonServer {
             }
         });
 
+        let mut final_done: Option<StreamDone> = None;
+
         while let Some(msg) = rx.recv().await {
             let is_terminal = matches!(msg, StreamMessage::Done(_) | StreamMessage::Error { .. });
 
-            let msg_to_send = if let StreamMessage::Done(mut done) = msg {
-                if profile {
-                    let _ = send_handle.await;
-                    fastrace::flush();
-                    if let Some(ref coll) = collector {
-                        let functions = coll.collect_and_aggregate();
-                        let cache = ctx.cache_stats.to_cache_stats();
-                        done.profiling = Some(ProfilingData { functions, cache });
-                    }
+            let msg_to_send = match msg {
+                StreamMessage::Done(done) => {
+                    final_done = Some(done);
+                    continue;
                 }
-                StreamMessage::Done(done)
-            } else {
-                msg
+                other => other,
             };
 
             let mut line = serde_json::to_vec(&msg_to_send)?;
@@ -215,6 +210,22 @@ impl DaemonServer {
             if is_terminal {
                 break;
             }
+        }
+
+        let _ = send_handle.await;
+
+        if let Some(mut done) = final_done {
+            if profile {
+                fastrace::flush();
+                if let Some(ref coll) = collector {
+                    let functions = coll.collect_and_aggregate();
+                    let cache = ctx.cache_stats.to_cache_stats();
+                    done.profiling = Some(ProfilingData { functions, cache });
+                }
+            }
+            let mut line = serde_json::to_vec(&StreamMessage::Done(done))?;
+            line.push(b'\n');
+            stream.write_all(&line).await?;
         }
         Ok(())
     }
