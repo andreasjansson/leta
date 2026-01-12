@@ -249,10 +249,6 @@ fn classify_and_filter_cached(
     filter: &GrepFilter<'_>,
     limit: usize,
 ) -> (Vec<SymbolInfo>, HashMap<String, Vec<PathBuf>>, bool) {
-    tracing::info!(
-        "classify_and_filter_cached: processing {} files",
-        files.len()
-    );
     let mut results = Vec::new();
     let mut uncached_by_lang: HashMap<String, Vec<PathBuf>> = HashMap::new();
 
