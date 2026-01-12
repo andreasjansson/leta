@@ -1,7 +1,6 @@
 ==================
-grep multiple files via glob
+grep multiple files via path regex
 ==================
-leta grep "^validate" --kind function "src/*.ts" -C
+leta grep "^validate" --kind function "main\.ts" -C
 ---
 src/main.ts:20 [Function] validateEmail
-src/user.ts:119 [Function] validateUser
