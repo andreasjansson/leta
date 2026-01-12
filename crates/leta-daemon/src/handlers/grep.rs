@@ -254,15 +254,26 @@ fn classify_and_filter_cached(
     let mut uncached_by_lang: HashMap<String, Vec<PathBuf>> = HashMap::new();
 
     let mut total_symbols = 0u64;
+    let mut cache_hits = 0u64;
     let mut match_time = std::time::Duration::ZERO;
+    let mut cache_time = std::time::Duration::ZERO;
+    let mut rel_path_time = std::time::Duration::ZERO;
 
     for file_path in files {
+        let start = std::time::Instant::now();
         let rel_path = relative_path(file_path, workspace_root);
+        rel_path_time += start.elapsed();
+
         if !filter.path_matches(&rel_path) {
             continue;
         }
 
-        if let Some(symbols) = check_file_cache(ctx, workspace_root, file_path) {
+        let start = std::time::Instant::now();
+        let cached = check_file_cache(ctx, workspace_root, file_path);
+        cache_time += start.elapsed();
+
+        if let Some(symbols) = cached {
+            cache_hits += 1;
             for sym in symbols {
                 total_symbols += 1;
                 let start = std::time::Instant::now();
@@ -272,9 +283,8 @@ fn classify_and_filter_cached(
                     results.push(sym);
                     if results.len() >= limit {
                         tracing::info!(
-                            "classify_and_filter_cached: {} symbols checked, match_time={:?}",
-                            total_symbols,
-                            match_time
+                            "classify: files={} hits={} syms={} rel_path={:?} cache={:?} match={:?}",
+                            files.len(), cache_hits, total_symbols, rel_path_time, cache_time, match_time
                         );
                         return (results, uncached_by_lang, true);
                     }
@@ -297,8 +307,12 @@ fn classify_and_filter_cached(
     }
 
     tracing::info!(
-        "classify_and_filter_cached: {} symbols checked, match_time={:?}",
+        "classify: files={} hits={} syms={} rel_path={:?} cache={:?} match={:?}",
+        files.len(),
+        cache_hits,
         total_symbols,
+        rel_path_time,
+        cache_time,
         match_time
     );
 
