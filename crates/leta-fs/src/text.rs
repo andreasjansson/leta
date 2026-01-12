@@ -11,7 +11,6 @@ pub enum TextError {
     Utf8(#[from] std::string::FromUtf8Error),
 }
 
-#[trace]
 pub fn get_language_id(path: &Path) -> &'static str {
     let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
     let filename = path.file_name().and_then(|f| f.to_str()).unwrap_or("");
