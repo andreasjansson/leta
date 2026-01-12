@@ -110,33 +110,10 @@ fn walk_directory(
     let mut total_bytes: u64 = 0;
     let mut total_lines: u32 = 0;
 
-    for entry in walkdir::WalkDir::new(target_path)
-        .into_iter()
-        .filter_entry(|e| {
-            let name = e.file_name().to_string_lossy();
+    let mut iter = walkdir::WalkDir::new(target_path).into_iter();
 
-            if e.file_type().is_dir() {
-                if name.starts_with('.') && e.depth() > 0 {
-                    if !params.include_patterns.iter().any(|p| p == name.as_ref()) {
-                        return false;
-                    }
-                }
-                if exclude_dirs.contains(name.as_ref()) {
-                    if !params.include_patterns.iter().any(|p| p == name.as_ref()) {
-                        return false;
-                    }
-                }
-                if name.ends_with(".egg-info") {
-                    return false;
-                }
-                if is_excluded_by_patterns(e.path(), workspace_root, &params.exclude_patterns) {
-                    return false;
-                }
-            }
-            true
-        })
-    {
-        let entry = match entry {
+    while let Some(entry_result) = iter.next() {
+        let entry = match entry_result {
             Ok(e) => e,
             Err(_) => continue,
         };
@@ -145,10 +122,29 @@ fn walk_directory(
         let name = entry.file_name().to_string_lossy();
 
         if entry.file_type().is_dir() {
-            if exclude_dirs.contains(name.as_ref()) || name.starts_with('.') {
+            if entry.depth() == 0 {
+                continue;
+            }
+
+            let is_hidden = name.starts_with('.');
+            let is_default_excluded = exclude_dirs.contains(name.as_ref());
+            let is_egg_info = name.ends_with(".egg-info");
+            let is_pattern_excluded =
+                is_excluded_by_patterns(path, workspace_root, &params.exclude_patterns);
+            let is_included = params.include_patterns.iter().any(|p| p == name.as_ref());
+
+            if is_egg_info {
+                iter.skip_current_dir();
+                continue;
+            }
+
+            if (is_hidden || is_default_excluded || is_pattern_excluded) && !is_included {
                 let rel_path = relative_path(path, workspace_root);
                 found_excluded.insert(rel_path);
+                iter.skip_current_dir();
+                continue;
             }
+
             continue;
         }
 
