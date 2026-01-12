@@ -246,20 +246,35 @@ fn classify_and_filter_cached(
 
     let _loop_span = LocalSpan::enter_with_local_parent("file_loop");
     for file_path in files {
-        let lang = get_language_id(file_path);
+        let lang = {
+            let _s = LocalSpan::enter_with_local_parent("get_language_id");
+            get_language_id(file_path)
+        };
         if lang == "plaintext" || excluded_languages.contains(lang) {
             continue;
         }
-        if get_server_for_language(lang, None).is_none() {
+        let has_server = {
+            let _s = LocalSpan::enter_with_local_parent("get_server_for_language");
+            get_server_for_language(lang, None).is_some()
+        };
+        if !has_server {
             continue;
         }
 
-        let rel_path = relative_path(file_path, workspace_root);
-        if !filter.path_matches(&rel_path) {
+        let rel_path = {
+            let _s = LocalSpan::enter_with_local_parent("relative_path");
+            relative_path(file_path, workspace_root)
+        };
+        let path_ok = {
+            let _s = LocalSpan::enter_with_local_parent("path_matches");
+            filter.path_matches(&rel_path)
+        };
+        if !path_ok {
             continue;
         }
 
         if let Some(symbols) = check_file_cache(ctx, workspace_root, file_path) {
+            let _s = LocalSpan::enter_with_local_parent("filter_symbols");
             for sym in symbols {
                 if filter.matches(&sym) {
                     results.push(sym);
