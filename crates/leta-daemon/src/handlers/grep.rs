@@ -728,6 +728,7 @@ pub async fn get_file_symbols_no_wait(
 ) -> Result<Vec<SymbolInfo>, String> {
     use std::sync::atomic::Ordering;
 
+    let start = std::time::Instant::now();
     let file_mtime = leta_fs::file_mtime(file_path);
     let cache_key = format!(
         "{}:{}:{}",
@@ -735,6 +736,7 @@ pub async fn get_file_symbols_no_wait(
         workspace_root.display(),
         file_mtime
     );
+    let cache_key_time = start.elapsed();
 
     if let Some(cached) = ctx.symbol_cache.get::<Vec<SymbolInfo>>(&cache_key) {
         ctx.cache_stats.symbol_hits.fetch_add(1, Ordering::Relaxed);
@@ -763,6 +765,7 @@ pub async fn get_file_symbols_no_wait(
         .await
         .map_err(|e| e.to_string())?;
 
+    let flatten_start = std::time::Instant::now();
     let symbols = match response {
         Some(resp) => {
             let rel_path = relative_path(file_path, workspace_root);
@@ -770,8 +773,29 @@ pub async fn get_file_symbols_no_wait(
         }
         None => Vec::new(),
     };
+    let flatten_time = flatten_start.elapsed();
 
+    let cache_start = std::time::Instant::now();
     ctx.symbol_cache.set(&cache_key, &symbols);
+    let cache_set_time = cache_start.elapsed();
+
+    fastrace::local::LocalSpan::add_properties(|| {
+        [
+            (
+                "cache_key_ms",
+                format!("{:.2}", cache_key_time.as_secs_f64() * 1000.0),
+            ),
+            (
+                "flatten_ms",
+                format!("{:.2}", flatten_time.as_secs_f64() * 1000.0),
+            ),
+            (
+                "cache_set_ms",
+                format!("{:.2}", cache_set_time.as_secs_f64() * 1000.0),
+            ),
+        ]
+    });
+
     Ok(symbols)
 }
 
