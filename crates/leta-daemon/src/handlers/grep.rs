@@ -499,18 +499,32 @@ async fn fetch_and_filter_symbols(
     results: &mut Vec<SymbolInfo>,
     limit: usize,
 ) -> Result<bool, String> {
+    tracing::info!(
+        "fetch_and_filter_symbols START: lang={}, {} files",
+        lang,
+        files.len()
+    );
     let workspace = ctx
         .session
         .get_or_create_workspace_for_language(lang, workspace_root)
         .await?;
+    tracing::info!("fetch_and_filter_symbols: got workspace for {}", lang);
 
-    for file_path in files {
+    for (i, file_path) in files.iter().enumerate() {
+        if i % 50 == 0 {
+            tracing::info!(
+                "fetch_and_filter_symbols: processing file {}/{}",
+                i,
+                files.len()
+            );
+        }
         match get_file_symbols_no_wait(ctx, &workspace, workspace_root, file_path).await {
             Ok(symbols) => {
                 for sym in symbols {
                     if filter.matches(&sym) {
                         results.push(sym);
                         if results.len() >= limit {
+                            tracing::info!("fetch_and_filter_symbols: reached limit at file {}", i);
                             return Ok(true);
                         }
                     }
@@ -521,6 +535,7 @@ async fn fetch_and_filter_symbols(
             }
         }
     }
+    tracing::info!("fetch_and_filter_symbols END: {} results", results.len());
     Ok(false)
 }
 
