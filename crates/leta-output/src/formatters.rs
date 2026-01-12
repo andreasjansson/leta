@@ -331,7 +331,7 @@ pub fn format_calls_result(result: &CallsResult, head: u32, command_base: &str) 
         }
         let next_head = head * 2;
         let cmd = format!("{} --head {}", command_base, next_head);
-        output.push_str(&format_truncation_unknown_total(&cmd, head));
+        output.push_str(&format_truncation_unknown_total(&cmd, head, command_base));
     }
 
     output
