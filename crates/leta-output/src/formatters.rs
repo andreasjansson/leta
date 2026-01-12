@@ -684,94 +684,80 @@ pub fn format_profiling(profiling: &ProfilingData) -> String {
     }
 
     if let Some(tree) = &profiling.span_tree {
+        if !tree.functions.is_empty() {
+            lines.push("TIMING".to_string());
+            lines.push(format!(
+                "{:<50} {:>8} {:>10} {:>10}",
+                "Function", "Calls", "Avg", "Total"
+            ));
+            for func in &tree.functions {
+                lines.push(format!(
+                    "{:<50} {:>8} {:>10} {:>10}",
+                    truncate_name(&func.name, 50),
+                    func.calls,
+                    format_duration_us(func.avg_us),
+                    format_duration_us(func.total_us)
+                ));
+            }
+            lines.push(String::new());
+        }
+
         lines.push("CALL TREE".to_string());
         for root in &tree.roots {
-            format_span_node(root, &mut lines, "", true, 0);
+            format_span_node(root, &mut lines, 0);
         }
+
+        lines.push(String::new());
+        lines.push(format!("[total] {}", format_duration_us(tree.total_us)));
     }
 
     lines.join("\n")
 }
 
-fn simplify_name(name: &str) -> &str {
-    if let Some(pos) = name.rfind("::") {
-        let suffix = &name[pos + 2..];
-        if suffix.starts_with("{{") || suffix == "{{closure}}" {
-            if let Some(prev_pos) = name[..pos].rfind("::") {
-                return &name[prev_pos + 2..];
-            }
-        }
-        suffix
+fn truncate_name(name: &str, max_len: usize) -> String {
+    if name.len() <= max_len {
+        name.to_string()
     } else {
-        name
+        format!("...{}", &name[name.len() - max_len + 3..])
     }
 }
 
-fn format_span_node(
-    node: &SpanNode,
-    lines: &mut Vec<String>,
-    prefix: &str,
-    is_last: bool,
-    depth: usize,
-) {
-    let connector = if prefix.is_empty() {
-        ""
-    } else if is_last {
-        "└── "
-    } else {
-        "├── "
-    };
-
-    let parallel_marker = if node.is_parallel { " ∥" } else { "" };
+fn format_span_node(node: &SpanNode, lines: &mut Vec<String>, depth: usize) {
+    let indent = "  ".repeat(depth + 1);
 
     let calls_str = if node.calls > 1 {
-        format!(" ×{}", node.calls)
+        format!(" ({}x)", node.calls)
     } else {
         String::new()
     };
 
-    let display_name = simplify_name(&node.name);
+    let parallel_marker = if node.is_parallel { " [parallel]" } else { "" };
 
-    let timing = if node.children.is_empty() || node.self_us == node.total_us {
-        format_duration_us(node.total_us)
+    let children_total: u64 = if node.is_parallel {
+        node.children.iter().map(|c| c.total_us).max().unwrap_or(0)
     } else {
-        let self_pct = (node.self_us as f64 / node.total_us as f64 * 100.0) as u32;
-        format!(
-            "{} ({} self, {}%)",
-            format_duration_us(node.total_us),
-            format_duration_us(node.self_us),
-            self_pct
-        )
+        node.children.iter().map(|c| c.total_us).sum()
     };
 
     lines.push(format!(
-        "  {}{}{}{} {}{}",
-        prefix, connector, display_name, calls_str, timing, parallel_marker
+        "{}{}{} = {}{}",
+        indent,
+        node.name,
+        calls_str,
+        format_duration_us(node.total_us),
+        parallel_marker
     ));
 
-    let child_prefix = if prefix.is_empty() {
-        "".to_string()
-    } else if is_last {
-        format!("{}    ", prefix)
-    } else {
-        format!("{}│   ", prefix)
-    };
-
-    let unaccounted = node.self_us;
-    let show_unaccounted = unaccounted > 1000 && !node.children.is_empty();
-
-    let num_items = node.children.len() + if show_unaccounted { 1 } else { 0 };
-
-    for (i, child) in node.children.iter().enumerate() {
-        let is_child_last = !show_unaccounted && i == num_items - 1;
-        format_span_node(child, lines, &child_prefix, is_child_last, depth + 1);
+    for child in &node.children {
+        format_span_node(child, lines, depth + 1);
     }
 
-    if show_unaccounted {
+    if node.self_us > 1000 && !node.children.is_empty() {
+        let child_indent = "  ".repeat(depth + 2);
         lines.push(format!(
-            "  {}└── (untraced) {}",
-            child_prefix,
-            format_duration_us(unaccounted)
+            "{}(self) = {}",
+            child_indent,
+            format_duration_us(node.self_us)
         ));
     }
 }
