@@ -221,6 +221,8 @@ pub struct FilesParams {
     pub exclude_patterns: Vec<String>,
     #[serde(default)]
     pub include_patterns: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub filter_pattern: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -229,6 +231,8 @@ pub struct FilesResult {
     pub total_files: u32,
     pub total_bytes: u64,
     pub total_lines: u32,
+    #[serde(default)]
+    pub excluded_dirs: Vec<String>,
 }
 
 // ============================================================================
