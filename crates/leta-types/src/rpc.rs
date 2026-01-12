@@ -49,6 +49,7 @@ pub struct SpanNode {
 pub struct SpanTree {
     pub roots: Vec<SpanNode>,
     pub total_us: u64,
+    pub functions: Vec<FunctionStats>,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
