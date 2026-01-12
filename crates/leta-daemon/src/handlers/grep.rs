@@ -250,6 +250,7 @@ fn classify_and_filter_cached(
     filter: &GrepFilter<'_>,
     limit: usize,
 ) -> (Vec<SymbolInfo>, HashMap<String, Vec<PathBuf>>, bool) {
+    let func_start = std::time::Instant::now();
     let mut results = Vec::new();
     let mut uncached_by_lang: HashMap<String, Vec<PathBuf>> = HashMap::new();
 
@@ -258,6 +259,8 @@ fn classify_and_filter_cached(
     let mut match_time = std::time::Duration::ZERO;
     let mut cache_time = std::time::Duration::ZERO;
     let mut rel_path_time = std::time::Duration::ZERO;
+    let mut sym_loop_time = std::time::Duration::ZERO;
+    let mut prefilter_time = std::time::Duration::ZERO;
 
     for file_path in files {
         let start = std::time::Instant::now();
@@ -284,20 +287,23 @@ fn classify_and_filter_cached(
                 if matched {
                     results.push(sym);
                     if results.len() >= limit {
-                        let loop_elapsed = loop_start.elapsed();
+                        sym_loop_time += loop_start.elapsed();
                         tracing::info!(
-                            "classify: files={} hits={} syms={} rel_path={:?} cache={:?} sym_loop={:?} match={:?}",
-                            files.len(), cache_hits, total_symbols, rel_path_time, cache_time, loop_elapsed, match_time
+                            "classify: files={} hits={} syms={} rel_path={:?} cache={:?} sym_loop={:?} match={:?} prefilter={:?} total={:?}",
+                            files.len(), cache_hits, total_symbols, rel_path_time, cache_time, sym_loop_time, match_time, prefilter_time, func_start.elapsed()
                         );
                         return (results, uncached_by_lang, true);
                     }
                 }
             }
+            sym_loop_time += loop_start.elapsed();
         } else {
+            let start = std::time::Instant::now();
             let should_fetch = match text_regex {
                 Some(re) => prefilter_file(file_path, re),
                 None => true,
             };
+            prefilter_time += start.elapsed();
 
             if should_fetch {
                 let lang = get_language_id(file_path);
@@ -310,13 +316,8 @@ fn classify_and_filter_cached(
     }
 
     tracing::info!(
-        "classify: files={} hits={} syms={} rel_path={:?} cache={:?} match={:?}",
-        files.len(),
-        cache_hits,
-        total_symbols,
-        rel_path_time,
-        cache_time,
-        match_time
+        "classify: files={} hits={} syms={} rel_path={:?} cache={:?} sym_loop={:?} match={:?} prefilter={:?} total={:?}",
+        files.len(), cache_hits, total_symbols, rel_path_time, cache_time, sym_loop_time, match_time, prefilter_time, func_start.elapsed()
     );
 
     (results, uncached_by_lang, false)
