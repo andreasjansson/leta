@@ -169,50 +169,65 @@ impl DaemonServer {
             None
         };
 
+        let method_name: &'static str = Box::leak(method.to_string().into_boxed_str());
+        let root = Span::root(method_name, SpanContext::random());
+        let _guard = root.set_local_parent();
+
         let (tx, mut rx) = mpsc::channel::<StreamMessage>(100);
 
-        let ctx_clone = ctx.clone();
-        let method_owned = method.to_string();
-
-        let send_handle = tokio::spawn(async move {
-            match method_owned.as_str() {
+        let handler_fut = async {
+            match method {
                 "grep" => {
                     if let Ok(p) = serde_json::from_value::<GrepParams>(params) {
-                        handle_grep_streaming(&ctx_clone, p, tx).await;
+                        handle_grep_streaming(ctx, p, tx).await;
                     }
                 }
                 "files" => {
                     if let Ok(p) = serde_json::from_value::<FilesParams>(params) {
-                        handle_files_streaming(&ctx_clone, p, tx).await;
+                        handle_files_streaming(ctx, p, tx).await;
                     }
                 }
                 _ => {}
             }
-        });
+        };
 
+        tokio::pin!(handler_fut);
+        let mut handler_done = false;
         let mut final_done: Option<StreamDone> = None;
 
-        while let Some(msg) = rx.recv().await {
-            let is_terminal = matches!(msg, StreamMessage::Done(_) | StreamMessage::Error { .. });
-
-            let msg_to_send = match msg {
-                StreamMessage::Done(done) => {
-                    final_done = Some(done);
-                    continue;
+        loop {
+            tokio::select! {
+                biased;
+                msg = rx.recv() => {
+                    match msg {
+                        Some(StreamMessage::Done(done)) => {
+                            final_done = Some(done);
+                        }
+                        Some(StreamMessage::Error { message }) => {
+                            let mut line = serde_json::to_vec(&StreamMessage::Error { message })?;
+                            line.push(b'\n');
+                            stream.write_all(&line).await?;
+                            break;
+                        }
+                        Some(msg) => {
+                            let mut line = serde_json::to_vec(&msg)?;
+                            line.push(b'\n');
+                            stream.write_all(&line).await?;
+                        }
+                        None => break,
+                    }
                 }
-                other => other,
-            };
+                _ = &mut handler_fut, if !handler_done => {
+                    handler_done = true;
+                }
+            }
 
-            let mut line = serde_json::to_vec(&msg_to_send)?;
-            line.push(b'\n');
-            stream.write_all(&line).await?;
-
-            if is_terminal {
+            if handler_done && final_done.is_some() {
                 break;
             }
         }
 
-        let _ = send_handle.await;
+        drop(_guard);
 
         if let Some(mut done) = final_done {
             if profile {
@@ -227,6 +242,7 @@ impl DaemonServer {
             line.push(b'\n');
             stream.write_all(&line).await?;
         }
+
         Ok(())
     }
 
