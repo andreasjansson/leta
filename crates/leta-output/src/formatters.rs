@@ -550,8 +550,8 @@ fn render_tree(
 ) {
     let mut entries: Vec<_> = node.keys().collect();
     entries.sort_by(|a, b| {
-        let a_is_dir = matches!(node.get(*a), Some(TreeNode::Dir(_)));
-        let b_is_dir = matches!(node.get(*b), Some(TreeNode::Dir(_)));
+        let a_is_dir = matches!(node.get(*a), Some(TreeNode::Dir(_) | TreeNode::ExcludedDir));
+        let b_is_dir = matches!(node.get(*b), Some(TreeNode::Dir(_) | TreeNode::ExcludedDir));
         match (a_is_dir, b_is_dir) {
             (true, false) => std::cmp::Ordering::Less,
             (false, true) => std::cmp::Ordering::Greater,
@@ -579,6 +579,9 @@ fn render_tree(
             TreeNode::Dir(children) => {
                 lines.push(format!("{}{}{}", prefix, connector, name));
                 render_tree(children, lines, &new_prefix, false);
+            }
+            TreeNode::ExcludedDir => {
+                lines.push(format!("{}{}{} (excluded)", prefix, connector, name));
             }
         }
     }
