@@ -39,8 +39,6 @@ pub struct FileInfo {
     pub path: String,
     pub lines: u32,
     pub bytes: u64,
-    #[serde(default)]
-    pub symbols: HashMap<String, u32>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
