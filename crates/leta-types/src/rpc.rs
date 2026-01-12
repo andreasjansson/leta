@@ -241,6 +241,8 @@ pub struct FilesResult {
     pub total_lines: u32,
     #[serde(default)]
     pub excluded_dirs: Vec<String>,
+    #[serde(default)]
+    pub truncated: bool,
 }
 
 // ============================================================================
