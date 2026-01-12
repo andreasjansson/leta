@@ -5,4 +5,5 @@ edition.workspace = true
 license.workspace = true
 
 [dependencies]
+fastrace = { workspace = true }
 thiserror = { workspace = true }
