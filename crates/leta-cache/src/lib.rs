@@ -1,4 +1,5 @@
 use std::path::Path;
+use std::sync::Mutex;
 
 use heed::types::*;
 use heed::{Database, Env, EnvOpenOptions};
@@ -19,6 +20,7 @@ pub struct LmdbCache {
     env: Env,
     db: Database<Str, Str>,
     max_bytes: u64,
+    write_buffer: Mutex<Vec<(String, String)>>,
 }
 
 impl LmdbCache {
