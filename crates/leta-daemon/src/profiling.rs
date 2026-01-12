@@ -22,7 +22,10 @@ impl CollectingReporter {
 
 impl Reporter for CollectingReporter {
     fn report(&mut self, spans: Vec<SpanRecord>) {
-        self.spans.lock().unwrap().extend(spans);
+        let count = spans.len();
+        let mut all = self.spans.lock().unwrap();
+        all.extend(spans);
+        eprintln!("[profiling] received {} spans, total {}", count, all.len());
     }
 }
 
