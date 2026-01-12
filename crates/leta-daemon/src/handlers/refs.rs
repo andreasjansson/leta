@@ -186,12 +186,18 @@ pub async fn handle_implementations(
         .map_err(|e| format!("{}", e))?;
 
     let locations = response
-        .map(|resp| definition_response_to_locations(&resp, &workspace_root, params.context))
+        .map(|resp| {
+            definition_response_to_locations(&resp, &workspace_root, params.context, params.head)
+        })
         .unwrap_or_default();
+
+    let truncated = locations.len() as u32 >= params.head;
 
     Ok(ImplementationsResult {
         locations,
         error: None,
+        truncated,
+        total_count: None,
     })
 }
 
