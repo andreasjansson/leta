@@ -560,25 +560,7 @@ fn render_tree(
 }
 
 fn format_file_info(info: &FileInfo) -> String {
-    let mut parts = vec![format_size(info.bytes), format!("{} lines", info.lines)];
-
-    let symbol_order = ["class", "struct", "interface", "enum", "function", "method"];
-    for kind in &symbol_order {
-        if let Some(&count) = info.symbols.get(*kind) {
-            if count > 0 {
-                let label = if count == 1 {
-                    kind.to_string()
-                } else if *kind == "class" {
-                    "classes".to_string()
-                } else {
-                    format!("{}s", kind)
-                };
-                parts.push(format!("{} {}", count, label));
-            }
-        }
-    }
-
-    parts.join(", ")
+    format!("{}, {} lines", format_size(info.bytes), info.lines)
 }
 
 fn is_stdlib_path(path: &str) -> bool {
