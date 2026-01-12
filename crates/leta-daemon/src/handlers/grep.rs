@@ -355,14 +355,29 @@ fn prefilter_uncached_files<'a>(
     uncached_files: &[&'a PathBuf],
     text_regex: Option<&Regex>,
 ) -> Vec<&'a PathBuf> {
-    match text_regex {
+    let start = std::time::Instant::now();
+    let result = match text_regex {
         Some(re) => uncached_files
             .iter()
             .filter(|path| prefilter_file(path, re))
             .copied()
             .collect(),
         None => uncached_files.to_vec(),
-    }
+    };
+    let elapsed = start.elapsed();
+
+    fastrace::local::LocalSpan::add_properties(|| {
+        [
+            ("files_checked", uncached_files.len().to_string()),
+            ("files_matched", result.len().to_string()),
+            (
+                "prefilter_ms",
+                format!("{:.1}", elapsed.as_secs_f64() * 1000.0),
+            ),
+        ]
+    });
+
+    result
 }
 
 #[trace]
