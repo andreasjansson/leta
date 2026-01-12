@@ -495,9 +495,15 @@ async fn collect_and_filter_symbols(
     filter: &GrepFilter<'_>,
     limit: usize,
 ) -> Result<Vec<SymbolInfo>, String> {
+    tracing::info!(
+        "collect_and_filter_symbols START: {} files, text_pattern={:?}",
+        files.len(),
+        text_pattern
+    );
     let span = Span::enter_with_local_parent("collect_and_filter_symbols");
     let text_regex = text_pattern.and_then(pattern_to_text_regex);
 
+    tracing::info!("collect_and_filter_symbols: calling classify_and_filter_cached");
     let (mut results, uncached_by_lang, limit_reached) = {
         let _guard = span.set_local_parent();
         classify_and_filter_cached(
@@ -509,12 +515,19 @@ async fn collect_and_filter_symbols(
             limit,
         )
     };
+    tracing::info!("collect_and_filter_symbols: classify_and_filter_cached done, {} results, {} uncached languages, limit_reached={}", 
+        results.len(), uncached_by_lang.len(), limit_reached);
 
     if limit_reached {
         return Ok(results);
     }
 
-    for (lang, uncached_files) in uncached_by_lang {
+    for (lang, uncached_files) in &uncached_by_lang {
+        tracing::info!(
+            "collect_and_filter_symbols: fetching {} uncached files for language {}",
+            uncached_files.len(),
+            lang
+        );
         if results.len() >= limit {
             break;
         }
@@ -523,8 +536,8 @@ async fn collect_and_filter_symbols(
         match fetch_and_filter_symbols(
             ctx,
             workspace_root,
-            &lang,
-            &uncached_files,
+            lang,
+            uncached_files,
             filter,
             &mut results,
             limit,
@@ -532,14 +545,23 @@ async fn collect_and_filter_symbols(
         .in_span(fetch_span)
         .await
         {
-            Ok(true) => break,
-            Ok(false) => {}
+            Ok(true) => {
+                tracing::info!("collect_and_filter_symbols: fetch_and_filter_symbols returned true (limit reached)");
+                break;
+            }
+            Ok(false) => {
+                tracing::info!(
+                    "collect_and_filter_symbols: fetch_and_filter_symbols done for {}",
+                    lang
+                );
+            }
             Err(e) => {
                 warn!("Failed to fetch symbols for language {}: {}", lang, e);
             }
         }
     }
 
+    tracing::info!("collect_and_filter_symbols END: {} results", results.len());
     Ok(results)
 }
 
@@ -1173,10 +1195,4 @@ async fn stream_and_filter_symbols(
                 }
             }
             Err(e) => {
-                warn!("Failed to get symbols for {}: {}", file_path.display(), e);
-            }
-        }
-    }
-
-    Ok((count, false))
-}
+     
