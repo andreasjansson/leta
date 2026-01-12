@@ -25,7 +25,7 @@ impl Reporter for CollectingReporter {
         let count = spans.len();
         let mut all = self.spans.lock().unwrap();
         all.extend(spans);
-        eprintln!("[profiling] received {} spans, total {}", count, all.len());
+        tracing::info!("[profiling] received {} spans, total {}", count, all.len());
     }
 }
 
