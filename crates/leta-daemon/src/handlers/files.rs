@@ -88,12 +88,15 @@ pub async fn handle_files(
 
     let total_files = files_info.len() as u32;
 
+    let truncated = total_files >= params.head;
+
     Ok(FilesResult {
         files: files_info,
         total_files,
         total_bytes,
         total_lines,
         excluded_dirs,
+        truncated,
     })
 }
 
