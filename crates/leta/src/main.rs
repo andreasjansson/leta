@@ -1183,6 +1183,7 @@ async fn handle_calls(
     to: Option<String>,
     max_depth: u32,
     include_non_workspace: bool,
+    head: u32,
 ) -> Result<()> {
     if from.is_none() && to.is_none() {
         return Err(anyhow!("At least one of --from or --to must be specified"));
@@ -1194,6 +1195,7 @@ async fn handle_calls(
         "workspace_root": workspace_root.to_string_lossy(),
         "max_depth": max_depth,
         "include_non_workspace": include_non_workspace,
+        "head": head,
     });
 
     if let (Some(from_sym), Some(to_sym)) = (&from, &to) {
@@ -1231,7 +1233,22 @@ async fn handle_calls(
     if json_output {
         println!("{}", serde_json::to_string_pretty(&calls_result)?);
     } else {
-        println!("{}", format_calls_result(&calls_result));
+        let mut cmd_parts = vec!["leta calls".to_string()];
+        if let Some(from_sym) = &from {
+            cmd_parts.push(format!("--from \"{}\"", from_sym));
+        }
+        if let Some(to_sym) = &to {
+            cmd_parts.push(format!("--to \"{}\"", to_sym));
+        }
+        cmd_parts.push(format!("--max-depth {}", max_depth));
+        if include_non_workspace {
+            cmd_parts.push("--include-non-workspace".to_string());
+        }
+        let command_base = cmd_parts.join(" ");
+        println!(
+            "{}",
+            format_calls_result(&calls_result, head, &command_base)
+        );
     }
     Ok(())
 }
