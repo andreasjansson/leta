@@ -403,12 +403,12 @@ pub fn get_cached_symbols(
 ) -> Option<Vec<SymbolInfo>> {
     use std::sync::atomic::Ordering;
 
-    let file_sha = leta_fs::file_sha(file_path);
+    let file_mtime = leta_fs::file_mtime(file_path);
     let cache_key = format!(
         "{}:{}:{}",
         file_path.display(),
         workspace_root.display(),
-        file_sha
+        file_mtime
     );
 
     if let Some(cached) = ctx.symbol_cache.get::<Vec<SymbolInfo>>(&cache_key) {
@@ -439,12 +439,12 @@ pub async fn get_file_symbols_no_wait(
 ) -> Result<Vec<SymbolInfo>, String> {
     use std::sync::atomic::Ordering;
 
-    let file_sha = leta_fs::file_sha(file_path);
+    let file_mtime = leta_fs::file_mtime(file_path);
     let cache_key = format!(
         "{}:{}:{}",
         file_path.display(),
         workspace_root.display(),
-        file_sha
+        file_mtime
     );
 
     if let Some(cached) = ctx.symbol_cache.get::<Vec<SymbolInfo>>(&cache_key) {
