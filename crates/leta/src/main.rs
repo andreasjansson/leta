@@ -99,6 +99,8 @@ enum Commands {
         include: Vec<String>,
         #[arg(short = 'f', long, help = "Filter files by regex pattern")]
         filter: Option<String>,
+        #[arg(long, default_value_t = DEFAULT_HEAD_LIMIT, help = "Maximum files to show")]
+        head: u32,
     },
 
     #[command(about = "Print the definition of a symbol.")]
