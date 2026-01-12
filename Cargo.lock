@@ -724,6 +724,7 @@ name = "leta-cache"
 version = "0.1.0"
 dependencies = [
  "blake3",
+ "fastrace",
  "heed",
  "serde",
  "serde_json",
@@ -772,7 +773,7 @@ dependencies = [
 name = "leta-fs"
 version = "0.1.0"
 dependencies = [
- "blake3",
+ "fastrace",
  "thiserror",
 ]
 
@@ -805,6 +806,7 @@ dependencies = [
 name = "leta-servers"
 version = "0.1.0"
 dependencies = [
+ "fastrace",
  "leta-config",
  "leta-fs",
 ]
