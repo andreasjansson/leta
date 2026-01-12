@@ -760,19 +760,53 @@ fn format_span_node(
     let mut property_time_ms = 0.0f64;
     if !node.properties.is_empty() {
         let props_indent = " ".repeat(depth + 1);
-        let props_str: Vec<String> = node
-            .properties
-            .iter()
-            .map(|(k, v)| {
-                // Sum up any _ms properties to account for time
-                if k.ends_with("_ms") {
-                    if let Ok(ms) = v.parse::<f64>() {
-                        property_time_ms += ms;
-                    }
+
+        // Aggregate properties by key, summing numeric values for _ms keys
+        let mut aggregated: std::collections::HashMap<&str, (f64, u32)> =
+            std::collections::HashMap::new();
+        for (k, v) in &node.properties {
+            if k.ends_with("_ms") {
+                if let Ok(ms) = v.parse::<f64>() {
+                    property_time_ms += ms;
+                    let entry = aggregated.entry(k.as_str()).or_insert((0.0, 0));
+                    entry.0 += ms;
+                    entry.1 += 1;
                 }
-                format!("{}={}", k, v)
+            } else if let Ok(num) = v.parse::<f64>() {
+                let entry = aggregated.entry(k.as_str()).or_insert((0.0, 0));
+                entry.0 += num;
+                entry.1 += 1;
+            } else {
+                // Non-numeric properties just count occurrences
+                let entry = aggregated.entry(k.as_str()).or_insert((0.0, 0));
+                entry.1 += 1;
+            }
+        }
+
+        // Format aggregated properties
+        let mut props_str: Vec<String> = aggregated
+            .iter()
+            .map(|(k, (sum, count))| {
+                if *count > 1 {
+                    if k.ends_with("_ms") {
+                        format!(
+                            "{}={:.1}ms total ({} calls)",
+                            k.trim_end_matches("_ms"),
+                            sum,
+                            count
+                        )
+                    } else {
+                        format!("{}={:.0} total", k, sum)
+                    }
+                } else if k.ends_with("_ms") {
+                    format!("{}={:.1}ms", k.trim_end_matches("_ms"), sum)
+                } else {
+                    format!("{}={:.0}", k, sum)
+                }
             })
             .collect();
+        props_str.sort();
+
         lines.push(format!("{}  [{}]", props_indent, props_str.join(", ")));
     }
 
