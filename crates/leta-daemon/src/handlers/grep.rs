@@ -378,7 +378,7 @@ fn prefilter_uncached_files<'a>(
     let start = std::time::Instant::now();
     let result = match text_regex {
         Some(re) => uncached_files
-            .iter()
+            .par_iter()
             .filter(|path| prefilter_file(path, re))
             .copied()
             .collect(),
