@@ -200,7 +200,21 @@ impl DaemonServer {
                 let is_terminal =
                     matches!(msg, StreamMessage::Done(_) | StreamMessage::Error { .. });
 
-                let mut line = serde_json::to_vec(&msg)?;
+                let msg_to_send = if let StreamMessage::Done(mut done) = msg {
+                    if profile {
+                        fastrace::flush();
+                        if let Some(ref coll) = collector {
+                            let functions = coll.collect_and_aggregate();
+                            let cache = ctx.cache_stats.to_cache_stats();
+                            done.profiling = Some(ProfilingData { functions, cache });
+                        }
+                    }
+                    StreamMessage::Done(done)
+                } else {
+                    msg
+                };
+
+                let mut line = serde_json::to_vec(&msg_to_send)?;
                 line.push(b'\n');
                 stream.write_all(&line).await?;
 
@@ -211,27 +225,7 @@ impl DaemonServer {
             Ok::<_, anyhow::Error>(())
         };
 
-        tokio::join!(send_task, recv_task).1?;
-
-        if profile {
-            fastrace::flush();
-            if let Some(collector) = collector {
-                let functions = collector.collect_and_aggregate();
-                let cache = ctx.cache_stats.to_cache_stats();
-                let profiling = ProfilingData { functions, cache };
-                let done = StreamMessage::Done(StreamDone {
-                    warning: None,
-                    truncated: false,
-                    total_count: 0,
-                    profiling: Some(profiling),
-                });
-                let mut line = serde_json::to_vec(&done)?;
-                line.push(b'\n');
-                stream.write_all(&line).await?;
-            }
-        }
-
-        Ok(())
+        tokio::join!(send_task, recv_task).1
     }
 
     #[trace]
