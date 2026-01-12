@@ -195,37 +195,13 @@ fn count_lines(path: &Path) -> u32 {
 
 fn is_excluded_by_patterns(path: &Path, workspace_root: &Path, patterns: &[String]) -> bool {
     let rel_path = relative_path(path, workspace_root);
-    let path_parts: Vec<&str> = Path::new(&rel_path)
-        .iter()
-        .filter_map(|s| s.to_str())
-        .collect();
-    let filename = Path::new(&rel_path)
-        .file_name()
-        .and_then(|s| s.to_str())
-        .unwrap_or("");
 
     for pattern in patterns {
-        if glob_match(&rel_path, pattern) {
-            return true;
-        }
-        if !pattern.contains('/') && !pattern.contains('*') && !pattern.contains('?') {
-            if path_parts.contains(&pattern.as_str()) {
+        if let Ok(re) = Regex::new(pattern) {
+            if re.is_match(&rel_path) {
                 return true;
             }
         }
-        if glob_match(filename, pattern) {
-            return true;
-        }
     }
     false
-}
-
-fn glob_match(text: &str, pattern: &str) -> bool {
-    let regex_pattern = pattern
-        .replace('.', r"\.")
-        .replace('*', ".*")
-        .replace('?', ".");
-    regex::Regex::new(&format!("^{}$", regex_pattern))
-        .map(|r| r.is_match(text))
-        .unwrap_or(false)
 }
