@@ -35,6 +35,22 @@ pub struct FunctionStats {
     pub max_us: u64,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SpanNode {
+    pub name: String,
+    pub self_us: u64,
+    pub total_us: u64,
+    pub calls: u32,
+    pub children: Vec<SpanNode>,
+    pub is_parallel: bool,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct SpanTree {
+    pub roots: Vec<SpanNode>,
+    pub total_us: u64,
+}
+
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct CacheStats {
     pub symbol_hits: u32,
