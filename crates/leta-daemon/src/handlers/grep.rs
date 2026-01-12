@@ -253,21 +253,54 @@ fn classify_and_filter_cached(
     let mut results = Vec::new();
     let mut uncached_by_lang: HashMap<String, Vec<PathBuf>> = HashMap::new();
 
+    let mut total_symbols = 0u64;
+    let mut match_time = std::time::Duration::ZERO;
+
     for file_path in files {
-        process_file_in_filter_loop(
-            ctx,
-            workspace_root,
-            file_path,
-            text_regex,
-            filter,
-            limit,
-            &mut results,
-            &mut uncached_by_lang,
-        );
-        if results.len() >= limit {
-            return (results, uncached_by_lang, true);
+        let rel_path = relative_path(file_path, workspace_root);
+        if !filter.path_matches(&rel_path) {
+            continue;
+        }
+
+        if let Some(symbols) = check_file_cache(ctx, workspace_root, file_path) {
+            for sym in symbols {
+                total_symbols += 1;
+                let start = std::time::Instant::now();
+                let matched = filter.matches(&sym);
+                match_time += start.elapsed();
+                if matched {
+                    results.push(sym);
+                    if results.len() >= limit {
+                        tracing::info!(
+                            "classify_and_filter_cached: {} symbols checked, match_time={:?}",
+                            total_symbols,
+                            match_time
+                        );
+                        return (results, uncached_by_lang, true);
+                    }
+                }
+            }
+        } else {
+            let should_fetch = match text_regex {
+                Some(re) => prefilter_file(file_path, re),
+                None => true,
+            };
+
+            if should_fetch {
+                let lang = get_language_id(file_path);
+                uncached_by_lang
+                    .entry(lang.to_string())
+                    .or_default()
+                    .push(file_path.clone());
+            }
         }
     }
+
+    tracing::info!(
+        "classify_and_filter_cached: {} symbols checked, match_time={:?}",
+        total_symbols,
+        match_time
+    );
 
     (results, uncached_by_lang, false)
 }
