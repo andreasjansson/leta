@@ -199,6 +199,26 @@ async fn index_workspace_background(ctx: HandlerContext, workspace_root: PathBuf
     ctx.session.add_workspace_profiling(profiling_data).await;
 }
 
+fn limit_files_per_language(
+    files_by_lang: std::collections::HashMap<String, Vec<PathBuf>>,
+    max_total: usize,
+) -> std::collections::HashMap<String, Vec<PathBuf>> {
+    let total: usize = files_by_lang.values().map(|v| v.len()).sum();
+    if total <= max_total {
+        return files_by_lang;
+    }
+
+    let ratio = max_total as f64 / total as f64;
+    files_by_lang
+        .into_iter()
+        .map(|(lang, mut files)| {
+            let limit = ((files.len() as f64 * ratio).ceil() as usize).max(1);
+            files.truncate(limit);
+            (lang, files)
+        })
+        .collect()
+}
+
 fn scan_workspace_files(workspace_root: &Path) -> std::collections::HashMap<String, Vec<PathBuf>> {
     let exclude_dirs: HashSet<&str> = DEFAULT_EXCLUDE_DIRS.iter().copied().collect();
     let binary_exts: HashSet<&str> = BINARY_EXTENSIONS.iter().copied().collect();
