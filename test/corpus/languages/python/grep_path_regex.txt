@@ -1,0 +1,10 @@
+==================
+grep with path regex filter
+==================
+leta grep "." --kind function "utils" -C
+---
+utils.py:9 [Function] validate_email
+utils.py:22 [Function] validate_age
+utils.py:31 [Function] hash_password
+utils.py:39 [Function] generate_id
+utils.py:47 [Function] format_name
