@@ -448,7 +448,7 @@ async fn send_request(method: &str, params: Value) -> Result<Value> {
 
 fn display_profiling(profiling: Option<ProfilingData>) {
     if let Some(data) = profiling {
-        eprintln!("\n{}", format_profiling(&data));
+        eprintln!("\n{}", format_profiling_data(&data));
     }
 }
 
