@@ -210,6 +210,7 @@ fn language_to_key(language_id: &str) -> Option<&'static str> {
     }
 }
 
+#[trace]
 pub fn get_server_for_language(
     language_id: &str,
     config: Option<&Config>,
@@ -242,6 +243,7 @@ pub fn get_server_for_language(
     Some(servers[0])
 }
 
+#[trace]
 pub fn get_server_for_file(path: &Path, config: Option<&Config>) -> Option<&'static ServerConfig> {
     let language_id = get_language_id(path);
     get_server_for_language(language_id, config)
