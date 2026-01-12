@@ -169,10 +169,6 @@ impl DaemonServer {
             None
         };
 
-        let method_name: &'static str = Box::leak(method.to_string().into_boxed_str());
-        let root = Span::root(method_name, SpanContext::random());
-        let _guard = root.set_local_parent();
-
         let (tx, mut rx) = mpsc::channel::<StreamMessage>(100);
 
         let handler_fut = async {
@@ -226,8 +222,6 @@ impl DaemonServer {
                 break;
             }
         }
-
-        drop(_guard);
 
         if let Some(mut done) = final_done {
             if profile {
