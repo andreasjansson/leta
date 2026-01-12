@@ -73,15 +73,15 @@ impl LmdbCache {
     {
         let key_hashes: Vec<String> = keys.iter().map(|k| self.hash_key(k)).collect();
 
-        let buffer_map: std::collections::HashMap<&str, &str> =
-            if let Ok(buffer) = self.write_buffer.lock() {
-                buffer
-                    .iter()
-                    .map(|(k, v)| (k.as_str(), v.as_str()))
-                    .collect()
-            } else {
-                std::collections::HashMap::new()
-            };
+        let buffer_snapshot: Vec<(String, String)> = if let Ok(buffer) = self.write_buffer.lock() {
+            buffer.clone()
+        } else {
+            Vec::new()
+        };
+        let buffer_map: std::collections::HashMap<&str, &str> = buffer_snapshot
+            .iter()
+            .map(|(k, v)| (k.as_str(), v.as_str()))
+            .collect();
 
         let Ok(rtxn) = self.env.read_txn() else {
             return keys.iter().map(|_| None).collect();
