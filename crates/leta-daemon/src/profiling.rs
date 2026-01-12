@@ -190,6 +190,7 @@ fn build_node(span: &RawSpan, children_map: &HashMap<SpanId, Vec<&RawSpan>>) -> 
         calls: 1,
         children,
         is_parallel,
+        properties: span.properties.clone(),
     }
 }
 
