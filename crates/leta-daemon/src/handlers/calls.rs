@@ -78,6 +78,7 @@ pub async fn handle_calls(
                 path: None,
                 message: None,
                 error: None,
+                truncated: false,
             })
         }
 
