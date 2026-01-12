@@ -287,46 +287,6 @@ fn classify_and_filter_cached(
     (results, uncached_by_lang, false)
 }
 
-fn process_file_in_filter_loop(
-    ctx: &HandlerContext,
-    workspace_root: &Path,
-    file_path: &Path,
-    text_regex: Option<&Regex>,
-    filter: &GrepFilter<'_>,
-    limit: usize,
-    results: &mut Vec<SymbolInfo>,
-    uncached_by_lang: &mut HashMap<String, Vec<PathBuf>>,
-) {
-    let rel_path = relative_path(file_path, workspace_root);
-    if !filter.path_matches(&rel_path) {
-        return;
-    }
-
-    if let Some(symbols) = check_file_cache(ctx, workspace_root, file_path) {
-        for sym in symbols {
-            if filter.matches(&sym) {
-                results.push(sym);
-                if results.len() >= limit {
-                    return;
-                }
-            }
-        }
-    } else {
-        let should_fetch = match text_regex {
-            Some(re) => prefilter_file(file_path, re),
-            None => true,
-        };
-
-        if should_fetch {
-            let lang = get_language_id(file_path);
-            uncached_by_lang
-                .entry(lang.to_string())
-                .or_default()
-                .push(file_path.to_path_buf());
-        }
-    }
-}
-
 #[trace]
 async fn fetch_and_filter_symbols(
     ctx: &HandlerContext,
