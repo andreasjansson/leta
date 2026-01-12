@@ -756,13 +756,22 @@ fn format_span_node(
         format_duration_us(node.total_us)
     ));
 
-    // Show properties if any
+    // Show properties if any - extract timing info from properties
+    let mut property_time_ms = 0.0f64;
     if !node.properties.is_empty() {
         let props_indent = " ".repeat(depth + 1);
         let props_str: Vec<String> = node
             .properties
             .iter()
-            .map(|(k, v)| format!("{}={}", k, v))
+            .map(|(k, v)| {
+                // Sum up any _ms properties to account for time
+                if k.ends_with("_ms") {
+                    if let Ok(ms) = v.parse::<f64>() {
+                        property_time_ms += ms;
+                    }
+                }
+                format!("{}={}", k, v)
+            })
             .collect();
         lines.push(format!("{}  [{}]", props_indent, props_str.join(", ")));
     }
@@ -771,7 +780,14 @@ fn format_span_node(
         format_span_node(child, lines, depth + 1, functions);
     }
 
-    if node.self_us > 1000 && !node.children.is_empty() {
+    // Only show unaccounted if:
+    // 1. There's significant unaccounted time (> 1ms)
+    // 2. There are children (otherwise all time is "self")
+    // 3. Properties don't already explain most of the time
+    let property_time_us = (property_time_ms * 1000.0) as u64;
+    let truly_unaccounted = node.self_us.saturating_sub(property_time_us);
+
+    if truly_unaccounted > 1000 && !node.children.is_empty() {
         let unaccounted_name = format!("{}[unaccounted]", " ".repeat(depth + 1));
         lines.push(format!(
             "{:<55} {:>7} {:>9} {:>9} {:>9}",
@@ -779,7 +795,7 @@ fn format_span_node(
             "",
             "",
             "",
-            format_duration_us(node.self_us)
+            format_duration_us(truly_unaccounted)
         ));
     }
 }
