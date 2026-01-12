@@ -194,6 +194,7 @@ pub fn enumerate_source_files(
     workspace_root: &Path,
     excluded_languages: &HashSet<String>,
 ) -> Vec<PathBuf> {
+    let _span = LocalSpan::enter_with_local_parent("enumerate_source_files");
     let skip_dirs: HashSet<&str> = SKIP_DIRS.iter().copied().collect();
     let mut files = Vec::new();
 
