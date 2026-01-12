@@ -686,7 +686,7 @@ pub fn format_profiling(profiling: &ProfilingData) -> String {
     if let Some(tree) = &profiling.span_tree {
         lines.push("CALL TREE".to_string());
         for root in &tree.roots {
-            format_span_node(root, &mut lines, "", true);
+            format_span_node(root, &mut lines, "", true, 0);
         }
         lines.push(String::new());
         lines.push(format!(
@@ -698,71 +698,84 @@ pub fn format_profiling(profiling: &ProfilingData) -> String {
     lines.join("\n")
 }
 
-fn format_span_node(node: &SpanNode, lines: &mut Vec<String>, prefix: &str, is_last: bool) {
+fn simplify_name(name: &str) -> &str {
+    if let Some(pos) = name.rfind("::") {
+        let suffix = &name[pos + 2..];
+        if suffix.starts_with("{{") || suffix == "{{closure}}" {
+            if let Some(prev_pos) = name[..pos].rfind("::") {
+                return &name[prev_pos + 2..];
+            }
+        }
+        suffix
+    } else {
+        name
+    }
+}
+
+fn format_span_node(
+    node: &SpanNode,
+    lines: &mut Vec<String>,
+    prefix: &str,
+    is_last: bool,
+    depth: usize,
+) {
     let connector = if prefix.is_empty() {
         ""
     } else if is_last {
-        "└─ "
+        "└── "
     } else {
-        "├─ "
+        "├── "
     };
 
-    let parallel_marker = if node.is_parallel { " [parallel]" } else { "" };
-
-    let self_pct = if node.total_us > 0 {
-        (node.self_us as f64 / node.total_us as f64 * 100.0) as u32
-    } else {
-        0
-    };
+    let parallel_marker = if node.is_parallel { " ∥" } else { "" };
 
     let calls_str = if node.calls > 1 {
-        format!(" ({}x)", node.calls)
+        format!(" ×{}", node.calls)
     } else {
         String::new()
     };
 
+    let display_name = simplify_name(&node.name);
+
+    let timing = if node.children.is_empty() || node.self_us == node.total_us {
+        format_duration_us(node.total_us)
+    } else {
+        let self_pct = (node.self_us as f64 / node.total_us as f64 * 100.0) as u32;
+        format!(
+            "{} ({} self, {}%)",
+            format_duration_us(node.total_us),
+            format_duration_us(node.self_us),
+            self_pct
+        )
+    };
+
     lines.push(format!(
-        "  {}{}{}{} {:>8} total, {:>8} self ({}%){}",
-        prefix,
-        connector,
-        node.name,
-        calls_str,
-        format_duration_us(node.total_us),
-        format_duration_us(node.self_us),
-        self_pct,
-        parallel_marker
+        "  {}{}{}{} {}{}",
+        prefix, connector, display_name, calls_str, timing, parallel_marker
     ));
 
     let child_prefix = if prefix.is_empty() {
         "".to_string()
     } else if is_last {
-        format!("{}   ", prefix)
+        format!("{}    ", prefix)
     } else {
-        format!("{}│  ", prefix)
-    };
-
-    let children_total: u64 = if node.is_parallel {
-        node.children.iter().map(|c| c.total_us).max().unwrap_or(0)
-    } else {
-        node.children.iter().map(|c| c.total_us).sum()
+        format!("{}│   ", prefix)
     };
 
     let unaccounted = node.self_us;
     let show_unaccounted = unaccounted > 1000 && !node.children.is_empty();
 
-    let num_children = node.children.len() + if show_unaccounted { 1 } else { 0 };
+    let num_items = node.children.len() + if show_unaccounted { 1 } else { 0 };
 
     for (i, child) in node.children.iter().enumerate() {
-        let is_child_last = i == num_children - 1;
-        format_span_node(child, lines, &child_prefix, is_child_last);
+        let is_child_last = !show_unaccounted && i == num_items - 1;
+        format_span_node(child, lines, &child_prefix, is_child_last, depth + 1);
     }
 
     if show_unaccounted {
-        let unaccounted_connector = "└─ ";
         lines.push(format!(
-            "  {}{}(untraced) {:>8}",
+            "  {}└── (untraced) {}",
             child_prefix,
-            unaccounted_connector,
             format_duration_us(unaccounted)
         ));
     }
