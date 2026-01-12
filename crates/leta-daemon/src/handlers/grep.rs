@@ -244,7 +244,10 @@ fn classify_and_filter_cached(
     let mut uncached_by_lang: HashMap<String, Vec<PathBuf>> = HashMap::new();
 
     for file_path in files {
-        let lang = get_language_id(file_path);
+        let lang = {
+            let _span = LocalSpan::enter_with_local_parent("get_language_id");
+            get_language_id(file_path)
+        };
         if lang == "plaintext" || excluded_languages.contains(lang) {
             continue;
         }
@@ -258,6 +261,7 @@ fn classify_and_filter_cached(
         }
 
         if let Some(symbols) = check_file_cache(ctx, workspace_root, file_path) {
+            let _span = LocalSpan::enter_with_local_parent("filter_cached_symbols");
             for sym in symbols {
                 if filter.matches(&sym) {
                     results.push(sym);
