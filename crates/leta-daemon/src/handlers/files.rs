@@ -160,15 +160,6 @@ fn count_lines(path: &Path) -> u32 {
         .unwrap_or(0)
 }
 
-fn count_symbols(symbols: &[SymbolInfo]) -> HashMap<String, u32> {
-    let mut counts: HashMap<String, u32> = HashMap::new();
-    for sym in symbols {
-        let kind = sym.kind.to_string().to_lowercase();
-        *counts.entry(kind).or_insert(0) += 1;
-    }
-    counts
-}
-
 fn is_excluded_by_patterns(path: &Path, workspace_root: &Path, patterns: &[String]) -> bool {
     let rel_path = relative_path(path, workspace_root);
     let path_parts: Vec<&str> = Path::new(&rel_path)
