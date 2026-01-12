@@ -83,8 +83,8 @@ fn pattern_to_text_regex(pattern: &str) -> Option<Regex> {
 #[trace]
 pub async fn handle_grep(ctx: &HandlerContext, params: GrepParams) -> Result<GrepResult, String> {
     debug!(
-        "handle_grep: pattern={} workspace={} limit={}",
-        params.pattern, params.workspace_root, params.limit
+        "handle_grep: pattern={} workspace={} limit={} path_pattern={:?}",
+        params.pattern, params.workspace_root, params.limit, params.path_pattern
     );
     let workspace_root = PathBuf::from(&params.workspace_root);
 
@@ -92,6 +92,13 @@ pub async fn handle_grep(ctx: &HandlerContext, params: GrepParams) -> Result<Gre
     let pattern = format!("{}{}", flags, params.pattern);
     let regex =
         Regex::new(&pattern).map_err(|e| format!("Invalid regex '{}': {}", params.pattern, e))?;
+
+    let path_regex = params
+        .path_pattern
+        .as_ref()
+        .map(|p| Regex::new(p))
+        .transpose()
+        .map_err(|e| format!("Invalid path pattern: {}", e))?;
 
     let kinds_set: Option<HashSet<String>> = params
         .kinds
@@ -111,13 +118,10 @@ pub async fn handle_grep(ctx: &HandlerContext, params: GrepParams) -> Result<Gre
         regex: &regex,
         kinds: kinds_set.as_ref(),
         exclude_patterns: &params.exclude_patterns,
+        path_regex: path_regex.as_ref(),
     };
 
-    let files = if let Some(paths) = &params.paths {
-        paths.iter().map(PathBuf::from).collect()
-    } else {
-        enumerate_source_files(&workspace_root, &excluded_languages)
-    };
+    let files = enumerate_source_files(&workspace_root, &excluded_languages);
 
     let text_pattern = if should_use_prefilter(&pattern) {
         Some(pattern.as_str())
