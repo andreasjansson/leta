@@ -119,6 +119,18 @@ fn walk_directory(
     let mut total_lines: u32 = 0;
     let mut truncated = false;
 
+    let exclude_regexes: Vec<Regex> = params
+        .exclude_patterns
+        .iter()
+        .filter_map(|p| Regex::new(p).ok())
+        .collect();
+
+    let include_regexes: Vec<Regex> = params
+        .include_patterns
+        .iter()
+        .filter_map(|p| Regex::new(p).ok())
+        .collect();
+
     let mut iter = walkdir::WalkDir::new(target_path).into_iter();
 
     while let Some(entry_result) = iter.next() {
@@ -134,6 +146,7 @@ fn walk_directory(
 
         let path = entry.path();
         let name = entry.file_name().to_string_lossy();
+        let rel_path = relative_path(path, workspace_root);
 
         if entry.file_type().is_dir() {
             if entry.depth() == 0 {
@@ -142,9 +155,8 @@ fn walk_directory(
 
             let is_default_excluded = exclude_dirs.contains(name.as_ref());
             let is_egg_info = name.ends_with(".egg-info");
-            let is_pattern_excluded =
-                is_excluded_by_patterns(path, workspace_root, &params.exclude_patterns);
-            let is_included = params.include_patterns.iter().any(|p| p == name.as_ref());
+            let is_pattern_excluded = exclude_regexes.iter().any(|re| re.is_match(&rel_path));
+            let is_included = include_regexes.iter().any(|re| re.is_match(&rel_path));
 
             if is_egg_info {
                 iter.skip_current_dir();
@@ -152,7 +164,6 @@ fn walk_directory(
             }
 
             if (is_default_excluded || is_pattern_excluded) && !is_included {
-                let rel_path = relative_path(path, workspace_root);
                 if filter_regex.is_none() {
                     found_excluded.insert(rel_path);
                 }
@@ -169,12 +180,14 @@ fn walk_directory(
             continue;
         }
 
-        let rel_path = relative_path(path, workspace_root);
-
         if let Some(re) = filter_regex {
             if !re.is_match(&rel_path) {
                 continue;
             }
+        }
+
+        if exclude_regexes.iter().any(|re| re.is_match(&rel_path)) {
+            continue;
         }
 
         let metadata = match std::fs::metadata(path) {
