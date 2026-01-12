@@ -2,8 +2,9 @@ use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
 use fastrace::trace;
-use leta_types::{FileInfo, FilesParams, FilesResult};
+use leta_types::{FileInfo, FilesParams, FilesResult, StreamDone, StreamMessage};
 use regex::Regex;
+use tokio::sync::mpsc;
 
 use super::{relative_path, HandlerContext};
 
