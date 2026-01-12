@@ -1,7 +1,7 @@
 ==================
-grep multiple files via glob
+grep multiple files via path regex
 ==================
-leta grep "User" --kind object "*.lua" -C
+leta grep "User" --kind object "user\.lua" -C
 ---
 user.lua:11 [Object] User
 user.lua:158 [Object] UserRepository
