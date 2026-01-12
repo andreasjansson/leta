@@ -90,7 +90,7 @@ pub async fn handle_show(ctx: &HandlerContext, params: ShowParams) -> Result<Sho
     }
 
     let total_lines = (end - start + 1) as u32;
-    let truncated = total_lines > head;
+    let truncated = head > 0 && total_lines > head;
     if truncated {
         end = start + (head as usize) - 1;
     }
