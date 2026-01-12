@@ -319,9 +319,11 @@ async fn main() -> Result<()> {
                     context,
                     head,
                 } => handle_refs(&config, cli.json, symbol, context, head).await,
-                Commands::Declaration { symbol, context } => {
-                    handle_declaration(&config, cli.json, symbol, context).await
-                }
+                Commands::Declaration {
+                    symbol,
+                    context,
+                    head,
+                } => handle_declaration(&config, cli.json, symbol, context, head).await,
                 Commands::Implementations { symbol, context } => {
                     handle_implementations(&config, cli.json, symbol, context).await
                 }
