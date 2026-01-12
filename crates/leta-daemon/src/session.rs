@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -8,8 +8,8 @@ use leta_fs::{get_language_id, path_to_uri, read_file_content};
 use leta_lsp::LspClient;
 use leta_servers::{get_server_env, get_server_for_file, get_server_for_language, ServerConfig};
 use serde_json::Value;
-use tokio::sync::RwLock;
-use tracing::{debug, info};
+use tokio::sync::{Mutex, RwLock};
+use tracing::{debug, info, warn};
 
 #[derive(Clone)]
 pub struct OpenDocument {
