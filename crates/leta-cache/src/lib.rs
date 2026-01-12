@@ -40,7 +40,6 @@ impl LmdbCache {
         Ok(Self { env, db, max_bytes })
     }
 
-    #[trace]
     pub fn get<V>(&self, key: &str) -> Option<V>
     where
         V: DeserializeOwned,
