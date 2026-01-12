@@ -81,7 +81,7 @@ enum Commands {
         docs: bool,
         #[arg(short = 'C', long, help = "Case-sensitive matching")]
         case_sensitive: bool,
-        #[arg(long, default_value_t = DEFAULT_HEAD_LIMIT, help = "Maximum results to return")]
+        #[arg(short = 'N', long, default_value_t = DEFAULT_HEAD_LIMIT, help = "Maximum results (0 = unlimited)")]
         head: u32,
     },
 
@@ -95,7 +95,7 @@ enum Commands {
         include: Vec<String>,
         #[arg(short = 'f', long, help = "Filter files by regex pattern")]
         filter: Option<String>,
-        #[arg(long, default_value_t = DEFAULT_HEAD_LIMIT, help = "Maximum files to show")]
+        #[arg(short = 'N', long, default_value_t = DEFAULT_HEAD_LIMIT, help = "Maximum files (0 = unlimited)")]
         head: u32,
     },
 
