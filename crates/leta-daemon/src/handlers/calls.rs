@@ -173,6 +173,7 @@ pub async fn handle_calls(
                     root: None,
                     path: None,
                     error: None,
+                    truncated: false,
                 });
             }
 
@@ -197,6 +198,7 @@ pub async fn handle_calls(
                     root: None,
                     message: None,
                     error: None,
+                    truncated: false,
                 }),
                 None => Ok(CallsResult {
                     message: Some(format!(
@@ -208,6 +210,7 @@ pub async fn handle_calls(
                     root: None,
                     path: None,
                     error: None,
+                    truncated: false,
                 }),
             }
         }
