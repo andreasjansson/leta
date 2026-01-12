@@ -94,19 +94,25 @@ impl DaemonServer {
 
     #[trace]
     async fn handle_client(&self, mut stream: UnixStream) -> anyhow::Result<()> {
-        let mut data = Vec::new();
-        stream.read_to_end(&mut data).await?;
+        let (read_half, write_half) = stream.split();
+        let mut reader = BufReader::new(read_half);
+        let mut line = String::new();
+        reader.read_line(&mut line).await?;
 
-        if data.is_empty() {
+        if line.is_empty() {
             return Ok(());
         }
 
-        let request: Value = serde_json::from_slice(&data)?;
+        let request: Value = serde_json::from_str(&line)?;
         let method = request.get("method").and_then(|m| m.as_str()).unwrap_or("");
         let params = request.get("params").cloned().unwrap_or(json!({}));
         let profile = request
             .get("profile")
             .and_then(|p| p.as_bool())
+            .unwrap_or(false);
+        let stream_mode = request
+            .get("stream")
+            .and_then(|s| s.as_bool())
             .unwrap_or(false);
 
         let ctx = HandlerContext::new(
@@ -115,16 +121,83 @@ impl DaemonServer {
             Arc::clone(&self.symbol_cache),
         );
 
-        let response = if profile {
-            self.dispatch_with_profiling(&ctx, method, params).await
+        drop(reader);
+        let mut stream = write_half.reunite(read_half.into_inner())?;
+
+        if stream_mode && (method == "grep" || method == "files") {
+            self.handle_streaming(&ctx, method, params, profile, &mut stream)
+                .await?;
         } else {
-            self.dispatch(&ctx, method, params).await
+            let response = if profile {
+                self.dispatch_with_profiling(&ctx, method, params).await
+            } else {
+                self.dispatch(&ctx, method, params).await
+            };
+
+            stream
+                .write_all(serde_json::to_vec(&response)?.as_slice())
+                .await?;
+        }
+
+        stream.shutdown().await?;
+        Ok(())
+    }
+
+    async fn handle_streaming(
+        &self,
+        ctx: &HandlerContext,
+        method: &str,
+        params: Value,
+        profile: bool,
+        stream: &mut UnixStream,
+    ) -> anyhow::Result<()> {
+        let (tx, mut rx) = mpsc::channel::<StreamMessage>(100);
+
+        let ctx_clone = ctx.clone();
+        let method_owned = method.to_string();
+
+        let (reporter, collector) = if profile {
+            let (r, c) = CollectingReporter::new();
+            fastrace::set_reporter(r, FastraceConfig::default());
+            ctx.cache_stats.reset();
+            (Some(()), Some(c))
+        } else {
+            (None, None)
         };
 
-        stream
-            .write_all(serde_json::to_vec(&response)?.as_slice())
-            .await?;
-        stream.shutdown().await?;
+        let handle = tokio::spawn(async move {
+            match method_owned.as_str() {
+                "grep" => {
+                    if let Ok(p) = serde_json::from_value::<GrepParams>(params) {
+                        handle_grep_streaming(&ctx_clone, p, tx).await;
+                    }
+                }
+                "files" => {
+                    if let Ok(p) = serde_json::from_value::<FilesParams>(params) {
+                        handle_files_streaming(&ctx_clone, p, tx).await;
+                    }
+                }
+                _ => {}
+            }
+        });
+
+        while let Some(msg) = rx.recv().await {
+            let mut line = serde_json::to_vec(&msg)?;
+            line.push(b'\n');
+            stream.write_all(&line).await?;
+
+            if matches!(msg, StreamMessage::Done(_) | StreamMessage::Error { .. }) {
+                break;
+            }
+        }
+
+        let _ = handle.await;
+
+        if let (Some(_), Some(collector)) = (reporter, collector) {
+            fastrace::flush();
+            let _functions = collector.collect_and_aggregate();
+            let _cache = ctx.cache_stats.to_cache_stats();
+        }
 
         Ok(())
     }
