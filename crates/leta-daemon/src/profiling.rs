@@ -67,7 +67,6 @@ struct RawSpan {
 }
 
 fn build_tree(spans: Vec<SpanRecord>) -> SpanTree {
-    tracing::info!("build_tree: received {} spans", spans.len());
     if spans.is_empty() {
         return SpanTree::default();
     }
