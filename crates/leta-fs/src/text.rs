@@ -57,12 +57,15 @@ pub fn read_file_content(path: &Path) -> Result<String, TextError> {
     Ok(content)
 }
 
-pub fn file_sha(path: &Path) -> String {
-    match std::fs::read(path) {
-        Ok(bytes) => {
-            let hash = blake3::hash(&bytes);
-            hash.to_hex()[..16].to_string()
-        }
+pub fn file_mtime(path: &Path) -> String {
+    match std::fs::metadata(path) {
+        Ok(meta) => match meta.modified() {
+            Ok(mtime) => match mtime.duration_since(std::time::UNIX_EPOCH) {
+                Ok(duration) => format!("{}.{}", duration.as_secs(), duration.subsec_nanos()),
+                Err(_) => String::new(),
+            },
+            Err(_) => String::new(),
+        },
         Err(_) => String::new(),
     }
 }
