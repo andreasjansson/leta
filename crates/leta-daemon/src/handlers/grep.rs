@@ -351,7 +351,6 @@ fn filter_cached_symbols<'a>(
 }
 
 #[trace]
-#[trace]
 fn prefilter_uncached_files<'a>(
     uncached_files: &[&'a PathBuf],
     text_regex: Option<&Regex>,
