@@ -981,46 +981,95 @@ async fn handle_files(
         (get_workspace_root(config)?, None)
     };
 
-    let response = send_request_with_profile(
-        "files",
-        json!({
-            "workspace_root": workspace_root.to_string_lossy(),
-            "subpath": subpath,
-            "exclude_patterns": exclude,
-            "include_patterns": include,
-            "filter_pattern": filter,
-            "head": head,
-        }),
-        profile,
-    )
-    .await?;
+    if json_output || profile {
+        // Use non-streaming path for JSON output or profiling
+        let response = send_request_with_profile(
+            "files",
+            json!({
+                "workspace_root": workspace_root.to_string_lossy(),
+                "subpath": subpath,
+                "exclude_patterns": exclude,
+                "include_patterns": include,
+                "filter_pattern": filter,
+                "head": head,
+            }),
+            profile,
+        )
+        .await?;
 
-    let files_result: FilesResult = serde_json::from_value(response.result)?;
+        let files_result: FilesResult = serde_json::from_value(response.result)?;
 
-    if json_output {
-        println!("{}", serde_json::to_string_pretty(&files_result)?);
+        if json_output {
+            println!("{}", serde_json::to_string_pretty(&files_result)?);
+        } else {
+            let mut cmd_parts = vec!["leta files".to_string()];
+            if let Some(p) = &path {
+                cmd_parts.push(format!("\"{}\"", p));
+            }
+            for ex in &exclude {
+                cmd_parts.push(format!("-x \"{}\"", ex));
+            }
+            for inc in &include {
+                cmd_parts.push(format!("-i \"{}\"", inc));
+            }
+            if let Some(f) = &filter {
+                cmd_parts.push(format!("-f \"{}\"", f));
+            }
+            let command_base = cmd_parts.join(" ");
+            println!(
+                "{}",
+                format_files_result(&files_result, head, &command_base)
+            );
+        }
+
+        display_profiling(response.profiling);
     } else {
-        let mut cmd_parts = vec!["leta files".to_string()];
-        if let Some(p) = &path {
-            cmd_parts.push(format!("\"{}\"", p));
-        }
-        for ex in &exclude {
-            cmd_parts.push(format!("-x \"{}\"", ex));
-        }
-        for inc in &include {
-            cmd_parts.push(format!("-i \"{}\"", inc));
-        }
-        if let Some(f) = &filter {
-            cmd_parts.push(format!("-f \"{}\"", f));
-        }
-        let command_base = cmd_parts.join(" ");
-        println!(
-            "{}",
-            format_files_result(&files_result, head, &command_base)
-        );
-    }
+        // Use streaming path - print files immediately as they arrive
+        let mut count = 0u32;
+        let done = send_streaming_request(
+            "files",
+            json!({
+                "workspace_root": workspace_root.to_string_lossy(),
+                "subpath": subpath,
+                "exclude_patterns": exclude,
+                "include_patterns": include,
+                "filter_pattern": filter,
+                "head": head,
+            }),
+            false,
+            |msg| {
+                if let StreamMessage::File(file) = msg {
+                    println!("{}", format_file_line(&file));
+                    count += 1;
+                }
+            },
+        )
+        .await?;
 
-    display_profiling(response.profiling);
+        if done.truncated {
+            let mut cmd_parts = vec!["leta files".to_string()];
+            if let Some(p) = &path {
+                cmd_parts.push(format!("\"{}\"", p));
+            }
+            for ex in &exclude {
+                cmd_parts.push(format!("-x \"{}\"", ex));
+            }
+            for inc in &include {
+                cmd_parts.push(format!("-i \"{}\"", inc));
+            }
+            if let Some(f) = &filter {
+                cmd_parts.push(format!("-f \"{}\"", f));
+            }
+            let command_base = cmd_parts.join(" ");
+            println!(
+                "\n[showing first {} results, use `{} --head {}` to show more, or `{} -N0` to show all]",
+                count,
+                command_base,
+                count * 2,
+                command_base
+            );
+        }
+    }
     Ok(())
 }
 
