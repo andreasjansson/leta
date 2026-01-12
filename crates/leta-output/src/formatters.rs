@@ -142,11 +142,13 @@ pub fn format_implementations_result(
                 &cmd,
                 result.locations.len() as u32,
                 total,
+                command_base,
             ));
         } else {
             output.push_str(&format_truncation_unknown_total(
                 &cmd,
                 result.locations.len() as u32,
+                command_base,
             ));
         }
     }
