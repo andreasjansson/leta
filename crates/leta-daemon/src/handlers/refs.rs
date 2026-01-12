@@ -57,11 +57,13 @@ pub async fn handle_references(
 
     let all_locations = response.unwrap_or_default();
     let total_count = all_locations.len() as u32;
-    let truncated = total_count > params.head;
-    let limited_locations: Vec<_> = all_locations
-        .into_iter()
-        .take(params.head as usize)
-        .collect();
+    let head_limit = if params.head == 0 {
+        usize::MAX
+    } else {
+        params.head as usize
+    };
+    let truncated = total_count as usize > head_limit;
+    let limited_locations: Vec<_> = all_locations.into_iter().take(head_limit).collect();
     let locations = format_locations(&limited_locations, &workspace_root, params.context);
 
     Ok(ReferencesResult {
