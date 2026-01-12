@@ -227,3 +227,145 @@ fn count_lines(path: &Path) -> u32 {
         .map(|content| content.lines().count() as u32)
         .unwrap_or(0)
 }
+
+pub async fn handle_files_streaming(
+    _ctx: &HandlerContext,
+    params: FilesParams,
+    tx: mpsc::Sender<StreamMessage>,
+) {
+    let result = handle_files_streaming_inner(&params, &tx).await;
+
+    match result {
+        Ok((truncated, count)) => {
+            let _ = tx
+                .send(StreamMessage::Done(StreamDone {
+                    warning: None,
+                    truncated,
+                    total_count: count,
+                    profiling: None,
+                }))
+                .await;
+        }
+        Err(e) => {
+            let _ = tx.send(StreamMessage::Error { message: e }).await;
+        }
+    }
+}
+
+async fn handle_files_streaming_inner(
+    params: &FilesParams,
+    tx: &mpsc::Sender<StreamMessage>,
+) -> Result<(bool, u32), String> {
+    let workspace_root = PathBuf::from(&params.workspace_root);
+    let target_path = params
+        .subpath
+        .clone()
+        .map(PathBuf::from)
+        .unwrap_or_else(|| workspace_root.clone());
+
+    let mut exclude_dirs: HashSet<&str> = DEFAULT_EXCLUDE_DIRS.iter().copied().collect();
+
+    for pattern in &params.include_patterns {
+        exclude_dirs.remove(pattern.as_str());
+    }
+
+    let binary_exts: HashSet<&str> = BINARY_EXTENSIONS.iter().copied().collect();
+
+    let filter_regex = params
+        .filter_pattern
+        .as_ref()
+        .map(|p| Regex::new(p))
+        .transpose()
+        .map_err(|e| format!("Invalid filter pattern: {}", e))?;
+
+    let head_limit = if params.head == 0 {
+        usize::MAX
+    } else {
+        params.head as usize
+    };
+
+    let exclude_regexes: Vec<Regex> = params
+        .exclude_patterns
+        .iter()
+        .filter_map(|p| Regex::new(p).ok())
+        .collect();
+
+    let include_regexes: Vec<Regex> = params
+        .include_patterns
+        .iter()
+        .filter_map(|p| Regex::new(p).ok())
+        .collect();
+
+    let mut count = 0u32;
+    let mut truncated = false;
+    let mut iter = walkdir::WalkDir::new(&target_path).into_iter();
+
+    while let Some(entry_result) = iter.next() {
+        if count as usize >= head_limit {
+            truncated = true;
+            break;
+        }
+
+        let entry = match entry_result {
+            Ok(e) => e,
+            Err(_) => continue,
+        };
+
+        let path = entry.path();
+        let name = entry.file_name().to_string_lossy();
+        let rel_path = relative_path(path, &workspace_root);
+
+        if entry.file_type().is_dir() {
+            if entry.depth() == 0 {
+                continue;
+            }
+
+            let is_default_excluded = exclude_dirs.contains(name.as_ref());
+            let is_egg_info = name.ends_with(".egg-info");
+            let is_pattern_excluded = exclude_regexes.iter().any(|re| re.is_match(&rel_path));
+            let is_included = include_regexes.iter().any(|re| re.is_match(&rel_path));
+
+            if is_egg_info || ((is_default_excluded || is_pattern_excluded) && !is_included) {
+                iter.skip_current_dir();
+            }
+            continue;
+        }
+
+        let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
+
+        if binary_exts.contains(&format!(".{}", ext).as_str()) {
+            continue;
+        }
+
+        if let Some(re) = filter_regex.as_ref() {
+            if !re.is_match(&rel_path) {
+                continue;
+            }
+        }
+
+        if exclude_regexes.iter().any(|re| re.is_match(&rel_path)) {
+            continue;
+        }
+
+        let metadata = match std::fs::metadata(path) {
+            Ok(m) => m,
+            Err(_) => continue,
+        };
+
+        let bytes = metadata.len();
+        let lines = count_lines(path);
+
+        let file_info = FileInfo {
+            path: rel_path,
+            lines,
+            bytes,
+        };
+
+        if tx.send(StreamMessage::File(file_info)).await.is_err() {
+            return Ok((false, count));
+        }
+        count += 1;
+    }
+
+    Ok((truncated, count))
+}
