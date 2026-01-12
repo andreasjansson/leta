@@ -324,44 +324,11 @@ fn parse_symbol_path(symbol_path: &str) -> Result<(Option<String>, Option<u32>, 
 }
 
 fn matches_path(rel_path: &str, filter: &str) -> bool {
-    if glob_match(rel_path, filter) {
-        return true;
+    if let Ok(re) = Regex::new(filter) {
+        re.is_match(rel_path)
+    } else {
+        rel_path.contains(filter)
     }
-    if glob_match(rel_path, &format!("**/{}", filter)) {
-        return true;
-    }
-    if glob_match(rel_path, &format!("{}/**", filter)) {
-        return true;
-    }
-    if !filter.contains('/') {
-        let filename = Path::new(rel_path)
-            .file_name()
-            .and_then(|s| s.to_str())
-            .unwrap_or("");
-        if glob_match(filename, filter) {
-            return true;
-        }
-        let parts: Vec<&str> = Path::new(rel_path)
-            .iter()
-            .filter_map(|s| s.to_str())
-            .collect();
-        if parts.contains(&filter) {
-            return true;
-        }
-    }
-    false
-}
-
-fn glob_match(text: &str, pattern: &str) -> bool {
-    let regex_pattern = pattern
-        .replace('.', r"\.")
-        .replace("**", "§§")
-        .replace('*', "[^/]*")
-        .replace("§§", ".*")
-        .replace('?', ".");
-    Regex::new(&format!("^{}$", regex_pattern))
-        .map(|r| r.is_match(text))
-        .unwrap_or(false)
 }
 
 fn name_matches(sym_name: &str, target: &str) -> bool {
