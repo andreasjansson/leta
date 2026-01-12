@@ -52,6 +52,7 @@ pub async fn handle_calls(
                     root: None,
                     path: None,
                     error: None,
+                    truncated: false,
                 });
             }
 
