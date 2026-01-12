@@ -174,11 +174,7 @@ impl DaemonServer {
         let ctx_clone = ctx.clone();
         let method_owned = method.to_string();
 
-        let send_handle = tokio::task::spawn_local(async move {
-            let method_name: &'static str = Box::leak(method_owned.clone().into_boxed_str());
-            let root = Span::root(method_name, SpanContext::random());
-            let _guard = root.set_local_parent();
-
+        let send_handle = tokio::spawn(async move {
             match method_owned.as_str() {
                 "grep" => {
                     if let Ok(p) = serde_json::from_value::<GrepParams>(params) {
@@ -199,6 +195,7 @@ impl DaemonServer {
 
             let msg_to_send = if let StreamMessage::Done(mut done) = msg {
                 if profile {
+                    let _ = send_handle.await;
                     fastrace::flush();
                     if let Some(ref coll) = collector {
                         let functions = coll.collect_and_aggregate();
@@ -219,8 +216,6 @@ impl DaemonServer {
                 break;
             }
         }
-
-        let _ = send_handle.await;
         Ok(())
     }
 
