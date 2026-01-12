@@ -277,14 +277,14 @@ fn classify_and_filter_cached(
 }
 
 #[trace]
-fn filter_cached_symbols(
+fn filter_cached_symbols<'a>(
     ctx: &HandlerContext,
     workspace_root: &Path,
-    files: &[PathBuf],
+    files: &'a [PathBuf],
     filter: &GrepFilter<'_>,
     limit: usize,
     results: &mut Vec<SymbolInfo>,
-    uncached_files: &mut Vec<&PathBuf>,
+    uncached_files: &mut Vec<&'a PathBuf>,
 ) {
     for file_path in files {
         let rel_path = relative_path(file_path, workspace_root);
