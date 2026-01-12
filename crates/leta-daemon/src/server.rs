@@ -169,9 +169,14 @@ impl DaemonServer {
             None
         };
 
-        let (tx, mut rx) = mpsc::channel::<StreamMessage>(100);
+        let method_name: &'static str = Box::leak(method.to_string().into_boxed_str());
+        let root = Span::root(method_name, SpanContext::random());
 
-        let handler_fut = async {
+        let (tx, mut rx) = mpsc::channel::<StreamMessage>(1000);
+
+        {
+            let _guard = root.set_local_parent();
+
             match method {
                 "grep" => {
                     if let Ok(p) = serde_json::from_value::<GrepParams>(params) {
@@ -185,41 +190,26 @@ impl DaemonServer {
                 }
                 _ => {}
             }
-        };
+        }
 
-        tokio::pin!(handler_fut);
-        let mut handler_done = false;
         let mut final_done: Option<StreamDone> = None;
-
-        loop {
-            tokio::select! {
-                biased;
-                msg = rx.recv() => {
-                    match msg {
-                        Some(StreamMessage::Done(done)) => {
-                            final_done = Some(done);
-                        }
-                        Some(StreamMessage::Error { message }) => {
-                            let mut line = serde_json::to_vec(&StreamMessage::Error { message })?;
-                            line.push(b'\n');
-                            stream.write_all(&line).await?;
-                            break;
-                        }
-                        Some(msg) => {
-                            let mut line = serde_json::to_vec(&msg)?;
-                            line.push(b'\n');
-                            stream.write_all(&line).await?;
-                        }
-                        None => break,
-                    }
+        while let Some(msg) = rx.recv().await {
+            match msg {
+                StreamMessage::Done(done) => {
+                    final_done = Some(done);
+                    break;
                 }
-                _ = &mut handler_fut, if !handler_done => {
-                    handler_done = true;
+                StreamMessage::Error { message } => {
+                    let mut line = serde_json::to_vec(&StreamMessage::Error { message })?;
+                    line.push(b'\n');
+                    stream.write_all(&line).await?;
+                    return Ok(());
                 }
-            }
-
-            if handler_done && final_done.is_some() {
-                break;
+                msg => {
+                    let mut line = serde_json::to_vec(&msg)?;
+                    line.push(b'\n');
+                    stream.write_all(&line).await?;
+                }
             }
         }
 
