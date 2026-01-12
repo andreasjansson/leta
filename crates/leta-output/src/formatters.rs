@@ -304,20 +304,30 @@ pub fn format_files_result(result: &FilesResult, head: u32, command_base: &str) 
     lines.join("\n")
 }
 
-pub fn format_calls_result(result: &CallsResult) -> String {
+pub fn format_calls_result(result: &CallsResult, head: u32, command_base: &str) -> String {
     if let Some(error) = &result.error {
         return format!("Error: {}", error);
     }
     if let Some(message) = &result.message {
         return message.clone();
     }
+    let mut output = String::new();
     if let Some(root) = &result.root {
-        return format_call_tree(root);
+        output = format_call_tree(root);
+    } else if let Some(path) = &result.path {
+        output = format_call_path(path);
     }
-    if let Some(path) = &result.path {
-        return format_call_path(path);
+
+    if result.truncated {
+        if !output.is_empty() {
+            output.push_str("\n\n");
+        }
+        let next_head = head * 2;
+        let cmd = format!("{} --head {}", command_base, next_head);
+        output.push_str(&format_truncation_unknown_total(&cmd, head));
     }
-    String::new()
+
+    output
 }
 
 pub fn format_describe_session_result(
