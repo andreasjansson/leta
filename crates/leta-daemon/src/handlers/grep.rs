@@ -277,12 +277,10 @@ fn classify_and_filter_cached(
     filter: &GrepFilter<'_>,
     limit: usize,
 ) -> (Vec<SymbolInfo>, HashMap<String, Vec<PathBuf>>, bool) {
-    tracing::info!("classify_and_filter_cached START: {} files", files.len());
     let mut results = Vec::new();
     let mut uncached_files: Vec<&PathBuf> = Vec::new();
 
     // Phase 1: Check cache and collect results from cached files
-    tracing::info!("classify_and_filter_cached: phase 1 - filter_cached_symbols");
     filter_cached_symbols(
         ctx,
         workspace_root,
@@ -292,34 +290,16 @@ fn classify_and_filter_cached(
         &mut results,
         &mut uncached_files,
     );
-    tracing::info!(
-        "classify_and_filter_cached: phase 1 done - {} results, {} uncached",
-        results.len(),
-        uncached_files.len()
-    );
 
     if results.len() >= limit {
         return (results, HashMap::new(), true);
     }
 
     // Phase 2: Prefilter uncached files (read file contents to check for pattern)
-    tracing::info!(
-        "classify_and_filter_cached: phase 2 - prefilter_uncached_files (text_regex={:?})",
-        text_regex.is_some()
-    );
     let files_to_fetch = prefilter_uncached_files(&uncached_files, text_regex);
-    tracing::info!(
-        "classify_and_filter_cached: phase 2 done - {} files to fetch",
-        files_to_fetch.len()
-    );
 
     // Phase 3: Group by language
-    tracing::info!("classify_and_filter_cached: phase 3 - group_files_by_language");
     let uncached_by_lang = group_files_by_language(&files_to_fetch);
-    tracing::info!(
-        "classify_and_filter_cached: phase 3 done - {} languages",
-        uncached_by_lang.len()
-    );
 
     (results, uncached_by_lang, false)
 }
@@ -433,34 +413,16 @@ fn prefilter_uncached_files<'a>(
     uncached_files: &[&'a PathBuf],
     text_regex: Option<&Regex>,
 ) -> Vec<&'a PathBuf> {
-    tracing::info!(
-        "prefilter_uncached_files START: {} files, has_regex={}",
-        uncached_files.len(),
-        text_regex.is_some()
-    );
     let start = std::time::Instant::now();
     let result = match text_regex {
-        Some(re) => {
-            tracing::info!("prefilter_uncached_files: starting parallel filter with rayon");
-            let r: Vec<_> = uncached_files
-                .par_iter()
-                .filter(|path| prefilter_file(path, re))
-                .copied()
-                .collect();
-            tracing::info!("prefilter_uncached_files: parallel filter done");
-            r
-        }
-        None => {
-            tracing::info!("prefilter_uncached_files: no regex, returning all files");
-            uncached_files.to_vec()
-        }
+        Some(re) => uncached_files
+            .par_iter()
+            .filter(|path| prefilter_file(path, re))
+            .copied()
+            .collect(),
+        None => uncached_files.to_vec(),
     };
     let elapsed = start.elapsed();
-    tracing::info!(
-        "prefilter_uncached_files END: {} matched in {:?}",
-        result.len(),
-        elapsed
-    );
 
     fastrace::local::LocalSpan::add_properties(|| {
         [
@@ -499,32 +461,18 @@ async fn fetch_and_filter_symbols(
     results: &mut Vec<SymbolInfo>,
     limit: usize,
 ) -> Result<bool, String> {
-    tracing::info!(
-        "fetch_and_filter_symbols START: lang={}, {} files",
-        lang,
-        files.len()
-    );
     let workspace = ctx
         .session
         .get_or_create_workspace_for_language(lang, workspace_root)
         .await?;
-    tracing::info!("fetch_and_filter_symbols: got workspace for {}", lang);
 
-    for (i, file_path) in files.iter().enumerate() {
-        if i % 50 == 0 {
-            tracing::info!(
-                "fetch_and_filter_symbols: processing file {}/{}",
-                i,
-                files.len()
-            );
-        }
+    for file_path in files {
         match get_file_symbols_no_wait(ctx, &workspace, workspace_root, file_path).await {
             Ok(symbols) => {
                 for sym in symbols {
                     if filter.matches(&sym) {
                         results.push(sym);
                         if results.len() >= limit {
-                            tracing::info!("fetch_and_filter_symbols: reached limit at file {}", i);
                             return Ok(true);
                         }
                     }
@@ -535,7 +483,6 @@ async fn fetch_and_filter_symbols(
             }
         }
     }
-    tracing::info!("fetch_and_filter_symbols END: {} results", results.len());
     Ok(false)
 }
 
@@ -548,15 +495,9 @@ async fn collect_and_filter_symbols(
     filter: &GrepFilter<'_>,
     limit: usize,
 ) -> Result<Vec<SymbolInfo>, String> {
-    tracing::info!(
-        "collect_and_filter_symbols START: {} files, text_pattern={:?}",
-        files.len(),
-        text_pattern
-    );
     let span = Span::enter_with_local_parent("collect_and_filter_symbols");
     let text_regex = text_pattern.and_then(pattern_to_text_regex);
 
-    tracing::info!("collect_and_filter_symbols: calling classify_and_filter_cached");
     let (mut results, uncached_by_lang, limit_reached) = {
         let _guard = span.set_local_parent();
         classify_and_filter_cached(
@@ -568,19 +509,12 @@ async fn collect_and_filter_symbols(
             limit,
         )
     };
-    tracing::info!("collect_and_filter_symbols: classify_and_filter_cached done, {} results, {} uncached languages, limit_reached={}", 
-        results.len(), uncached_by_lang.len(), limit_reached);
 
     if limit_reached {
         return Ok(results);
     }
 
-    for (lang, uncached_files) in &uncached_by_lang {
-        tracing::info!(
-            "collect_and_filter_symbols: fetching {} uncached files for language {}",
-            uncached_files.len(),
-            lang
-        );
+    for (lang, uncached_files) in uncached_by_lang {
         if results.len() >= limit {
             break;
         }
@@ -589,8 +523,8 @@ async fn collect_and_filter_symbols(
         match fetch_and_filter_symbols(
             ctx,
             workspace_root,
-            lang,
-            uncached_files,
+            &lang,
+            &uncached_files,
             filter,
             &mut results,
             limit,
@@ -598,23 +532,14 @@ async fn collect_and_filter_symbols(
         .in_span(fetch_span)
         .await
         {
-            Ok(true) => {
-                tracing::info!("collect_and_filter_symbols: fetch_and_filter_symbols returned true (limit reached)");
-                break;
-            }
-            Ok(false) => {
-                tracing::info!(
-                    "collect_and_filter_symbols: fetch_and_filter_symbols done for {}",
-                    lang
-                );
-            }
+            Ok(true) => break,
+            Ok(false) => {}
             Err(e) => {
                 warn!("Failed to fetch symbols for language {}: {}", lang, e);
             }
         }
     }
 
-    tracing::info!("collect_and_filter_symbols END: {} results", results.len());
     Ok(results)
 }
 
