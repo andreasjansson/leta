@@ -382,17 +382,17 @@ enum FileStatus {
     Skipped,
 }
 
+#[trace]
 fn check_file_cache(
     ctx: &HandlerContext,
     workspace_root: &Path,
     file_path: &Path,
 ) -> Option<Vec<SymbolInfo>> {
-    let _span = LocalSpan::enter_with_local_parent("check_file_cache");
     get_cached_symbols(ctx, workspace_root, file_path)
 }
 
+#[trace]
 fn prefilter_file(file_path: &Path, text_regex: &Regex) -> bool {
-    let _span = LocalSpan::enter_with_local_parent("prefilter_file");
     match read_file_content(file_path) {
         Ok(content) => text_regex.is_match(&content),
         Err(e) => {
