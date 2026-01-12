@@ -205,6 +205,8 @@ pub fn enumerate_source_files(
 ) -> Vec<PathBuf> {
     let skip_dirs: HashSet<&str> = SKIP_DIRS.iter().copied().collect();
     let mut files = Vec::new();
+    let mut entries_seen = 0u64;
+    let mut files_checked = 0u64;
 
     for entry in walkdir::WalkDir::new(workspace_root)
         .sort_by_file_name()
@@ -216,6 +218,7 @@ pub fn enumerate_source_files(
                 && !name.ends_with(".egg-info")
         })
     {
+        entries_seen += 1;
         let entry = match entry {
             Ok(e) => e,
             Err(_) => continue,
@@ -225,6 +228,7 @@ pub fn enumerate_source_files(
             continue;
         }
 
+        files_checked += 1;
         let path = entry.path();
         let lang = get_language_id(path);
 
@@ -236,6 +240,14 @@ pub fn enumerate_source_files(
             files.push(path.to_path_buf());
         }
     }
+
+    fastrace::local::LocalSpan::add_properties(|| {
+        [
+            ("entries_seen", entries_seen.to_string()),
+            ("files_checked", files_checked.to_string()),
+            ("source_files", files.len().to_string()),
+        ]
+    });
 
     files
 }
