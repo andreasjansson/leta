@@ -331,7 +331,6 @@ async fn collect_and_filter_symbols(
             workspace_root,
             files,
             text_regex.as_ref(),
-            excluded_languages,
             filter,
             limit,
         )
