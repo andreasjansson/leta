@@ -757,17 +757,6 @@ fn extract_hover_content(contents: &leta_lsp::lsp_types::HoverContents) -> Optio
     }
 }
 
-fn is_excluded(path: &str, patterns: &[String]) -> bool {
-    for pattern in patterns {
-        if let Ok(re) = Regex::new(pattern) {
-            if re.is_match(path) {
-                return true;
-            }
-        }
-    }
-    false
-}
-
 #[trace]
 pub async fn handle_grep_streaming(
     ctx: &HandlerContext,
