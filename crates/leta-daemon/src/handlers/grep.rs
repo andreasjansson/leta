@@ -351,14 +351,11 @@ fn filter_cached_symbols<'a>(
 }
 
 #[trace]
+#[trace]
 fn prefilter_uncached_files<'a>(
     uncached_files: &[&'a PathBuf],
     text_regex: Option<&Regex>,
 ) -> Vec<&'a PathBuf> {
-    tracing::debug!(
-        "prefilter_uncached_files: checking {} files",
-        uncached_files.len()
-    );
     let start = std::time::Instant::now();
     let result = match text_regex {
         Some(re) => uncached_files
@@ -369,11 +366,6 @@ fn prefilter_uncached_files<'a>(
         None => uncached_files.to_vec(),
     };
     let elapsed = start.elapsed();
-    tracing::debug!(
-        "prefilter_uncached_files: {} matched in {:?}",
-        result.len(),
-        elapsed
-    );
 
     fastrace::local::LocalSpan::add_properties(|| {
         [
