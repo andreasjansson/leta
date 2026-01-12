@@ -684,81 +684,91 @@ pub fn format_profiling(profiling: &ProfilingData) -> String {
     }
 
     if let Some(tree) = &profiling.span_tree {
-        if !tree.functions.is_empty() {
-            lines.push("TIMING".to_string());
-            lines.push(format!(
-                "{:<50} {:>8} {:>10} {:>10}",
-                "Function", "Calls", "Avg", "Total"
-            ));
-            for func in &tree.functions {
-                lines.push(format!(
-                    "{:<50} {:>8} {:>10} {:>10}",
-                    truncate_name(&func.name, 50),
-                    func.calls,
-                    format_duration_us(func.avg_us),
-                    format_duration_us(func.total_us)
-                ));
-            }
-            lines.push(String::new());
-        }
+        lines.push(format!(
+            "{:<55} {:>7} {:>9} {:>9} {:>9}",
+            "Function", "Calls", "Avg", "P90", "Total"
+        ));
+        lines.push("-".repeat(90));
 
-        lines.push("CALL TREE".to_string());
         for root in &tree.roots {
-            format_span_node(root, &mut lines, 0);
+            format_span_node(root, &mut lines, 0, &tree.functions);
         }
 
-        lines.push(String::new());
-        lines.push(format!("[total] {}", format_duration_us(tree.total_us)));
+        lines.push("-".repeat(90));
+        lines.push(format!(
+            "{:<55} {:>7} {:>9} {:>9} {:>9}",
+            "TOTAL",
+            "",
+            "",
+            "",
+            format_duration_us(tree.total_us)
+        ));
     }
 
     lines.join("\n")
 }
 
-fn truncate_name(name: &str, max_len: usize) -> String {
-    if name.len() <= max_len {
-        name.to_string()
-    } else {
-        format!("...{}", &name[name.len() - max_len + 3..])
-    }
+fn get_func_stats<'a>(name: &str, functions: &'a [FunctionStats]) -> Option<&'a FunctionStats> {
+    functions.iter().find(|f| f.name == name)
 }
 
-fn format_span_node(node: &SpanNode, lines: &mut Vec<String>, depth: usize) {
-    let indent = "  ".repeat(depth + 1);
+fn format_span_node(
+    node: &SpanNode,
+    lines: &mut Vec<String>,
+    depth: usize,
+    functions: &[FunctionStats],
+) {
+    let indent = " ".repeat(depth);
+    let parallel_marker = if node.is_parallel { " ||" } else { "" };
 
-    let calls_str = if node.calls > 1 {
-        format!(" ({}x)", node.calls)
+    let stats = get_func_stats(&node.name, functions);
+    let (calls, avg, p90) = if let Some(s) = stats {
+        (s.calls, s.avg_us, s.p90_us)
     } else {
-        String::new()
+        (
+            node.calls,
+            if node.calls > 0 {
+                node.total_us / node.calls as u64
+            } else {
+                0
+            },
+            0,
+        )
     };
 
-    let parallel_marker = if node.is_parallel { " [parallel]" } else { "" };
-
-    let children_total: u64 = if node.is_parallel {
-        node.children.iter().map(|c| c.total_us).max().unwrap_or(0)
-    } else {
-        node.children.iter().map(|c| c.total_us).sum()
-    };
+    let name_with_indent = format!("{}{}{}", indent, node.name, parallel_marker);
 
     lines.push(format!(
-        "{}{}{} = {}{}",
-        indent,
-        node.name,
-        calls_str,
-        format_duration_us(node.total_us),
-        parallel_marker
+        "{:<55} {:>7} {:>9} {:>9} {:>9}",
+        truncate_left(&name_with_indent, 55),
+        calls,
+        format_duration_us(avg),
+        format_duration_us(p90),
+        format_duration_us(node.total_us)
     ));
 
     for child in &node.children {
-        format_span_node(child, lines, depth + 1);
+        format_span_node(child, lines, depth + 1, functions);
     }
 
     if node.self_us > 1000 && !node.children.is_empty() {
-        let child_indent = "  ".repeat(depth + 2);
+        let unaccounted_name = format!("{}[unaccounted]", " ".repeat(depth + 1));
         lines.push(format!(
-            "{}(self) = {}",
-            child_indent,
+            "{:<55} {:>7} {:>9} {:>9} {:>9}",
+            unaccounted_name,
+            "",
+            "",
+            "",
             format_duration_us(node.self_us)
         ));
+    }
+}
+
+fn truncate_left(s: &str, max_len: usize) -> String {
+    if s.len() <= max_len {
+        s.to_string()
+    } else {
+        format!("…{}", &s[s.len() - max_len + 1..])
     }
 }
 
