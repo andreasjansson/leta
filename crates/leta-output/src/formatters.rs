@@ -3,6 +3,27 @@ use std::path::PathBuf;
 
 use leta_types::*;
 
+pub fn format_truncation_with_count(
+    command_with_larger_head: &str,
+    displayed_count: u32,
+    total_count: u32,
+) -> String {
+    format!(
+        "[showing {} of {} results, use `{}` to show more]",
+        displayed_count, total_count, command_with_larger_head
+    )
+}
+
+pub fn format_truncation_unknown_total(
+    command_with_larger_head: &str,
+    displayed_count: u32,
+) -> String {
+    format!(
+        "[showing first {} results, use `{}` to show more]",
+        displayed_count, command_with_larger_head
+    )
+}
+
 pub fn format_grep_result(result: &GrepResult) -> String {
     if let Some(warning) = &result.warning {
         return format!("Warning: {}", warning);
