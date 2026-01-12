@@ -8,6 +8,7 @@ use leta_fs::{get_language_id, read_file_content};
 use leta_lsp::lsp_types::{DocumentSymbolParams, TextDocumentIdentifier};
 use leta_servers::get_server_for_language;
 use leta_types::{GrepParams, GrepResult, StreamDone, StreamMessage, SymbolInfo};
+use rayon::prelude::*;
 use regex::Regex;
 use tokio::sync::mpsc;
 use tracing::{debug, warn};
