@@ -243,6 +243,11 @@ async fn collect_and_filter_symbols(
             continue;
         }
 
+        let rel_path = relative_path(file_path, workspace_root);
+        if !filter.path_matches(&rel_path) {
+            continue;
+        }
+
         if let Some(symbols) = get_cached_symbols(ctx, workspace_root, file_path) {
             for sym in symbols {
                 if filter.matches(&sym) {
