@@ -3,6 +3,7 @@ use std::path::{Path, PathBuf};
 
 use fastrace::trace;
 use leta_types::{FileInfo, FilesParams, FilesResult};
+use regex::Regex;
 
 use super::{relative_path, HandlerContext};
 
@@ -69,12 +70,20 @@ pub async fn handle_files(
 
     let binary_exts: HashSet<&str> = BINARY_EXTENSIONS.iter().copied().collect();
 
-    let (files_info, total_bytes, total_lines) = walk_directory(
+    let filter_regex = params
+        .filter_pattern
+        .as_ref()
+        .map(|p| Regex::new(p))
+        .transpose()
+        .map_err(|e| format!("Invalid filter pattern: {}", e))?;
+
+    let (files_info, excluded_dirs, total_bytes, total_lines) = walk_directory(
         &target_path,
         &workspace_root,
         &exclude_dirs,
         &binary_exts,
         &params,
+        filter_regex.as_ref(),
     );
 
     let total_files = files_info.len() as u32;
@@ -84,6 +93,7 @@ pub async fn handle_files(
         total_files,
         total_bytes,
         total_lines,
+        excluded_dirs,
     })
 }
 
@@ -93,8 +103,10 @@ fn walk_directory(
     exclude_dirs: &HashSet<&str>,
     binary_exts: &HashSet<&str>,
     params: &FilesParams,
-) -> (HashMap<String, FileInfo>, u64, u32) {
+    filter_regex: Option<&Regex>,
+) -> (HashMap<String, FileInfo>, Vec<String>, u64, u32) {
     let mut files_info: HashMap<String, FileInfo> = HashMap::new();
+    let mut found_excluded: HashSet<String> = HashSet::new();
     let mut total_bytes: u64 = 0;
     let mut total_lines: u32 = 0;
 
@@ -102,16 +114,26 @@ fn walk_directory(
         .into_iter()
         .filter_entry(|e| {
             let name = e.file_name().to_string_lossy();
-            if name.starts_with('.') && e.depth() > 0 {
-                return params.include_patterns.iter().any(|p| p == name.as_ref());
+
+            if e.file_type().is_dir() {
+                if name.starts_with('.') && e.depth() > 0 {
+                    if !params.include_patterns.iter().any(|p| p == name.as_ref()) {
+                        return false;
+                    }
+                }
+                if exclude_dirs.contains(name.as_ref()) {
+                    if !params.include_patterns.iter().any(|p| p == name.as_ref()) {
+                        return false;
+                    }
+                }
+                if name.ends_with(".egg-info") {
+                    return false;
+                }
+                if is_excluded_by_patterns(e.path(), workspace_root, &params.exclude_patterns) {
+                    return false;
+                }
             }
-            if exclude_dirs.contains(name.as_ref()) {
-                return params.include_patterns.iter().any(|p| p == name.as_ref());
-            }
-            if name.ends_with(".egg-info") {
-                return false;
-            }
-            !is_excluded_by_patterns(e.path(), workspace_root, &params.exclude_patterns)
+            true
         })
     {
         let entry = match entry {
@@ -119,11 +141,17 @@ fn walk_directory(
             Err(_) => continue,
         };
 
-        if !entry.file_type().is_file() {
+        let path = entry.path();
+        let name = entry.file_name().to_string_lossy();
+
+        if entry.file_type().is_dir() {
+            if exclude_dirs.contains(name.as_ref()) || name.starts_with('.') {
+                let rel_path = relative_path(path, workspace_root);
+                found_excluded.insert(rel_path);
+            }
             continue;
         }
 
-        let path = entry.path();
         let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
 
         if binary_exts.contains(&format!(".{}", ext).as_str()) {
@@ -131,6 +159,12 @@ fn walk_directory(
         }
 
         let rel_path = relative_path(path, workspace_root);
+
+        if let Some(re) = filter_regex {
+            if !re.is_match(&rel_path) {
+                continue;
+            }
+        }
 
         let metadata = match std::fs::metadata(path) {
             Ok(m) => m,
@@ -151,7 +185,10 @@ fn walk_directory(
         files_info.insert(rel_path, file_info);
     }
 
-    (files_info, total_bytes, total_lines)
+    let mut excluded_dirs: Vec<String> = found_excluded.into_iter().collect();
+    excluded_dirs.sort();
+
+    (files_info, excluded_dirs, total_bytes, total_lines)
 }
 
 fn count_lines(path: &Path) -> u32 {
