@@ -396,6 +396,7 @@ fn prefilter_file(file_path: &Path, text_regex: &Regex) -> bool {
     }
 }
 
+#[trace]
 fn classify_file(
     ctx: &HandlerContext,
     workspace_root: &Path,
