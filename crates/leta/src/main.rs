@@ -957,7 +957,7 @@ async fn handle_show(
     if json_output {
         println!("{}", serde_json::to_string_pretty(&show_result)?);
     } else {
-        println!("{}", format_show_result(&show_result));
+        println!("{}", format_show_result(&show_result, head));
     }
 
     display_profiling(merge_profiling(
