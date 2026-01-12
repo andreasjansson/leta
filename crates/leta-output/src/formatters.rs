@@ -53,8 +53,34 @@ pub fn format_grep_result(result: &GrepResult, head: u32, command_base: &str) ->
     output
 }
 
-pub fn format_references_result(result: &ReferencesResult) -> String {
-    format_locations(&result.locations)
+pub fn format_references_result(
+    result: &ReferencesResult,
+    head: u32,
+    command_base: &str,
+) -> String {
+    let mut output = format_locations(&result.locations);
+
+    if result.truncated {
+        if !output.is_empty() {
+            output.push('\n');
+        }
+        let next_head = head * 2;
+        let cmd = format!("{} --head {}", command_base, next_head);
+        if let Some(total) = result.total_count {
+            output.push_str(&format_truncation_with_count(
+                &cmd,
+                result.locations.len() as u32,
+                total,
+            ));
+        } else {
+            output.push_str(&format_truncation_unknown_total(
+                &cmd,
+                result.locations.len() as u32,
+            ));
+        }
+    }
+
+    output
 }
 
 pub fn format_declaration_result(result: &DeclarationResult) -> String {
