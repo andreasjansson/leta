@@ -250,7 +250,13 @@ pub async fn handle_subtypes(
 
     let items = match prepare_response {
         Some(items) if !items.is_empty() => items,
-        _ => return Ok(SubtypesResult { locations: vec![] }),
+        _ => {
+            return Ok(SubtypesResult {
+                locations: vec![],
+                truncated: false,
+                total_count: None,
+            })
+        }
     };
 
     // Send subtypes request with just the item field (no extra params that jdtls doesn't expect)
