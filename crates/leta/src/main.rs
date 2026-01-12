@@ -295,6 +295,7 @@ async fn main() -> Result<()> {
                     exclude,
                     include,
                     filter,
+                    head,
                 } => {
                     handle_files(
                         &config,
@@ -304,6 +305,7 @@ async fn main() -> Result<()> {
                         exclude,
                         include,
                         filter,
+                        head,
                     )
                     .await
                 }
