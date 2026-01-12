@@ -31,52 +31,25 @@ pub struct SpanCollector {
 }
 
 impl SpanCollector {
-    pub fn collect_and_aggregate(&self) -> Vec<FunctionStats> {
-        let spans = self.spans.lock().unwrap().clone();
-        aggregate_spans(spans)
-    }
-
     pub fn build_span_tree(&self) -> SpanTree {
         let spans = std::mem::take(&mut *self.spans.lock().unwrap());
         build_tree(spans)
     }
 }
 
-fn aggregate_spans(spans: Vec<SpanRecord>) -> Vec<FunctionStats> {
-    let mut by_name: HashMap<String, Vec<u64>> = HashMap::new();
+fn simplify_name(name: &str) -> String {
+    let name = name
+        .replace("::{{closure}}", "")
+        .replace("leta_daemon::", "")
+        .replace("leta_", "")
+        .replace("handlers::", "")
+        .replace("session::", "");
 
-    for span in spans {
-        let duration_us = span.duration_ns / 1000;
-        by_name
-            .entry(span.name.to_string())
-            .or_default()
-            .push(duration_us);
+    if let Some(pos) = name.rfind("::") {
+        name[pos + 2..].to_string()
+    } else {
+        name
     }
-
-    let mut stats: Vec<FunctionStats> = by_name
-        .into_iter()
-        .map(|(name, mut durations)| {
-            durations.sort_unstable();
-            let calls = durations.len() as u32;
-            let total_us: u64 = durations.iter().sum();
-            let avg_us = total_us / calls as u64;
-            let p90_idx = (durations.len() as f64 * 0.9) as usize;
-            let p90_us = durations.get(p90_idx).copied().unwrap_or(0);
-            let max_us = durations.last().copied().unwrap_or(0);
-
-            FunctionStats {
-                name,
-                calls,
-                total_us,
-                avg_us,
-                p90_us,
-                max_us,
-            }
-        })
-        .collect();
-
-    stats.sort_by(|a, b| b.total_us.cmp(&a.total_us));
-    stats
 }
 
 #[derive(Debug, Clone)]
@@ -85,7 +58,7 @@ struct RawSpan {
     parent_id: SpanId,
     name: String,
     begin_ns: u64,
-    end_ns: u64,
+    duration_ns: u64,
 }
 
 fn build_tree(spans: Vec<SpanRecord>) -> SpanTree {
@@ -98,9 +71,9 @@ fn build_tree(spans: Vec<SpanRecord>) -> SpanTree {
         .map(|s| RawSpan {
             span_id: s.span_id,
             parent_id: s.parent_id,
-            name: s.name.to_string(),
+            name: simplify_name(&s.name),
             begin_ns: s.begin_time_unix_ns,
-            end_ns: s.begin_time_unix_ns + s.duration_ns,
+            duration_ns: s.duration_ns,
         })
         .collect();
 
@@ -119,7 +92,7 @@ fn build_tree(spans: Vec<SpanRecord>) -> SpanTree {
 
     let total_us = roots
         .iter()
-        .map(|s| (s.end_ns - s.begin_ns) / 1000)
+        .map(|s| s.duration_ns / 1000)
         .max()
         .unwrap_or(0);
 
@@ -128,14 +101,39 @@ fn build_tree(spans: Vec<SpanRecord>) -> SpanTree {
         .map(|r| build_node(r, &children_map))
         .collect();
 
+    let merged = merge_nodes(root_nodes);
+
+    let mut functions = Vec::new();
+    collect_function_stats(&merged, &mut functions);
+    functions.sort_by(|a, b| b.total_us.cmp(&a.total_us));
+
     SpanTree {
-        roots: merge_nodes(root_nodes),
+        roots: merged,
         total_us,
+        functions,
+    }
+}
+
+fn collect_function_stats(nodes: &[SpanNode], stats: &mut Vec<FunctionStats>) {
+    for node in nodes {
+        stats.push(FunctionStats {
+            name: node.name.clone(),
+            calls: node.calls,
+            total_us: node.total_us,
+            avg_us: if node.calls > 0 {
+                node.total_us / node.calls as u64
+            } else {
+                0
+            },
+            p90_us: 0,
+            max_us: 0,
+        });
+        collect_function_stats(&node.children, stats);
     }
 }
 
 fn build_node(span: &RawSpan, children_map: &HashMap<SpanId, Vec<&RawSpan>>) -> SpanNode {
-    let total_us = (span.end_ns - span.begin_ns) / 1000;
+    let total_us = span.duration_ns / 1000;
 
     let raw_children: Vec<SpanNode> = children_map
         .get(&span.span_id)
@@ -173,7 +171,8 @@ fn detect_parallel(spans: &[&RawSpan]) -> bool {
     sorted.sort_by_key(|s| s.begin_ns);
 
     for i in 1..sorted.len() {
-        if sorted[i].begin_ns < sorted[i - 1].end_ns {
+        let prev_end = sorted[i - 1].begin_ns + sorted[i - 1].duration_ns;
+        if sorted[i].begin_ns < prev_end {
             return true;
         }
     }
