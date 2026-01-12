@@ -613,25 +613,32 @@ fn get_line_content(path: &str, line: u32) -> Option<String> {
     }
 }
 
+pub fn format_symbol_line(sym: &SymbolInfo) -> String {
+    let location = format!("{}:{}", sym.path, sym.line);
+    let mut parts = vec![location, format!("[{}]", sym.kind), sym.name.clone()];
+    if let Some(detail) = &sym.detail {
+        if !detail.is_empty() && detail != "()" {
+            parts.push(format!("({})", detail));
+        }
+    }
+    if let Some(container) = &sym.container {
+        parts.push(format!("in {}", container));
+    }
+    let mut output = parts.join(" ");
+
+    if let Some(doc) = &sym.documentation {
+        for doc_line in doc.trim().lines() {
+            output.push_str(&format!("\n    {}", doc_line));
+        }
+    }
+    output
+}
+
 fn format_symbols(symbols: &[SymbolInfo]) -> String {
     let mut lines = Vec::new();
     for sym in symbols {
-        let location = format!("{}:{}", sym.path, sym.line);
-        let mut parts = vec![location, format!("[{}]", sym.kind), sym.name.clone()];
-        if let Some(detail) = &sym.detail {
-            if !detail.is_empty() && detail != "()" {
-                parts.push(format!("({})", detail));
-            }
-        }
-        if let Some(container) = &sym.container {
-            parts.push(format!("in {}", container));
-        }
-        lines.push(parts.join(" "));
-
-        if let Some(doc) = &sym.documentation {
-            for doc_line in doc.trim().lines() {
-                lines.push(format!("    {}", doc_line));
-            }
+        lines.push(format_symbol_line(sym));
+        if sym.documentation.is_some() {
             lines.push(String::new());
         }
     }
