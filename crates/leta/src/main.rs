@@ -862,7 +862,8 @@ async fn handle_grep(
 
     let workspace_root = get_workspace_root(config)?;
 
-    if json_output {
+    if json_output || profile {
+        // Use non-streaming path for JSON output or profiling (profiling needs full timing data)
         let response = send_request_with_profile(
             "grep",
             json!({
@@ -880,9 +881,31 @@ async fn handle_grep(
         .await?;
 
         let grep_result: GrepResult = serde_json::from_value(response.result)?;
-        println!("{}", serde_json::to_string_pretty(&grep_result)?);
+        if json_output {
+            println!("{}", serde_json::to_string_pretty(&grep_result)?);
+        } else {
+            let mut cmd_parts = vec![format!("leta grep \"{}\"", pattern)];
+            if let Some(p) = &path {
+                cmd_parts.push(format!("\"{}\"", p));
+            }
+            if let Some(k) = &kind {
+                cmd_parts.push(format!("-k {}", k));
+            }
+            for ex in &exclude {
+                cmd_parts.push(format!("-x \"{}\"", ex));
+            }
+            if docs {
+                cmd_parts.push("-d".to_string());
+            }
+            if case_sensitive {
+                cmd_parts.push("-C".to_string());
+            }
+            let command_base = cmd_parts.join(" ");
+            println!("{}", format_grep_result(&grep_result, head, &command_base));
+        }
         display_profiling(response.profiling);
     } else {
+        // Use streaming path for normal output
         let mut symbols: Vec<SymbolInfo> = Vec::new();
         let done = send_streaming_request(
             "grep",
@@ -896,7 +919,7 @@ async fn handle_grep(
                 "exclude_patterns": exclude,
                 "limit": head,
             }),
-            profile,
+            false,
             |msg| {
                 if let StreamMessage::Symbol(sym) = msg {
                     symbols.push(sym);
@@ -941,8 +964,6 @@ async fn handle_grep(
         if let Some(warning) = &done.warning {
             eprintln!("\nWarning: {}", warning);
         }
-
-        display_profiling(done.profiling);
     }
     Ok(())
 }
