@@ -118,10 +118,18 @@ pub async fn handle_declaration(
         .map_err(|e| format!("{}", e))?;
 
     let locations = response
-        .map(|resp| definition_response_to_locations(&resp, &workspace_root, params.context))
+        .map(|resp| {
+            definition_response_to_locations(&resp, &workspace_root, params.context, params.head)
+        })
         .unwrap_or_default();
 
-    Ok(DeclarationResult { locations })
+    let truncated = locations.len() as u32 >= params.head;
+
+    Ok(DeclarationResult {
+        locations,
+        truncated,
+        total_count: None,
+    })
 }
 
 #[trace]
