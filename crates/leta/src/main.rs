@@ -7,10 +7,14 @@ use anyhow::{anyhow, Result};
 use clap::{Parser, Subcommand};
 use leta_config::{get_log_dir, get_socket_path, is_daemon_running, Config};
 use leta_output::*;
-use leta_types::*;
+use leta_types::{DEFAULT_HEAD_LIMIT, *};
 use serde_json::{json, Value};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::UnixStream;
+
+fn default_head_str() -> String {
+    DEFAULT_HEAD_LIMIT.to_string()
+}
 
 static PROFILING_ENABLED: AtomicBool = AtomicBool::new(false);
 
