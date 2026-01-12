@@ -473,7 +473,7 @@ fn process_file_status(
             uncached_by_lang
                 .entry(lang.to_string())
                 .or_default()
-                .push(file_path.clone());
+                .push(file_path.to_path_buf());
         }
         FileStatus::Skipped => {}
     }
