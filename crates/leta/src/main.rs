@@ -905,8 +905,8 @@ async fn handle_grep(
         }
         display_profiling(response.profiling);
     } else {
-        // Use streaming path for normal output
-        let mut symbols: Vec<SymbolInfo> = Vec::new();
+        // Use streaming path - print symbols immediately as they arrive
+        let mut count = 0u32;
         let done = send_streaming_request(
             "grep",
             json!({
@@ -922,17 +922,12 @@ async fn handle_grep(
             false,
             |msg| {
                 if let StreamMessage::Symbol(sym) = msg {
-                    symbols.push(sym);
+                    println!("{}", format_symbol_line(&sym));
+                    count += 1;
                 }
             },
         )
         .await?;
-
-        symbols.sort_by(|a, b| (&a.path, a.line).cmp(&(&b.path, b.line)));
-        let count = symbols.len() as u32;
-        for sym in &symbols {
-            println!("{}", format_symbol_line(sym));
-        }
 
         if done.truncated {
             let mut cmd_parts = vec![format!("leta grep \"{}\"", pattern)];
