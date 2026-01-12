@@ -293,6 +293,7 @@ impl Session {
             workspaces: RwLock::new(HashMap::new()),
             config: RwLock::new(config),
             workspace_profiling: RwLock::new(Vec::new()),
+            startup_locks: Mutex::new(HashMap::new()),
         }
     }
 
