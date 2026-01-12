@@ -60,6 +60,7 @@ impl CacheStatsTracker {
     }
 }
 
+#[derive(Clone)]
 pub struct HandlerContext {
     pub session: Arc<Session>,
     pub hover_cache: Arc<LmdbCache>,
