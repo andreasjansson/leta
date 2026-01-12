@@ -207,6 +207,7 @@ impl DaemonServer {
                 done.profiling = Some(ProfilingData {
                     functions: Vec::new(),
                     cache,
+                    span_tree: None,
                 });
             }
             let mut line = serde_json::to_vec(&StreamMessage::Done(done))?;
