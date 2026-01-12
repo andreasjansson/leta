@@ -7,10 +7,20 @@ use leta_lsp::lsp_types::{DocumentSymbolParams, TextDocumentIdentifier};
 use leta_servers::get_server_for_language;
 use leta_types::{GrepParams, GrepResult, SymbolInfo};
 use regex::Regex;
-use tracing::debug;
+use tracing::{debug, warn};
 
 use super::{flatten_document_symbols, relative_path, HandlerContext};
 use crate::session::WorkspaceHandle;
+
+#[derive(Debug, Default)]
+pub struct CollectionStats {
+    pub total_files: usize,
+    pub cache_hits: usize,
+    pub prefilter_skipped: usize,
+    pub prefilter_matched: usize,
+    pub lsp_fetched: usize,
+    pub lsp_errors: usize,
+}
 
 struct GrepFilter<'a> {
     regex: &'a Regex,
