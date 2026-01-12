@@ -491,7 +491,6 @@ async fn fetch_symbols_for_language(
     Ok(symbols)
 }
 
-#[trace]
 pub async fn collect_symbols_smart(
     ctx: &HandlerContext,
     workspace_root: &Path,
@@ -499,6 +498,9 @@ pub async fn collect_symbols_smart(
     text_pattern: Option<&str>,
     excluded_languages: &HashSet<String>,
 ) -> Result<Vec<SymbolInfo>, String> {
+    let span = Span::enter_with_local_parent("collect_symbols_smart");
+    let _guard = span.set_local_parent();
+
     let text_regex = text_pattern.and_then(pattern_to_text_regex);
 
     let (mut all_symbols, uncached_by_lang) = classify_all_files(
