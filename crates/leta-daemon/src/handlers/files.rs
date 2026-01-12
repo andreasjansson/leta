@@ -226,16 +226,3 @@ fn count_lines(path: &Path) -> u32 {
         .map(|content| content.lines().count() as u32)
         .unwrap_or(0)
 }
-
-fn is_excluded_by_patterns(path: &Path, workspace_root: &Path, patterns: &[String]) -> bool {
-    let rel_path = relative_path(path, workspace_root);
-
-    for pattern in patterns {
-        if let Ok(re) = Regex::new(pattern) {
-            if re.is_match(&rel_path) {
-                return true;
-            }
-        }
-    }
-    false
-}
