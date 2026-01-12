@@ -356,16 +356,22 @@ impl Session {
             .canonicalize()
             .unwrap_or_else(|_| workspace_root.to_path_buf());
 
-        debug!(
-            "get_or_create_workspace_for_server: {} for {} - acquiring read lock",
-            server_config.name,
-            workspace_root.display()
-        );
+        // Get or create a per-workspace/server lock to prevent concurrent starts
+        let startup_lock = {
+            let mut locks = self.startup_locks.lock().await;
+            let key = (workspace_root.clone(), server_config.name.to_string());
+            locks
+                .entry(key)
+                .or_insert_with(|| Arc::new(Mutex::new(())))
+                .clone()
+        };
+
+        // Hold the startup lock while we check and potentially start the server
+        let _startup_guard = startup_lock.lock().await;
 
         // Check if workspace exists (read lock only)
         let needs_create = {
             let workspaces = self.workspaces.read().await;
-            debug!("get_or_create_workspace_for_server: got read lock");
             if let Some(servers) = workspaces.get(&workspace_root) {
                 if let Some(ws) = servers.get(server_config.name) {
                     ws.client.is_none() // needs restart
@@ -376,38 +382,22 @@ impl Session {
                 true // needs create
             }
         };
-        debug!(
-            "get_or_create_workspace_for_server: released read lock, needs_create={}",
-            needs_create
-        );
 
         if needs_create {
             debug!(
-                "get_or_create_workspace_for_server: starting server {}",
-                server_config.name
+                "Starting {} for {}",
+                server_config.name,
+                workspace_root.display()
             );
-            // Start server outside of lock to avoid blocking other operations
             let mut new_workspace = Workspace::new(workspace_root.clone(), server_config);
             new_workspace.start_server().await?;
-            debug!("get_or_create_workspace_for_server: server started, acquiring write lock");
 
-            // Now insert with write lock (quick operation)
+            // Insert with write lock (quick operation)
             let mut workspaces = self.workspaces.write().await;
-            debug!("get_or_create_workspace_for_server: got write lock");
             let servers = workspaces
                 .entry(workspace_root.clone())
                 .or_insert_with(HashMap::new);
-
-            // Check again in case another task created it while we were starting
-            if !servers.contains_key(server_config.name)
-                || servers
-                    .get(server_config.name)
-                    .map(|w| w.client.is_none())
-                    .unwrap_or(false)
-            {
-                servers.insert(server_config.name.to_string(), new_workspace);
-            }
-            debug!("get_or_create_workspace_for_server: releasing write lock");
+            servers.insert(server_config.name.to_string(), new_workspace);
         }
 
         Ok(WorkspaceHandle {
