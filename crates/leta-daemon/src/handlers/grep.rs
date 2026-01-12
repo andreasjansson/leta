@@ -397,6 +397,7 @@ fn prefilter_file(file_path: &Path, text_regex: &Regex) -> bool {
     }
 }
 
+#[trace]
 fn classify_file(
     ctx: &HandlerContext,
     workspace_root: &Path,
@@ -404,7 +405,6 @@ fn classify_file(
     text_regex: Option<&Regex>,
     excluded_languages: &HashSet<String>,
 ) -> FileStatus {
-    let _span = LocalSpan::enter_with_local_parent("classify_file");
     let lang = get_language_id(file_path);
     if lang == "plaintext" || excluded_languages.contains(lang) {
         return FileStatus::Skipped;
@@ -429,6 +429,7 @@ fn classify_file(
     }
 }
 
+#[trace]
 fn classify_all_files(
     ctx: &HandlerContext,
     workspace_root: &Path,
@@ -436,7 +437,6 @@ fn classify_all_files(
     text_regex: Option<&Regex>,
     excluded_languages: &HashSet<String>,
 ) -> (Vec<SymbolInfo>, HashMap<String, Vec<PathBuf>>) {
-    let _span = LocalSpan::enter_with_local_parent("classify_all_files");
     let mut cached_symbols = Vec::new();
     let mut uncached_by_lang: HashMap<String, Vec<PathBuf>> = HashMap::new();
 
