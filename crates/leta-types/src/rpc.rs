@@ -43,6 +43,8 @@ pub struct SpanNode {
     pub calls: u32,
     pub children: Vec<SpanNode>,
     pub is_parallel: bool,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub properties: Vec<(String, String)>,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
