@@ -635,24 +635,87 @@ fn classify_all_files(
     text_regex: Option<&Regex>,
     excluded_languages: &HashSet<String>,
 ) -> (Vec<SymbolInfo>, HashMap<String, Vec<PathBuf>>) {
+    let start = std::time::Instant::now();
     let mut cached_symbols = Vec::new();
     let mut uncached_by_lang: HashMap<String, Vec<PathBuf>> = HashMap::new();
 
+    let mut cache_check_time = std::time::Duration::ZERO;
+    let mut prefilter_time = std::time::Duration::ZERO;
+    let mut cache_hits = 0u64;
+    let mut prefilter_matches = 0u64;
+    let mut skipped_lang = 0u64;
+    let mut skipped_prefilter = 0u64;
+
     for file_path in files {
-        let status = classify_file(
-            ctx,
-            workspace_root,
-            file_path,
-            text_regex,
-            excluded_languages,
-        );
-        handle_file_status(
-            status,
-            file_path,
-            &mut cached_symbols,
-            &mut uncached_by_lang,
-        );
+        let lang = get_language_id(file_path);
+        if lang == "plaintext" || excluded_languages.contains(lang) {
+            skipped_lang += 1;
+            continue;
+        }
+        if get_server_for_language(lang, None).is_none() {
+            skipped_lang += 1;
+            continue;
+        }
+
+        let cache_start = std::time::Instant::now();
+        if let Some(symbols) = get_cached_symbols(ctx, workspace_root, file_path) {
+            cache_check_time += cache_start.elapsed();
+            cache_hits += 1;
+            cached_symbols.extend(symbols);
+            continue;
+        }
+        cache_check_time += cache_start.elapsed();
+
+        match text_regex {
+            Some(re) => {
+                let prefilter_start = std::time::Instant::now();
+                let matches = prefilter_file(file_path, re);
+                prefilter_time += prefilter_start.elapsed();
+                if matches {
+                    prefilter_matches += 1;
+                    uncached_by_lang
+                        .entry(lang.to_string())
+                        .or_default()
+                        .push(file_path.clone());
+                } else {
+                    skipped_prefilter += 1;
+                }
+            }
+            None => {
+                uncached_by_lang
+                    .entry(lang.to_string())
+                    .or_default()
+                    .push(file_path.clone());
+            }
+        }
     }
+
+    let total_time = start.elapsed();
+    let uncached_total: usize = uncached_by_lang.values().map(|v| v.len()).sum();
+
+    fastrace::local::LocalSpan::add_properties(|| {
+        [
+            ("files_total", files.len().to_string()),
+            ("cache_hits", cache_hits.to_string()),
+            ("cached_symbols", cached_symbols.len().to_string()),
+            ("uncached_files", uncached_total.to_string()),
+            ("skipped_lang", skipped_lang.to_string()),
+            ("skipped_prefilter", skipped_prefilter.to_string()),
+            ("prefilter_matches", prefilter_matches.to_string()),
+            (
+                "cache_check_ms",
+                format!("{:.1}", cache_check_time.as_secs_f64() * 1000.0),
+            ),
+            (
+                "prefilter_ms",
+                format!("{:.1}", prefilter_time.as_secs_f64() * 1000.0),
+            ),
+            (
+                "total_ms",
+                format!("{:.1}", total_time.as_secs_f64() * 1000.0),
+            ),
+        ]
+    });
 
     (cached_symbols, uncached_by_lang)
 }
