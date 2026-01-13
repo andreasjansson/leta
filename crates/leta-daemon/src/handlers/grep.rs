@@ -1084,7 +1084,7 @@ async fn stream_and_filter_symbols(
         }
 
         // Try cache first
-        if let Some(symbols) = check_file_cache(ctx, workspace_root, file_path) {
+        if let Some(symbols) = get_cached_symbols(ctx, workspace_root, file_path) {
             let mut matching: Vec<_> = symbols.into_iter().filter(|s| filter.matches(s)).collect();
             matching.sort_by_key(|s| s.line);
 
