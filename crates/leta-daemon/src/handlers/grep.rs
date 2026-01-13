@@ -543,20 +543,6 @@ async fn collect_and_filter_symbols(
     Ok(results)
 }
 
-enum FileStatus {
-    Cached(Vec<SymbolInfo>),
-    NeedsFetch,
-    Skipped,
-}
-
-fn check_file_cache(
-    ctx: &HandlerContext,
-    workspace_root: &Path,
-    file_path: &Path,
-) -> Option<Vec<SymbolInfo>> {
-    get_cached_symbols(ctx, workspace_root, file_path)
-}
-
 fn prefilter_file(file_path: &Path, text_regex: &Regex) -> bool {
     match read_file_content(file_path) {
         Ok(content) => text_regex.is_match(&content),
@@ -568,59 +554,6 @@ fn prefilter_file(file_path: &Path, text_regex: &Regex) -> bool {
             );
             false
         }
-    }
-}
-
-fn classify_file(
-    ctx: &HandlerContext,
-    workspace_root: &Path,
-    file_path: &Path,
-    text_regex: Option<&Regex>,
-    excluded_languages: &HashSet<String>,
-) -> FileStatus {
-    let lang = get_language_id(file_path);
-    if lang == "plaintext" || excluded_languages.contains(lang) {
-        return FileStatus::Skipped;
-    }
-    if get_server_for_language(lang, None).is_none() {
-        return FileStatus::Skipped;
-    }
-
-    if let Some(symbols) = check_file_cache(ctx, workspace_root, file_path) {
-        return FileStatus::Cached(symbols);
-    }
-
-    match text_regex {
-        Some(re) => {
-            if prefilter_file(file_path, re) {
-                FileStatus::NeedsFetch
-            } else {
-                FileStatus::Skipped
-            }
-        }
-        None => FileStatus::NeedsFetch,
-    }
-}
-
-#[trace]
-fn handle_file_status(
-    status: FileStatus,
-    file_path: &Path,
-    cached_symbols: &mut Vec<SymbolInfo>,
-    uncached_by_lang: &mut HashMap<String, Vec<PathBuf>>,
-) {
-    match status {
-        FileStatus::Cached(symbols) => {
-            cached_symbols.extend(symbols);
-        }
-        FileStatus::NeedsFetch => {
-            let lang = get_language_id(file_path);
-            uncached_by_lang
-                .entry(lang.to_string())
-                .or_default()
-                .push(file_path.to_path_buf());
-        }
-        FileStatus::Skipped => {}
     }
 }
 
