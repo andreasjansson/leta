@@ -365,7 +365,7 @@ Workspaces must be explicitly added before using leta:
 
 ```bash
 leta workspace add              # Add current directory (interactive)
-leta workspace add --root /path # Add specific path
+leta workspace add /path # Add specific path
 leta workspace remove           # Remove current workspace
 leta workspace restart          # Restart language servers
 ```

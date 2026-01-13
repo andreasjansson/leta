@@ -74,7 +74,7 @@ When you think "I want to see where this function is imported" or "how is this v
 Before using leta on a new project, add it as a workspace:
 
 ```bash
-leta workspace add --root /path/to/project
+leta workspace add /path/to/project
 ```
 
 ## Core Commands
