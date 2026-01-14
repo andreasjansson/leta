@@ -220,7 +220,7 @@ pub async fn handle_calls(
 #[trace]
 async fn prepare_call_hierarchy(
     client: Arc<LspClient>,
-    file_path: &PathBuf,
+    file_path: &Path,
     line: u32,
     column: u32,
 ) -> Result<Vec<CallHierarchyItem>, String> {
