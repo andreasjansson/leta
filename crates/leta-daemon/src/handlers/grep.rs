@@ -994,12 +994,11 @@ async fn handle_grep_streaming_inner(
     params: GrepParams,
     tx: &mpsc::Sender<StreamMessage>,
 ) -> Result<(Option<String>, bool, u32), String> {
-    info!(
+    debug!(
         "handle_grep_streaming_inner: pattern={} workspace={} limit={}",
         params.pattern, params.workspace_root, params.limit
     );
     let workspace_root = PathBuf::from(&params.workspace_root);
-    info!("handle_grep_streaming_inner: set workspace_root");
 
     let flags = if params.case_sensitive { "" } else { "(?i)" };
     let pattern = format!("{}{}", flags, params.pattern);
