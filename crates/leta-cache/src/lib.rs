@@ -194,7 +194,7 @@ impl LmdbCache {
             .env
             .read_txn()
             .and_then(|rtxn| self.db.len(&rtxn))
-            .unwrap_or(0) as u64;
+            .unwrap_or(0);
 
         let info = self.env.info();
         let current_bytes = info.last_page_number as u64 * 4096;
