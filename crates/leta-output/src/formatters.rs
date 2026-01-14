@@ -897,7 +897,7 @@ fn build_tree(
     tree
 }
 
-fn render_tree(node: &HashMap<String, TreeNode>, lines: &mut Vec<String>, path_prefix: &str) {
+fn render_tree(node: &HashMap<String, TreeNode>, lines: &mut Vec<String>, indent: usize) {
     let mut entries: Vec<_> = node.keys().collect();
     entries.sort_by(|a, b| {
         let a_is_dir = matches!(node.get(*a), Some(TreeNode::Dir(_) | TreeNode::ExcludedDir));
@@ -909,24 +909,22 @@ fn render_tree(node: &HashMap<String, TreeNode>, lines: &mut Vec<String>, path_p
         }
     });
 
+    let prefix = "  ".repeat(indent);
+
     for name in entries {
         let child = node.get(name).unwrap();
-        let full_path = if path_prefix.is_empty() {
-            name.to_string()
-        } else {
-            format!("{}/{}", path_prefix, name)
-        };
 
         match child {
             TreeNode::File(info) => {
                 let info_str = format_file_info(info);
-                lines.push(format!("{} ({})", full_path, info_str));
+                lines.push(format!("{}{} ({})", prefix, name, info_str));
             }
             TreeNode::Dir(children) => {
-                render_tree(children, lines, &full_path);
+                lines.push(format!("{}{}/", prefix, name));
+                render_tree(children, lines, indent + 1);
             }
             TreeNode::ExcludedDir => {
-                lines.push(format!("{}/ (excluded)", full_path));
+                lines.push(format!("{}{} (excluded)", prefix, name));
             }
         }
     }
