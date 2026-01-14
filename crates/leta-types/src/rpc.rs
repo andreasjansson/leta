@@ -648,26 +648,29 @@ pub struct ResolveSymbolResult {
     pub total_matches: Option<u32>,
 }
 
+#[derive(Default)]
+pub struct ResolveSymbolResultBuilder {
+    pub path: String,
+    pub line: u32,
+    pub column: u32,
+    pub name: Option<String>,
+    pub kind: Option<String>,
+    pub container: Option<String>,
+    pub range_start_line: Option<u32>,
+    pub range_end_line: Option<u32>,
+}
+
 impl ResolveSymbolResult {
-    pub fn success(
-        path: String,
-        line: u32,
-        column: u32,
-        name: Option<String>,
-        kind: Option<String>,
-        container: Option<String>,
-        range_start_line: Option<u32>,
-        range_end_line: Option<u32>,
-    ) -> Self {
+    pub fn success(builder: ResolveSymbolResultBuilder) -> Self {
         Self {
-            path: Some(path),
-            line: Some(line),
-            column: Some(column),
-            name,
-            kind,
-            container,
-            range_start_line,
-            range_end_line,
+            path: Some(builder.path),
+            line: Some(builder.line),
+            column: Some(builder.column),
+            name: builder.name,
+            kind: builder.kind,
+            container: builder.container,
+            range_start_line: builder.range_start_line,
+            range_end_line: builder.range_end_line,
             error: None,
             matches: None,
             total_matches: None,
