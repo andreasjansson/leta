@@ -175,18 +175,16 @@ pub async fn handle_calls(
 
             let target_key = item_key(&to_items[0]);
             let mut visited = HashSet::new();
+            let mut ctx = FindCallPathContext {
+                client: client.clone(),
+                workspace_root: &workspace_root,
+                target_key: &target_key,
+                max_depth: params.max_depth,
+                include_non_workspace: params.include_non_workspace,
+                visited: &mut visited,
+            };
 
-            let path = find_call_path(
-                client.clone(),
-                &from_items[0],
-                &target_key,
-                &workspace_root,
-                0,
-                params.max_depth,
-                params.include_non_workspace,
-                &mut visited,
-            )
-            .await;
+            let path = find_call_path(&mut ctx, &from_items[0], 0).await;
 
             match path {
                 Some(p) => Ok(CallsResult {
