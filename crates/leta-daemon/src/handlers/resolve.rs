@@ -480,34 +480,27 @@ fn ref_resolves_uniquely(
 
     if let Some(ref pf) = path_filter {
         let filename = pf.clone();
-        candidates = candidates
-            .into_iter()
-            .filter(|s| Path::new(&s.path).file_name().and_then(|f| f.to_str()) == Some(&filename))
-            .collect();
+        candidates.retain(|s| {
+            Path::new(&s.path).file_name().and_then(|f| f.to_str()) == Some(&filename)
+        });
     }
 
     if let Some(line) = line_filter {
-        candidates = candidates.into_iter().filter(|s| s.line == line).collect();
+        candidates.retain(|s| s.line == line);
     }
 
     let parts: Vec<&str> = symbol_part.split('.').collect();
     if parts.len() == 1 {
-        candidates = candidates
-            .into_iter()
-            .filter(|s| normalize_symbol_name(&s.name) == parts[0])
-            .collect();
+        candidates.retain(|s| normalize_symbol_name(&s.name) == parts[0]);
     } else {
         let container_str = parts[..parts.len() - 1].join(".");
         let target_name = parts.last().unwrap();
-        candidates = candidates
-            .into_iter()
-            .filter(|s| {
-                if normalize_symbol_name(&s.name) != *target_name {
-                    return false;
-                }
-                get_effective_container(s) == container_str
-            })
-            .collect();
+        candidates.retain(|s| {
+            if normalize_symbol_name(&s.name) != *target_name {
+                return false;
+            }
+            get_effective_container(s) == container_str
+        });
     }
 
     candidates.len() == 1
