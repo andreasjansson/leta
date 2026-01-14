@@ -299,11 +299,13 @@ async fn main() -> Result<()> {
                         &config,
                         cli.json,
                         cli.profile,
-                        path,
-                        exclude,
-                        include,
-                        filter,
-                        head,
+                        FilesOptions {
+                            path,
+                            exclude,
+                            include,
+                            filter,
+                            head,
+                        },
                     )
                     .await
                 }
