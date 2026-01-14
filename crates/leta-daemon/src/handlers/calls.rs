@@ -435,15 +435,16 @@ async fn find_call_path(
     if ctx.visited.contains(&key) {
         return None;
     }
-    visited.insert(key.clone());
+    ctx.visited.insert(key.clone());
 
-    let current_node = call_hierarchy_item_to_node(item, workspace_root);
+    let current_node = call_hierarchy_item_to_node(item, ctx.workspace_root);
 
-    if key == target_key {
+    if key == ctx.target_key {
         return Some(vec![current_node]);
     }
 
-    let response: Result<Option<Vec<CallHierarchyOutgoingCall>>, _> = client
+    let response: Result<Option<Vec<CallHierarchyOutgoingCall>>, _> = ctx
+        .client
         .send_request(
             "callHierarchy/outgoingCalls",
             CallHierarchyOutgoingCallsParams {
@@ -462,22 +463,13 @@ async fn find_call_path(
     for call in calls {
         let call_item = &call.to;
 
-        if !include_non_workspace && !is_path_in_workspace(call_item.uri.as_str(), workspace_root) {
+        if !ctx.include_non_workspace
+            && !is_path_in_workspace(call_item.uri.as_str(), ctx.workspace_root)
+        {
             continue;
         }
 
-        if let Some(mut path) = Box::pin(find_call_path(
-            client.clone(),
-            call_item,
-            target_key,
-            workspace_root,
-            current_depth + 1,
-            max_depth,
-            include_non_workspace,
-            visited,
-        ))
-        .await
-        {
+        if let Some(mut path) = Box::pin(find_call_path(ctx, call_item, current_depth + 1)).await {
             path.insert(0, current_node);
             return Some(path);
         }
