@@ -622,6 +622,64 @@ pub fn format_file_line(file: &FileInfo) -> String {
     )
 }
 
+/// Stateful printer for streaming file output with proper indentation.
+/// Tracks the current directory path and emits directory headers when needed.
+pub struct FileTreePrinter {
+    current_path: Vec<String>,
+}
+
+impl FileTreePrinter {
+    pub fn new() -> Self {
+        Self {
+            current_path: Vec::new(),
+        }
+    }
+
+    /// Format a file with proper indentation, emitting directory headers as needed.
+    /// Returns a string that may contain multiple lines (directory headers + file).
+    pub fn format_file(&mut self, file: &FileInfo) -> String {
+        let parts: Vec<&str> = file.path.split('/').collect();
+        let (dirs, filename) = parts.split_at(parts.len().saturating_sub(1));
+
+        let mut output = String::new();
+
+        // Find where current path diverges from file path
+        let mut common_depth = 0;
+        for (i, dir) in dirs.iter().enumerate() {
+            if i < self.current_path.len() && self.current_path[i] == *dir {
+                common_depth = i + 1;
+            } else {
+                break;
+            }
+        }
+
+        // Truncate current path to common prefix
+        self.current_path.truncate(common_depth);
+
+        // Add new directory headers
+        for (i, dir) in dirs.iter().enumerate().skip(common_depth) {
+            let indent = "  ".repeat(i);
+            output.push_str(&format!("{}{}/\n", indent, dir));
+            self.current_path.push(dir.to_string());
+        }
+
+        // Add the file
+        let indent = "  ".repeat(dirs.len());
+        let info_str = format!("{}, {} lines", format_size(file.bytes), file.lines);
+        if let Some(name) = filename.first() {
+            output.push_str(&format!("{}{} ({})", indent, name, info_str));
+        }
+
+        output
+    }
+}
+
+impl Default for FileTreePrinter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 pub fn format_symbol_line(sym: &SymbolInfo) -> String {
     let location = format!("{}:{}", sym.path, sym.line);
     let mut parts = vec![location, format!("[{}]", sym.kind), sym.name.clone()];
