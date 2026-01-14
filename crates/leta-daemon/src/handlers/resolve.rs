@@ -68,16 +68,16 @@ pub async fn handle_resolve_symbol(
             .collect();
         if matches.len() == 1 {
             let sym = &matches[0];
-            return Ok(ResolveSymbolResult::success(
-                format!("{}/{}", workspace_root.display(), sym.path),
-                sym.line,
-                sym.column,
-                Some(sym.name.clone()),
-                Some(sym.kind.clone()),
-                sym.container.clone(),
-                sym.range_start_line,
-                sym.range_end_line,
-            ));
+            return Ok(ResolveSymbolResult::success(ResolveSymbolResultBuilder {
+                path: format!("{}/{}", workspace_root.display(), sym.path),
+                line: sym.line,
+                column: sym.column,
+                name: Some(sym.name.clone()),
+                kind: Some(sym.kind.clone()),
+                container: sym.container.clone(),
+                range_start_line: sym.range_start_line,
+                range_end_line: sym.range_end_line,
+            }));
         }
     }
 
