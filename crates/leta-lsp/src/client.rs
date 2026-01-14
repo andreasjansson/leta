@@ -699,12 +699,12 @@ impl LspClient {
     pub async fn supports_declaration(&self) -> bool {
         use crate::lsp_types::DeclarationCapability;
         let caps = self.capabilities.read().await;
-        match &caps.declaration_provider {
-            Some(DeclarationCapability::Simple(true)) => true,
-            Some(DeclarationCapability::Options(_)) => true,
-            Some(DeclarationCapability::RegistrationOptions(_)) => true,
-            _ => false,
-        }
+        matches!(
+            &caps.declaration_provider,
+            Some(DeclarationCapability::Simple(true))
+                | Some(DeclarationCapability::Options(_))
+                | Some(DeclarationCapability::RegistrationOptions(_))
+        )
     }
 
     #[trace]
