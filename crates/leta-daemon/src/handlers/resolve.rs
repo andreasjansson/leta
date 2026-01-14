@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use std::sync::LazyLock;
 
 use fastrace::trace;
-use leta_types::{ResolveSymbolParams, ResolveSymbolResult, SymbolInfo};
+use leta_types::{ResolveSymbolParams, ResolveSymbolResult, ResolveSymbolResultBuilder, SymbolInfo};
 use regex::Regex;
 use tracing::debug;
 
