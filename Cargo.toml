@@ -67,14 +67,14 @@ rustc-hash = "2.0"
 dashmap = "6.1"
 
 # Internal crates
-leta-types = { path = "crates/leta-types" }
-leta-config = { path = "crates/leta-config" }
-leta-lsp = { path = "crates/leta-lsp" }
-leta-cache = { path = "crates/leta-cache" }
-leta-servers = { path = "crates/leta-servers" }
-leta-output = { path = "crates/leta-output" }
-leta-fs = { path = "crates/leta-fs" }
-leta-daemon = { path = "crates/leta-daemon" }
+leta-types = { version = "0.1.0", path = "crates/leta-types" }
+leta-config = { version = "0.1.0", path = "crates/leta-config" }
+leta-lsp = { version = "0.1.0", path = "crates/leta-lsp" }
+leta-cache = { version = "0.1.0", path = "crates/leta-cache" }
+leta-servers = { version = "0.1.0", path = "crates/leta-servers" }
+leta-output = { version = "0.1.0", path = "crates/leta-output" }
+leta-fs = { version = "0.1.0", path = "crates/leta-fs" }
+leta-daemon = { version = "0.1.0", path = "crates/leta-daemon" }
 
 [profile.release]
 strip = true
