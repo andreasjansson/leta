@@ -1144,7 +1144,6 @@ async fn stream_and_filter_symbols(
             continue;
         }
 
-        // Fetch from LSP
         let workspace = match ctx
             .session
             .get_or_create_workspace_for_language(lang, workspace_root)
@@ -1158,12 +1157,14 @@ async fn stream_and_filter_symbols(
         };
         match get_file_symbols_no_wait(ctx, &workspace, workspace_root, file_path).await {
             Ok(symbols) => {
-                let mut matching: Vec<_> =
-                    symbols.into_iter().filter(|s| filter.matches(s)).collect();
+                let mut matching: Vec<_> = symbols
+                    .into_iter()
+                    .filter(|s| params.filter.matches(s))
+                    .collect();
                 matching.sort_by_key(|s| s.line);
 
                 for mut sym in matching {
-                    if include_docs {
+                    if params.include_docs {
                         if let Some(doc) = get_symbol_documentation(
                             ctx,
                             workspace_root,
@@ -1180,7 +1181,7 @@ async fn stream_and_filter_symbols(
                         return Ok((count, false));
                     }
                     count += 1;
-                    if count as usize >= limit {
+                    if count as usize >= params.limit {
                         return Ok((count, true));
                     }
                 }
