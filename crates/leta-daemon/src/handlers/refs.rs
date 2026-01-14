@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use fastrace::trace;
 use leta_lsp::lsp_types::{
