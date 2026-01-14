@@ -1086,17 +1086,11 @@ async fn stream_and_filter_symbols(
     include_docs: bool,
     tx: &mpsc::Sender<StreamMessage>,
 ) -> Result<(u32, bool), String> {
-    info!("stream_and_filter_symbols: starting with {} files", files.len());
     let text_regex = text_pattern.and_then(pattern_to_text_regex);
     let mut count = 0u32;
-    let mut files_processed = 0u32;
 
     // Process files in sorted order and stream symbols immediately
     for file_path in files {
-        files_processed += 1;
-        if files_processed % 50 == 0 || files_processed <= 5 || (files_processed >= 99 && files_processed <= 105) {
-            info!("stream_and_filter_symbols: processing file {} ({}): {}", files_processed, count, file_path.display());
-        }
         if count as usize >= limit {
             return Ok((count, true));
         }
