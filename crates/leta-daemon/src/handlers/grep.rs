@@ -1065,16 +1065,20 @@ async fn handle_grep_streaming_inner(
     Ok((warning, truncated, count))
 }
 
+struct StreamFilterParams<'a> {
+    files: &'a [PathBuf],
+    text_pattern: Option<&'a str>,
+    excluded_languages: &'a HashSet<String>,
+    filter: &'a GrepFilter<'a>,
+    limit: usize,
+    include_docs: bool,
+}
+
 #[trace]
 async fn stream_and_filter_symbols(
     ctx: &HandlerContext,
     workspace_root: &Path,
-    files: &[PathBuf],
-    text_pattern: Option<&str>,
-    excluded_languages: &HashSet<String>,
-    filter: &GrepFilter<'_>,
-    limit: usize,
-    include_docs: bool,
+    params: StreamFilterParams<'_>,
     tx: &mpsc::Sender<StreamMessage>,
 ) -> Result<(u32, bool), String> {
     let text_regex = text_pattern.and_then(pattern_to_text_regex);
