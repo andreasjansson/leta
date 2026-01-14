@@ -828,13 +828,14 @@ pub async fn get_file_symbols_no_wait(
     workspace.ensure_document_open(file_path).await?;
 
     info!("get_file_symbols_no_wait: sending documentSymbol request for {}", file_path.display());
+    let parsed_uri = uri
+        .parse()
+        .map_err(|e| format!("Invalid URI for {}: {}", file_path.display(), e))?;
     let response: Option<leta_lsp::lsp_types::DocumentSymbolResponse> = client
         .send_request(
             "textDocument/documentSymbol",
             DocumentSymbolParams {
-                text_document: TextDocumentIdentifier {
-                    uri: uri.parse().unwrap(),
-                },
+                text_document: TextDocumentIdentifier { uri: parsed_uri },
                 work_done_progress_params: Default::default(),
                 partial_result_params: Default::default(),
             },
