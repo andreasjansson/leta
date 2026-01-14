@@ -239,7 +239,7 @@ fn scan_workspace_files(workspace_root: &Path) -> std::collections::HashMap<Stri
         }
 
         let lang = get_language_id(path);
-        if lang != "plaintext" && get_server_for_language(&lang, None).is_some() {
+        if lang != "plaintext" && get_server_for_language(lang, None).is_some() {
             files_by_lang
                 .entry(lang.to_string())
                 .or_default()
