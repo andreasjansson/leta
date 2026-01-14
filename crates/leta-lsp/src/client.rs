@@ -711,12 +711,11 @@ impl LspClient {
     pub async fn supports_implementation(&self) -> bool {
         use crate::lsp_types::ImplementationProviderCapability;
         let caps = self.capabilities.read().await;
-        // Check for actual support - Some(Simple(false)) means explicitly disabled
-        match &caps.implementation_provider {
-            Some(ImplementationProviderCapability::Simple(true)) => true,
-            Some(ImplementationProviderCapability::Options(_)) => true,
-            _ => false,
-        }
+        matches!(
+            &caps.implementation_provider,
+            Some(ImplementationProviderCapability::Simple(true))
+                | Some(ImplementationProviderCapability::Options(_))
+        )
     }
 
     #[trace]
