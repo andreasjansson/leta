@@ -675,11 +675,11 @@ impl LspClient {
     pub async fn supports_call_hierarchy(&self) -> bool {
         use crate::lsp_types::CallHierarchyServerCapability;
         let caps = self.capabilities.read().await;
-        match &caps.call_hierarchy_provider {
-            Some(CallHierarchyServerCapability::Simple(true)) => true,
-            Some(CallHierarchyServerCapability::Options(_)) => true,
-            _ => false,
-        }
+        matches!(
+            &caps.call_hierarchy_provider,
+            Some(CallHierarchyServerCapability::Simple(true))
+                | Some(CallHierarchyServerCapability::Options(_))
+        )
     }
 
     #[trace]
