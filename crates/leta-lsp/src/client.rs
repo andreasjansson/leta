@@ -562,9 +562,7 @@ impl LspClient {
             NumberOrString::String(s) => s.clone(),
         };
 
-        let progress = match params.value {
-            ProgressParamsValue::WorkDone(wd) => wd,
-        };
+        let ProgressParamsValue::WorkDone(progress) = params.value;
 
         let mut tokens = self.active_progress_tokens.lock().await;
         match progress {
