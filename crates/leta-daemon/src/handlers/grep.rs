@@ -579,9 +579,7 @@ fn classify_all_files(
             if lang == "plaintext" || excluded_languages.contains(lang) {
                 return None;
             }
-            if get_server_for_language(lang, None).is_none() {
-                return None;
-            }
+            get_server_for_language(lang, None)?;
             Some((file_path, lang))
         })
         .collect();
