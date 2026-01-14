@@ -978,16 +978,27 @@ async fn handle_grep(
     Ok(())
 }
 
-async fn handle_files(
-    config: &Config,
-    json_output: bool,
-    profile: bool,
+struct FilesOptions {
     path: Option<String>,
     exclude: Vec<String>,
     include: Vec<String>,
     filter: Option<String>,
     head: u32,
+}
+
+async fn handle_files(
+    config: &Config,
+    json_output: bool,
+    profile: bool,
+    opts: FilesOptions,
 ) -> Result<()> {
+    let FilesOptions {
+        path,
+        exclude,
+        include,
+        filter,
+        head,
+    } = opts;
     let (workspace_root, subpath) = if let Some(ref path) = path {
         let target = PathBuf::from(path).canonicalize()?;
         let workspace_root = get_workspace_root_for_path(config, &target)?;
