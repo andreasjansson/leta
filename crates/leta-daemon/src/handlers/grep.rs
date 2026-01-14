@@ -1081,12 +1081,11 @@ async fn stream_and_filter_symbols(
     params: StreamFilterParams<'_>,
     tx: &mpsc::Sender<StreamMessage>,
 ) -> Result<(u32, bool), String> {
-    let text_regex = text_pattern.and_then(pattern_to_text_regex);
+    let text_regex = params.text_pattern.and_then(pattern_to_text_regex);
     let mut count = 0u32;
 
-    // Process files in sorted order and stream symbols immediately
-    for file_path in files {
-        if count as usize >= limit {
+    for file_path in params.files {
+        if count as usize >= params.limit {
             return Ok((count, true));
         }
 
