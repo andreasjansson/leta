@@ -1159,6 +1159,7 @@ async fn stream_and_filter_symbols(
         }
 
         // Fetch from LSP
+        info!("stream_and_filter_symbols: getting workspace for {}", lang);
         let workspace = match ctx
             .session
             .get_or_create_workspace_for_language(lang, workspace_root)
@@ -1170,7 +1171,7 @@ async fn stream_and_filter_symbols(
                 continue;
             }
         };
-
+        info!("stream_and_filter_symbols: got workspace, fetching symbols from LSP");
         match get_file_symbols_no_wait(ctx, &workspace, workspace_root, file_path).await {
             Ok(symbols) => {
                 let mut matching: Vec<_> =
