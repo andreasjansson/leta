@@ -1,0 +1,6 @@
+==================
+grep multiple files
+==================
+leta grep "^main$" -x _build
+---
+main.ml:10 [Variable] main
