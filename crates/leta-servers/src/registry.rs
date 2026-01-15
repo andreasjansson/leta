@@ -23,6 +23,7 @@ fn get_extended_path() -> String {
         format!("{}/go/bin", home),
         format!("{}/.cargo/bin", home),
         format!("{}/.local/bin", home),
+        format!("{}/.opam/default/bin", home),
         "/usr/local/bin".to_string(),
         "/opt/homebrew/bin".to_string(),
     ];
