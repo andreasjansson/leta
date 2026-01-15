@@ -57,7 +57,7 @@ brew install andreasjansson/tap/leta
 ### Using Cargo
 
 ```bash
-cargo install leta
+cargo install leta leta-daemon
 ```
 
 ### From source
