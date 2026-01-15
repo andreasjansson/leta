@@ -7,9 +7,9 @@ description = "This is an internal component crate of leta"
 repository.workspace = true
 homepage.workspace = true
 
-[[bin]]
-name = "leta-daemon"
-path = "src/main.rs"
+[lib]
+name = "leta_daemon"
+path = "src/lib.rs"
 
 [dependencies]
 leta-types = { workspace = true }
