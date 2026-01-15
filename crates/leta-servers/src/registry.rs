@@ -60,7 +60,7 @@ static BASEDPYRIGHT: ServerConfig = ServerConfig {
     command: &["basedpyright-langserver", "--stdio"],
     languages: &["python"],
     file_patterns: &["*.py", "*.pyi"],
-    install_cmd: Some("npm install -g basedpyright"),
+    install_cmd: Some("pip install basedpyright"),
     root_markers: &[
         "pyproject.toml",
         "setup.py",
