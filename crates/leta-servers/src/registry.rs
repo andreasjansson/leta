@@ -210,6 +210,7 @@ fn language_to_servers(language_id: &str) -> Option<&'static [&'static ServerCon
         "php" => Some(PHP_SERVERS),
         "lua" => Some(LUA_SERVERS),
         "zig" => Some(ZIG_SERVERS),
+        "ocaml" => Some(OCAML_SERVERS),
         "dummy-doesnt-exist" => Some(DUMMY_SERVERS),
         _ => None,
     }
