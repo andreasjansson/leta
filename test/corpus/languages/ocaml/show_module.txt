@@ -1,0 +1,28 @@
+==================
+show module definition
+==================
+leta show "^storage.ml$:MemoryStorage"
+---
+storage.ml:12-32
+
+module MemoryStorage : Storage = struct
+  type t = (string, User.user) Hashtbl.t
+
+  let create () = Hashtbl.create 16
+
+  let save tbl key user = Hashtbl.replace tbl key user
+
+  let load tbl key =
+    match Hashtbl.find_opt tbl key with
+    | Some user -> Some user
+    | None -> None
+
+  let delete tbl key =
+    if Hashtbl.mem tbl key then begin
+      Hashtbl.remove tbl key;
+      true
+    end else false
+
+  let list tbl =
+    Hashtbl.fold (fun _ user acc -> user :: acc) tbl []
+end
