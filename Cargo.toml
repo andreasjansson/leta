@@ -13,13 +13,24 @@ members = [
 ]
 
 [workspace.package]
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
-authors = ["Anthropic"]
+authors = ["Andreas Jansson"]
 license = "MIT"
 rust-version = "1.75"
 
 [workspace.dependencies]
+
+# Internal crates
+leta-types = { version = "0.2.0", path = "crates/leta-types" }
+leta-config = { version = "0.2.0", path = "crates/leta-config" }
+leta-lsp = { version = "0.2.0", path = "crates/leta-lsp" }
+leta-cache = { version = "0.2.0", path = "crates/leta-cache" }
+leta-servers = { version = "0.2.0", path = "crates/leta-servers" }
+leta-output = { version = "0.2.0", path = "crates/leta-output" }
+leta-fs = { version = "0.2.0", path = "crates/leta-fs" }
+leta-daemon = { version = "0.2.0", path = "crates/leta-daemon" }
+
 # Async runtime
 tokio = { version = "1.40", features = ["full", "fs", "io-util", "macros", "process", "rt-multi-thread", "signal", "sync"] }
 tokio-util = { version = "0.7", features = ["compat", "io"] }
@@ -65,16 +76,6 @@ fastrace = "0.7"
 # Collections
 rustc-hash = "2.0"
 dashmap = "6.1"
-
-# Internal crates
-leta-types = { version = "0.1.0", path = "crates/leta-types" }
-leta-config = { version = "0.1.0", path = "crates/leta-config" }
-leta-lsp = { version = "0.1.0", path = "crates/leta-lsp" }
-leta-cache = { version = "0.1.0", path = "crates/leta-cache" }
-leta-servers = { version = "0.1.0", path = "crates/leta-servers" }
-leta-output = { version = "0.1.0", path = "crates/leta-output" }
-leta-fs = { version = "0.1.0", path = "crates/leta-fs" }
-leta-daemon = { version = "0.1.0", path = "crates/leta-daemon" }
 
 [profile.release]
 strip = true
