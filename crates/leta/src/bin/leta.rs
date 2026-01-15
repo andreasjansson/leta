@@ -974,6 +974,9 @@ async fn handle_grep(
         }
 
         if let Some(warning) = &done.warning {
+            if count == 0 && warning.contains("failed to start") {
+                return Err(anyhow!("{}", warning));
+            }
             eprintln!("\nWarning: {}", warning);
         }
     }
