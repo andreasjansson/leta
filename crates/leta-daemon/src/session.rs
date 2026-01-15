@@ -110,13 +110,21 @@ impl Workspace {
                 self.startup_stats = Some(stats.clone());
                 Ok(stats)
             }
-            Err(e) => Err(format!(
-                "Language server '{}' for {} failed to start in workspace {}: {}",
-                self.server_config.name,
-                self.server_config.languages.join(", "),
-                self.root.display(),
-                e
-            )),
+            Err(e) => {
+                let mut msg = format!(
+                    "Language server '{}' for {} failed to start: {}",
+                    self.server_config.name,
+                    self.server_config.languages.join(", "),
+                    e
+                );
+                if let Some(install_cmd) = self.server_config.install_cmd {
+                    msg.push_str(&format!(
+                        "\n\nTo install {}, run:\n  {}",
+                        self.server_config.name, install_cmd
+                    ));
+                }
+                Err(msg)
+            }
         }
     }
 
