@@ -1,0 +1,8 @@
+==================
+grep combined filters
+==================
+leta grep "^get" -k variable -x _build user.ml
+---
+user.ml:12 [Variable] get_name
+user.ml:15 [Variable] get_email
+user.ml:18 [Variable] get_age
