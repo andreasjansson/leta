@@ -1,0 +1,7 @@
+==================
+grep case insensitive (default)
+==================
+leta grep "^create_user$" -x _build
+---
+user.ml:9 [Variable] create_user
+user.mli:9 [Variable] create_user
