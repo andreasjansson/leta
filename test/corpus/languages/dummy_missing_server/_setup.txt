@@ -1,0 +1,6 @@
+===
+setup workspace
+===
+leta workspace add {{ FIXTURE_DIR }}
+---
+Added workspace: {{ FIXTURE_DIR }}
