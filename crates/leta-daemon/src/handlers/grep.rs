@@ -1043,7 +1043,7 @@ async fn handle_grep_streaming_inner(
         None
     };
 
-    let (count, truncated) = stream_and_filter_symbols(
+    let result = stream_and_filter_symbols(
         ctx,
         &workspace_root,
         StreamFilterParams {
@@ -1058,13 +1058,18 @@ async fn handle_grep_streaming_inner(
     )
     .await?;
 
-    let warning = if count == 0 && params.pattern.contains(r"\|") {
-        Some("No results. Note: use '|' for alternation, not '\\|' (e.g., 'foo|bar' not 'foo\\|bar')".to_string())
-    } else {
+    let mut warnings = result.errors;
+    if result.count == 0 && params.pattern.contains(r"\|") {
+        warnings.push("No results. Note: use '|' for alternation, not '\\|' (e.g., 'foo|bar' not 'foo\\|bar')".to_string());
+    }
+
+    let warning = if warnings.is_empty() {
         None
+    } else {
+        Some(warnings.join("\n\n"))
     };
 
-    Ok((warning, truncated, count))
+    Ok((warning, result.truncated, result.count))
 }
 
 struct StreamFilterParams<'a> {
