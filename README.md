@@ -60,7 +60,7 @@ Ensure you have language servers installed for your target languages:
 
 ```bash
 # Python
-npm install -g @anthropic/basedpyright
+pip install basedpyright
 
 # TypeScript/JavaScript
 npm install -g typescript-language-server typescript
@@ -405,7 +405,7 @@ Logs are stored in `~/.cache/leta/log/`.
 
 | Language | Server | Install |
 |----------|--------|---------|
-| Python | basedpyright | `npm install -g @anthropic/basedpyright` |
+| Python | basedpyright | `pip install basedpyright` |
 | TypeScript/JavaScript | typescript-language-server | `npm install -g typescript-language-server typescript` |
 | Go | gopls | `go install golang.org/x/tools/gopls@latest` |
 | Rust | rust-analyzer | `rustup component add rust-analyzer` |
