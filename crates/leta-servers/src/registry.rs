@@ -228,6 +228,7 @@ fn language_to_key(language_id: &str) -> Option<&'static str> {
         "php" => Some("php"),
         "lua" => Some("lua"),
         "zig" => Some("zig"),
+        "ocaml" => Some("ocaml"),
         "dummy-doesnt-exist" => Some("dummy-doesnt-exist"),
         _ => None,
     }
