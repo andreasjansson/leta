@@ -143,16 +143,14 @@ Then load the skill with `/skill leta` or configure it to load automatically.
 
 ### Claude Code
 
-Claude Code automatically loads `CLAUDE.md` files at startup. Add the skill
-content to your project's `CLAUDE.md` (for project-specific use) or to
-`~/.claude/CLAUDE.md` (for global use across all projects):
+Copy the skill to your Claude Code skills directory:
 
 ```bash
-# Project-specific (at your project root):
-cat skills/leta/SKILL.md >> CLAUDE.md
+# Personal (available across all your projects):
+cp -r skills/leta ~/.claude/skills/
 
-# Global (for all projects):
-cat skills/leta/SKILL.md >> ~/.claude/CLAUDE.md
+# Project-specific (commit to version control):
+cp -r skills/leta .claude/skills/
 ```
 
 ## Commands
