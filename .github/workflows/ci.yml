@@ -123,10 +123,32 @@ jobs:
           ref: refs/tags/v${{ needs.check-release.outputs.version }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
+  publish:
+    name: Publish to crates.io
+    runs-on: ubuntu-latest
+    needs: [check-release, create-release]
+    if: needs.check-release.outputs.should_release == 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Publish to crates.io
+        run: |
+          cargo publish -p leta-types --no-verify
+          cargo publish -p leta-fs --no-verify
+          cargo publish -p leta-config --no-verify
+          cargo publish -p leta-lsp --no-verify
+          cargo publish -p leta-cache --no-verify
+          cargo publish -p leta-servers --no-verify
+          cargo publish -p leta-output --no-verify
+          cargo publish -p leta-daemon --no-verify
+          cargo publish -p leta --no-verify
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
   release:
     name: Finalize Release
     runs-on: ubuntu-latest
-    needs: [check-release, build]
+    needs: [check-release, build, publish]
     if: needs.check-release.outputs.should_release == 'true'
     steps:
       - uses: actions/checkout@v4
