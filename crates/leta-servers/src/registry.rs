@@ -193,6 +193,7 @@ static RUBY_SERVERS: &[&ServerConfig] = &[&RUBY_LSP];
 static PHP_SERVERS: &[&ServerConfig] = &[&INTELEPHENSE];
 static LUA_SERVERS: &[&ServerConfig] = &[&LUA_LANGUAGE_SERVER];
 static ZIG_SERVERS: &[&ServerConfig] = &[&ZLS];
+static OCAML_SERVERS: &[&ServerConfig] = &[&OCAMLLSP];
 static DUMMY_SERVERS: &[&ServerConfig] = &[&DUMMY_DOESNT_EXIST];
 
 fn language_to_servers(language_id: &str) -> Option<&'static [&'static ServerConfig]> {
