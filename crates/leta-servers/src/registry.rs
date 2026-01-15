@@ -165,6 +165,15 @@ static ZLS: ServerConfig = ServerConfig {
     root_markers: &["build.zig"],
 };
 
+static OCAMLLSP: ServerConfig = ServerConfig {
+    name: "ocamllsp",
+    command: &["ocamllsp"],
+    languages: &["ocaml"],
+    file_patterns: &["*.ml", "*.mli"],
+    install_cmd: Some("opam install ocaml-lsp-server"),
+    root_markers: &["dune-project", "dune", ".merlin"],
+};
+
 static DUMMY_DOESNT_EXIST: ServerConfig = ServerConfig {
     name: "dummy-doesnt-exist-server",
     command: &["dummy-doesnt-exist-server-binary"],
