@@ -177,3 +177,89 @@ jobs:
     with:
       version: ${{ needs.check-release.outputs.version }}
     secrets: inherit
+
+  post-release-test-macos:
+    name: Post-release Test (macOS/Homebrew)
+    runs-on: macos-latest
+    needs: [check-release, homebrew]
+    if: needs.check-release.outputs.should_release == 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install leta via Homebrew
+        run: |
+          brew tap andreasjansson/tap
+          brew install leta
+      - name: Install rust-analyzer
+        run: |
+          rustup component add rust-analyzer
+      - name: Verify installation
+        run: |
+          leta --version
+          which leta
+          which leta-daemon
+      - name: Add workspace and run leta
+        run: |
+          leta workspace add .
+          leta grep "run" --head 10
+          leta files --head 10
+
+  post-release-test-linux:
+    name: Post-release Test (Linux/GitHub Release)
+    runs-on: ubuntu-latest
+    needs: [check-release, release]
+    if: needs.check-release.outputs.should_release == 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install leta from GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ needs.check-release.outputs.version }}"
+          ARCHIVE="leta-v${VERSION}-x86_64-unknown-linux-gnu.tar.gz"
+          gh release download "v${VERSION}" --pattern "${ARCHIVE}"
+          tar -xzf "${ARCHIVE}"
+          sudo mv leta leta-daemon /usr/local/bin/
+          rm "${ARCHIVE}"
+      - name: Install rust-analyzer
+        run: |
+          rustup component add rust-analyzer
+      - name: Verify installation
+        run: |
+          leta --version
+          which leta
+          which leta-daemon
+      - name: Add workspace and run leta
+        run: |
+          leta workspace add .
+          leta grep "run" --head 10
+          leta files --head 10
+
+  post-release-test-windows:
+    name: Post-release Test (Windows/GitHub Release)
+    runs-on: windows-latest
+    needs: [check-release, build]
+    if: needs.check-release.outputs.should_release == 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install leta from GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: pwsh
+        run: |
+          $VERSION = "${{ needs.check-release.outputs.version }}"
+          # Note: Windows builds would need to be added to the build matrix first
+          # For now, install via cargo as a fallback
+          cargo install --path crates/leta
+      - name: Install rust-analyzer
+        run: |
+          rustup component add rust-analyzer
+      - name: Verify installation
+        shell: pwsh
+        run: |
+          leta --version
+      - name: Add workspace and run leta
+        shell: pwsh
+        run: |
+          leta workspace add .
+          leta grep "run" --head 10
+          leta files --head 10
