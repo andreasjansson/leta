@@ -1,0 +1,11 @@
+==================
+grep with documentation
+==================
+leta grep "^not_found$" -d -x _build
+---
+errors.ml:8 [Variable] not_found
+    ```ocaml
+    string -> 'a
+    ```
+    ***
+    Raises a not found error.
