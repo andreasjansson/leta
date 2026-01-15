@@ -1,0 +1,11 @@
+==================
+grep exclude files
+==================
+leta grep "^create" -x _build -x errors
+---
+main.ml:2 [Variable] create_sample_user
+storage.ml:4 [Variable] create in Storage
+storage.ml:15 [Variable] create in MemoryStorage
+storage.ml:41 [Variable] create in FileStorage
+user.ml:9 [Variable] create_user
+user.mli:9 [Variable] create_user
