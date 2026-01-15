@@ -7,3 +7,5 @@ Error: Language server 'dummy-doesnt-exist-server' for dummy-doesnt-exist failed
 
 To install dummy-doesnt-exist-server, run:
   pip install dummy-doesnt-exist
+
+If you just installed it, run `leta daemon restart` to pick up PATH changes.
