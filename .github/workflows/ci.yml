@@ -241,7 +241,7 @@ jobs:
   post-release-test-windows:
     name: Post-release Test (Windows/GitHub Release)
     runs-on: windows-latest
-    needs: [check-release, build]
+    needs: [check-release, release]
     if: needs.check-release.outputs.should_release == 'true'
     steps:
       - uses: actions/checkout@v4
@@ -251,9 +251,12 @@ jobs:
         shell: pwsh
         run: |
           $VERSION = "${{ needs.check-release.outputs.version }}"
-          # Note: Windows builds would need to be added to the build matrix first
-          # For now, install via cargo as a fallback
-          cargo install --path crates/leta
+          $ARCHIVE = "leta-v${VERSION}-x86_64-pc-windows-msvc.zip"
+          gh release download "v${VERSION}" --pattern "${ARCHIVE}"
+          Expand-Archive -Path "${ARCHIVE}" -DestinationPath .
+          Move-Item -Path "leta.exe" -Destination "$env:USERPROFILE\.cargo\bin\"
+          Move-Item -Path "leta-daemon.exe" -Destination "$env:USERPROFILE\.cargo\bin\"
+          Remove-Item "${ARCHIVE}"
       - name: Install rust-analyzer
         run: |
           rustup component add rust-analyzer
