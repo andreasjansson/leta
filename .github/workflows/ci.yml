@@ -159,7 +159,7 @@ jobs:
 
           ## Binaries
 
-          Pre-built binaries are available for Linux, macOS, and Windows (x86_64 and ARM64).
+          Pre-built binaries are available for Linux and macOS (x86_64 and ARM64).
           EOF
       - name: Publish Release
         env:
