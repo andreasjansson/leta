@@ -1,0 +1,6 @@
+==================
+grep case sensitive
+==================
+leta grep "^MemoryStorage$" -x _build -C
+---
+storage.ml:12 [Module] MemoryStorage
