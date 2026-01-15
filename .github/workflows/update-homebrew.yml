@@ -64,6 +64,7 @@ jobs:
 
             def install
               bin.install "leta"
+              bin.install "leta-daemon"
             end
 
             test do
