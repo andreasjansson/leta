@@ -1,0 +1,9 @@
+==================
+show function definition
+==================
+leta show "^main.ml$:create_sample_user"
+---
+main.ml:2-3
+
+let create_sample_user () =
+  User.create_user "John Doe" "john@example.com" 30
