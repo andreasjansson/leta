@@ -412,15 +412,15 @@ async fn ensure_daemon_running() -> Result<()> {
         return Ok(());
     }
 
-    let daemon_exe = find_daemon_executable()?;
+    let exe = std::env::current_exe()?;
+    let daemon_exe = exe.parent().unwrap().join("leta-daemon");
 
     Command::new(&daemon_exe)
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .envs(std::env::vars())
-        .spawn()
-        .map_err(|e| anyhow!("Failed to start leta-daemon at {}: {}", daemon_exe.display(), e))?;
+        .spawn()?;
 
     for _ in 0..100 {
         if can_connect_to_daemon(&socket_path).await {
@@ -430,24 +430,6 @@ async fn ensure_daemon_running() -> Result<()> {
     }
 
     Err(anyhow!("Failed to start daemon"))
-}
-
-fn find_daemon_executable() -> Result<std::path::PathBuf> {
-    let exe = std::env::current_exe()?;
-    let same_dir = exe.parent().unwrap().join("leta-daemon");
-    if same_dir.exists() {
-        return Ok(same_dir);
-    }
-
-    if let Ok(path) = which::which("leta-daemon") {
-        return Ok(path);
-    }
-
-    Err(anyhow!(
-        "Could not find leta-daemon. Please ensure it is installed.\n\
-         Install with: cargo install leta-daemon\n\
-         Or if using Homebrew: brew install andreasjansson/tap/leta"
-    ))
 }
 
 async fn can_connect_to_daemon(socket_path: &std::path::Path) -> bool {
