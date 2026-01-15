@@ -10,12 +10,17 @@ readme = "../../README.md"
 
 [[bin]]
 name = "leta"
-path = "src/main.rs"
+path = "src/bin/leta.rs"
+
+[[bin]]
+name = "leta-daemon"
+path = "src/bin/leta-daemon.rs"
 
 [dependencies]
 leta-types = { workspace = true }
 leta-config = { workspace = true }
 leta-output = { workspace = true }
+leta-daemon = { workspace = true }
 
 clap = { workspace = true }
 tokio = { workspace = true }
@@ -24,7 +29,6 @@ serde_json = { workspace = true }
 anyhow = { workspace = true }
 globset = { workspace = true }
 glob = "0.3"
-which = "7.0"
 
 [features]
 default = []
