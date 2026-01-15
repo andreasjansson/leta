@@ -1,0 +1,6 @@
+==================
+grep kind filter interface
+==================
+leta grep "." -k interface -x _build
+---
+storage.ml:2 [Interface] Storage
