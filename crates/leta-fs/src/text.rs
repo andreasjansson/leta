@@ -44,6 +44,7 @@ pub fn get_language_id(path: &Path) -> &'static str {
         "xml" => "xml",
         "sh" | "bash" => "shellscript",
         "sql" => "sql",
+        "dummy-doesnt-exist" => "dummy-doesnt-exist",
         _ => match filename {
             "Gemfile" | "Rakefile" => "ruby",
             "Makefile" | "makefile" | "GNUmakefile" => "makefile",
