@@ -1,0 +1,10 @@
+==================
+grep pattern matching
+==================
+leta grep "_user$" -x _build
+---
+main.ml:2 [Variable] create_sample_user
+user.ml:9 [Variable] create_user
+user.ml:27 [Variable] validate_user
+user.mli:9 [Variable] create_user
+user.mli:27 [Variable] validate_user
