@@ -161,8 +161,8 @@ jobs:
           # Via Homebrew (macOS/Linux)
           brew install andreasjansson/tap/leta
 
-          # From source
-          cargo install --git https://github.com/andreasjansson/leta.git leta
+          # Via Cargo
+          cargo install leta
           ```
 
           ## Binaries
