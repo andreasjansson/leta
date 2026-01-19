@@ -1,0 +1,6 @@
+==================
+implementations not supported
+==================
+leta implementations "^storage.ml$:Storage"
+---
+Error: Server 'ocamllsp' does not support implementations (may require a license)
