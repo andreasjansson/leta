@@ -1,0 +1,7 @@
+==================
+refs basic
+==================
+leta refs "^main.ml$:create_sample_user"
+---
+main.ml:2 let create_sample_user () =
+main.ml:12   let user = create_sample_user () in
