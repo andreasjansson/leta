@@ -41,6 +41,7 @@ const DEFAULT_EXCLUDE_DIRS: &[&str] = &[
     "coverage",
     ".nyc_output",
     ".zig-cache",
+    "_build",
 ];
 
 const BINARY_EXTENSIONS: &[&str] = &[
