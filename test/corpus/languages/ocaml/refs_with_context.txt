@@ -1,0 +1,18 @@
+==================
+refs with context
+==================
+leta refs "^main.ml$:create_sample_user" -n 2
+---
+main.ml:1-4
+(** Creates a sample user for testing. *)
+let create_sample_user () =
+  User.create_user "John Doe" "john@example.com" 30
+
+
+main.ml:10-14
+let main () =
+  let storage = Storage.MemoryStorage.create () in
+  let user = create_sample_user () in
+
+  Storage.MemoryStorage.save storage (User.get_email user) user;
+
