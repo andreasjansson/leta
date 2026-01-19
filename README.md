@@ -471,6 +471,7 @@ Logs are stored in `~/.cache/leta/log/`.
 | C/C++ | clangd | `brew install llvm` |
 | PHP | intelephense | `npm install -g intelephense` |
 | Lua | lua-language-server | `brew install lua-language-server` |
+| OCaml | ocamllsp | `opam install ocaml-lsp-server` |
 | Zig | zls | `brew install zls` |
 
 ## Development
