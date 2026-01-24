@@ -1,6 +1,6 @@
 ===
 teardown workspace
 ===
-leta workspace remove {{ FIXTURE_DIR }}
+leta workspace remove $CCTR_FIXTURE_DIR
 ---
-Removed workspace: {{ FIXTURE_DIR }}
+Removed workspace: {{ path }}
