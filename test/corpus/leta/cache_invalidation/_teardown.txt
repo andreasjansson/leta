@@ -1,0 +1,6 @@
+===
+teardown workspace
+===
+leta workspace remove $CCTR_FIXTURE_DIR
+---
+Removed workspace: {{ path }}
