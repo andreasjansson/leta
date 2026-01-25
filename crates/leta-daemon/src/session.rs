@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use fastrace::trace;
 use leta_config::Config;
-use leta_fs::{get_language_id, path_to_uri, read_file_content};
+use leta_fs::{get_language_id, path_to_uri, read_file_content, uri_to_path};
 use leta_lsp::LspClient;
 use leta_servers::{get_server_env, get_server_for_file, get_server_for_language, ServerConfig};
 use serde_json::Value;
