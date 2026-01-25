@@ -98,6 +98,7 @@ pub fn relative_path(path: &Path, workspace_root: &Path) -> String {
         .unwrap_or_else(|_| path.to_string_lossy().to_string())
 }
 
+
 pub fn find_source_files_with_extension(
     workspace_root: &Path,
     extension: &str,
@@ -190,13 +191,19 @@ pub fn format_locations(
 
     for loc in locations {
         let file_path = uri_to_path(loc.uri.as_str());
+
+        // Skip files that no longer exist (LSP may return stale cached results)
+        if !file_path.exists() {
+            continue;
+        }
+
         let rel_path = relative_path(&file_path, workspace_root);
         let line = loc.range.start.line + 1;
 
         let mut info = LocationInfo::new(rel_path, line);
         info.column = loc.range.start.character;
 
-        if context > 0 && file_path.exists() {
+        if context > 0 {
             if let Ok(content) = read_file_content(&file_path) {
                 let (lines, start, _) =
                     get_lines_around(&content, loc.range.start.line as usize, context as usize);
