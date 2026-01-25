@@ -709,6 +709,15 @@ impl<'a> WorkspaceHandle<'a> {
         false
     }
 
+    async fn cleanup_deleted_documents(&self) {
+        let mut workspaces = self.session.workspaces.write().await;
+        if let Some(servers) = workspaces.get_mut(&self.workspace_root) {
+            if let Some(workspace) = servers.get_mut(&self.server_name) {
+                workspace.cleanup_deleted_documents().await;
+            }
+        }
+    }
+
     #[trace]
     pub async fn notify_files_changed(
         &self,
