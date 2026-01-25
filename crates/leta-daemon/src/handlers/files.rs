@@ -331,6 +331,13 @@ async fn handle_files_streaming_inner(
             let is_included = include_regexes.iter().any(|re| re.is_match(&rel_path));
 
             if is_egg_info || ((is_default_excluded || is_pattern_excluded) && !is_included) {
+                if filter_regex.is_none() && !is_egg_info {
+                    let _ = tx
+                        .send(StreamMessage::ExcludedDir {
+                            path: rel_path.clone(),
+                        })
+                        .await;
+                }
                 iter.skip_current_dir();
             }
             continue;
