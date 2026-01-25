@@ -1,0 +1,25 @@
+===
+refs shows User in all files before delete
+===
+leta refs User
+---
+consumer.py:1 from user import User
+consumer.py:4 def process_user(user: User) -> str:
+main.py:1 from user import User
+main.py:4 def create_user() -> User:
+user.py:1 class User:
+
+===
+delete consumer.py
+===
+rm consumer.py
+---
+
+===
+refs excludes deleted file
+===
+leta refs User
+---
+main.py:1 from user import User
+main.py:4 def create_user() -> User:
+user.py:1 class User:
