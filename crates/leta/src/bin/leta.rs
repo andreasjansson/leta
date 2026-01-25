@@ -1069,11 +1069,15 @@ async fn handle_files(
                 "head": head,
             }),
             false,
-            |msg| {
-                if let StreamMessage::File(file) = msg {
+            |msg| match msg {
+                StreamMessage::File(file) => {
                     println!("{}", printer.format_file(&file));
                     count += 1;
                 }
+                StreamMessage::ExcludedDir { path } => {
+                    println!("{}", printer.format_excluded_dir(&path));
+                }
+                _ => {}
             },
         )
         .await?;
