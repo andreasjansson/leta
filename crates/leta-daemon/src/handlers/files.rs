@@ -94,7 +94,7 @@ pub async fn handle_files(
         head_limit,
     );
 
-    tracing::debug!("excluded_dirs: {:?}", excluded_dirs);
+    tracing::info!("excluded_dirs: {:?}", excluded_dirs);
 
     let total_files = files_info.len() as u32;
 
