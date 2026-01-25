@@ -7,6 +7,7 @@ consumer.py:1 from user import User
 consumer.py:4 def process_user(user: User) -> str:
 main.py:1 from user import User
 main.py:4 def create_user() -> User:
+main.py:5     return User("test", "test@example.com")
 user.py:1 class User:
 
 ===
@@ -22,4 +23,5 @@ leta refs User
 ---
 main.py:1 from user import User
 main.py:4 def create_user() -> User:
+main.py:5     return User("test", "test@example.com")
 user.py:1 class User:
