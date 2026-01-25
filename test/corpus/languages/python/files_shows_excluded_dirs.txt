@@ -1,0 +1,12 @@
+==================
+files shows excluded directories
+==================
+leta files $CCTR_FIXTURE_DIR
+---
+editable.py (1.1KB, 43 lines)
+editable_consumer.py (561B, 17 lines)
+errors.py (554B, 25 lines)
+main.py (3.7KB, 146 lines)
+node_modules (excluded)
+pyproject.toml (79B, 4 lines)
+utils.py (3.4KB, 145 lines)
