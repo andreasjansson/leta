@@ -323,6 +323,27 @@ impl Workspace {
         }
         self.open_documents.clear();
     }
+
+    pub async fn cleanup_deleted_documents(&mut self) {
+        let deleted_uris: Vec<String> = self
+            .open_documents
+            .keys()
+            .filter(|uri| !uri_to_path(uri).exists())
+            .cloned()
+            .collect();
+
+        for uri in deleted_uris {
+            self.open_documents.remove(&uri);
+            if let Some(client) = &self.client {
+                let params = serde_json::json!({
+                    "textDocument": {"uri": uri}
+                });
+                let _ = client
+                    .send_notification("textDocument/didClose", params)
+                    .await;
+            }
+        }
+    }
 }
 
 type StartupLockKey = (PathBuf, String);
