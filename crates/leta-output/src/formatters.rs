@@ -672,6 +672,41 @@ impl FileTreePrinter {
 
         output
     }
+
+    pub fn format_excluded_dir(&mut self, path: &str) -> String {
+        let parts: Vec<&str> = path.split('/').collect();
+        if parts.is_empty() {
+            return String::new();
+        }
+
+        let (parent_dirs, dir_name) = parts.split_at(parts.len().saturating_sub(1));
+
+        let mut output = String::new();
+
+        let mut common_depth = 0;
+        for (i, dir) in parent_dirs.iter().enumerate() {
+            if i < self.current_path.len() && self.current_path[i] == *dir {
+                common_depth = i + 1;
+            } else {
+                break;
+            }
+        }
+
+        self.current_path.truncate(common_depth);
+
+        for (i, dir) in parent_dirs.iter().enumerate().skip(common_depth) {
+            let indent = "  ".repeat(i);
+            output.push_str(&format!("{}{}/\n", indent, dir));
+            self.current_path.push(dir.to_string());
+        }
+
+        let indent = "  ".repeat(parent_dirs.len());
+        if let Some(name) = dir_name.first() {
+            output.push_str(&format!("{}{} (excluded)", indent, name));
+        }
+
+        output
+    }
 }
 
 impl Default for FileTreePrinter {
