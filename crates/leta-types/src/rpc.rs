@@ -11,6 +11,7 @@ use crate::{
 pub enum StreamMessage {
     Symbol(SymbolInfo),
     File(FileInfo),
+    ExcludedDir { path: String },
     Done(StreamDone),
     Error { message: String },
 }
