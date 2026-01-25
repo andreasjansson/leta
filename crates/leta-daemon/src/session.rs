@@ -601,6 +601,8 @@ impl<'a> WorkspaceHandle<'a> {
 
     #[trace]
     pub async fn ensure_document_open(&self, path: &Path) -> Result<(), String> {
+        self.cleanup_deleted_documents().await;
+
         let uri = path_to_uri(path);
 
         // First check if document needs updating (read lock only)
