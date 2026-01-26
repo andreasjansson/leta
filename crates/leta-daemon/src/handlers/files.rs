@@ -198,7 +198,7 @@ fn walk_directory(
         };
 
         let bytes = metadata.len();
-        let lines = count_lines(path);
+        let lines = count_lines(path, bytes);
 
         let file_info = FileInfo {
             path: rel_path.clone(),
