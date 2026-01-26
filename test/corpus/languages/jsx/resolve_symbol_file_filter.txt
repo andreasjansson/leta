@@ -1,0 +1,13 @@
+==================
+resolve symbol with file filter
+==================
+leta show "types.ts:User"
+---
+src/types.ts:8-13
+
+export interface User {
+    id: string;
+    name: string;
+    email: string;
+    role: UserRole;
+}
