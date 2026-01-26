@@ -223,7 +223,12 @@ fn walk_directory(
     )
 }
 
-fn count_lines(path: &Path) -> u32 {
+const MAX_LINE_COUNT_SIZE: u64 = 1024 * 1024;
+
+fn count_lines(path: &Path, size: u64) -> u32 {
+    if size > MAX_LINE_COUNT_SIZE {
+        return 0;
+    }
     let file = match std::fs::File::open(path) {
         Ok(f) => f,
         Err(_) => return 0,
