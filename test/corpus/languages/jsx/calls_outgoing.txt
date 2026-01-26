@@ -1,0 +1,11 @@
+==================
+calls outgoing
+==================
+leta calls --from UserCard
+---
+src/components.tsx:84 [Function] UserCard
+
+Outgoing calls:
+  ├── src/components.tsx:33 [Function] Card
+  ├── src/components.tsx:54 [Function] UserAvatar
+  └── src/components.tsx:8 [Function] Button
