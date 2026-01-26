@@ -1,0 +1,13 @@
+==================
+show class definition
+==================
+leta show ValidationError
+---
+src/errors.tsx:6-11
+
+export class ValidationError extends Error {
+    constructor(public field: string, message: string) {
+        super(message);
+        this.name = 'ValidationError';
+    }
+}
