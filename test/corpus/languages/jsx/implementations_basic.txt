@@ -1,0 +1,6 @@
+==================
+implementations basic
+==================
+leta implementations ThemeConfig
+---
+src/types.ts:60 export const DEFAULT_THEME: ThemeConfig = {
