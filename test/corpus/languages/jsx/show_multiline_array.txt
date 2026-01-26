@@ -1,0 +1,12 @@
+==================
+show multiline array constant
+==================
+leta show SAMPLE_USERS
+---
+src/App.tsx:17-21
+
+const SAMPLE_USERS: User[] = [
+    { id: '1', name: 'Alice Johnson', email: 'alice@example.com', role: 'admin' },
+    { id: '2', name: 'Bob Smith', email: 'bob@example.com', role: 'editor' },
+    { id: '3', name: 'Carol White', email: 'carol@example.com', role: 'viewer' },
+];
