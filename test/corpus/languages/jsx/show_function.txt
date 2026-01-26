@@ -1,0 +1,28 @@
+==================
+show function definition
+==================
+leta show Button
+---
+src/components.tsx:8-28
+
+export function Button({
+    children,
+    onClick,
+    variant = 'primary',
+    disabled = false,
+}: {
+    children: React.ReactNode;
+    onClick?: () => void;
+    variant?: 'primary' | 'secondary' | 'danger';
+    disabled?: boolean;
+}) {
+    return (
+        <button
+            className={`btn btn-${variant}`}
+            onClick={onClick}
+            disabled={disabled}
+        >
+            {children}
+        </button>
+    );
+}
