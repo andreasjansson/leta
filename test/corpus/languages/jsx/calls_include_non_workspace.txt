@@ -1,0 +1,10 @@
+==================
+calls outgoing include non-workspace
+==================
+leta calls --from DashboardStats --max-depth 1 --include-non-workspace
+---
+src/App.tsx:88 [Function] DashboardStats
+
+Outgoing calls:
+  ├── [Method] filter
+  └── src/components.tsx:33 [Function] Card
