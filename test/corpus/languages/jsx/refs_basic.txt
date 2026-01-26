@@ -1,0 +1,23 @@
+==================
+refs basic
+==================
+leta refs User
+---
+src/App.tsx:2 import { User, DEFAULT_THEME } from './types';
+src/App.tsx:17 const SAMPLE_USERS: User[] = [
+src/App.tsx:66     user: User | null;
+src/App.tsx:88 function DashboardStats({ users }: { users: User[] }) {
+src/App.tsx:121     const [users] = useState<User[]>(SAMPLE_USERS);
+src/App.tsx:122     const [selectedUser, setSelectedUser] = useState<User | null>(null);
+src/App.tsx:126     const handleUserSelect = useCallback((user: User) => {
+src/components.tsx:2 import { User, UserDisplayProps, ListProps, ThemeConfig } from './types';
+src/components.tsx:54 export function UserAvatar({ user, size = 40 }: { user: User; size?: number }) {
+src/components.tsx:135     users: User[];
+src/components.tsx:136     onUserSelect?: (user: User) => void;
+src/hooks.ts:2 import { User } from './types';
+src/hooks.ts:7 export function useUser(initialUser: User | null = null) {
+src/hooks.ts:8     const [user, setUser] = useState<User | null>(initialUser);
+src/hooks.ts:12     const updateUser = useCallback((updates: Partial<User>) => {
+src/types.ts:8 export interface User {
+src/types.ts:24     user: User;
+src/types.ts:25     onSelect?: (user: User) => void;
