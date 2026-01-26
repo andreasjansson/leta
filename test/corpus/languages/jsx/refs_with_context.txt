@@ -1,0 +1,30 @@
+==================
+refs with context
+==================
+leta refs useToggle -n 1
+---
+src/App.tsx:2-4
+import { User, DEFAULT_THEME } from './types';
+import { useUser, useToggle } from './hooks';
+import {
+
+src/App.tsx:122-124
+    const [selectedUser, setSelectedUser] = useState<User | null>(null);
+    const { value: isSidebarOpen, toggle: toggleSidebar, setFalse: closeSidebar } = useToggle(false);
+    const [isLoading, setIsLoading] = useState(false);
+
+src/components.tsx:2-4
+import { User, UserDisplayProps, ListProps, ThemeConfig } from './types';
+import { useToggle } from './hooks';
+
+
+src/components.tsx:193-195
+}) {
+    const { value: isExpanded, toggle } = useToggle(defaultExpanded);
+
+
+src/hooks.ts:66-68
+ */
+export function useToggle(initialValue: boolean = false) {
+    const [value, setValue] = useState(initialValue);
+
