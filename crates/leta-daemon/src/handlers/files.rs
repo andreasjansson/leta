@@ -224,9 +224,15 @@ fn walk_directory(
 }
 
 fn count_lines(path: &Path) -> u32 {
-    std::fs::read_to_string(path)
-        .map(|content| content.lines().count() as u32)
-        .unwrap_or(0)
+    let file = match std::fs::File::open(path) {
+        Ok(f) => f,
+        Err(_) => return 0,
+    };
+    let mmap = match unsafe { memmap2::Mmap::map(&file) } {
+        Ok(m) => m,
+        Err(_) => return 0,
+    };
+    memchr::memchr_iter(b'\n', &mmap).count() as u32
 }
 
 pub async fn handle_files_streaming(
