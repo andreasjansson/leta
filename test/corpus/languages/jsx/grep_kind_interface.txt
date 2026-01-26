@@ -1,0 +1,10 @@
+==================
+grep kind filter interface
+==================
+leta grep "." -k interface -C
+---
+src/types.ts:8 [Interface] User
+src/types.ts:23 [Interface] UserDisplayProps
+src/types.ts:31 [Interface] ListProps
+src/types.ts:40 [Interface] FormField
+src/types.ts:51 [Interface] ThemeConfig
