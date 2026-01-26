@@ -1,0 +1,25 @@
+==================
+show custom hook
+==================
+leta show useUser
+---
+src/hooks.ts:7-24
+
+export function useUser(initialUser: User | null = null) {
+    const [user, setUser] = useState<User | null>(initialUser);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const updateUser = useCallback((updates: Partial<User>) => {
+        if (user) {
+            setUser({ ...user, ...updates });
+        }
+    }, [user]);
+
+    const clearUser = useCallback(() => {
+        setUser(null);
+        setError(null);
+    }, []);
+
+    return { user, loading, error, setUser, updateUser, clearUser };
+}
