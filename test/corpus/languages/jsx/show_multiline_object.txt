@@ -1,0 +1,12 @@
+==================
+show multiline object constant
+==================
+leta show DEFAULT_THEME
+---
+src/types.ts:60-64
+
+export const DEFAULT_THEME: ThemeConfig = {
+    primaryColor: '#007bff',
+    secondaryColor: '#6c757d',
+    fontFamily: 'Arial, sans-serif',
+};
