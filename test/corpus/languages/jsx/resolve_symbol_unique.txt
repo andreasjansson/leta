@@ -1,0 +1,16 @@
+==================
+resolve unique symbol
+==================
+leta show Spinner
+---
+src/components.tsx:210-220
+
+export function Spinner({ size = 'medium' }: { size?: 'small' | 'medium' | 'large' }) {
+    const sizes = { small: 16, medium: 32, large: 48 };
+    return (
+        <div
+            className={`spinner spinner-${size}`}
+            style={{ width: sizes[size], height: sizes[size] }}
+        />
+    );
+}
