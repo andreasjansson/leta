@@ -1,0 +1,16 @@
+==================
+resolve ambiguous symbol shows matches
+==================
+leta show name
+---
+Error: Symbol 'name' is ambiguous (5 matches)
+  App.tsx:18:name
+    src/App.tsx:18 [Property] name in SAMPLE_USERS
+  App.tsx:19:name
+    src/App.tsx:19 [Property] name in SAMPLE_USERS
+  App.tsx:20:name
+    src/App.tsx:20 [Property] name in SAMPLE_USERS
+  User.name
+    src/types.ts:10 [Property] name in User
+  FormField.name
+    src/types.ts:41 [Property] name in FormField
