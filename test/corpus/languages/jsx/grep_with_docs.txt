@@ -1,0 +1,19 @@
+==================
+grep with documentation
+==================
+leta grep "Card" -k function -C -d
+---
+src/components.tsx:33 [Function] Card
+    ```typescript
+    function Card({ title, children, footer, }: {
+        title?: string;
+        children: React.ReactNode;
+        footer?: React.ReactNode;
+    }): any
+    ```
+    Card component for content containers.
+src/components.tsx:84 [Function] UserCard
+    ```typescript
+    function UserCard({ user, onSelect }: UserDisplayProps): any
+    ```
+    User card component showing user details.
