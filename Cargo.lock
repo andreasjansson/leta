@@ -741,7 +741,7 @@ checksum = "bbd2bcb4c963f2ddae06a2efc7e9f3591312473c50c6685e1f298068316e66fe"
 
 [[package]]
 name = "leta"
-version = "0.11.5"
+version = "0.12.0"
 dependencies = [
  "anyhow",
  "clap",
@@ -760,7 +760,7 @@ dependencies = [
 
 [[package]]
 name = "leta-cache"
-version = "0.11.5"
+version = "0.12.0"
 dependencies = [
  "blake3",
  "fastrace",
@@ -773,7 +773,7 @@ dependencies = [
 
 [[package]]
 name = "leta-config"
-version = "0.11.5"
+version = "0.12.0"
 dependencies = [
  "libc",
  "serde",
@@ -783,7 +783,7 @@ dependencies = [
 
 [[package]]
 name = "leta-daemon"
-version = "0.11.5"
+version = "0.12.0"
 dependencies = [
  "anyhow",
  "blake3",
@@ -799,6 +799,8 @@ dependencies = [
  "leta-servers",
  "leta-types",
  "libc",
+ "memchr",
+ "memmap2",
  "rayon",
  "regex",
  "serde",
@@ -812,7 +814,7 @@ dependencies = [
 
 [[package]]
 name = "leta-fs"
-version = "0.11.5"
+version = "0.12.0"
 dependencies = [
  "fastrace",
  "thiserror",
@@ -820,7 +822,7 @@ dependencies = [
 
 [[package]]
 name = "leta-lsp"
-version = "0.11.5"
+version = "0.12.0"
 dependencies = [
  "async-trait",
  "dashmap",
@@ -836,7 +838,7 @@ dependencies = [
 
 [[package]]
 name = "leta-output"
-version = "0.11.5"
+version = "0.12.0"
 dependencies = [
  "leta-types",
  "serde",
@@ -845,7 +847,7 @@ dependencies = [
 
 [[package]]
 name = "leta-servers"
-version = "0.11.5"
+version = "0.12.0"
 dependencies = [
  "fastrace",
  "leta-config",
@@ -854,7 +856,7 @@ dependencies = [
 
 [[package]]
 name = "leta-types"
-version = "0.11.5"
+version = "0.12.0"
 dependencies = [
  "lsp-types",
  "serde",
@@ -932,6 +934,15 @@ name = "memchr"
 version = "2.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f52b00d39961fc5b2736ea853c9cc86238e165017a493d1d5c8eac6bdc4cc273"
+
+[[package]]
+name = "memmap2"
+version = "0.9.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "744133e4a0e0a658e1374cf3bf8e415c4052a15a111acd372764c55b4177d490"
+dependencies = [
+ "libc",
+]
 
 [[package]]
 name = "mio"
