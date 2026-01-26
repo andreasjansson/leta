@@ -1,0 +1,12 @@
+==================
+grep combined filters
+==================
+leta grep "." -k function src/components.tsx -C --head 5
+---
+src/components.tsx:8 [Function] Button
+src/components.tsx:33 [Function] Card
+src/components.tsx:54 [Function] UserAvatar
+src/components.tsx:57 [Function] map() callback in initials
+src/components.tsx:84 [Function] UserCard
+
+[showing first 5 results, use `leta grep "." "src/components.tsx" -k function -C --head 10` to show more, or `leta grep "." "src/components.tsx" -k function -C -N0` to show all]
