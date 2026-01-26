@@ -1,0 +1,31 @@
+==================
+show react component with JSX
+==================
+leta show UserCard
+---
+src/components.tsx:84-107
+
+export function UserCard({ user, onSelect }: UserDisplayProps) {
+    const handleClick = useCallback(() => {
+        if (onSelect) {
+            onSelect(user);
+        }
+    }, [user, onSelect]);
+
+    return (
+        <Card title={user.name}>
+            <div className="user-card">
+                <UserAvatar user={user} />
+                <div className="user-info">
+                    <p className="email">{user.email}</p>
+                    <span className={`role role-${user.role}`}>{user.role}</span>
+                </div>
+            </div>
+            {onSelect && (
+                <Button onClick={handleClick} variant="secondary">
+                    Select
+                </Button>
+            )}
+        </Card>
+    );
+}
