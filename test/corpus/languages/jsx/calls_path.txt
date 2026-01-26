@@ -1,0 +1,8 @@
+==================
+calls path from to
+==================
+leta calls --from DashboardStats --to Card
+---
+Call path:
+src/App.tsx:88 [Function] DashboardStats
+  → src/components.tsx:33 [Function] Card
