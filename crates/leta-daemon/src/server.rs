@@ -169,6 +169,7 @@ impl DaemonServer {
         match method {
             "grep" => match serde_json::from_value::<GrepParams>(params) {
                 Ok(p) => {
+                    let ctx = ctx.clone();
                     tokio::spawn(async move {
                         handle_grep_streaming(&ctx, p, tx).await;
                     });
@@ -183,6 +184,7 @@ impl DaemonServer {
             },
             "files" => match serde_json::from_value::<FilesParams>(params) {
                 Ok(p) => {
+                    let ctx = ctx.clone();
                     tokio::spawn(async move {
                         handle_files_streaming(&ctx, p, tx).await;
                     });
