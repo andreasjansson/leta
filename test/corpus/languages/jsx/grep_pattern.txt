@@ -1,0 +1,18 @@
+==================
+grep pattern for hooks
+==================
+leta grep "^use[A-Z]" '\.ts$' -k function -C
+---
+src/hooks.ts:7 [Function] useUser
+src/hooks.ts:12 [Function] useCallback() callback in updateUser
+src/hooks.ts:18 [Function] useCallback() callback in clearUser
+src/hooks.ts:29 [Function] useForm
+src/hooks.ts:33 [Function] useCallback() callback in handleChange
+src/hooks.ts:38 [Function] useCallback() callback in reset
+src/hooks.ts:43 [Function] useCallback() callback in validate
+src/hooks.ts:67 [Function] useToggle
+src/hooks.ts:70 [Function] useCallback() callback in toggle
+src/hooks.ts:74 [Function] useCallback() callback in setTrue
+src/hooks.ts:75 [Function] useCallback() callback in setFalse
+src/hooks.ts:83 [Function] useDebounce
+src/hooks.ts:86 [Function] useEffect() callback in useDebounce
