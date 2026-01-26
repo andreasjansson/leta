@@ -1,0 +1,12 @@
+==================
+implementations with context
+==================
+leta implementations ThemeConfig -n 2
+---
+src/types.ts:58-62
+ * Default theme values.
+ */
+export const DEFAULT_THEME: ThemeConfig = {
+    primaryColor: '#007bff',
+    secondaryColor: '#6c757d',
+
