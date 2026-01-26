@@ -1,0 +1,12 @@
+==================
+grep exclude multiple patterns
+==================
+leta grep "." -x hooks -x editable -k function -C --head 5
+---
+src/App.tsx:26 [Function] Header
+src/App.tsx:42 [Function] Sidebar
+src/App.tsx:62 [Function] UserDetailsPanel
+src/App.tsx:88 [Function] DashboardStats
+src/App.tsx:89 [Function] users.filter() callback in adminCount
+
+[showing first 5 results, use `leta grep "." -k function -x "hooks" -x "editable" -C --head 10` to show more, or `leta grep "." -k function -x "hooks" -x "editable" -C -N0` to show all]
