@@ -564,11 +564,11 @@ pub fn format_resolve_symbol_result(result: &ResolveSymbolResult) -> String {
 fn format_locations(locations: &[LocationInfo]) -> String {
     let mut lines = Vec::new();
     for loc in locations {
-        if loc.name.is_some() && loc.kind.is_some() {
+        if let (Some(name), Some(kind)) = (&loc.name, &loc.kind) {
             let mut parts = vec![
                 format!("{}:{}", loc.path, loc.line),
-                format!("[{}]", loc.kind.as_ref().unwrap()),
-                loc.name.clone().unwrap(),
+                format!("[{}]", kind),
+                name.clone(),
             ];
             if let Some(detail) = &loc.detail {
                 if !detail.is_empty() && detail != "()" {
