@@ -204,9 +204,13 @@ fn filter_symbols(
     let mut filtered: Vec<&SymbolInfo> = {
         let _span = Span::enter_with_local_parent("path_filter");
         if let Some(pf) = path_filter {
+            let path_re = Regex::new(pf).ok();
             all_symbols
                 .iter()
-                .filter(|s| matches_path(&s.path, pf))
+                .filter(|s| match &path_re {
+                    Some(re) => re.is_match(&s.path),
+                    None => s.path.contains(pf),
+                })
                 .collect()
         } else {
             all_symbols.iter().collect()
