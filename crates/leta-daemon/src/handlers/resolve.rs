@@ -339,14 +339,6 @@ fn parse_symbol_path(symbol_path: &str) -> Result<(Option<String>, Option<u32>, 
     }
 }
 
-fn matches_path(rel_path: &str, filter: &str) -> bool {
-    if let Ok(re) = Regex::new(filter) {
-        re.is_match(rel_path)
-    } else {
-        rel_path.contains(filter)
-    }
-}
-
 fn name_matches(sym_name: &str, target: &str) -> bool {
     if sym_name == target {
         return true;
