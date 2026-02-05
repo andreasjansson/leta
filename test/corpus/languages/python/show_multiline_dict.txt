@@ -1,6 +1,6 @@
-==================
+===
 show multi-line dict constant
-==================
+===
 leta show COUNTRY_CODES
 ---
 utils.py:130-138

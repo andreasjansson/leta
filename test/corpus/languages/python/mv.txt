@@ -1,38 +1,38 @@
-==================
+===
 check import before move
-==================
+===
 grep "from editable import" editable_consumer.py
 ---
 from editable import EditablePerson, editable_create_sample
 
-==================
+===
 move file and update imports
-==================
+===
 leta mv editable.py editable_renamed.py
 ---
 Moved file and updated imports in 2 file(s):
   editable_consumer.py
   editable_renamed.py
 
-==================
+===
 verify import was updated
-==================
+===
 grep "from editable_renamed import" editable_consumer.py
 ---
 from editable_renamed import EditablePerson, editable_create_sample
 
-==================
+===
 restore file back
-==================
+===
 leta mv editable_renamed.py editable.py
 ---
 Moved file and updated imports in 2 file(s):
   editable.py
   editable_consumer.py
 
-==================
+===
 verify import was restored
-==================
+===
 grep "from editable import" editable_consumer.py
 ---
 from editable import EditablePerson, editable_create_sample

@@ -1,6 +1,6 @@
-==================
+===
 show multiline array constant
-==================
+===
 leta show DEFAULT_PORTS
 ---
 src/user.rs:91-98

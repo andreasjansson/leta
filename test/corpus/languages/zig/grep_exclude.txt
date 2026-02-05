@@ -1,6 +1,6 @@
-==================
+===
 grep exclude pattern
-==================
+===
 leta grep "." --kind function --exclude "errors.zig" --exclude "user.zig" -C
 ---
 build.zig:3 [Function] build (fn build(b: *std.Build) void)

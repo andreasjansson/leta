@@ -1,6 +1,6 @@
-==================
+===
 grep kind filter class
-==================
+===
 leta grep "." --kind class user.rb -C
 ---
 user.rb:8 [Class] User

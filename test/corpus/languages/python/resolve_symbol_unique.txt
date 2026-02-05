@@ -1,6 +1,6 @@
-==================
+===
 show unique symbol
-==================
+===
 leta show validate_email
 ---
 utils.py:9-19

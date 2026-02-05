@@ -1,13 +1,13 @@
-==================
+===
 check mod before move
-==================
+===
 grep "mod user" src/main.rs
 ---
 mod user;
 
-==================
+===
 move file and update imports
-==================
+===
 leta mv src/user.rs src/person.rs
 ---
 Moved file and updated imports in 3 file(s):
@@ -15,16 +15,16 @@ Moved file and updated imports in 3 file(s):
   src/person.rs
   src/storage.rs
 
-==================
+===
 verify mod was updated
-==================
+===
 grep "mod person" src/main.rs
 ---
 mod person;
 
-==================
+===
 restore file back
-==================
+===
 leta mv src/person.rs src/user.rs
 ---
 Moved file and updated imports in 3 file(s):
@@ -32,9 +32,9 @@ Moved file and updated imports in 3 file(s):
   src/storage.rs
   src/user.rs
 
-==================
+===
 verify mod was restored
-==================
+===
 grep "mod user" src/main.rs
 ---
 mod user;

@@ -1,6 +1,6 @@
-==================
+===
 implementations basic
-==================
+===
 leta implementations Storage
 ---
 main.go:39 type MemoryStorage struct {

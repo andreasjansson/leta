@@ -1,6 +1,6 @@
-==================
+===
 resolve unique symbol
-==================
+===
 leta show User
 ---
 user.rb:8-35

@@ -1,6 +1,6 @@
-==================
+===
 grep multiple files via path regex
-==================
+===
 leta grep "^new$" --kind function "user\.rs" -C
 ---
 src/user.rs:13 [Function] new (fn(name: String, email: String, age: u32) -> Self) in impl User

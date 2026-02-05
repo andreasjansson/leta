@@ -1,6 +1,6 @@
-==================
+===
 grep pattern for hooks
-==================
+===
 leta grep "^use[A-Z]" '\.ts$' -k function -C
 ---
 src/hooks.ts:7 [Function] useUser

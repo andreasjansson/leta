@@ -1,6 +1,6 @@
-==================
+===
 grep with docs
-==================
+===
 leta grep "createSampleUser" --kind method --docs src/Main.php -C
 ---
 src/Main.php:17 [Method] createSampleUser (static) in Main

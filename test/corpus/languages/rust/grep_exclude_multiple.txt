@@ -1,6 +1,6 @@
-==================
+===
 grep exclude multiple patterns
-==================
+===
 leta grep "." --kind function --exclude "errors.rs" --exclude "storage.rs" -C
 ---
 src/main.rs:10 [Function] create_sample_user (fn() -> User)

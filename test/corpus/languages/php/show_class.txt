@@ -1,6 +1,6 @@
-==================
+===
 show class definition
-==================
+===
 leta show User
 ---
 src/User.php:7-97

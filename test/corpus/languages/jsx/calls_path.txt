@@ -1,6 +1,6 @@
-==================
+===
 calls path from to
-==================
+===
 leta calls --from DashboardStats --to Card
 ---
 Call path:

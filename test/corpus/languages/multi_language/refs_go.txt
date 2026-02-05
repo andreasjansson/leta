@@ -1,12 +1,12 @@
-==================
+===
 refs Go struct
-==================
+===
 leta refs GoUser
 ---
 main.go:6 type GoUser struct {
-main.go:14 	users []GoUser
-main.go:21 		users: make([]GoUser, 0),
+main.go:14 users []GoUser
+main.go:21 users: make([]GoUser, 0),
 main.go:31 func (s *GoService) AddUser(user GoUser) {
 main.go:36 func (s *GoService) GetUsers() []GoUser {
-main.go:37 	result := make([]GoUser, len(s.users))
-main.go:67 	service.AddUser(GoUser{Name: "John", Email: "john@example.com"})
+main.go:37 result := make([]GoUser, len(s.users))
+main.go:67 service.AddUser(GoUser{Name: "John", Email: "john@example.com"})

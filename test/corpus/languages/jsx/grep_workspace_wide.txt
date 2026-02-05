@@ -1,6 +1,6 @@
-==================
+===
 grep workspace wide
-==================
+===
 leta grep "." '\.tsx$' -k function -C --head 5
 ---
 src/App.tsx:26 [Function] Header

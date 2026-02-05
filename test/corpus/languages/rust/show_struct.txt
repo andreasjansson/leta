@@ -1,6 +1,6 @@
-==================
+===
 show struct definition
-==================
+===
 leta show User
 ---
 src/user.rs:3-9

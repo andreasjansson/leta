@@ -1,6 +1,6 @@
-==================
+===
 grep Python classes only
-==================
+===
 leta grep "." app.py --kind class
 ---
 app.py:10 [Class] ServiceProtocol

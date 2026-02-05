@@ -1,6 +1,6 @@
-==================
+===
 grep all functions excluding editable
-==================
+===
 leta grep "." --kind function --exclude "editable*" -C
 ---
 errors.go:4 [Function] ErrorFunc (func())

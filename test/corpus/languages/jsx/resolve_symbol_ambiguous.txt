@@ -1,6 +1,6 @@
-==================
+===
 resolve ambiguous symbol shows matches
-==================
+===
 leta show name
 ---
 Error: Symbol 'name' is ambiguous (5 matches)

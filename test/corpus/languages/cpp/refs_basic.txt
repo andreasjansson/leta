@@ -1,6 +1,6 @@
-==================
+===
 refs basic
-==================
+===
 leta refs example.User
 ---
 main.cpp:11     User user = createSampleUser();

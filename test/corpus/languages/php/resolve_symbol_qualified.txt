@@ -1,6 +1,6 @@
-==================
+===
 resolve qualified method
-==================
+===
 leta show MemoryStorage.save
 ---
 src/MemoryStorage.php:15-23

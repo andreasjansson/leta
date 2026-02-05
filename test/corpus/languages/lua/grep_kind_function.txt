@@ -1,6 +1,6 @@
-==================
+===
 grep kind filter function
-==================
+===
 leta grep "." --kind function main.lua -C
 ---
 main.lua:8 [Function] createSampleUser (function ())

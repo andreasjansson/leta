@@ -1,6 +1,6 @@
-==================
+===
 grep pattern filter
-==================
+===
 leta grep "Storage" --kind struct,interface src/storage.rs -C
 ---
 src/storage.rs:5 [Interface] Storage

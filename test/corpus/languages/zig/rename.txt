@@ -1,36 +1,36 @@
-==================
+===
 check before rename
-==================
+===
 grep "pub const User = struct" src/user.zig
 ---
 pub const User = struct {
 
-==================
+===
 rename User to RenamedUser
-==================
+===
 leta rename User RenamedUser
 ---
 Renamed in 1 file(s):
   src/user.zig
 
-==================
+===
 verify rename worked
-==================
+===
 grep "pub const RenamedUser = struct" src/user.zig
 ---
 pub const RenamedUser = struct {
 
-==================
+===
 restore original name
-==================
+===
 leta rename RenamedUser User
 ---
 Renamed in 1 file(s):
   src/user.zig
 
-==================
+===
 verify restore worked
-==================
+===
 grep "pub const User = struct" src/user.zig
 ---
 pub const User = struct {

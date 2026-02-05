@@ -1,6 +1,6 @@
-==================
+===
 refs Python class
-==================
+===
 leta refs PythonUser
 ---
 app.py:19 class PythonUser:

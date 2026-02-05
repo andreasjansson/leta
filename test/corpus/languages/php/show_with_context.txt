@@ -1,6 +1,6 @@
-==================
+===
 show method with context
-==================
+===
 leta show getName -n 1
 ---
 src/User.php:47-57

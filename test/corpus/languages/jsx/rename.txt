@@ -1,45 +1,45 @@
-==================
+===
 check function exists before rename
-==================
+===
 grep "export function.*EditableButton" src/editable.tsx
 ---
 export function EditableButton({
 
-==================
+===
 rename EditableButton to RenamedButton
-==================
+===
 leta rename EditableButton RenamedButton
 ---
 Renamed in 2 file(s):
   src/editable.tsx
   src/editable_consumer.tsx
 
-==================
+===
 verify function was renamed
-==================
+===
 grep "export function.*RenamedButton" src/editable.tsx
 ---
 export function RenamedButton({
 
-==================
+===
 verify import was updated
-==================
+===
 grep "import.*RenamedButton" src/editable_consumer.tsx
 ---
 import { RenamedButton, EditableContainer } from './editable';
 
-==================
+===
 restore original name
-==================
+===
 leta rename RenamedButton EditableButton
 ---
 Renamed in 2 file(s):
   src/editable.tsx
   src/editable_consumer.tsx
 
-==================
+===
 verify restore worked
-==================
+===
 grep "export function.*EditableButton" src/editable.tsx
 ---
 export function EditableButton({

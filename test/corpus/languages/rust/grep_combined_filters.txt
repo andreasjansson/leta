@@ -1,6 +1,6 @@
-==================
+===
 grep combined filters Storage structs
-==================
+===
 leta grep "Storage" --kind struct src/storage.rs -C
 ---
 src/storage.rs:20 [Struct] MemoryStorage

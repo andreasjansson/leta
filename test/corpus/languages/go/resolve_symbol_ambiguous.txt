@@ -1,6 +1,6 @@
-==================
+===
 resolve ambiguous symbol shows matches
-==================
+===
 leta show Save
 ---
 Error: Symbol 'Save' is ambiguous (4 matches)

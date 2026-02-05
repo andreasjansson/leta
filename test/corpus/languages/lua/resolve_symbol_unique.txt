@@ -1,6 +1,6 @@
-==================
+===
 resolve unique symbol
-==================
+===
 leta show User
 ---
 user.lua:11

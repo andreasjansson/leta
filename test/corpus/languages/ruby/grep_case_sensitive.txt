@@ -1,6 +1,6 @@
-==================
+===
 grep case sensitive
-==================
+===
 leta grep "^User$" -C
 ---
 user.rb:8 [Class] User

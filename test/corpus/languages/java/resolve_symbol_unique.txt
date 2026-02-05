@@ -1,6 +1,6 @@
-==================
+===
 show unique symbol
-==================
+===
 leta show validateEmail
 ---
 src/main/java/com/example/Main.java:31-40

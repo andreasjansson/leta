@@ -1,6 +1,6 @@
-==================
+===
 grep with docs
-==================
+===
 leta grep "^adult" --kind method --docs user.rb
 ---
 user.rb:25 [Method] adult? in User

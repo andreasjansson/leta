@@ -1,6 +1,6 @@
-==================
+===
 grep combined filters Storage classes
-==================
+===
 leta grep "Storage" --kind class -C
 ---
 src/FileStorage.php:10 [Class] FileStorage

@@ -1,6 +1,6 @@
-==================
+===
 show function with context lines
-==================
+===
 leta show create_sample_user -n 2
 ---
 main.py:112-118

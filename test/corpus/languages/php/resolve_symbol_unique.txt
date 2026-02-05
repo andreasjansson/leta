@@ -1,6 +1,6 @@
-==================
+===
 show unique symbol
-==================
+===
 leta show UserRepository
 ---
 src/UserRepository.php:7-62

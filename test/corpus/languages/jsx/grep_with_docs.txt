@@ -1,6 +1,6 @@
-==================
+===
 grep with documentation
-==================
+===
 leta grep "Card" -k function -C -d
 ---
 src/components.tsx:33 [Function] Card

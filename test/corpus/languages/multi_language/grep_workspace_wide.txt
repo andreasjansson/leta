@@ -1,6 +1,6 @@
-==================
+===
 grep workspace-wide finds both languages
-==================
+===
 leta grep "Service" --kind struct,class
 ---
 app.py:10 [Class] ServiceProtocol

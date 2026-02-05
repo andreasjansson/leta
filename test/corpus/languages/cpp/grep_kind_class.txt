@@ -1,6 +1,6 @@
-==================
+===
 grep kind filter class
-==================
+===
 leta grep "." --kind class user.hpp -C
 ---
 user.hpp:13 [Class] User (class) in example

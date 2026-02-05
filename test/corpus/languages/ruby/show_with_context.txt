@@ -1,6 +1,6 @@
-==================
+===
 show method with context
-==================
+===
 leta show create_sample_user -n 2
 ---
 main.rb:6-12

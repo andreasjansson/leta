@@ -1,6 +1,6 @@
-==================
+===
 implementations of trait
-==================
+===
 leta implementations Storage
 ---
 src/storage.rs:39 impl Storage for MemoryStorage {

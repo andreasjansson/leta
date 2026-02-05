@@ -1,6 +1,6 @@
-==================
+===
 grep workspace wide with exclude
-==================
+===
 leta grep "validate" --kind function -x "editable*"
 ---
 utils.py:9 [Function] validate_email

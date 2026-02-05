@@ -1,6 +1,6 @@
-==================
+===
 grep workspace wide validate functions
-==================
+===
 leta grep "validate" --kind function --exclude "editable*" -C
 ---
 src/main.ts:20 [Function] validateEmail

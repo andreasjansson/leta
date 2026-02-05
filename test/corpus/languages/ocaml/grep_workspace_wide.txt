@@ -1,6 +1,6 @@
-==================
+===
 grep workspace wide
-==================
+===
 leta grep "^Storage$" -x _build
 ---
 main.ml:11 [Variable] storage in main

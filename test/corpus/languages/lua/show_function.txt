@@ -1,6 +1,6 @@
-==================
+===
 show function definition
-==================
+===
 leta show isAdult
 ---
 user.lua:29-31

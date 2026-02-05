@@ -1,6 +1,6 @@
-==================
+===
 calls path
-==================
+===
 leta calls --from main --to createSampleUser
 ---
 Call path:

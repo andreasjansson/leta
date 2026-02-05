@@ -1,6 +1,6 @@
-==================
+===
 grep kind filter constant
-==================
+===
 leta grep "." --kind constant src/user.zig -C
 ---
 src/user.zig:1 [Constant] std

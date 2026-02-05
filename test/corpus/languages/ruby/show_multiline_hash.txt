@@ -1,6 +1,6 @@
-==================
+===
 show multiline hash constant
-==================
+===
 leta show COUNTRY_CODES
 ---
 user.rb:144-152

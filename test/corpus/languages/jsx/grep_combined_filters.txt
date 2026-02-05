@@ -1,6 +1,6 @@
-==================
+===
 grep combined filters
-==================
+===
 leta grep "." -k function src/components.tsx -C --head 5
 ---
 src/components.tsx:8 [Function] Button

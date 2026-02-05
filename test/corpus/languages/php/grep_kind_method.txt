@@ -1,6 +1,6 @@
-==================
+===
 grep kind filter method
-==================
+===
 leta grep "." --kind method src/User.php -C
 ---
 src/User.php:53 [Method] getName in User

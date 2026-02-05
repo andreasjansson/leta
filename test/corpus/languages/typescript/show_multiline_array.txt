@@ -1,6 +1,6 @@
-==================
+===
 show multiline array constant
-==================
+===
 leta show DEFAULT_CONFIG
 ---
 src/user.ts:148-153

@@ -1,6 +1,6 @@
-==================
+===
 show with file filter
-==================
+===
 leta show main.py:save
 ---
 Error: Symbol 'save' is ambiguous (3 matches)

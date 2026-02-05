@@ -1,6 +1,6 @@
-==================
+===
 implementations with context
-==================
+===
 leta implementations ThemeConfig -n 2
 ---
 src/types.ts:58-62

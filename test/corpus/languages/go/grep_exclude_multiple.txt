@@ -1,6 +1,6 @@
-==================
+===
 grep exclude multiple patterns
-==================
+===
 leta grep "." --kind function --exclude "editable*" --exclude "utils.go" -C
 ---
 errors.go:4 [Function] ErrorFunc (func())

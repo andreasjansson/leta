@@ -1,6 +1,6 @@
-==================
+===
 calls outgoing excludes stdlib by default
-==================
+===
 leta calls --from DashboardStats --max-depth 1
 ---
 src/App.tsx:88 [Function] DashboardStats

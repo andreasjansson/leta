@@ -1,6 +1,6 @@
-==================
+===
 show unique symbol
-==================
+===
 leta show UserRepository
 ---
 src/user.rs:43-46

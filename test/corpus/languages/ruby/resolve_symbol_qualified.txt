@@ -1,6 +1,6 @@
-==================
+===
 resolve qualified symbol
-==================
+===
 leta show MemoryStorage.save
 ---
 user.rb:79-81

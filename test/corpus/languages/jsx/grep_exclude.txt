@@ -1,6 +1,6 @@
-==================
+===
 grep exclude pattern
-==================
+===
 leta grep "." -x editable -k class -C
 ---
 src/errors.tsx:6 [Class] ValidationError

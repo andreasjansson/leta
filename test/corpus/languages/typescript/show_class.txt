@@ -1,6 +1,6 @@
-==================
+===
 show class definition
-==================
+===
 leta show User
 ---
 src/user.ts:4-24

@@ -1,6 +1,6 @@
-==================
+===
 calls outgoing
-==================
+===
 leta calls --from createSampleUser
 ---
 src/main/java/com/example/Main.java:15 [Method] createSampleUser() : User (com.example.Main)

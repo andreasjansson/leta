@@ -1,6 +1,6 @@
-==================
+===
 show with context
-==================
+===
 leta show "^main.ml$:create_sample_user" -n 2
 ---
 main.ml:1-5

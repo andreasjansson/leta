@@ -1,6 +1,6 @@
-==================
+===
 refs basic
-==================
+===
 leta refs User
 ---
 src/App.tsx:2 import { User, DEFAULT_THEME } from './types';

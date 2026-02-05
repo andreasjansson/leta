@@ -1,36 +1,36 @@
-==================
+===
 check before rename
-==================
+===
 grep "local User = {}" user.lua
 ---
 local User = {}
 
-==================
+===
 rename User to Person
-==================
+===
 leta rename User Person
 ---
 Renamed in 1 file(s):
   user.lua
 
-==================
+===
 verify rename worked
-==================
+===
 grep "local Person = {}" user.lua
 ---
 local Person = {}
 
-==================
+===
 restore original name
-==================
+===
 leta rename Person User
 ---
 Renamed in 1 file(s):
   user.lua
 
-==================
+===
 verify restore worked
-==================
+===
 grep "local User = {}" user.lua
 ---
 local User = {}

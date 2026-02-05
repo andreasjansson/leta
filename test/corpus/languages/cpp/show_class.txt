@@ -1,6 +1,6 @@
-==================
+===
 show class definition
-==================
+===
 leta show example.User
 ---
 user.hpp:13-34

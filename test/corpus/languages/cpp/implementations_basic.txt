@@ -1,6 +1,6 @@
-==================
+===
 implementations basic
-==================
+===
 leta implementations Storage
 ---
 user.hpp:48 class MemoryStorage : public Storage {

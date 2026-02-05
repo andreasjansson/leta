@@ -1,6 +1,6 @@
-==================
+===
 show multiline array constant
-==================
+===
 leta show COUNTRY_CODES
 ---
 src/User.php:15-23

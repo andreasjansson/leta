@@ -1,6 +1,6 @@
-==================
+===
 grep exclude pattern
-==================
+===
 leta grep "." --kind function --exclude "errors*" --exclude "main*" -C
 ---
 user.lua:19 [Function] User.new (function (name, email, age))

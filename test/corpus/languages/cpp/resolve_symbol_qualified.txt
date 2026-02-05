@@ -1,6 +1,6 @@
-==================
+===
 resolve symbol qualified
-==================
+===
 leta show User.isAdult
 ---
 user.hpp:23

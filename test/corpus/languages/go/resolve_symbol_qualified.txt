@@ -1,14 +1,14 @@
-==================
+===
 resolve qualified method pointer receiver
-==================
+===
 leta show MemoryStorage.Save
 ---
 main.go:49-55
 
 func (m *MemoryStorage) Save(user *User) error {
-	if user == nil {
-		return errors.New("user cannot be nil")
-	}
-	m.users[user.Email] = user
-	return nil
+if user == nil {
+return errors.New("user cannot be nil")
+}
+m.users[user.Email] = user
+return nil
 }

@@ -1,6 +1,6 @@
-==================
+===
 grep with docs
-==================
+===
 leta grep "^User$" --kind constant --docs -C
 ---
 src/user.zig:4 [Constant] User

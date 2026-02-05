@@ -1,6 +1,6 @@
-==================
+===
 show qualified name with Rust :: syntax
-==================
+===
 leta show MemoryStorage::new
 ---
 src/storage.rs:25-30

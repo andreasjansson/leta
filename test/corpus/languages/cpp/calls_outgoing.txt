@@ -1,6 +1,6 @@
-==================
+===
 calls outgoing
-==================
+===
 leta calls --from main --max-depth 1
 ---
 main.cpp:7 [Function] main

@@ -1,6 +1,6 @@
-==================
+===
 grep multiple files via path regex
-==================
+===
 leta grep "User" --kind class "user\.rb"
 ---
 user.rb:8 [Class] User

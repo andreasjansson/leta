@@ -1,6 +1,6 @@
-==================
+===
 grep pattern filter
-==================
+===
 leta grep "Storage" --kind class,interface src/user.ts -C
 ---
 src/user.ts:29 [Interface] Storage

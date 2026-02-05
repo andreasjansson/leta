@@ -1,6 +1,6 @@
-==================
+===
 grep exclude multiple patterns
-==================
+===
 leta grep "." --kind function --exclude "errors*" --exclude "user*" -C
 ---
 main.lua:8 [Function] createSampleUser (function ())

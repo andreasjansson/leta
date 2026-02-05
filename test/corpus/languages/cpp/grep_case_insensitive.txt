@@ -1,6 +1,6 @@
-==================
+===
 grep case insensitive (default)
-==================
+===
 leta grep "^user$"
 ---
 user.hpp:13 [Class] User (class) in example

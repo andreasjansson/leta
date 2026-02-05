@@ -1,6 +1,6 @@
-==================
+===
 show function definition
-==================
+===
 leta show create_sample_user
 ---
 src/main.rs:9-12

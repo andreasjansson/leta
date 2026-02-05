@@ -1,6 +1,6 @@
-==================
+===
 resolve with file filter
-==================
+===
 leta show src/main.zig:main
 ---
 src/main.zig:4-19

@@ -1,6 +1,6 @@
-==================
+===
 refs basic
-==================
+===
 leta refs User
 ---
 src/main.ts:1 import { User, UserRepository, MemoryStorage, validateUser } from './user';

@@ -1,6 +1,6 @@
-==================
+===
 grep all symbols in main.py
-==================
+===
 leta grep . main.py
 ---
 main.py:14 [Class] StorageProtocol

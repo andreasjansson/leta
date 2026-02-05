@@ -1,6 +1,6 @@
-==================
+===
 grep case insensitive (default)
-==================
+===
 leta grep "user" main.py
 ---
 main.py:27 [Class] User

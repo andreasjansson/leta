@@ -1,6 +1,6 @@
-==================
+===
 show struct definition
-==================
+===
 leta show User
 ---
 src/user.zig:4-28

@@ -1,6 +1,6 @@
-==================
+===
 show method definition
-==================
+===
 leta show createSampleUser
 ---
 src/Main.php:12-20

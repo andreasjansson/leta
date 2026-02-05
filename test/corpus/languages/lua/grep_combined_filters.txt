@@ -1,6 +1,6 @@
-==================
+===
 grep combined filters
-==================
+===
 leta grep "^Memory" --kind object user.lua -C
 ---
 user.lua:72 [Object] MemoryStorage

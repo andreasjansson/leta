@@ -1,6 +1,6 @@
-==================
+===
 files shows excluded directories
-==================
+===
 leta files $CCTR_FIXTURE_DIR
 ---
 editable.py (1.1KB, 43 lines)

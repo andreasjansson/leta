@@ -1,6 +1,6 @@
-==================
+===
 grep exclude multiple patterns
-==================
+===
 leta grep "." --kind function --exclude "errors.zig" --exclude "user.zig" --exclude "build.zig" -C
 ---
 src/main.zig:4 [Function] main (fn main() !void)

@@ -1,6 +1,6 @@
-==================
+===
 resolve unique symbol
-==================
+===
 leta show Counter
 ---
 src/main.ts:28-50

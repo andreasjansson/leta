@@ -1,6 +1,6 @@
-==================
+===
 refs basic
-==================
+===
 leta refs User
 ---
 src/user.zig:4 pub const User = struct {

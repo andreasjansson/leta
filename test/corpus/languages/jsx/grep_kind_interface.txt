@@ -1,6 +1,6 @@
-==================
+===
 grep kind filter interface
-==================
+===
 leta grep "." -k interface -C
 ---
 src/types.ts:8 [Interface] User

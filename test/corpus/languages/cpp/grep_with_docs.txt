@@ -1,6 +1,6 @@
-==================
+===
 grep with docs
-==================
+===
 leta grep "createSampleUser" --kind function --docs user.hpp -C
 ---
 user.hpp:135 [Function] createSampleUser (User ()) in example
@@ -15,4 +15,3 @@ user.hpp:135 [Function] createSampleUser (User ()) in example
     // In namespace example
     inline User createSampleUser()
     ```
-

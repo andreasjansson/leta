@@ -1,6 +1,6 @@
-==================
+===
 refs basic
-==================
+===
 leta refs User
 ---
 user.lua:11 local User = {}

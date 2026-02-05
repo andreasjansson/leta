@@ -1,6 +1,6 @@
-==================
+===
 calls outgoing include non-workspace
-==================
+===
 leta calls --from processUsers --include-non-workspace --max-depth 1
 ---
 src/main/java/com/example/Main.java:25 [Method] processUsers(UserRepository) : List<String> (com.example.Main)

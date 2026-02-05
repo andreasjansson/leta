@@ -1,6 +1,6 @@
-==================
+===
 grep case insensitive (default)
-==================
+===
 leta grep "^user$"
 ---
 src/main.zig:2 [Constant] user

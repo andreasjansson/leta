@@ -1,6 +1,6 @@
-==================
+===
 grep pattern matching
-==================
+===
 leta grep "_user$" -x _build
 ---
 main.ml:2 [Variable] create_sample_user

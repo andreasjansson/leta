@@ -1,6 +1,6 @@
-==================
+===
 grep multiple files via path regex
-==================
+===
 leta grep "." --kind function "main\.zig" -C
 ---
 src/main.zig:4 [Function] main (fn main() !void)

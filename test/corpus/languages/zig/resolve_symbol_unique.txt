@@ -1,6 +1,6 @@
-==================
+===
 resolve unique symbol
-==================
+===
 leta show createSampleUser
 ---
 src/main.zig:22-24

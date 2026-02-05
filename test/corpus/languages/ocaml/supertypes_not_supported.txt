@@ -1,6 +1,6 @@
-==================
+===
 supertypes not supported
-==================
+===
 leta supertypes "^storage.ml$:MemoryStorage"
 ---
 Error: textDocument/prepareTypeHierarchy is not supported by ocamllsp

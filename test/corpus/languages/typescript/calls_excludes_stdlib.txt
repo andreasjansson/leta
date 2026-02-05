@@ -1,6 +1,6 @@
-==================
+===
 calls outgoing excludes stdlib by default
-==================
+===
 leta calls --from processUsers --max-depth 1
 ---
 src/main.ts:13 [Function] processUsers

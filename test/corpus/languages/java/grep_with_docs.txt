@@ -1,6 +1,6 @@
-==================
+===
 grep with docs
-==================
+===
 leta grep "createSampleUser" --kind method --docs -C
 ---
 src/main/java/com/example/Main.java:15 [Method] createSampleUser() ( : User) in Main

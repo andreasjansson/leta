@@ -1,6 +1,6 @@
-==================
+===
 show qualified name
-==================
+===
 leta show MemoryStorage.save
 ---
 main.py:55-56

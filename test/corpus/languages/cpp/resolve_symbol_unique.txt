@@ -1,6 +1,6 @@
-==================
+===
 resolve symbol unique
-==================
+===
 leta show example.UserRepository
 ---
 user.hpp:109-132

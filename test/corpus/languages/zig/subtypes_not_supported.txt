@@ -1,6 +1,6 @@
-==================
+===
 subtypes returns empty
-==================
+===
 leta subtypes User
 ---
 Error: textDocument/prepareTypeHierarchy is not supported by zls

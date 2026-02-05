@@ -1,6 +1,6 @@
-==================
+===
 grep multiple files via path regex
-==================
+===
 leta grep "^validate" --kind function "utils\.py" -C
 ---
 utils.py:9 [Function] validate_email

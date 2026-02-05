@@ -1,6 +1,6 @@
-==================
+===
 grep all classes excluding Errors
-==================
+===
 leta grep "." --kind class --exclude "Errors.php" -C
 ---
 src/FileStorage.php:10 [Class] FileStorage

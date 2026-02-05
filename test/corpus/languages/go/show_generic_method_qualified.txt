@@ -1,10 +1,10 @@
-==================
+===
 show generic method by qualified name
-==================
+===
 leta show Result.IsOk
 ---
 utils.go:74-76
 
 func (r *Result[T]) IsOk() bool {
-	return r.err == nil
+return r.err == nil
 }

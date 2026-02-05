@@ -1,6 +1,6 @@
-==================
+===
 grep kind filter method
-==================
+===
 leta grep "^save$" --kind method user.rb -C
 ---
 user.rb:42 [Method] save in Storage

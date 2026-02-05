@@ -1,6 +1,6 @@
-==================
+===
 grep kind filter class
-==================
+===
 leta grep "." --kind class -C
 ---
 src/Errors.php:10 [Class] Errors

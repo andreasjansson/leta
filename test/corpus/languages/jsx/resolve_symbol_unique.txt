@@ -1,6 +1,6 @@
-==================
+===
 resolve unique symbol
-==================
+===
 leta show Spinner
 ---
 src/components.tsx:210-218

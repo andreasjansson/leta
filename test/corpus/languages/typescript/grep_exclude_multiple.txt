@@ -1,6 +1,6 @@
-==================
+===
 grep exclude multiple patterns
-==================
+===
 leta grep "." --kind function --exclude "editable*" --exclude "errors.ts" -C
 ---
 src/main.ts:6 [Function] createSampleUser

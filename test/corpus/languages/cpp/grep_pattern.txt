@@ -1,6 +1,6 @@
-==================
+===
 grep pattern filter
-==================
+===
 leta grep "Storage" --kind class -C
 ---
 user.hpp:37 [Class] Storage (class) in example

@@ -1,6 +1,6 @@
-==================
+===
 implementations basic
-==================
+===
 leta implementations Storage
 ---
 src/user.ts:39 export class MemoryStorage implements Storage {

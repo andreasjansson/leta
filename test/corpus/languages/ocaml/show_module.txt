@@ -1,6 +1,6 @@
-==================
+===
 show module definition
-==================
+===
 leta show "^storage.ml$:MemoryStorage"
 ---
 storage.ml:12-32

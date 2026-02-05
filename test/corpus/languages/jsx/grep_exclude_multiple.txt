@@ -1,6 +1,6 @@
-==================
+===
 grep exclude multiple patterns
-==================
+===
 leta grep "." -x hooks -x editable -k function -C --head 5
 ---
 src/App.tsx:26 [Function] Header

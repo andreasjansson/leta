@@ -1,6 +1,6 @@
-==================
+===
 implementations basic
-==================
+===
 leta implementations Storage
 ---
 src/main/java/com/example/AbstractStorage.java:7 public abstract class AbstractStorage implements Storage {

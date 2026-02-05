@@ -1,10 +1,10 @@
-==================
+===
 show function definition
-==================
+===
 leta show NewUserRepository
 ---
 main.go:124-126
 
 func NewUserRepository(storage Storage) *UserRepository {
-	return &UserRepository{storage: storage}
+return &UserRepository{storage: storage}
 }

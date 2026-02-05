@@ -1,45 +1,45 @@
-==================
+===
 check class exists before rename
-==================
+===
 grep "export class.*Person" src/editable.ts
 ---
 export class EditablePerson {
 
-==================
+===
 rename EditablePerson to RenamedPerson
-==================
+===
 leta rename EditablePerson RenamedPerson
 ---
 Renamed in 2 file(s):
   src/editable.ts
   src/editable_consumer.ts
 
-==================
+===
 verify class was renamed
-==================
+===
 grep "export class.*Person" src/editable.ts
 ---
 export class RenamedPerson {
 
-==================
+===
 verify import was updated
-==================
+===
 grep "import.*Person" src/editable_consumer.ts
 ---
 import { RenamedPerson, editableCreateSample } from './editable';
 
-==================
+===
 restore original name
-==================
+===
 leta rename RenamedPerson EditablePerson
 ---
 Renamed in 2 file(s):
   src/editable.ts
   src/editable_consumer.ts
 
-==================
+===
 verify restore worked
-==================
+===
 grep "export class.*Person" src/editable.ts
 ---
 export class EditablePerson {

@@ -1,6 +1,6 @@
-==================
+===
 grep workspace wide Validate functions
-==================
+===
 leta grep "Validate" --kind function --exclude "editable*" -C
 ---
 main.go:159 [Function] ValidateUser (func(user *User) error)

@@ -1,6 +1,6 @@
-==================
+===
 grep kind filter function
-==================
+===
 leta grep "User" '\.tsx$' -k function -C
 ---
 src/App.tsx:62 [Function] UserDetailsPanel

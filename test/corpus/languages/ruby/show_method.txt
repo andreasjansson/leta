@@ -1,6 +1,6 @@
-==================
+===
 show method definition
-==================
+===
 leta show create_sample_user
 ---
 main.rb:8-10

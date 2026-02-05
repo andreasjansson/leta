@@ -1,6 +1,6 @@
-==================
+===
 find references to User class
-==================
+===
 leta refs User
 ---
 main.py:27 class User:

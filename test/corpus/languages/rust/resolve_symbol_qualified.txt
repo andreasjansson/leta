@@ -1,6 +1,6 @@
-==================
+===
 show qualified name
-==================
+===
 leta show MemoryStorage.new
 ---
 src/storage.rs:25-30

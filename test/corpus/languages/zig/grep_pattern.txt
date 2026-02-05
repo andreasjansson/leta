@@ -1,6 +1,6 @@
-==================
+===
 grep pattern filter functions
-==================
+===
 leta grep "^init" --kind function -C
 ---
 src/user.zig:10 [Function] init (fn init(name: []const u8, email: []const u8, age: i32) User) in User

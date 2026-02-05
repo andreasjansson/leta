@@ -1,36 +1,36 @@
-==================
+===
 check before rename
-==================
+===
 grep "let create_user" user.ml
 ---
 let create_user name email age = { name; email; age }
 
-==================
+===
 rename create_user to make_user
-==================
+===
 leta rename "^user.ml$:create_user" make_user
 ---
 Renamed in 1 file(s):
   user.ml
 
-==================
+===
 verify rename worked
-==================
+===
 grep "let make_user" user.ml
 ---
 let make_user name email age = { name; email; age }
 
-==================
+===
 restore original name
-==================
+===
 leta rename "^user.ml$:make_user" create_user
 ---
 Renamed in 1 file(s):
   user.ml
 
-==================
+===
 verify restore worked
-==================
+===
 grep "let create_user" user.ml
 ---
 let create_user name email age = { name; email; age }

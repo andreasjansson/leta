@@ -1,50 +1,50 @@
-==================
+===
 check import before move
-==================
+===
 grep "from './editable'" src/editable_consumer.tsx
 ---
 import { EditableButton, EditableContainer } from './editable';
 
-==================
+===
 create models directory
-==================
+===
 mkdir -p src/models
 ---
 
-==================
+===
 move file to models directory
-==================
+===
 leta mv src/editable.tsx src/models/editable.tsx
 ---
 Moved file and updated imports in 2 file(s):
   src/editable_consumer.tsx
   src/models/editable.tsx
 
-==================
+===
 verify import was updated
-==================
+===
 grep "from './models/editable'" src/editable_consumer.tsx
 ---
 import { EditableButton, EditableContainer } from './models/editable';
 
-==================
+===
 restore file back
-==================
+===
 leta mv src/models/editable.tsx src/editable.tsx
 ---
 Moved file and updated imports in 2 file(s):
   src/editable.tsx
   src/editable_consumer.tsx
 
-==================
+===
 verify import was restored
-==================
+===
 grep "from './editable'" src/editable_consumer.tsx
 ---
 import { EditableButton, EditableContainer } from './editable';
 
-==================
+===
 cleanup models directory
-==================
+===
 rmdir src/models
 ---

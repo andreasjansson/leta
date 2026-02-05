@@ -1,6 +1,6 @@
-==================
+===
 show multi-line list constant
-==================
+===
 leta show DEFAULT_CONFIG
 ---
 utils.py:140-145

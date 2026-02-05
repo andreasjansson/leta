@@ -1,6 +1,6 @@
-==================
+===
 grep with documentation
-==================
+===
 leta grep "^create_sample_user$" main.py --kind function --docs
 ---
 main.py:114 [Function] create_sample_user

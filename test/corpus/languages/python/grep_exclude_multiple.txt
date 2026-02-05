@@ -1,6 +1,6 @@
-==================
+===
 grep with multiple exclude patterns
-==================
+===
 leta grep . --kind function -x "editable*" -x "utils.py"
 ---
 errors.py:4 [Function] undefined_variable

@@ -1,6 +1,6 @@
-==================
+===
 show function definition
-==================
+===
 leta show "^main.ml$:create_sample_user"
 ---
 main.ml:2-3

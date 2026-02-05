@@ -1,6 +1,6 @@
-==================
+===
 subtypes
-==================
+===
 leta subtypes Storage
 ---
 user.hpp:48 [Class] MemoryStorage (example::MemoryStorage)

@@ -1,6 +1,6 @@
-==================
+===
 resolve symbol with file filter
-==================
+===
 leta show main.cpp:main
 ---
 main.cpp:7-22

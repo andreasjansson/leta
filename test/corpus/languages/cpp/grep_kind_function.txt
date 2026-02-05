@@ -1,6 +1,6 @@
-==================
+===
 grep kind filter function
-==================
+===
 leta grep "." --kind function user.hpp -C
 ---
 user.hpp:135 [Function] createSampleUser (User ()) in example

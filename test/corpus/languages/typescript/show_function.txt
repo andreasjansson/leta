@@ -1,6 +1,6 @@
-==================
+===
 show function definition
-==================
+===
 leta show createSampleUser
 ---
 src/main.ts:6-8

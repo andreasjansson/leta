@@ -1,6 +1,6 @@
-==================
+===
 supertypes not supported by pyright
-==================
+===
 leta supertypes MemoryStorage
 ---
 Error: textDocument/prepareTypeHierarchy is not supported by basedpyright

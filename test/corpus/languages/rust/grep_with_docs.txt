@@ -1,18 +1,6 @@
-==================
+===
 grep with docs
-==================
+===
 leta grep "^create_sample_user$" --kind function --docs src/main.rs -C
 ---
 src/main.rs:10 [Function] create_sample_user (fn() -> User)
-    ```rust
-    sample_project
-    ```
-    
-    ```rust
-    fn create_sample_user() -> User
-    ```
-    
-    ---
-    
-    Creates a sample user for testing.
-

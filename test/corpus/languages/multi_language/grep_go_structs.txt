@@ -1,6 +1,6 @@
-==================
+===
 grep Go structs only
-==================
+===
 leta grep "." main.go --kind struct
 ---
 main.go:6 [Struct] GoUser (struct{...})

@@ -1,6 +1,6 @@
-==================
+===
 show multiline object constant
-==================
+===
 leta show COUNTRY_CODES
 ---
 src/user.ts:135-143

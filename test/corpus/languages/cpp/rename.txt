@@ -1,39 +1,39 @@
-==================
+===
 check before rename
-==================
+===
 grep "class User" user.hpp
 ---
 class User {
 class UserRepository {
 
-==================
+===
 rename User to Person
-==================
+===
 leta rename example.User Person
 ---
 Renamed in 2 file(s):
   main.cpp
   user.hpp
 
-==================
+===
 verify rename worked
-==================
+===
 grep "class Person" user.hpp
 ---
 class Person {
 
-==================
+===
 restore original name
-==================
+===
 leta rename example.Person User
 ---
 Renamed in 2 file(s):
   main.cpp
   user.hpp
 
-==================
+===
 verify restore worked
-==================
+===
 grep "class User" user.hpp
 ---
 class User {

@@ -1,6 +1,6 @@
-==================
+===
 grep multiple files via path regex
-==================
+===
 leta grep "." "src/(App|components).tsx" -k function -C --head 5
 ---
 src/App.tsx:26 [Function] Header

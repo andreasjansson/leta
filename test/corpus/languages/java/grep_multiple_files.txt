@@ -1,6 +1,6 @@
-==================
+===
 grep multiple files via path regex
-==================
+===
 leta grep "^get" --kind method "User\.java" -C
 ---
 src/main/java/com/example/User.java:54 [Method] getName() ( : String) in User

@@ -1,6 +1,6 @@
-==================
+===
 grep case sensitive
-==================
+===
 leta grep "Button" -C
 ---
 src/components.tsx:8 [Function] Button

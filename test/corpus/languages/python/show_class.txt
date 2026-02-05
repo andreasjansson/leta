@@ -1,6 +1,6 @@
-==================
+===
 show class definition
-==================
+===
 leta show User
 ---
 main.py:26-46

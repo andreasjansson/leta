@@ -1,6 +1,6 @@
-==================
+===
 refs with context
-==================
+===
 leta refs UserRepository -n 1
 ---
 src/Main.php:43-45

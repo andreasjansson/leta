@@ -1,6 +1,6 @@
-==================
+===
 grep all functions excluding errors
-==================
+===
 leta grep "." --kind function --exclude "errors.rs" -C
 ---
 src/main.rs:10 [Function] create_sample_user (fn() -> User)

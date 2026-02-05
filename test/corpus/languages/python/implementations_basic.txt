@@ -1,6 +1,6 @@
-==================
+===
 find implementations of protocol
-==================
+===
 leta implementations StorageProtocol
 ---
 editable.py:31 class EditableStorage:

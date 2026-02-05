@@ -1,6 +1,6 @@
-==================
+===
 grep multiple files via path regex
-==================
+===
 leta grep "User" --kind object "user\.lua" -C
 ---
 user.lua:11 [Object] User

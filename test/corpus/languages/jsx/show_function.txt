@@ -1,6 +1,6 @@
-==================
+===
 show function definition
-==================
+===
 leta show Button
 ---
 src/components.tsx:8-28

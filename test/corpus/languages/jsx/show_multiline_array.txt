@@ -1,6 +1,6 @@
-==================
+===
 show multiline array constant
-==================
+===
 leta show SAMPLE_USERS
 ---
 src/App.tsx:17-21

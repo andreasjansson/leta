@@ -1,6 +1,6 @@
-==================
+===
 subtypes not supported
-==================
+===
 leta subtypes "^storage.ml$:Storage"
 ---
 Error: textDocument/prepareTypeHierarchy is not supported by ocamllsp

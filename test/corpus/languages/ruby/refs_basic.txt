@@ -1,6 +1,6 @@
-==================
+===
 refs basic
-==================
+===
 leta refs User
 ---
 main.rb:9   User.new('John Doe', 'john@example.com', 30)

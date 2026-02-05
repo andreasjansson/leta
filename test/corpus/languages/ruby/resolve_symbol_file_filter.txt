@@ -1,6 +1,6 @@
-==================
+===
 resolve with file filter still ambiguous
-==================
+===
 leta show user.rb:save
 ---
 Error: Symbol 'save' is ambiguous (3 matches)

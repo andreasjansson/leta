@@ -1,6 +1,6 @@
-==================
+===
 show class definition
-==================
+===
 leta show User
 ---
 user.rb:8-35

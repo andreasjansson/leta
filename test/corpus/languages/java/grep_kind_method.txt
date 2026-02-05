@@ -1,6 +1,6 @@
-==================
+===
 grep kind filter method
-==================
+===
 leta grep "." --kind method src/main/java/com/example/Main.java -C
 ---
 src/main/java/com/example/Main.java:15 [Method] createSampleUser() ( : User) in Main

@@ -1,6 +1,6 @@
-==================
+===
 show ambiguous symbol shows matches
-==================
+===
 leta show new
 ---
 Error: Symbol 'new' is ambiguous (4 matches)

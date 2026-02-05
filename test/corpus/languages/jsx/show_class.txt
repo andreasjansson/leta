@@ -1,6 +1,6 @@
-==================
+===
 show class definition
-==================
+===
 leta show ValidationError
 ---
 src/errors.tsx:6-11

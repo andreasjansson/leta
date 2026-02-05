@@ -1,6 +1,6 @@
-==================
+===
 resolve qualified name with colon method
-==================
+===
 leta show User.isAdult
 ---
 user.lua:29-31

@@ -1,6 +1,6 @@
-==================
+===
 grep case sensitive finds User
-==================
+===
 leta grep "^User$" -C
 ---
 main.go:9 [Struct] User (struct{...})

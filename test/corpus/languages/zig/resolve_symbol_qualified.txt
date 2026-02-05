@@ -1,6 +1,6 @@
-==================
+===
 resolve qualified method
-==================
+===
 leta show User.init
 ---
 src/user.zig:10-16

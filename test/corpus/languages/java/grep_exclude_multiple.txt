@@ -1,6 +1,6 @@
-==================
+===
 grep exclude multiple patterns
-==================
+===
 leta grep "." --kind class --exclude "Errors" --exclude "Abstract" -C
 ---
 src/main/java/com/example/FileStorage.java:12 [Class] FileStorage

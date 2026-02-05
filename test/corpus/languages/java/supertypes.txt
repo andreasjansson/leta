@@ -1,6 +1,6 @@
-==================
+===
 supertypes of class
-==================
+===
 leta supertypes MemoryStorage
 ---
 src/main/java/com/example/AbstractStorage.java:7 [Class] AbstractStorage (com.example)

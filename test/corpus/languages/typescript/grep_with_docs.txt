@@ -1,6 +1,6 @@
-==================
+===
 grep with docs
-==================
+===
 leta grep "^createSampleUser$" --kind function --docs src/main.ts -C
 ---
 src/main.ts:6 [Function] createSampleUser

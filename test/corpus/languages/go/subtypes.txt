@@ -1,6 +1,6 @@
-==================
+===
 subtypes of interface
-==================
+===
 leta subtypes Storage
 ---
 main.go:39 [Class] MemoryStorage (sample_project)

@@ -1,6 +1,6 @@
-==================
+===
 outgoing calls including non-workspace (stdlib)
-==================
+===
 leta calls --from validate_email --include-non-workspace
 ---
 utils.py:9 [Function] validate_email

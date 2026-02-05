@@ -1,6 +1,6 @@
-==================
+===
 grep case insensitive (default)
-==================
+===
 leta grep "^user$"
 ---
 src/main/java/com/example/User.java:9 [Class] User

@@ -1,6 +1,6 @@
-==================
+===
 grep kind filter function
-==================
+===
 leta grep "." --kind function src/main.rs -C
 ---
 src/main.rs:10 [Function] create_sample_user (fn() -> User)

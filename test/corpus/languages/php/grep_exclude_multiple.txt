@@ -1,6 +1,6 @@
-==================
+===
 grep exclude multiple patterns
-==================
+===
 leta grep "." --kind class --exclude "Errors" --exclude "Storage" -C
 ---
 src/Main.php:10 [Class] Main

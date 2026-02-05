@@ -1,6 +1,6 @@
-==================
+===
 calls path not found
-==================
+===
 leta calls --from validateUser --to main
 ---
 No call path found from 'validateUser' to 'main' within depth 3

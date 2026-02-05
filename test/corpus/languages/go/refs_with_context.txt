@@ -1,15 +1,14 @@
-==================
+===
 refs with context
-==================
+===
 leta refs NewUserRepository -n 1
 ---
 main.go:123-125
 // NewUserRepository creates a new repository with the given storage.
 func NewUserRepository(storage Storage) *UserRepository {
-	return &UserRepository{storage: storage}
+return &UserRepository{storage: storage}
 
 main.go:173-175
-	storage := NewMemoryStorage()
-	repo := NewUserRepository(storage)
-	user := createSampleUser()
-
+storage := NewMemoryStorage()
+repo := NewUserRepository(storage)
+user := createSampleUser()

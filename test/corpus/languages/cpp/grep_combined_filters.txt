@@ -1,6 +1,6 @@
-==================
+===
 grep combined filters
-==================
+===
 leta grep "Storage" --kind class user.hpp -C
 ---
 user.hpp:37 [Class] Storage (class) in example

@@ -1,6 +1,6 @@
-==================
+===
 grep multiple files via path regex
-==================
+===
 leta grep "." --kind function "main\.cpp" -C
 ---
 main.cpp:7 [Function] main (int ())

@@ -1,6 +1,6 @@
-==================
+===
 show react component with JSX
-==================
+===
 leta show UserCard
 ---
 src/components.tsx:84-107
