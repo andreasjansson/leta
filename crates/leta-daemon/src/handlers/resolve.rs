@@ -200,19 +200,23 @@ fn filter_symbols(
     let parts: Vec<&str> = symbol_name.split('.').collect();
     let target_name = parts.last().unwrap_or(&"");
 
-    let mut filtered: Vec<&SymbolInfo> = if let Some(pf) = path_filter {
-        all_symbols
-            .iter()
-            .filter(|s| matches_path(&s.path, pf))
-            .collect()
-    } else {
-        all_symbols.iter().collect()
+    let mut filtered: Vec<&SymbolInfo> = {
+        let _span = Span::enter_with_local_parent("path_filter");
+        if let Some(pf) = path_filter {
+            all_symbols
+                .iter()
+                .filter(|s| matches_path(&s.path, pf))
+                .collect()
+        } else {
+            all_symbols.iter().collect()
+        }
     };
 
     if let Some(line) = line_filter {
         filtered.retain(|s| s.line == line);
     }
 
+    let _span = Span::enter_with_local_parent("name_filter");
     if parts.len() == 1 {
         filtered
             .into_iter()
