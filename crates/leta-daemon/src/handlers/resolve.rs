@@ -2,6 +2,7 @@ use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::sync::LazyLock;
 
+use fastrace::prelude::*;
 use fastrace::trace;
 use leta_types::{
     ResolveSymbolParams, ResolveSymbolResult, ResolveSymbolResultBuilder, SymbolInfo,
