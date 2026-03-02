@@ -53,12 +53,10 @@ pub async fn handle_files(
         .unwrap_or_else(|| workspace_root.clone());
 
     let mut exclude_dirs: HashSet<&str> = DEFAULT_EXCLUDE_DIRS.iter().copied().collect();
-    let mut whitelisted_dot_dirs: HashSet<&str> =
-        WHITELISTED_DOT_DIRS.iter().copied().collect();
+    let whitelisted_dot_dirs: HashSet<&str> = WHITELISTED_DOT_DIRS.iter().copied().collect();
 
     for pattern in &params.include_patterns {
         exclude_dirs.remove(pattern.as_str());
-        whitelisted_dot_dirs.insert(leak_string(pattern.clone()));
     }
 
     let binary_exts: HashSet<&str> = BINARY_EXTENSIONS.iter().copied().collect();
