@@ -270,6 +270,7 @@ async fn handle_files_streaming_inner(
         .unwrap_or_else(|| workspace_root.clone());
 
     let mut exclude_dirs: HashSet<&str> = DEFAULT_EXCLUDE_DIRS.iter().copied().collect();
+    let whitelisted_dot_dirs: HashSet<&str> = WHITELISTED_DOT_DIRS.iter().copied().collect();
 
     for pattern in &params.include_patterns {
         exclude_dirs.remove(pattern.as_str());
@@ -328,12 +329,18 @@ async fn handle_files_streaming_inner(
                 continue;
             }
 
-            let is_default_excluded = exclude_dirs.contains(name.as_ref());
-            let is_egg_info = name.ends_with(".egg-info");
+            let name_ref: &str = &name;
+            let is_hidden_dot_dir =
+                name_ref.starts_with('.') && !whitelisted_dot_dirs.contains(name_ref);
+            let is_default_excluded = exclude_dirs.contains(name_ref);
+            let is_egg_info = name_ref.ends_with(".egg-info");
             let is_pattern_excluded = exclude_regexes.iter().any(|re| re.is_match(&rel_path));
             let is_included = include_regexes.iter().any(|re| re.is_match(&rel_path));
 
-            if is_egg_info || ((is_default_excluded || is_pattern_excluded) && !is_included) {
+            if is_egg_info
+                || ((is_hidden_dot_dir || is_default_excluded || is_pattern_excluded)
+                    && !is_included)
+            {
                 if filter_regex.is_none() && !is_egg_info {
                     let _ = tx
                         .send(StreamMessage::ExcludedDir {
