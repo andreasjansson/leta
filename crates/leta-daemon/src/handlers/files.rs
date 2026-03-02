@@ -9,39 +9,27 @@ use tokio::sync::mpsc;
 use super::{relative_path, HandlerContext};
 
 const DEFAULT_EXCLUDE_DIRS: &[&str] = &[
-    ".git",
     "__pycache__",
+    "__pypackages__",
     "node_modules",
-    ".venv",
     "venv",
     "target",
     "build",
     "dist",
-    ".tox",
-    ".mypy_cache",
-    ".pytest_cache",
-    ".eggs",
-    ".cache",
-    ".coverage",
-    ".hypothesis",
-    ".nox",
-    ".ruff_cache",
-    "__pypackages__",
-    ".pants.d",
-    ".pyre",
-    ".pytype",
     "vendor",
     "third_party",
-    ".bundle",
-    ".next",
-    ".nuxt",
-    ".svelte-kit",
-    ".turbo",
-    ".parcel-cache",
     "coverage",
-    ".nyc_output",
-    ".zig-cache",
-    ".wrangler",
+];
+
+// Dot-directories are excluded by default; only these are recursed into
+const WHITELISTED_DOT_DIRS: &[&str] = &[
+    ".github",
+    ".gitlab",
+    ".circleci",
+    ".vscode",
+    ".devcontainer",
+    ".changeset",
+    ".changesets",
 ];
 
 const BINARY_EXTENSIONS: &[&str] = &[
