@@ -3,6 +3,7 @@ use leta_config::{get_cache_dir, get_log_dir, Config, DaemonLock};
 use tracing::info;
 use tracing_subscriber::EnvFilter;
 
+pub mod embedded;
 pub mod handlers;
 mod profiling;
 mod server;
