@@ -18,7 +18,6 @@ leta-lsp = { workspace = true }
 leta-cache = { workspace = true }
 leta-servers = { workspace = true }
 leta-fs = { workspace = true }
-leta-output = { workspace = true }
 
 tokio = { workspace = true }
 futures = { workspace = true }
