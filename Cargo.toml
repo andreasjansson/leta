@@ -3,6 +3,7 @@ resolver = "2"
 members = [
     "crates/leta",
     "crates/leta-daemon",
+    "crates/leta-lib",
     "crates/leta-lsp",
     "crates/leta-types",
     "crates/leta-config",
