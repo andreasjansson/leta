@@ -2,7 +2,6 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use anyhow::{anyhow, Result};
-use serde_json::json;
 use tokio::sync::OnceCell;
 
 use leta_cache::LmdbCache;
