@@ -73,12 +73,15 @@ pub async fn handle_files(
     } else {
         params.head as usize
     };
+    let dir_filters = DirFilters {
+        exclude_dirs: &exclude_dirs,
+        whitelisted_dot_dirs: &whitelisted_dot_dirs,
+        binary_exts: &binary_exts,
+    };
     let (files_info, excluded_dirs, total_bytes, total_lines, truncated) = walk_directory(
         &target_path,
         &workspace_root,
-        &exclude_dirs,
-        &whitelisted_dot_dirs,
-        &binary_exts,
+        &dir_filters,
         &params,
         filter_regex.as_ref(),
         head_limit,
