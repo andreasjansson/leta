@@ -154,9 +154,9 @@ fn walk_directory(
             }
 
             let name_ref: &str = &name;
-            let is_hidden_dot_dir =
-                name_ref.starts_with('.') && !whitelisted_dot_dirs.contains(name_ref);
-            let is_default_excluded = exclude_dirs.contains(name_ref);
+            let is_hidden_dot_dir = name_ref.starts_with('.')
+                && !dir_filters.whitelisted_dot_dirs.contains(name_ref);
+            let is_default_excluded = dir_filters.exclude_dirs.contains(name_ref);
             let is_egg_info = name_ref.ends_with(".egg-info");
             let is_pattern_excluded = exclude_regexes.iter().any(|re| re.is_match(&rel_path));
             let is_included = include_regexes.iter().any(|re| re.is_match(&rel_path));
@@ -179,7 +179,7 @@ fn walk_directory(
 
         let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
 
-        if binary_exts.contains(&format!(".{}", ext).as_str()) {
+        if dir_filters.binary_exts.contains(&format!(".{}", ext).as_str()) {
             continue;
         }
 
