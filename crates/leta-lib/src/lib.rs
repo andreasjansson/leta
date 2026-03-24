@@ -157,6 +157,7 @@ pub async fn grep(
     let state = get_state().await?;
     let workspace_root = get_workspace_root(&state.config, working_dir)?;
 
+    let head = options.head;
     let params = GrepParams {
         workspace_root: workspace_root.to_string_lossy().to_string(),
         pattern: pattern.to_string(),
@@ -165,14 +166,14 @@ pub async fn grep(
         include_docs: options.include_docs,
         path_pattern: options.path_pattern,
         exclude_patterns: options.exclude_patterns,
-        limit: options.head,
+        limit: head,
     };
     let result = handle_grep(&state.ctx, params)
         .await
         .map_err(|e| anyhow!("{}", e))?;
 
     let command_base = format!("leta grep \"{}\"", pattern);
-    Ok(format_grep_result(&result, options.head, &command_base))
+    Ok(format_grep_result(&result, head, &command_base))
 }
 
 pub async fn files(
