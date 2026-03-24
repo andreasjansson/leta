@@ -140,15 +140,19 @@ pub async fn refs(working_dir: &Path, symbol: &str, context: u32, head: u32) -> 
     Ok(format_references_result(&result, head, &command_base))
 }
 
+pub struct GrepOptions {
+    pub path_pattern: Option<String>,
+    pub kinds: Option<Vec<String>>,
+    pub case_sensitive: bool,
+    pub include_docs: bool,
+    pub exclude_patterns: Vec<String>,
+    pub head: u32,
+}
+
 pub async fn grep(
     working_dir: &Path,
     pattern: &str,
-    path_pattern: Option<&str>,
-    kinds: Option<Vec<String>>,
-    case_sensitive: bool,
-    include_docs: bool,
-    exclude_patterns: Vec<String>,
-    head: u32,
+    options: GrepOptions,
 ) -> Result<String> {
     let state = get_state().await?;
     let workspace_root = get_workspace_root(&state.config, working_dir)?;
@@ -156,19 +160,19 @@ pub async fn grep(
     let params = GrepParams {
         workspace_root: workspace_root.to_string_lossy().to_string(),
         pattern: pattern.to_string(),
-        kinds,
-        case_sensitive,
-        include_docs,
-        path_pattern: path_pattern.map(String::from),
-        exclude_patterns,
-        limit: head,
+        kinds: options.kinds,
+        case_sensitive: options.case_sensitive,
+        include_docs: options.include_docs,
+        path_pattern: options.path_pattern,
+        exclude_patterns: options.exclude_patterns,
+        limit: options.head,
     };
     let result = handle_grep(&state.ctx, params)
         .await
         .map_err(|e| anyhow!("{}", e))?;
 
     let command_base = format!("leta grep \"{}\"", pattern);
-    Ok(format_grep_result(&result, head, &command_base))
+    Ok(format_grep_result(&result, options.head, &command_base))
 }
 
 pub async fn files(
