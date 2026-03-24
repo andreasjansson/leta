@@ -6,12 +6,12 @@ use tokio::sync::OnceCell;
 
 use leta_cache::LmdbCache;
 use leta_config::Config;
+use leta_daemon::handlers::{handle_add_workspace, handle_remove_workspace};
 use leta_daemon::handlers::{
     handle_calls, handle_declaration, handle_files, handle_grep, handle_implementations,
     handle_move_file, handle_references, handle_rename, handle_resolve_symbol, handle_show,
     handle_subtypes, handle_supertypes, HandlerContext,
 };
-use leta_daemon::handlers::{handle_add_workspace, handle_remove_workspace};
 use leta_daemon::session::Session;
 use leta_output::*;
 use leta_types::*;
@@ -32,12 +32,16 @@ async fn get_state() -> Result<&'static State> {
             let cache_dir = leta_config::get_cache_dir();
             std::fs::create_dir_all(&cache_dir)?;
 
-            let hover_cache =
-                LmdbCache::new(&cache_dir.join("hover_cache.lmdb"), config.daemon.hover_cache_size)
-                    .map_err(|e| anyhow!("{}", e))?;
-            let symbol_cache =
-                LmdbCache::new(&cache_dir.join("symbol_cache.lmdb"), config.daemon.symbol_cache_size)
-                    .map_err(|e| anyhow!("{}", e))?;
+            let hover_cache = LmdbCache::new(
+                &cache_dir.join("hover_cache.lmdb"),
+                config.daemon.hover_cache_size,
+            )
+            .map_err(|e| anyhow!("{}", e))?;
+            let symbol_cache = LmdbCache::new(
+                &cache_dir.join("symbol_cache.lmdb"),
+                config.daemon.symbol_cache_size,
+            )
+            .map_err(|e| anyhow!("{}", e))?;
 
             let session = Arc::new(Session::new(config.clone()));
             let ctx = HandlerContext::new(session, Arc::new(hover_cache), Arc::new(symbol_cache));
@@ -50,14 +54,28 @@ async fn get_state() -> Result<&'static State> {
 fn get_workspace_root(config: &Config, working_dir: &Path) -> Result<PathBuf> {
     config
         .get_best_workspace_root(working_dir, Some(working_dir))
-        .ok_or_else(|| anyhow!("No workspace found for {}\nRun: leta workspace add", working_dir.display()))
+        .ok_or_else(|| {
+            anyhow!(
+                "No workspace found for {}\nRun: leta workspace add",
+                working_dir.display()
+            )
+        })
 }
 
-fn get_workspace_root_for_path(config: &Config, path: &Path, working_dir: &Path) -> Result<PathBuf> {
+fn get_workspace_root_for_path(
+    config: &Config,
+    path: &Path,
+    working_dir: &Path,
+) -> Result<PathBuf> {
     let path = path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
     config
         .get_best_workspace_root(&path, Some(working_dir))
-        .ok_or_else(|| anyhow!("No workspace found for {}\nRun: leta workspace add", path.display()))
+        .ok_or_else(|| {
+            anyhow!(
+                "No workspace found for {}\nRun: leta workspace add",
+                path.display()
+            )
+        })
 }
 
 async fn resolve(symbol: &str, workspace_root: &Path) -> Result<ResolveSymbolResult> {
@@ -74,12 +92,23 @@ async fn resolve(symbol: &str, workspace_root: &Path) -> Result<ResolveSymbolRes
         let mut msg = error.clone();
         if let Some(matches) = &result.matches {
             for m in matches {
-                let container = m.container.as_ref().map(|c| format!(" in {}", c)).unwrap_or_default();
+                let container = m
+                    .container
+                    .as_ref()
+                    .map(|c| format!(" in {}", c))
+                    .unwrap_or_default();
                 let kind = format!("[{}] ", m.kind);
-                let detail = m.detail.as_ref().map(|d| format!(" ({})", d)).unwrap_or_default();
+                let detail = m
+                    .detail
+                    .as_ref()
+                    .map(|d| format!(" ({})", d))
+                    .unwrap_or_default();
                 let ref_str = m.reference.as_deref().unwrap_or("");
                 msg.push_str(&format!("\n  {}", ref_str));
-                msg.push_str(&format!("\n    {}:{} {}{}{}{}", m.path, m.line, kind, m.name, detail, container));
+                msg.push_str(&format!(
+                    "\n    {}:{} {}{}{}{}",
+                    m.path, m.line, kind, m.name, detail, container
+                ));
             }
             if let Some(total) = result.total_matches {
                 let shown = matches.len() as u32;
@@ -149,11 +178,7 @@ pub struct GrepOptions {
     pub head: u32,
 }
 
-pub async fn grep(
-    working_dir: &Path,
-    pattern: &str,
-    options: GrepOptions,
-) -> Result<String> {
+pub async fn grep(working_dir: &Path, pattern: &str, options: GrepOptions) -> Result<String> {
     let state = get_state().await?;
     let workspace_root = get_workspace_root(&state.config, working_dir)?;
 
@@ -277,7 +302,12 @@ pub async fn calls(
     Ok(format_calls_result(&result, head, &command_base))
 }
 
-pub async fn declaration(working_dir: &Path, symbol: &str, context: u32, head: u32) -> Result<String> {
+pub async fn declaration(
+    working_dir: &Path,
+    symbol: &str,
+    context: u32,
+    head: u32,
+) -> Result<String> {
     let state = get_state().await?;
     let workspace_root = get_workspace_root(&state.config, working_dir)?;
     let resolved = resolve(symbol, &workspace_root).await?;
@@ -298,7 +328,12 @@ pub async fn declaration(working_dir: &Path, symbol: &str, context: u32, head: u
     Ok(format_declaration_result(&result, head, &command_base))
 }
 
-pub async fn implementations(working_dir: &Path, symbol: &str, context: u32, head: u32) -> Result<String> {
+pub async fn implementations(
+    working_dir: &Path,
+    symbol: &str,
+    context: u32,
+    head: u32,
+) -> Result<String> {
     let state = get_state().await?;
     let workspace_root = get_workspace_root(&state.config, working_dir)?;
     let resolved = resolve(symbol, &workspace_root).await?;
@@ -340,7 +375,12 @@ pub async fn subtypes(working_dir: &Path, symbol: &str, context: u32, head: u32)
     Ok(format_subtypes_result(&result, head, &command_base))
 }
 
-pub async fn supertypes(working_dir: &Path, symbol: &str, context: u32, head: u32) -> Result<String> {
+pub async fn supertypes(
+    working_dir: &Path,
+    symbol: &str,
+    context: u32,
+    head: u32,
+) -> Result<String> {
     let state = get_state().await?;
     let workspace_root = get_workspace_root(&state.config, working_dir)?;
     let resolved = resolve(symbol, &workspace_root).await?;
@@ -412,7 +452,10 @@ pub async fn workspace_add(path: &Path) -> Result<String> {
     if result.added {
         Ok(format!("Added workspace: {}", result.workspace_root))
     } else {
-        Ok(format!("Workspace already added: {}", result.workspace_root))
+        Ok(format!(
+            "Workspace already added: {}",
+            result.workspace_root
+        ))
     }
 }
 
