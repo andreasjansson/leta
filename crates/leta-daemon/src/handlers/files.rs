@@ -99,12 +99,16 @@ pub async fn handle_files(
     })
 }
 
+struct DirFilters<'a> {
+    exclude_dirs: &'a HashSet<&'a str>,
+    whitelisted_dot_dirs: &'a HashSet<&'a str>,
+    binary_exts: &'a HashSet<&'a str>,
+}
+
 fn walk_directory(
     target_path: &Path,
     workspace_root: &Path,
-    exclude_dirs: &HashSet<&str>,
-    whitelisted_dot_dirs: &HashSet<&str>,
-    binary_exts: &HashSet<&str>,
+    dir_filters: &DirFilters<'_>,
     params: &FilesParams,
     filter_regex: Option<&Regex>,
     head: usize,
