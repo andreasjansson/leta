@@ -1273,6 +1273,7 @@ pub fn format_graph_result(result: &GraphResult, include_orphans: bool) -> Strin
         }
 
         lines.push(String::new());
+        }
     }
 
     // Leaf-only nodes (have incoming but no outgoing, not self-recursive) are
