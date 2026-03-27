@@ -1451,6 +1451,7 @@ async fn handle_graph(
     json_output: bool,
     include_non_workspace: bool,
     include_orphans: bool,
+    exclude: Vec<String>,
 ) -> Result<()> {
     let workspace_root = get_workspace_root(config)?;
 
@@ -1459,6 +1460,7 @@ async fn handle_graph(
         json!({
             "workspace_root": workspace_root.to_string_lossy(),
             "include_non_workspace": include_non_workspace,
+            "exclude_patterns": exclude,
         }),
     )
     .await?;
