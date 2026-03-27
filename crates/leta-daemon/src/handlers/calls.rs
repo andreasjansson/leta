@@ -121,7 +121,7 @@ pub async fn handle_calls(
             };
             let called_by = collect_incoming_calls(&mut ctx, item, 0).await;
 
-            let root = call_hierarchy_item_to_node(item, &workspace_root);
+            let root = call_hierarchy_item_to_node(item, &workspace_root, true);
             Ok(CallsResult {
                 root: Some(CallNode {
                     called_by: Some(called_by),
