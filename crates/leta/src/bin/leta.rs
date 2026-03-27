@@ -1444,6 +1444,7 @@ async fn handle_graph(
     config: &Config,
     json_output: bool,
     include_non_workspace: bool,
+    include_orphans: bool,
 ) -> Result<()> {
     let workspace_root = get_workspace_root(config)?;
 
@@ -1461,7 +1462,7 @@ async fn handle_graph(
     if json_output {
         println!("{}", serde_json::to_string_pretty(&graph_result)?);
     } else {
-        println!("{}", format_graph_result(&graph_result));
+        println!("{}", format_graph_result(&graph_result, include_orphans));
     }
     Ok(())
 }
