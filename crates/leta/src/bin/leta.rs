@@ -133,6 +133,8 @@ enum Commands {
     Graph {
         #[arg(long, help = "Include stdlib/dependency calls")]
         include_non_workspace: bool,
+        #[arg(long, help = "Include symbols with no callers or callees")]
+        include_orphans: bool,
     },
 
     #[command(about = "Find implementations of an interface or abstract method.")]
