@@ -860,7 +860,6 @@ async fn handle_grep(
         kind,
         exclude,
         head,
-        docs,
         case_sensitive,
     } = opts;
     if pattern.contains(' ') {
