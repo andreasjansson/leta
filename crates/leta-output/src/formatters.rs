@@ -1125,7 +1125,7 @@ fn format_call_path(path: &[CallNode]) -> String {
     lines.join("\n")
 }
 
-pub fn format_graph_result(result: &GraphResult) -> String {
+pub fn format_graph_result(result: &GraphResult, include_orphans: bool) -> String {
     use leta_types::{CallGraphEdge, CallGraphSymbol};
 
     let mut outgoing: HashMap<String, Vec<&CallGraphEdge>> = HashMap::new();
@@ -1149,6 +1149,10 @@ pub fn format_graph_result(result: &GraphResult) -> String {
         let edges = outgoing.get(&key);
 
         let is_orphan = !has_incoming.contains(&key) && !has_outgoing.contains(&key);
+
+        if is_orphan && !include_orphans {
+            continue;
+        }
 
         let mut header_parts = vec![
             format!("{}:{}", node.path, node.line),
