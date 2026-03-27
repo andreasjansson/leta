@@ -226,8 +226,6 @@ pub struct GrepParams {
     pub kinds: Option<Vec<String>>,
     #[serde(default)]
     pub case_sensitive: bool,
-    #[serde(default)]
-    pub include_docs: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub path_pattern: Option<String>,
     #[serde(default)]
