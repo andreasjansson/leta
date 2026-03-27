@@ -86,6 +86,7 @@ impl CallNode {
             path: None,
             line: None,
             column: None,
+            in_workspace: true,
             calls: None,
             called_by: None,
         }
