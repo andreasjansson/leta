@@ -167,7 +167,6 @@ leta grep <PATTERN> [PATH] [OPTIONS]
 Options:
   -k, --kind <KIND>        Filter by symbol kind (comma-separated: class, function, method, etc.)
   -x, --exclude <EXCLUDE>  Exclude files matching regex (repeatable)
-  -d, --docs               Include documentation for each symbol
   -C, --case-sensitive     Case-sensitive matching
   -N, --head <N>           Maximum results (0 = unlimited) [default: 500]
 ```
