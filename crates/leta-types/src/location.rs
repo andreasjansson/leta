@@ -69,6 +69,8 @@ pub struct CallNode {
     pub line: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub column: Option<u32>,
+    #[serde(default)]
+    pub in_workspace: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub calls: Option<Vec<CallNode>>,
     #[serde(skip_serializing_if = "Option::is_none")]
