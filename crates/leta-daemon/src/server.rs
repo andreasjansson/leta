@@ -14,9 +14,9 @@ use tracing::{error, info};
 
 use crate::handlers::{
     handle_add_workspace, handle_calls, handle_declaration, handle_describe_session, handle_files,
-    handle_files_streaming, handle_grep, handle_grep_streaming, handle_implementations,
-    handle_move_file, handle_references, handle_remove_workspace, handle_rename,
-    handle_resolve_symbol, handle_restart_workspace, handle_show, handle_subtypes,
+    handle_files_streaming, handle_graph, handle_grep, handle_grep_streaming,
+    handle_implementations, handle_move_file, handle_references, handle_remove_workspace,
+    handle_rename, handle_resolve_symbol, handle_restart_workspace, handle_show, handle_subtypes,
     handle_supertypes, HandlerContext,
 };
 use crate::profiling::CollectingReporter;
