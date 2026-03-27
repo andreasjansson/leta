@@ -173,7 +173,6 @@ pub struct GrepOptions {
     pub path_pattern: Option<String>,
     pub kinds: Option<Vec<String>>,
     pub case_sensitive: bool,
-    pub include_docs: bool,
     pub exclude_patterns: Vec<String>,
     pub head: u32,
 }
@@ -188,7 +187,6 @@ pub async fn grep(working_dir: &Path, pattern: &str, options: GrepOptions) -> Re
         pattern: pattern.to_string(),
         kinds: options.kinds,
         case_sensitive: options.case_sensitive,
-        include_docs: options.include_docs,
         path_pattern: options.path_pattern,
         exclude_patterns: options.exclude_patterns,
         limit: head,
