@@ -1372,3 +1372,23 @@ fn render_graph_tree(
         }
     }
 }
+
+fn language_from_path(path: &str) -> String {
+    let ext = path.rsplit('.').next().unwrap_or("");
+    match ext {
+        "py" => "Python",
+        "rs" => "Rust",
+        "go" => "Go",
+        "ts" | "tsx" => "TypeScript",
+        "js" | "jsx" => "JavaScript",
+        "java" => "Java",
+        "rb" => "Ruby",
+        "cpp" | "cc" | "cxx" | "c" | "h" | "hpp" => "C/C++",
+        "php" => "PHP",
+        "lua" => "Lua",
+        "ml" | "mli" => "OCaml",
+        "zig" => "Zig",
+        _ => ext,
+    }
+    .to_string()
+}
