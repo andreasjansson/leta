@@ -522,6 +522,17 @@ pub struct CallsResult {
 // ============================================================================
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GraphParams {
+    pub workspace_root: String,
+    #[serde(default)]
+    pub include_non_workspace: bool,
+}
+
+// ============================================================================
+// Rename (symbol)
+// ============================================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RenameParams {
     pub workspace_root: String,
     pub path: String,
