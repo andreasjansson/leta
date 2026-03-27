@@ -1283,9 +1283,8 @@ fn format_graph_node_label(node: &leta_types::CallGraphSymbol, show_path: bool) 
 }
 
 fn render_graph_tree(
-    children: &[(&leta_types::CallGraphSymbol, bool)],
-    outgoing: &HashMap<String, Vec<(&leta_types::CallGraphSymbol, bool)>>,
-    node_map: &HashMap<String, &leta_types::CallGraphSymbol>,
+    children: &[&leta_types::CallGraphEdge],
+    outgoing: &HashMap<String, Vec<&leta_types::CallGraphEdge>>,
     self_recursive: &HashSet<String>,
     visited: &mut HashSet<String>,
     lines: &mut Vec<String>,
@@ -1294,13 +1293,15 @@ fn render_graph_tree(
     let node_key =
         |s: &leta_types::CallGraphSymbol| format!("{}:{}:{}", s.path, s.line, s.name);
 
-    for (i, (callee, in_workspace)) in children.iter().enumerate() {
+    for (i, edge) in children.iter().enumerate() {
+        let callee = &edge.callee;
+        let in_workspace = edge.in_workspace;
         let is_last = i == children.len() - 1;
         let connector = if is_last { "└── " } else { "├── " };
         let child_prefix = format!("{}{}", prefix, if is_last { "    " } else { "│   " });
 
         let key = node_key(callee);
-        let label = format_graph_node_label(callee, *in_workspace);
+        let label = format_graph_node_label(callee, in_workspace);
         let is_self_recursive = self_recursive.contains(&key);
 
         if !visited.insert(key.clone()) {
@@ -1308,8 +1309,7 @@ fn render_graph_tree(
             if is_self_recursive {
                 line.push_str(" ↻");
             }
-            let has_children = outgoing.contains_key(key.as_str());
-            if has_children {
+            if outgoing.contains_key(key.as_str()) {
                 line.push_str(" ↑");
             }
             lines.push(line);
@@ -1327,7 +1327,6 @@ fn render_graph_tree(
             render_graph_tree(
                 grandchildren,
                 outgoing,
-                node_map,
                 self_recursive,
                 visited,
                 lines,
