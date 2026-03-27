@@ -1307,7 +1307,10 @@ fn render_graph_tree(
             if is_self_recursive {
                 line.push_str(" ↻");
             }
-            line.push_str(" ↑");
+            let has_children = outgoing.contains_key(key.as_str());
+            if has_children {
+                line.push_str(" ↑");
+            }
             lines.push(line);
             continue;
         }
