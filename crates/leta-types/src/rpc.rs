@@ -528,6 +528,8 @@ pub struct GraphParams {
     pub include_non_workspace: bool,
     #[serde(default)]
     pub exclude_patterns: Vec<String>,
+    #[serde(default)]
+    pub include_patterns: Vec<String>,
 }
 
 // ============================================================================
