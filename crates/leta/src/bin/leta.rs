@@ -357,6 +357,9 @@ async fn main() -> Result<()> {
                     )
                     .await
                 }
+                Commands::Graph {
+                    include_non_workspace,
+                } => handle_graph(&config, cli.json, include_non_workspace).await,
                 Commands::Rename { symbol, new_name } => {
                     handle_rename(&config, cli.json, symbol, new_name).await
                 }
