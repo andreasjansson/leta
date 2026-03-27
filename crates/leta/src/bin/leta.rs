@@ -873,63 +873,51 @@ async fn handle_grep(
 
     let workspace_root = get_workspace_root(config)?;
 
+    let request_params = json!({
+        "workspace_root": workspace_root.to_string_lossy(),
+        "pattern": pattern,
+        "kinds": kinds,
+        "case_sensitive": case_sensitive,
+        "include_docs": false,
+        "path_pattern": path,
+        "exclude_patterns": exclude,
+        "limit": head,
+    });
+
+    let build_command_base = || {
+        let mut cmd_parts = vec![format!("leta grep \"{}\"", pattern)];
+        if let Some(p) = &path {
+            cmd_parts.push(format!("\"{}\"", p));
+        }
+        if let Some(k) = &kind {
+            cmd_parts.push(format!("-k {}", k));
+        }
+        for ex in &exclude {
+            cmd_parts.push(format!("-x \"{}\"", ex));
+        }
+        if case_sensitive {
+            cmd_parts.push("-C".to_string());
+        }
+        cmd_parts.join(" ")
+    };
+
     if json_output || profile {
-        // Use non-streaming path for JSON output or profiling (profiling needs full timing data)
-        let response = send_request_with_profile(
-            "grep",
-            json!({
-                "workspace_root": workspace_root.to_string_lossy(),
-                "pattern": pattern,
-                "kinds": kinds,
-                "case_sensitive": case_sensitive,
-                "include_docs": false,
-                "path_pattern": path,
-                "exclude_patterns": exclude,
-                "limit": head,
-            }),
-            profile,
-        )
-        .await?;
+        let response =
+            send_request_with_profile("grep", request_params, profile).await?;
 
         let grep_result: GrepResult = serde_json::from_value(response.result)?;
         if json_output {
             println!("{}", serde_json::to_string_pretty(&grep_result)?);
         } else {
-            let mut cmd_parts = vec![format!("leta grep \"{}\"", pattern)];
-            if let Some(p) = &path {
-                cmd_parts.push(format!("\"{}\"", p));
-            }
-            if let Some(k) = &kind {
-                cmd_parts.push(format!("-k {}", k));
-            }
-            for ex in &exclude {
-                cmd_parts.push(format!("-x \"{}\"", ex));
-            }
-            if docs {
-                cmd_parts.push("-d".to_string());
-            }
-            if case_sensitive {
-                cmd_parts.push("-C".to_string());
-            }
-            let command_base = cmd_parts.join(" ");
+            let command_base = build_command_base();
             println!("{}", format_grep_result(&grep_result, head, &command_base));
         }
         display_profiling(response.profiling);
     } else {
-        // Use streaming path - print symbols immediately as they arrive
         let mut count = 0u32;
         let done = send_streaming_request(
             "grep",
-            json!({
-                "workspace_root": workspace_root.to_string_lossy(),
-                "pattern": pattern,
-                "kinds": kinds,
-                "case_sensitive": case_sensitive,
-                "include_docs": false,
-                "path_pattern": path,
-                "exclude_patterns": exclude,
-                "limit": head,
-            }),
+            request_params,
             false,
             |msg| {
                 if let StreamMessage::Symbol(sym) = msg {
@@ -941,23 +929,7 @@ async fn handle_grep(
         .await?;
 
         if done.truncated {
-            let mut cmd_parts = vec![format!("leta grep \"{}\"", pattern)];
-            if let Some(p) = &path {
-                cmd_parts.push(format!("\"{}\"", p));
-            }
-            if let Some(k) = &kind {
-                cmd_parts.push(format!("-k {}", k));
-            }
-            for ex in &exclude {
-                cmd_parts.push(format!("-x \"{}\"", ex));
-            }
-            if docs {
-                cmd_parts.push("-d".to_string());
-            }
-            if case_sensitive {
-                cmd_parts.push("-C".to_string());
-            }
-            let command_base = cmd_parts.join(" ");
+            let command_base = build_command_base();
             println!(
                 "\n[showing first {} results, use `{} --head {}` to show more, or `{} -N0` to show all]",
                 count,
