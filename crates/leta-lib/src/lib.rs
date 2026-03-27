@@ -23,10 +23,10 @@ struct State {
 }
 
 static STATE: OnceCell<State> = OnceCell::const_new();
-static ENSURED_WORKSPACES: OnceCell<Mutex<HashSet<PathBuf>>> = OnceCell::const_new();
+static ENSURED_WORKSPACES: OnceLock<std::sync::Mutex<HashSet<PathBuf>>> = OnceLock::new();
 
-fn ensured_workspaces() -> &'static Mutex<HashSet<PathBuf>> {
-    ENSURED_WORKSPACES.get_or_init(|| Mutex::new(HashSet::new()))
+fn ensured_workspaces() -> &'static std::sync::Mutex<HashSet<PathBuf>> {
+    ENSURED_WORKSPACES.get_or_init(|| std::sync::Mutex::new(HashSet::new()))
 }
 
 /// Fast workspace ensure: checks an in-memory HashSet first (zero-cost after
@@ -35,7 +35,7 @@ pub async fn ensure_workspace(path: &Path) -> Result<()> {
     let canonical = path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
 
     {
-        let set = ensured_workspaces().lock().await;
+        let set = ensured_workspaces().lock().unwrap();
         if set.contains(&canonical) {
             return Ok(());
         }
@@ -44,7 +44,7 @@ pub async fn ensure_workspace(path: &Path) -> Result<()> {
     workspace_add(path).await?;
 
     {
-        let mut set = ensured_workspaces().lock().await;
+        let mut set = ensured_workspaces().lock().unwrap();
         set.insert(canonical);
     }
 
