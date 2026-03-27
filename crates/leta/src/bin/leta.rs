@@ -39,8 +39,6 @@ entire code base.
 understand a code base. Note that `leta grep` only exposes symbols that are
 declared in its workspace, so use (rip)grep or other search tools when you're
 looking for specific multi-symbol strings, puncuation, or library functions.
-`leta grep PATTERN [PATH] --docs` prints function and method documentation for
-all matching symbols.
 
 `leta files` is a good starting point when starting work on a project.
 
