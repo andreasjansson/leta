@@ -1043,7 +1043,6 @@ async fn handle_grep_streaming_inner(
             excluded_languages: &excluded_languages,
             filter: &filter,
             limit,
-            include_docs: params.include_docs,
         },
         tx,
     )
