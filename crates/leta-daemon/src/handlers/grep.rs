@@ -1068,7 +1068,6 @@ struct StreamFilterParams<'a> {
     excluded_languages: &'a HashSet<String>,
     filter: &'a GrepFilter<'a>,
     limit: usize,
-    include_docs: bool,
 }
 
 struct StreamResult {
