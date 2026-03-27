@@ -103,7 +103,7 @@ pub async fn handle_graph(
     for (rel_path, file_syms) in &symbols_by_file {
         let file_path = workspace_root.join(rel_path);
         let mtime = leta_fs::file_mtime(&file_path);
-        let key = cache_key(&file_path, mtime);
+        let key = cache_key(&file_path, &mtime);
 
         if let Some(cached) = ctx.hover_cache.get::<CallGraphFileEdges>(&key) {
             all_edges.extend(cached.edges);
