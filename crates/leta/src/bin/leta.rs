@@ -135,6 +135,8 @@ enum Commands {
         include_non_workspace: bool,
         #[arg(long, help = "Include symbols with no callers or callees")]
         include_orphans: bool,
+        #[arg(short = 'x', long = "exclude", action = clap::ArgAction::Append, help = "Exclude paths matching regex")]
+        exclude: Vec<String>,
     },
 
     #[command(about = "Find implementations of an interface or abstract method.")]
