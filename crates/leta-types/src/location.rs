@@ -92,3 +92,33 @@ impl CallNode {
         }
     }
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub struct CallGraphSymbol {
+    pub name: String,
+    pub kind: String,
+    pub path: String,
+    pub line: u32,
+    pub column: u32,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub detail: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CallGraphEdge {
+    pub caller: CallGraphSymbol,
+    pub callee: CallGraphSymbol,
+    pub in_workspace: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CallGraphFileEdges {
+    pub edges: Vec<CallGraphEdge>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GraphResult {
+    pub nodes: Vec<CallGraphSymbol>,
+    pub edges: Vec<CallGraphEdge>,
+    pub indexing_time_ms: Option<u64>,
+}
