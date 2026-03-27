@@ -1174,7 +1174,7 @@ pub fn format_graph_result(result: &GraphResult, include_orphans: bool) -> Strin
 
     fn count_reachable(
         key: &str,
-        outgoing: &HashMap<String, Vec<(&CallGraphSymbol, bool)>>,
+        outgoing: &HashMap<String, Vec<&CallGraphEdge>>,
         seen: &mut HashSet<String>,
     ) -> usize {
         if !seen.insert(key.to_string()) {
@@ -1183,8 +1183,8 @@ pub fn format_graph_result(result: &GraphResult, include_orphans: bool) -> Strin
         let mut count = 1;
         let node_key = |s: &CallGraphSymbol| format!("{}:{}:{}", s.path, s.line, s.name);
         if let Some(children) = outgoing.get(key) {
-            for (callee, _) in children {
-                count += count_reachable(&node_key(callee), outgoing, seen);
+            for edge in children {
+                count += count_reachable(&node_key(&edge.callee), outgoing, seen);
             }
         }
         count
