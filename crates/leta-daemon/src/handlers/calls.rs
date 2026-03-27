@@ -461,9 +461,13 @@ async fn find_call_path(
     for call in calls {
         let call_item = &call.to;
 
-        if !ctx.include_non_workspace
-            && !is_path_in_workspace(call_item.uri.as_str(), ctx.workspace_root)
-        {
+        let in_workspace = is_path_in_workspace(call_item.uri.as_str(), ctx.workspace_root);
+
+        if !ctx.include_non_workspace && !in_workspace {
+            continue;
+        }
+
+        if !in_workspace {
             continue;
         }
 
