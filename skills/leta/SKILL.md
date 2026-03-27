@@ -117,8 +117,8 @@ The optional PATH_REGEX argument filters files by matching a regex against the r
 # Find all functions/methods starting with "test"
 leta grep "^test" -k function,method
 
-# Find a class and show its documentation
-leta grep "UserRepository" -k class -d
+# Find a class
+leta grep "UserRepository" -k class
 
 # Find all methods in a specific file
 leta grep ".*" "server\.py" -k method
