@@ -1126,11 +1126,11 @@ fn format_call_path(path: &[CallNode]) -> String {
 }
 
 pub fn format_graph_result(result: &GraphResult, include_orphans: bool) -> String {
-    use leta_types::CallGraphSymbol;
+    use leta_types::{CallGraphEdge, CallGraphSymbol};
 
     let node_key = |s: &CallGraphSymbol| format!("{}:{}:{}", s.path, s.line, s.name);
 
-    let mut outgoing: HashMap<String, Vec<(&CallGraphSymbol, bool)>> = HashMap::new();
+    let mut outgoing: HashMap<String, Vec<&CallGraphEdge>> = HashMap::new();
     let mut has_incoming: HashSet<String> = HashSet::new();
     let mut has_outgoing: HashSet<String> = HashSet::new();
     let mut self_recursive: HashSet<String> = HashSet::new();
