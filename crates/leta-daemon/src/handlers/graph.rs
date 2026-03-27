@@ -26,7 +26,7 @@ fn is_callable(sym: &SymbolInfo) -> bool {
 }
 
 fn cache_key(file_path: &Path, mtime: &str) -> String {
-    format!("callgraph:{}:{}", file_path.display(), mtime)
+    format!("callgraph2:{}:{}", file_path.display(), mtime)
 }
 
 fn is_path_in_workspace(uri: &str, workspace_root: &Path) -> bool {
