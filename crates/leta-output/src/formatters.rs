@@ -1020,7 +1020,8 @@ fn format_file_info(info: &FileInfo) -> String {
 }
 
 fn is_stdlib_path(path: &str) -> bool {
-    path.contains("/typeshed-fallback/stdlib/")
+    path.starts_with('/')
+        || path.contains("/typeshed-fallback/stdlib/")
         || path.contains("/typeshed/stdlib/")
         || (path.contains("/libexec/src/") && !path.contains("/mod/"))
         || (path.ends_with(".d.ts")
