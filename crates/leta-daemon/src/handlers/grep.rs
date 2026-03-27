@@ -883,6 +883,8 @@ async fn get_symbol_documentation(
     let workspace = ctx.session.get_workspace_for_file(&file_path).await?;
     let client = workspace.client().await?;
 
+    client.wait_for_indexing(30).await;
+
     let file_mtime = leta_fs::file_mtime(&file_path);
     let cache_key = format!(
         "hover:{}:{}:{}:{}",
