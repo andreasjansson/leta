@@ -297,11 +297,16 @@ async fn collect_symbol_edges(
     for call in calls {
         let in_workspace = is_path_in_workspace(call.to.uri.as_str(), workspace_root);
         let callee = call_item_to_graph_symbol(&call.to, workspace_root);
+        let call_site_line = call
+            .from_ranges
+            .first()
+            .map(|r| r.start.line + 1);
 
         edges.push(CallGraphEdge {
             caller: caller.clone(),
             callee,
             in_workspace,
+            call_site_line,
         });
     }
 
