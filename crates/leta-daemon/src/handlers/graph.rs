@@ -92,12 +92,28 @@ pub async fn handle_graph(
         .filter_map(|p| Regex::new(p).ok())
         .collect();
 
+    let include_regexes: Vec<Regex> = params
+        .include_patterns
+        .iter()
+        .filter_map(|p| Regex::new(p).ok())
+        .collect();
+
+    let path_matches = |path: &str| -> bool {
+        if !include_regexes.is_empty() && !include_regexes.iter().any(|re| re.is_match(path)) {
+            return false;
+        }
+        if exclude_regexes.iter().any(|re| re.is_match(path)) {
+            return false;
+        }
+        true
+    };
+
     let all_symbols = super::collect_all_workspace_symbols(ctx, &workspace_root).await?;
 
     let callable_symbols: Vec<&SymbolInfo> = all_symbols
         .iter()
         .filter(|s| is_callable(s))
-        .filter(|s| !exclude_regexes.iter().any(|re| re.is_match(&s.path)))
+        .filter(|s| path_matches(&s.path))
         .collect();
     info!(
         "Building call graph: {} callable symbols out of {} total",
