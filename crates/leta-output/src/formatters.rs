@@ -1124,3 +1124,80 @@ fn format_call_path(path: &[CallNode]) -> String {
 
     lines.join("\n")
 }
+
+pub fn format_graph_result(result: &GraphResult) -> String {
+    use leta_types::{CallGraphEdge, CallGraphSymbol};
+
+    let mut outgoing: HashMap<String, Vec<&CallGraphEdge>> = HashMap::new();
+    let mut has_incoming: HashSet<String> = HashSet::new();
+    let mut has_outgoing: HashSet<String> = HashSet::new();
+
+    let node_key = |s: &CallGraphSymbol| format!("{}:{}:{}", s.path, s.line, s.name);
+
+    for edge in &result.edges {
+        let caller_key = node_key(&edge.caller);
+        let callee_key = node_key(&edge.callee);
+        outgoing.entry(caller_key.clone()).or_default().push(edge);
+        has_incoming.insert(callee_key);
+        has_outgoing.insert(caller_key);
+    }
+
+    let mut lines = Vec::new();
+
+    for node in &result.nodes {
+        let key = node_key(node);
+        let edges = outgoing.get(&key);
+
+        let is_orphan = !has_incoming.contains(&key) && !has_outgoing.contains(&key);
+
+        let mut header_parts = vec![
+            format!("{}:{}", node.path, node.line),
+            format!("[{}]", node.kind),
+            node.name.clone(),
+        ];
+        if let Some(detail) = &node.detail {
+            if !detail.is_empty() && detail != "()" {
+                header_parts.push(format!("({})", detail));
+            }
+        }
+
+        if is_orphan {
+            lines.push(format!("{} (orphan)", header_parts.join(" ")));
+            lines.push(String::new());
+            continue;
+        }
+
+        lines.push(header_parts.join(" "));
+
+        if let Some(edges) = edges {
+            for edge in edges {
+                let callee = &edge.callee;
+                let mut callee_parts = Vec::new();
+                if edge.in_workspace {
+                    callee_parts.push(format!("{}:{}", callee.path, callee.line));
+                }
+                callee_parts.push(format!("[{}]", callee.kind));
+                callee_parts.push(callee.name.clone());
+                if let Some(detail) = &callee.detail {
+                    if !detail.is_empty() && detail != "()" {
+                        callee_parts.push(format!("({})", detail));
+                    }
+                }
+                lines.push(format!("  → {}", callee_parts.join(" ")));
+            }
+        }
+
+        lines.push(String::new());
+    }
+
+    if let Some(time_ms) = result.indexing_time_ms {
+        lines.push(format!(
+            "{} nodes, {} edges, indexed in {}ms",
+            result.nodes.len(),
+            result.edges.len(),
+            time_ms,
+        ));
+    }
+
+    lines.join("\n")
+}
