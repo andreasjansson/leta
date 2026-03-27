@@ -138,7 +138,6 @@ leta grep "^[A-Z]" '\.go$' -k function -C
 
 **Options:**
 - `-k, --kind TEXT` - Filter by kind: class, function, method, variable, constant, interface, struct, enum, property, field, constructor, module, namespace, package, typeparameter
-- `-d, --docs` - Include documentation/docstrings
 - `-x, --exclude TEXT` - Exclude files matching regex (repeatable)
 - `-C, --case-sensitive` - Case-sensitive matching. Note that `leta grep` is case-insensitive by default
 - `--head N` - Maximum results to return (default: 200)
