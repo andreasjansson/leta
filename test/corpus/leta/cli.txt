@@ -30,6 +30,7 @@ Commands:
   show             Print the definition of a symbol.
   refs             Find all references to a symbol.
   calls            Show call hierarchy for a symbol.
+  graph            Show full workspace call graph.
   implementations  Find implementations of an interface or abstract method.
   supertypes       Find direct supertypes of a type.
   subtypes         Find direct subtypes of a type.
@@ -47,7 +48,6 @@ Options:
       --profile  Print timing information for profiling
   -h, --help     Print help
   -V, --version  Print version
-
 ===
 workspace help
 ===
