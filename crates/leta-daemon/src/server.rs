@@ -306,6 +306,7 @@ impl DaemonServer {
             "subtypes" => handle!(SubtypesParams, handle_subtypes),
             "supertypes" => handle!(SupertypesParams, handle_supertypes),
             "calls" => handle!(CallsParams, handle_calls),
+            "graph" => handle!(GraphParams, handle_graph),
             "rename" => handle!(RenameParams, handle_rename),
             "move-file" => handle!(MoveFileParams, handle_move_file),
             "files" => handle!(FilesParams, handle_files),
