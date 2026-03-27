@@ -129,6 +129,12 @@ enum Commands {
         head: u32,
     },
 
+    #[command(about = "Show full workspace call graph.")]
+    Graph {
+        #[arg(long, help = "Include stdlib/dependency calls")]
+        include_non_workspace: bool,
+    },
+
     #[command(about = "Find implementations of an interface or abstract method.")]
     Implementations {
         #[arg(help = "Symbol to find implementations for")]
