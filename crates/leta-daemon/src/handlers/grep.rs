@@ -179,17 +179,6 @@ pub async fn handle_grep(ctx: &HandlerContext, params: GrepParams) -> Result<Gre
     )
     .await?;
 
-    if params.include_docs {
-        for sym in &mut filtered {
-            if let Some(doc) =
-                get_symbol_documentation(ctx, &workspace_root, &sym.path, sym.line, sym.column)
-                    .await
-            {
-                sym.documentation = Some(doc);
-            }
-        }
-    }
-
     filtered.sort_by(|a, b| (&a.path, a.line).cmp(&(&b.path, b.line)));
 
     let warning = if filtered.is_empty() && params.pattern.contains(r"\|") {
