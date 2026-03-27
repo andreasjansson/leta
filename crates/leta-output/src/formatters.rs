@@ -1082,7 +1082,7 @@ fn render_calls_tree(items: &[CallNode], lines: &mut Vec<String>, prefix: &str, 
         let line = item.line.unwrap_or(0);
 
         let mut parts: Vec<String> = Vec::new();
-        if is_stdlib_path(path) {
+        if !item.in_workspace || is_stdlib_path(path) {
             if let Some(kind) = &item.kind {
                 parts.push(format!("[{}]", kind));
             }
