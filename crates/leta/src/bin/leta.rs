@@ -77,8 +77,6 @@ enum Commands {
         kind: Option<String>,
         #[arg(short = 'x', long, action = clap::ArgAction::Append, help = "Exclude pattern")]
         exclude: Vec<String>,
-        #[arg(short = 'd', long, help = "Include documentation")]
-        docs: bool,
         #[arg(short = 'C', long, help = "Case-sensitive matching")]
         case_sensitive: bool,
         #[arg(short = 'N', long, default_value_t = DEFAULT_HEAD_LIMIT, help = "Maximum results (0 = unlimited)")]
