@@ -1196,10 +1196,47 @@ pub fn format_graph_result(result: &GraphResult, include_orphans: bool) -> Strin
         size_b.cmp(&size_a).then_with(|| a.cmp(b))
     });
 
+    let mut roots_by_lang: Vec<(String, Vec<String>)> = Vec::new();
+    let mut lang_map: HashMap<String, Vec<String>> = HashMap::new();
+    for root_key in roots {
+        let lang = node_map
+            .get(root_key.as_str())
+            .map(|n| language_from_path(&n.path))
+            .unwrap_or_else(|| "Unknown".to_string());
+        lang_map.entry(lang).or_default().push(root_key);
+    }
+    for (lang, lang_roots) in lang_map {
+        roots_by_lang.push((lang, lang_roots));
+    }
+    roots_by_lang.sort_by(|a, b| {
+        let size_a: usize = a
+            .1
+            .iter()
+            .map(|r| count_reachable(r, &outgoing, &mut HashSet::new()))
+            .sum();
+        let size_b: usize = b
+            .1
+            .iter()
+            .map(|r| count_reachable(r, &outgoing, &mut HashSet::new()))
+            .sum();
+        size_b.cmp(&size_a).then_with(|| a.0.cmp(&b.0))
+    });
+
     let mut visited: HashSet<String> = HashSet::new();
     let mut lines: Vec<String> = Vec::new();
+    let show_lang_headers = roots_by_lang.len() > 1;
 
-    for root_key in &roots {
+    for (lang, lang_roots) in &roots_by_lang {
+        if show_lang_headers {
+            if !lines.is_empty() {
+                lines.push(String::new());
+            }
+            lines.push(lang.clone());
+            lines.push("═".repeat(lang.len()));
+            lines.push(String::new());
+        }
+
+        for root_key in lang_roots {
         let node = match node_map.get(root_key.as_str()) {
             Some(n) => n,
             None => continue,
