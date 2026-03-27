@@ -14,10 +14,9 @@ use leta_types::{
     SymbolKind,
 };
 use tokio::sync::Semaphore;
-use tracing::{debug, info, warn};
+use tracing::{debug, info};
 
 use super::{relative_path, HandlerContext};
-use crate::session::WorkspaceHandle;
 
 const CALLABLE_KINDS: &[&str] = &[
     "Function",
@@ -29,7 +28,7 @@ fn is_callable(sym: &SymbolInfo) -> bool {
     CALLABLE_KINDS.iter().any(|k| sym.kind == *k)
 }
 
-fn cache_key(file_path: &Path, mtime: u64) -> String {
+fn cache_key(file_path: &Path, mtime: &str) -> String {
     format!("callgraph:{}:{}", file_path.display(), mtime)
 }
 
