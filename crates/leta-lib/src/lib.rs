@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 
 use anyhow::{anyhow, Result};
-use tokio::sync::{Mutex, OnceCell};
+use tokio::sync::OnceCell;
 
 use leta_cache::LmdbCache;
 use leta_config::Config;
