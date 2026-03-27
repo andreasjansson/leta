@@ -109,6 +109,8 @@ pub struct CallGraphEdge {
     pub caller: CallGraphSymbol,
     pub callee: CallGraphSymbol,
     pub in_workspace: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub call_site_line: Option<u32>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
