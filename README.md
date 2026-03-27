@@ -189,9 +189,6 @@ leta grep "User" "models/"
 # Find symbols in test files
 leta grep "test" "test/"
 
-# Search with documentation
-leta grep "parse" -k function -d
-
 # Exclude test files
 leta grep "User" -x test -x mock
 ```
