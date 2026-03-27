@@ -266,7 +266,6 @@ async fn main() -> Result<()> {
                     path,
                     kind,
                     exclude,
-                    docs,
                     case_sensitive,
                     head,
                 } => {
@@ -280,7 +279,6 @@ async fn main() -> Result<()> {
                             kind,
                             exclude,
                             head,
-                            docs,
                             case_sensitive,
                         },
                     )
