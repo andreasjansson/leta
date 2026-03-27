@@ -366,10 +366,18 @@ async fn main() -> Result<()> {
                 Commands::Graph {
                     include_non_workspace,
                     include_orphans,
-                    exclude,
+                    exclude_path,
+                    include_path,
                 } => {
-                    handle_graph(&config, cli.json, include_non_workspace, include_orphans, exclude)
-                        .await
+                    handle_graph(
+                        &config,
+                        cli.json,
+                        include_non_workspace,
+                        include_orphans,
+                        exclude_path,
+                        include_path,
+                    )
+                    .await
                 }
                 Commands::Rename { symbol, new_name } => {
                     handle_rename(&config, cli.json, symbol, new_name).await
