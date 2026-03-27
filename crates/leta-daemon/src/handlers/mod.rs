@@ -1,5 +1,6 @@
 mod calls;
 mod files;
+mod graph;
 mod grep;
 mod index;
 mod refs;
