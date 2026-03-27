@@ -184,13 +184,8 @@ pub async fn handle_graph(
     if !params.include_non_workspace {
         all_edges.retain(|e| e.in_workspace);
     }
-    if !exclude_regexes.is_empty() {
-        all_edges.retain(|e| {
-            !exclude_regexes.iter().any(|re| re.is_match(&e.caller.path))
-                && !exclude_regexes
-                    .iter()
-                    .any(|re| re.is_match(&e.callee.path))
-        });
+    if !include_regexes.is_empty() || !exclude_regexes.is_empty() {
+        all_edges.retain(|e| path_matches(&e.caller.path) && path_matches(&e.callee.path));
     }
 
     let elapsed = start.elapsed();
@@ -204,7 +199,7 @@ pub async fn handle_graph(
 
     let mut node_set: HashSet<CallGraphSymbol> = HashSet::new();
     for sym in &all_symbols {
-        if !exclude_regexes.iter().any(|re| re.is_match(&sym.path)) {
+        if path_matches(&sym.path) {
             node_set.insert(sym_to_graph_symbol(sym));
         }
     }
