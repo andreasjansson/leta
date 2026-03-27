@@ -176,7 +176,6 @@ pub async fn handle_resolve_symbol(
             column: sym.column,
             container: sym.container.clone(),
             detail: None,
-            documentation: None,
             range_start_line: None,
             range_end_line: None,
             reference: Some(generate_unambiguous_ref(sym, &final_matches, target_name)),
