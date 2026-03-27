@@ -304,9 +304,7 @@ leta show FileStorage
 
 1. **Start with `leta files`** to understand project structure before diving in.
 
-2. **Use `-d` flag** with grep to see documentation - helps understand what symbols do.
-
-3. **Combine with ripgrep-like tools** - use leta for "where is X defined/used?" and ripgrep-like tools for "where does string Y appear?"
+2. **Combine with ripgrep-like tools** - use leta for "where is X defined/used?" and ripgrep-like tools for "where does string Y appear?"
 
 4. **Symbol formats are flexible** - if `SymbolName` is ambiguous, qualify it with `path:Symbol` or `Parent.Symbol`.
 
