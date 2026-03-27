@@ -1332,10 +1332,3 @@ fn render_graph_tree(
         }
     }
 }
-            result.edges.len(),
-            time_ms,
-        ));
-    }
-
-    lines.join("\n")
-}
