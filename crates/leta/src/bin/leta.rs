@@ -876,7 +876,6 @@ async fn handle_grep(
         "pattern": pattern,
         "kinds": kinds,
         "case_sensitive": case_sensitive,
-        "include_docs": false,
         "path_pattern": path,
         "exclude_patterns": exclude,
         "limit": head,
