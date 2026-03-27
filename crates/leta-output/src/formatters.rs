@@ -1228,7 +1228,6 @@ pub fn format_graph_result(result: &GraphResult, include_orphans: bool) -> Strin
             render_graph_tree(
                 children,
                 &outgoing,
-                &node_map,
                 &self_recursive,
                 &mut visited,
                 &mut lines,
