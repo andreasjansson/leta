@@ -329,18 +329,20 @@ async fn collect_outgoing_calls(
     for call in calls {
         let call_item = &call.to;
 
-        if !ctx.include_non_workspace
-            && !is_path_in_workspace(call_item.uri.as_str(), ctx.workspace_root)
-        {
+        let in_workspace = is_path_in_workspace(call_item.uri.as_str(), ctx.workspace_root);
+
+        if !ctx.include_non_workspace && !in_workspace {
             continue;
         }
 
         let mut node = call_hierarchy_item_to_node(call_item, ctx.workspace_root);
 
-        let children = Box::pin(collect_outgoing_calls(ctx, call_item, current_depth + 1)).await;
-
-        if !children.is_empty() {
-            node.calls = Some(children);
+        if in_workspace {
+            let children =
+                Box::pin(collect_outgoing_calls(ctx, call_item, current_depth + 1)).await;
+            if !children.is_empty() {
+                node.calls = Some(children);
+            }
         }
 
         result.push(node);
@@ -386,18 +388,20 @@ async fn collect_incoming_calls(
     for call in calls {
         let call_item = &call.from;
 
-        if !ctx.include_non_workspace
-            && !is_path_in_workspace(call_item.uri.as_str(), ctx.workspace_root)
-        {
+        let in_workspace = is_path_in_workspace(call_item.uri.as_str(), ctx.workspace_root);
+
+        if !ctx.include_non_workspace && !in_workspace {
             continue;
         }
 
         let mut node = call_hierarchy_item_to_node(call_item, ctx.workspace_root);
 
-        let children = Box::pin(collect_incoming_calls(ctx, call_item, current_depth + 1)).await;
-
-        if !children.is_empty() {
-            node.called_by = Some(children);
+        if in_workspace {
+            let children =
+                Box::pin(collect_incoming_calls(ctx, call_item, current_depth + 1)).await;
+            if !children.is_empty() {
+                node.called_by = Some(children);
+            }
         }
 
         result.push(node);
