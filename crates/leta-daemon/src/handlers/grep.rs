@@ -1170,20 +1170,7 @@ async fn stream_and_filter_symbols(
                     .collect();
                 matching.sort_by_key(|s| s.line);
 
-                for mut sym in matching {
-                    if params.include_docs {
-                        if let Some(doc) = get_symbol_documentation(
-                            ctx,
-                            workspace_root,
-                            &sym.path,
-                            sym.line,
-                            sym.column,
-                        )
-                        .await
-                        {
-                            sym.documentation = Some(doc);
-                        }
-                    }
+                for sym in matching {
                     if tx.send(StreamMessage::Symbol(sym)).await.is_err() {
                         return Ok(StreamResult {
                             count,
