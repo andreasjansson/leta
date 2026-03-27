@@ -480,7 +480,11 @@ async fn find_call_path(
     None
 }
 
-fn call_hierarchy_item_to_node(item: &CallHierarchyItem, workspace_root: &Path) -> CallNode {
+fn call_hierarchy_item_to_node(
+    item: &CallHierarchyItem,
+    workspace_root: &Path,
+    in_workspace: bool,
+) -> CallNode {
     let file_path = uri_to_path(item.uri.as_str());
     let rel_path = relative_path(&file_path, workspace_root);
     let kind = SymbolKind::from_lsp(item.kind);
@@ -492,6 +496,7 @@ fn call_hierarchy_item_to_node(item: &CallHierarchyItem, workspace_root: &Path) 
         path: Some(rel_path),
         line: Some(item.selection_range.start.line + 1),
         column: Some(item.selection_range.start.character),
+        in_workspace,
         calls: None,
         called_by: None,
     }
