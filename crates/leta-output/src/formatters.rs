@@ -1151,12 +1151,13 @@ pub fn format_graph_result(result: &GraphResult, include_orphans: bool) -> Strin
             continue;
         }
 
-        outgoing
-            .entry(caller_key.clone())
-            .or_default()
-            .push((&edge.callee, edge.in_workspace));
+        outgoing.entry(caller_key.clone()).or_default().push(edge);
         has_incoming.insert(callee_key);
         has_outgoing.insert(caller_key);
+    }
+
+    for children in outgoing.values_mut() {
+        children.sort_by_key(|e| e.call_site_line.unwrap_or(u32::MAX));
     }
 
     let mut roots: Vec<String> = Vec::new();
