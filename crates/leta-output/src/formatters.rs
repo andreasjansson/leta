@@ -726,23 +726,13 @@ pub fn format_symbol_line(sym: &SymbolInfo) -> String {
     if let Some(container) = &sym.container {
         parts.push(format!("in {}", container));
     }
-    let mut output = parts.join(" ");
-
-    if let Some(doc) = &sym.documentation {
-        for doc_line in doc.trim().lines() {
-            output.push_str(&format!("\n    {}", doc_line));
-        }
-    }
-    output
+    parts.join(" ")
 }
 
 fn format_symbols(symbols: &[SymbolInfo]) -> String {
     let mut lines = Vec::new();
     for sym in symbols {
         lines.push(format_symbol_line(sym));
-        if sym.documentation.is_some() {
-            lines.push(String::new());
-        }
     }
     lines.join("\n")
 }
