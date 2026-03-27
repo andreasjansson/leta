@@ -395,6 +395,8 @@ async fn collect_incoming_calls(
         }
 
         let mut node = call_hierarchy_item_to_node(call_item, ctx.workspace_root, in_workspace);
+
+        if in_workspace {
             let children =
                 Box::pin(collect_incoming_calls(ctx, call_item, current_depth + 1)).await;
             if !children.is_empty() {
