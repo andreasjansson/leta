@@ -845,7 +845,6 @@ struct GrepOptions {
     kind: Option<String>,
     exclude: Vec<String>,
     head: u32,
-    docs: bool,
     case_sensitive: bool,
 }
 
