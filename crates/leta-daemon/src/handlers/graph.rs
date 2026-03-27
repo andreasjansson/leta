@@ -13,16 +13,13 @@ use leta_types::{
     CallGraphEdge, CallGraphFileEdges, CallGraphSymbol, GraphParams, GraphResult, SymbolInfo,
     SymbolKind,
 };
+use regex::Regex;
 use tokio::sync::Semaphore;
 use tracing::{debug, info};
 
 use super::{relative_path, HandlerContext};
 
-const CALLABLE_KINDS: &[&str] = &[
-    "Function",
-    "Method",
-    "Constructor",
-];
+const CALLABLE_KINDS: &[&str] = &["Function", "Method", "Constructor"];
 
 fn is_callable(sym: &SymbolInfo) -> bool {
     CALLABLE_KINDS.iter().any(|k| sym.kind == *k)
@@ -37,8 +34,15 @@ fn is_path_in_workspace(uri: &str, workspace_root: &Path) -> bool {
     match file_path.strip_prefix(workspace_root) {
         Ok(rel_path) => {
             let excluded_dirs = [
-                ".venv", "venv", "node_modules", "vendor", ".git", "__pycache__", "target",
-                "build", "dist",
+                ".venv",
+                "venv",
+                "node_modules",
+                "vendor",
+                ".git",
+                "__pycache__",
+                "target",
+                "build",
+                "dist",
             ];
             !rel_path
                 .iter()
@@ -82,9 +86,19 @@ pub async fn handle_graph(
     let workspace_root = PathBuf::from(&params.workspace_root);
     let start = std::time::Instant::now();
 
+    let exclude_regexes: Vec<Regex> = params
+        .exclude_patterns
+        .iter()
+        .filter_map(|p| Regex::new(p).ok())
+        .collect();
+
     let all_symbols = super::collect_all_workspace_symbols(ctx, &workspace_root).await?;
 
-    let callable_symbols: Vec<&SymbolInfo> = all_symbols.iter().filter(|s| is_callable(s)).collect();
+    let callable_symbols: Vec<&SymbolInfo> = all_symbols
+        .iter()
+        .filter(|s| is_callable(s))
+        .filter(|s| !exclude_regexes.iter().any(|re| re.is_match(&s.path)))
+        .collect();
     info!(
         "Building call graph: {} callable symbols out of {} total",
         callable_symbols.len(),
@@ -142,18 +156,25 @@ pub async fn handle_graph(
 
         workspace.ensure_document_open(&file_abs).await.ok();
 
-        let edges = collect_file_edges(
-            &client,
-            &workspace_root,
-            file_syms,
-            params.include_non_workspace,
-        )
-        .await;
+        let edges = collect_file_edges(&client, &workspace_root, file_syms).await;
 
         ctx.hover_cache
             .set(&key, &CallGraphFileEdges { edges: edges.clone() });
         all_edges.extend(edges);
         files_computed += 1;
+    }
+
+    // Filter edges after caching (cache always stores all edges)
+    if !params.include_non_workspace {
+        all_edges.retain(|e| e.in_workspace);
+    }
+    if !exclude_regexes.is_empty() {
+        all_edges.retain(|e| {
+            !exclude_regexes.iter().any(|re| re.is_match(&e.caller.path))
+                && !exclude_regexes
+                    .iter()
+                    .any(|re| re.is_match(&e.callee.path))
+        });
     }
 
     let elapsed = start.elapsed();
@@ -167,7 +188,9 @@ pub async fn handle_graph(
 
     let mut node_set: HashSet<CallGraphSymbol> = HashSet::new();
     for sym in &all_symbols {
-        node_set.insert(sym_to_graph_symbol(sym));
+        if !exclude_regexes.iter().any(|re| re.is_match(&sym.path)) {
+            node_set.insert(sym_to_graph_symbol(sym));
+        }
     }
     for edge in &all_edges {
         node_set.insert(edge.callee.clone());
@@ -192,7 +215,6 @@ async fn collect_file_edges(
     client: &Arc<LspClient>,
     workspace_root: &Path,
     symbols: &[&SymbolInfo],
-    include_non_workspace: bool,
 ) -> Vec<CallGraphEdge> {
     let semaphore = Arc::new(Semaphore::new(10));
     let mut handles = Vec::new();
@@ -213,10 +235,7 @@ async fn collect_file_edges(
 
     let mut edges = Vec::new();
     for handle in handles {
-        if let Ok(Ok(mut file_edges)) = handle.await {
-            if !include_non_workspace {
-                file_edges.retain(|e| e.in_workspace);
-            }
+        if let Ok(Ok(file_edges)) = handle.await {
             edges.extend(file_edges);
         }
     }
