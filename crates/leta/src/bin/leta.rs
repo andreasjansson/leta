@@ -1437,6 +1437,32 @@ async fn handle_calls(
     Ok(())
 }
 
+async fn handle_graph(
+    config: &Config,
+    json_output: bool,
+    include_non_workspace: bool,
+) -> Result<()> {
+    let workspace_root = get_workspace_root(config)?;
+
+    let result = send_request(
+        "graph",
+        json!({
+            "workspace_root": workspace_root.to_string_lossy(),
+            "include_non_workspace": include_non_workspace,
+        }),
+    )
+    .await?;
+
+    let graph_result: GraphResult = serde_json::from_value(result)?;
+
+    if json_output {
+        println!("{}", serde_json::to_string_pretty(&graph_result)?);
+    } else {
+        println!("{}", format_graph_result(&graph_result));
+    }
+    Ok(())
+}
+
 async fn handle_rename(
     config: &Config,
     json_output: bool,
