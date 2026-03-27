@@ -435,7 +435,7 @@ async fn find_call_path(
     }
     ctx.visited.insert(key.clone());
 
-    let current_node = call_hierarchy_item_to_node(item, ctx.workspace_root);
+    let current_node = call_hierarchy_item_to_node(item, ctx.workspace_root, true);
 
     if key == ctx.target_key {
         return Some(vec![current_node]);
