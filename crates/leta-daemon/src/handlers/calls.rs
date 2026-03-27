@@ -335,7 +335,7 @@ async fn collect_outgoing_calls(
             continue;
         }
 
-        let mut node = call_hierarchy_item_to_node(call_item, ctx.workspace_root);
+        let mut node = call_hierarchy_item_to_node(call_item, ctx.workspace_root, in_workspace);
 
         if in_workspace {
             let children =
