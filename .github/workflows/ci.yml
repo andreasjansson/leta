@@ -94,7 +94,7 @@ jobs:
 
       - name: Install gopls
         run: |
-          go install golang.org/x/tools/gopls@v0.18.1
+          go install golang.org/x/tools/gopls@latest
           echo "$HOME/go/bin" >> $GITHUB_PATH
 
       - name: Install ruby-lsp
