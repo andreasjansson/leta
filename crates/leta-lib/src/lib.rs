@@ -328,6 +328,36 @@ pub async fn calls(
     Ok(format_calls_result(&result, head, &command_base))
 }
 
+pub struct GraphOptions {
+    pub include_non_workspace: bool,
+    pub include_tests: bool,
+    pub exclude_patterns: Vec<String>,
+    pub include_patterns: Vec<String>,
+}
+
+pub async fn graph(working_dir: &Path, options: GraphOptions) -> Result<String> {
+    let state = get_state().await?;
+    let workspace_root = get_workspace_root(&state.config, working_dir)?;
+
+    let params = GraphParams {
+        workspace_root: workspace_root.to_string_lossy().to_string(),
+        include_non_workspace: options.include_non_workspace,
+        exclude_patterns: options.exclude_patterns,
+        include_patterns: options.include_patterns,
+        include_tests: options.include_tests,
+    };
+
+    let result = handle_graph(&state.ctx, params)
+        .await
+        .map_err(|e| anyhow!("{}", e))?;
+
+    if let Some(error) = &result.error {
+        return Err(anyhow!("{}", error));
+    }
+
+    Ok(format_graph_result(&result, false))
+}
+
 pub async fn declaration(
     working_dir: &Path,
     symbol: &str,
