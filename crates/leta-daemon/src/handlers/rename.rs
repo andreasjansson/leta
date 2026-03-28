@@ -132,7 +132,13 @@ pub async fn handle_rename(
             break;
         }
 
-        tracing::info!("rename: retrying after wait_for_indexing");
+        tracing::info!("rename: retrying - closing and reopening all source files to sync content");
+        for source_file in &source_files {
+            let _ = workspace.close_document(source_file).await;
+        }
+        for source_file in &source_files {
+            let _ = workspace.ensure_document_open(source_file).await;
+        }
         client.wait_for_indexing(30).await;
     }
     let edit = edit.unwrap();
