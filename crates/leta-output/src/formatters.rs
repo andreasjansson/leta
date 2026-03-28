@@ -1209,16 +1209,14 @@ pub fn format_graph_result(result: &GraphResult, include_orphans: bool) -> Strin
         roots_by_lang.push((lang, lang_roots));
     }
     roots_by_lang.sort_by(|a, b| {
-        let size_a: usize = a
-            .1
-            .iter()
-            .map(|r| count_reachable(r, &outgoing, &mut HashSet::new()))
-            .sum();
-        let size_b: usize = b
-            .1
-            .iter()
-            .map(|r| count_reachable(r, &outgoing, &mut HashSet::new()))
-            .sum();
+        let size_a: usize =
+            a.1.iter()
+                .map(|r| count_reachable(r, &outgoing, &mut HashSet::new()))
+                .sum();
+        let size_b: usize =
+            b.1.iter()
+                .map(|r| count_reachable(r, &outgoing, &mut HashSet::new()))
+                .sum();
         size_b.cmp(&size_a).then_with(|| a.0.cmp(&b.0))
     });
 
@@ -1237,42 +1235,42 @@ pub fn format_graph_result(result: &GraphResult, include_orphans: bool) -> Strin
         }
 
         for root_key in lang_roots {
-        let node = match node_map.get(root_key.as_str()) {
-            Some(n) => n,
-            None => continue,
-        };
+            let node = match node_map.get(root_key.as_str()) {
+                Some(n) => n,
+                None => continue,
+            };
 
-        let mut root_line = format_graph_node_label(node, true);
-        let has_children = outgoing.contains_key(root_key.as_str());
-        let is_self_recursive = self_recursive.contains(root_key.as_str());
+            let mut root_line = format_graph_node_label(node, true);
+            let has_children = outgoing.contains_key(root_key.as_str());
+            let is_self_recursive = self_recursive.contains(root_key.as_str());
 
-        if is_self_recursive && !has_children {
-            root_line.push_str(" ↻");
+            if is_self_recursive && !has_children {
+                root_line.push_str(" ↻");
+                lines.push(root_line);
+                lines.push(String::new());
+                visited.insert(root_key.clone());
+                continue;
+            }
+
+            if is_self_recursive {
+                root_line.push_str(" ↻");
+            }
+
             lines.push(root_line);
-            lines.push(String::new());
             visited.insert(root_key.clone());
-            continue;
-        }
 
-        if is_self_recursive {
-            root_line.push_str(" ↻");
-        }
+            if let Some(children) = outgoing.get(root_key.as_str()) {
+                render_graph_tree(
+                    children,
+                    &outgoing,
+                    &self_recursive,
+                    &mut visited,
+                    &mut lines,
+                    "",
+                );
+            }
 
-        lines.push(root_line);
-        visited.insert(root_key.clone());
-
-        if let Some(children) = outgoing.get(root_key.as_str()) {
-            render_graph_tree(
-                children,
-                &outgoing,
-                &self_recursive,
-                &mut visited,
-                &mut lines,
-                "",
-            );
-        }
-
-        lines.push(String::new());
+            lines.push(String::new());
         }
     }
 
@@ -1324,8 +1322,7 @@ fn render_graph_tree(
     lines: &mut Vec<String>,
     prefix: &str,
 ) {
-    let node_key =
-        |s: &leta_types::CallGraphSymbol| format!("{}:{}:{}", s.path, s.line, s.name);
+    let node_key = |s: &leta_types::CallGraphSymbol| format!("{}:{}:{}", s.path, s.line, s.name);
 
     for (i, edge) in children.iter().enumerate() {
         let callee = &edge.callee;

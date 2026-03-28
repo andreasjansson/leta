@@ -931,8 +931,7 @@ async fn handle_grep(
     };
 
     if json_output || profile {
-        let response =
-            send_request_with_profile("grep", request_params, profile).await?;
+        let response = send_request_with_profile("grep", request_params, profile).await?;
 
         let grep_result: GrepResult = serde_json::from_value(response.result)?;
         if json_output {
@@ -944,17 +943,12 @@ async fn handle_grep(
         display_profiling(response.profiling);
     } else {
         let mut count = 0u32;
-        let done = send_streaming_request(
-            "grep",
-            request_params,
-            false,
-            |msg| {
-                if let StreamMessage::Symbol(sym) = msg {
-                    println!("{}", format_symbol_line(&sym));
-                    count += 1;
-                }
-            },
-        )
+        let done = send_streaming_request("grep", request_params, false, |msg| {
+            if let StreamMessage::Symbol(sym) = msg {
+                println!("{}", format_symbol_line(&sym));
+                count += 1;
+            }
+        })
         .await?;
 
         if done.truncated {

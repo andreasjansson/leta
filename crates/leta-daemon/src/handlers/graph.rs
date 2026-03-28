@@ -31,8 +31,15 @@ fn is_test_path(path: &str) -> bool {
 
     // Directory-based patterns (all languages)
     let test_dirs = [
-        "test", "tests", "spec", "specs", "__tests__", "__test__",
-        "test_fixtures", "testdata", "testing",
+        "test",
+        "tests",
+        "spec",
+        "specs",
+        "__tests__",
+        "__test__",
+        "test_fixtures",
+        "testdata",
+        "testing",
     ];
     for part in &parts {
         let lower = part.to_lowercase();
@@ -47,15 +54,13 @@ fn is_test_path(path: &str) -> bool {
     }
 
     let ext = filename.rsplit('.').next().unwrap_or("");
-    let stem = filename.strip_suffix(&format!(".{}", ext)).unwrap_or(filename);
+    let stem = filename
+        .strip_suffix(&format!(".{}", ext))
+        .unwrap_or(filename);
 
     match ext {
         // Python: test_*.py, *_test.py, conftest.py
-        "py" => {
-            stem.starts_with("test_")
-                || stem.ends_with("_test")
-                || stem == "conftest"
-        }
+        "py" => stem.starts_with("test_") || stem.ends_with("_test") || stem == "conftest",
         // Go: *_test.go
         "go" => stem.ends_with("_test"),
         // Rust: file-level only (inline tests detected by is_test_symbol)
@@ -94,11 +99,7 @@ fn is_test_symbol(sym: &SymbolInfo) -> bool {
     match sym.container.as_deref() {
         // Rust: #[cfg(test)] mod tests { #[test] fn test_foo() }
         // Python: class TestFoo(unittest.TestCase)
-        Some(c) => {
-            c == "tests"
-                || c == "test"
-                || c.starts_with("Test")
-        }
+        Some(c) => c == "tests" || c == "test" || c.starts_with("Test"),
         None => false,
     }
 }
@@ -266,8 +267,12 @@ pub async fn handle_graph(
 
         let edges = collect_file_edges(&client, &workspace_root, file_syms).await;
 
-        ctx.hover_cache
-            .set(&key, &CallGraphFileEdges { edges: edges.clone() });
+        ctx.hover_cache.set(
+            &key,
+            &CallGraphFileEdges {
+                edges: edges.clone(),
+            },
+        );
         all_edges.extend(edges);
         files_computed += 1;
     }
@@ -303,8 +308,11 @@ pub async fn handle_graph(
     nodes.sort_by(|a, b| (&a.path, a.line).cmp(&(&b.path, b.line)));
 
     all_edges.sort_by(|a, b| {
-        (&a.caller.path, a.caller.line, &a.callee.name)
-            .cmp(&(&b.caller.path, b.caller.line, &b.callee.name))
+        (&a.caller.path, a.caller.line, &a.callee.name).cmp(&(
+            &b.caller.path,
+            b.caller.line,
+            &b.callee.name,
+        ))
     });
 
     let error = if all_edges.is_empty() && !unsupported_servers.is_empty() {
@@ -411,10 +419,7 @@ async fn collect_symbol_edges(
     for call in calls {
         let in_workspace = is_path_in_workspace(call.to.uri.as_str(), workspace_root);
         let callee = call_item_to_graph_symbol(&call.to, workspace_root);
-        let call_site_line = call
-            .from_ranges
-            .first()
-            .map(|r| r.start.line + 1);
+        let call_site_line = call.from_ranges.first().map(|r| r.start.line + 1);
 
         edges.push(CallGraphEdge {
             caller: caller.clone(),
