@@ -101,7 +101,7 @@ pub async fn handle_rename(
     // Some LSP servers (basedpyright) may not have finished analyzing
     // cross-file references after newly opened documents.
     let mut edit = None;
-    let expect_multi_file = !opened_for_rename.is_empty();
+    let expect_multi_file = source_files.len() > 1;
     for attempt in 0..4u32 {
         let response: Option<WorkspaceEdit> = client
             .send_request("textDocument/rename", rename_params.clone())
