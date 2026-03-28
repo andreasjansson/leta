@@ -213,12 +213,6 @@ pub async fn handle_rename(
         }
     }
 
-    for file_path in &opened_for_rename {
-        if !files_to_modify.contains(file_path) {
-            let _ = workspace.close_document(file_path).await;
-        }
-    }
-
     Ok(RenameResult { files_changed })
 }
 
