@@ -45,7 +45,7 @@ jobs:
 
   corpus-test:
     name: Corpus Tests
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -101,59 +101,24 @@ jobs:
         run: gem install ruby-lsp
 
       - name: Install clangd
-        run: sudo apt-get install -y clangd
+        run: brew install llvm
 
       - name: Install jdtls
-        run: |
-          JDTLS_URL="https://www.eclipse.org/downloads/download.php?file=/jdtls/milestones/1.40.0/jdt-language-server-1.40.0-202409261450.tar.gz&r=1"
-          wget -q "$JDTLS_URL" -O jdtls.tar.gz
-          mkdir -p ~/.local/share/jdtls
-          tar -xzf jdtls.tar.gz -C ~/.local/share/jdtls
-          rm jdtls.tar.gz
-          cat > ~/.local/bin/jdtls << 'WRAPPER'
-          #!/bin/bash
-          JAR=$(ls ~/.local/share/jdtls/plugins/org.eclipse.equinox.launcher_*.jar | head -1)
-          exec java \
-            -Declipse.application=org.eclipse.jdt.ls.core.id1 \
-            -Dosgi.bundles.defaultStartLevel=4 \
-            -Declipse.product=org.eclipse.jdt.ls.core.product \
-            -noverify -Xmx1G \
-            --add-modules=ALL-SYSTEM \
-            --add-opens java.base/java.util=ALL-UNNAMED \
-            --add-opens java.base/java.lang=ALL-UNNAMED \
-            -jar "$JAR" \
-            -configuration ~/.local/share/jdtls/config_linux \
-            "$@"
-          WRAPPER
-          chmod +x ~/.local/bin/jdtls
+        run: brew install jdtls
 
       - name: Install lua-language-server
-        run: |
-          LUA_LS_VERSION="3.13.5"
-          wget -q "https://github.com/LuaLS/lua-language-server/releases/download/${LUA_LS_VERSION}/lua-language-server-${LUA_LS_VERSION}-linux-x64.tar.gz" -O lua-ls.tar.gz
-          mkdir -p ~/.local/share/lua-language-server
-          tar -xzf lua-ls.tar.gz -C ~/.local/share/lua-language-server
-          ln -s ~/.local/share/lua-language-server/bin/lua-language-server ~/.local/bin/
-          rm lua-ls.tar.gz
+        run: brew install lua-language-server
 
       - name: Install OCaml and ocamllsp
         run: |
-          sudo apt-get install -y opam
+          brew install opam
           opam init --auto-setup --disable-sandboxing --yes
           eval $(opam env)
           opam install ocaml-lsp-server dune --yes
           echo "$HOME/.opam/default/bin" >> $GITHUB_PATH
 
       - name: Install Zig and zls
-        run: |
-          wget -q "https://ziglang.org/download/0.13.0/zig-linux-x86_64-0.13.0.tar.xz"
-          tar -xf zig-linux-x86_64-0.13.0.tar.xz
-          ln -s "$PWD/zig-linux-x86_64-0.13.0/zig" ~/.local/bin/zig
-          rm zig-linux-x86_64-0.13.0.tar.xz
-          wget -q "https://github.com/zigtools/zls/releases/download/0.13.0/zls-x86_64-linux.tar.xz" -O zls.tar.xz
-          tar -xf zls.tar.xz
-          mv zls ~/.local/bin/
-          rm zls.tar.xz
+        run: brew install zig zls
 
       - name: Build OCaml fixture
         run: |
