@@ -87,7 +87,7 @@ jobs:
         run: cargo install cctr --git https://github.com/andreasjansson/cctr
 
       - name: Install language servers (npm)
-        run: npm install -g typescript-language-server typescript intelephense
+        run: npm install -g typescript-language-server@4.3.3 typescript@5.8.3 intelephense@1.12.6
 
       - name: Install basedpyright
         run: pip install basedpyright
