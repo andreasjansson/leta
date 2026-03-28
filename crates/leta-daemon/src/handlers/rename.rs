@@ -139,7 +139,24 @@ pub async fn handle_rename(
         for source_file in &source_files {
             let _ = workspace.ensure_document_open(source_file).await;
         }
-        client.wait_for_indexing(30).await;
+        // Force the server to parse each reopened file by sending a probe request.
+        // basedpyright's getParseResults calls getBoundSourceFileInfo(force=true)
+        // which synchronously parses and binds the file.
+        for source_file in &source_files {
+            let probe_uri = leta_fs::path_to_uri(source_file);
+            let _: Result<Option<leta_lsp::lsp_types::DocumentSymbolResponse>, _> = client
+                .send_request(
+                    "textDocument/documentSymbol",
+                    leta_lsp::lsp_types::DocumentSymbolParams {
+                        text_document: TextDocumentIdentifier {
+                            uri: probe_uri.parse().unwrap(),
+                        },
+                        work_done_progress_params: Default::default(),
+                        partial_result_params: Default::default(),
+                    },
+                )
+                .await;
+        }
     }
     let edit = edit.unwrap();
     tracing::info!("rename: got response from LSP");
