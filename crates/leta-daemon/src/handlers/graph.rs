@@ -195,6 +195,7 @@ pub async fn handle_graph(
         .iter()
         .filter(|s| is_callable(s))
         .filter(|s| path_matches(&s.path))
+        .filter(|s| params.include_tests || !is_test_symbol(s))
         .collect();
     info!(
         "Building call graph: {} callable symbols out of {} total",
