@@ -225,10 +225,21 @@ pub async fn handle_graph(
             .cmp(&(&b.caller.path, b.caller.line, &b.callee.name))
     });
 
+    let error = if all_edges.is_empty() && !unsupported_servers.is_empty() {
+        unsupported_servers.sort();
+        Some(format!(
+            "Call hierarchy is not supported by {}",
+            unsupported_servers.join(", ")
+        ))
+    } else {
+        None
+    };
+
     Ok(GraphResult {
         nodes,
         edges: all_edges,
         indexing_time_ms: Some(elapsed.as_millis() as u64),
+        error,
     })
 }
 
