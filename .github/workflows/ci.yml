@@ -141,8 +141,8 @@ jobs:
         run: |
           eval $(opam env)
           leta daemon start
-          sleep 2
-          ./script/corpus-test
+          sleep 5
+          ./script/corpus-test -s
 
   check-release:
     name: Check Release
