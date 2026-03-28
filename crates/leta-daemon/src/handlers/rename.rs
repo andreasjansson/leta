@@ -68,9 +68,24 @@ pub async fn handle_rename(
         .map_err(|e| e.to_string())?;
 
     workspace.ensure_document_open(&file_path).await?;
+
+    let extension = file_path.extension().and_then(|e| e.to_str()).unwrap_or("");
+    let source_files = super::find_source_files_with_extension(&workspace_root, extension);
+    let mut opened_for_rename = Vec::new();
+    for source_file in &source_files {
+        if *source_file != file_path && !workspace.is_document_open(source_file).await {
+            workspace.ensure_document_open(source_file).await?;
+            opened_for_rename.push(source_file.clone());
+        }
+    }
+
     let client = workspace.client().await.ok_or("No LSP client")?;
 
     client.wait_for_indexing(30).await;
+
+    if !opened_for_rename.is_empty() {
+        tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+    }
     let uri = leta_fs::path_to_uri(&file_path);
     let response: Option<WorkspaceEdit> = client
         .send_request(
