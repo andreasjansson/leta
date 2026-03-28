@@ -370,6 +370,7 @@ async fn main() -> Result<()> {
                     include_orphans,
                     exclude_path,
                     include_path,
+                    include_tests,
                 } => {
                     handle_graph(
                         &config,
@@ -378,6 +379,7 @@ async fn main() -> Result<()> {
                         include_orphans,
                         exclude_path,
                         include_path,
+                        include_tests,
                     )
                     .await
                 }
