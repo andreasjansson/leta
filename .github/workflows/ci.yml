@@ -44,113 +44,149 @@ jobs:
       - run: cargo test --all-features
 
   corpus-test:
-    name: Corpus Tests
+    name: "Corpus: ${{ matrix.name }}"
     runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: python
+            paths: languages/python languages/multi_language leta leta/cache_invalidation languages/dummy_missing_server
+            setup_python: true
+            setup_go: true
+            servers: basedpyright gopls
+          - name: typescript
+            paths: languages/typescript languages/jsx
+            setup_node: true
+            servers: typescript-ls
+          - name: go
+            paths: languages/go
+            setup_go: true
+            servers: gopls
+          - name: rust
+            paths: languages/rust
+            servers: none
+          - name: java
+            paths: languages/java
+            setup_java: true
+            servers: jdtls
+          - name: cpp
+            paths: languages/cpp
+            servers: clangd
+          - name: ruby
+            paths: languages/ruby
+            setup_ruby: true
+            servers: ruby-lsp
+          - name: php
+            paths: languages/php
+            setup_node: true
+            servers: intelephense
+          - name: lua
+            paths: languages/lua
+            servers: lua-ls
+          - name: ocaml
+            paths: languages/ocaml
+            servers: ocamllsp
+          - name: zig
+            paths: languages/zig
+            servers: zig-zls
     steps:
       - uses: actions/checkout@v4
-
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rust-analyzer
       - uses: Swatinem/rust-cache@v2
 
       - uses: actions/setup-node@v4
+        if: matrix.setup_node
         with:
           node-version: "20"
-
       - uses: actions/setup-python@v5
+        if: matrix.setup_python
         with:
           python-version: "3.12"
-
       - uses: actions/setup-go@v5
+        if: matrix.setup_go
         with:
           go-version: "1.24"
-
       - uses: ruby/setup-ruby@v1
+        if: matrix.setup_ruby
         with:
           ruby-version: "3.3"
-
       - uses: actions/setup-java@v4
+        if: matrix.setup_java
         with:
           distribution: "temurin"
           java-version: "17"
 
-      - name: Build and install leta
+      - name: Build and install leta + cctr
         run: |
           cargo build --release
           mkdir -p ~/.local/bin
           cp target/release/leta ~/.local/bin/
           cp target/release/leta-daemon ~/.local/bin/
           echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-      - name: Install cctr
-        run: cargo install cctr --git https://github.com/andreasjansson/cctr
-
-      - name: Install language servers (npm)
-        run: npm install -g typescript-language-server@4.3.3 typescript@5.8.3 intelephense@1.12.6
+          cargo install cctr --git https://github.com/andreasjansson/cctr
 
       - name: Install basedpyright
+        if: contains(matrix.servers, 'basedpyright')
         run: pip install basedpyright
 
       - name: Install gopls
+        if: contains(matrix.servers, 'gopls')
         run: |
           go install golang.org/x/tools/gopls@latest
           echo "$HOME/go/bin" >> $GITHUB_PATH
 
+      - name: Install TypeScript language servers
+        if: contains(matrix.servers, 'typescript-ls')
+        run: npm install -g typescript-language-server@4.3.3 typescript@5.8.3
+
+      - name: Install intelephense
+        if: contains(matrix.servers, 'intelephense')
+        run: npm install -g intelephense@1.12.6
+
       - name: Install ruby-lsp
+        if: contains(matrix.servers, 'ruby-lsp')
         run: gem install ruby-lsp
 
       - name: Install clangd
+        if: contains(matrix.servers, 'clangd')
         run: brew install llvm
 
       - name: Install jdtls
+        if: contains(matrix.servers, 'jdtls')
         run: brew install jdtls
 
       - name: Install lua-language-server
+        if: contains(matrix.servers, 'lua-ls')
         run: brew install lua-language-server
 
       - name: Install OCaml and ocamllsp
+        if: contains(matrix.servers, 'ocamllsp')
         run: |
           brew install opam
           opam init --auto-setup --disable-sandboxing --yes
           eval $(opam env)
           opam install ocaml-lsp-server dune --yes
           echo "$HOME/.opam/default/bin" >> $GITHUB_PATH
-
-      - name: Install Zig and zls
-        run: brew install zig zls
-
-      - name: Build OCaml fixture
-        run: |
-          eval $(opam env)
           cd test/corpus/languages/ocaml/fixture
           opam exec -- dune build 2>/dev/null || true
 
-      - name: Verify language servers
-        run: |
-          echo "Checking language servers..."
-          for cmd in basedpyright-langserver typescript-language-server gopls rust-analyzer ruby-lsp clangd jdtls lua-language-server ocamllsp intelephense zls zig; do
-            if which $cmd > /dev/null 2>&1; then
-              echo "  ✓ $cmd"
-            else
-              echo "  ✗ $cmd MISSING" && exit 1
-            fi
-          done
-          echo ""
-          echo "Versions:"
-          typescript-language-server --version || true
-          gopls version 2>&1 | head -1 || true
-          rust-analyzer --version || true
-          lua-language-server --version || true
-          zls --version || true
-          clangd --version 2>&1 | head -1 || true
+      - name: Install Zig and zls
+        if: contains(matrix.servers, 'zig-zls')
+        run: brew install zig zls
 
       - name: Run corpus tests
         run: |
-          eval $(opam env)
+          if [[ "${{ matrix.servers }}" == *"ocamllsp"* ]]; then
+            eval $(opam env)
+          fi
           leta daemon start
-          sleep 5
-          ./script/corpus-test -s
+          sleep 3
+          for p in ${{ matrix.paths }}; do
+            cctr "test/corpus/$p"
+          done
 
   check-release:
     name: Check Release
