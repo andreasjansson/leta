@@ -58,7 +58,7 @@ fn is_test_path(path: &str) -> bool {
         }
         // Go: *_test.go
         "go" => stem.ends_with("_test"),
-        // Rust: tests are in tests/ dir (handled above), but also detect test modules
+        // Rust: file-level only (inline tests detected by is_test_symbol)
         "rs" => stem.ends_with("_test") || stem == "tests",
         // TypeScript/JavaScript: *.test.ts, *.spec.ts, *.test.tsx, *.spec.tsx
         "ts" | "tsx" | "js" | "jsx" | "mts" | "mjs" => {
@@ -87,6 +87,19 @@ fn is_test_path(path: &str) -> bool {
         // Zig: *_test.zig, test_*.zig
         "zig" => stem.ends_with("_test") || stem.starts_with("test_"),
         _ => false,
+    }
+}
+
+fn is_test_symbol(sym: &SymbolInfo) -> bool {
+    match sym.container.as_deref() {
+        // Rust: #[cfg(test)] mod tests { #[test] fn test_foo() }
+        // Python: class TestFoo(unittest.TestCase)
+        Some(c) => {
+            c == "tests"
+                || c == "test"
+                || c.starts_with("Test")
+        }
+        None => false,
     }
 }
 
