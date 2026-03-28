@@ -104,6 +104,12 @@ cd /path/to/your/project
 leta workspace add
 ```
 
+Get a full architectural overview:
+
+```bash
+leta graph                     # Full call graph as trees from entry points
+```
+
 Search for symbols:
 
 ```bash
