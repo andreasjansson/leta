@@ -136,6 +136,14 @@ jobs:
               echo "  ✗ $cmd MISSING" && exit 1
             fi
           done
+          echo ""
+          echo "Versions:"
+          typescript-language-server --version || true
+          gopls version 2>&1 | head -1 || true
+          rust-analyzer --version || true
+          lua-language-server --version || true
+          zls --version || true
+          clangd --version 2>&1 | head -1 || true
 
       - name: Run corpus tests
         run: |
