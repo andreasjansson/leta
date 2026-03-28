@@ -1467,6 +1467,7 @@ async fn handle_graph(
     include_orphans: bool,
     exclude_path: Vec<String>,
     include_path: Vec<String>,
+    include_tests: bool,
 ) -> Result<()> {
     let workspace_root = get_workspace_root(config)?;
 
@@ -1477,6 +1478,7 @@ async fn handle_graph(
             "include_non_workspace": include_non_workspace,
             "exclude_patterns": exclude_path,
             "include_patterns": include_path,
+            "include_tests": include_tests,
         }),
     )
     .await?;
