@@ -71,13 +71,24 @@ pub async fn handle_rename(
 
     let extension = file_path.extension().and_then(|e| e.to_str()).unwrap_or("");
     let source_files = super::find_source_files_with_extension(&workspace_root, extension);
+    tracing::info!(
+        "rename: found {} source files with .{}: {:?}",
+        source_files.len(),
+        extension,
+        source_files.iter().map(|p| relative_path(p, &workspace_root)).collect::<Vec<_>>()
+    );
     let mut opened_for_rename = Vec::new();
     for source_file in &source_files {
-        if *source_file != file_path && !workspace.is_document_open(source_file).await {
-            workspace.ensure_document_open(source_file).await?;
-            opened_for_rename.push(source_file.clone());
+        if *source_file != file_path {
+            let already_open = workspace.is_document_open(source_file).await;
+            tracing::info!("rename: {} already_open={}", relative_path(source_file, &workspace_root), already_open);
+            if !already_open {
+                workspace.ensure_document_open(source_file).await?;
+                opened_for_rename.push(source_file.clone());
+            }
         }
     }
+    tracing::info!("rename: opened {} new files", opened_for_rename.len());
 
     let client = workspace.client().await.ok_or("No LSP client")?;
 
@@ -97,9 +108,6 @@ pub async fn handle_rename(
         work_done_progress_params: Default::default(),
     };
 
-    // Retry rename if the result only contains edits for the definition file.
-    // Some LSP servers (basedpyright) may not have finished analyzing
-    // cross-file references after newly opened documents.
     let mut edit = None;
     let expect_multi_file = source_files.len() > 1;
     for attempt in 0..4u32 {
@@ -110,21 +118,21 @@ pub async fn handle_rename(
 
         let workspace_edit = response.ok_or("Rename not supported or failed")?;
         let files = get_files_from_workspace_edit(&workspace_edit);
+        tracing::info!(
+            "rename: attempt {} => {} file(s): {:?}",
+            attempt + 1,
+            files.len(),
+            files.iter().map(|p| relative_path(p, &workspace_root)).collect::<Vec<_>>()
+        );
+
         let multi_file = files.len() > 1;
 
         if multi_file || !expect_multi_file || attempt == 3 {
-            if attempt > 0 {
-                tracing::info!("rename: succeeded on attempt {} ({} files)", attempt + 1, files.len());
-            }
             edit = Some(workspace_edit);
             break;
         }
 
-        tracing::info!(
-            "rename: attempt {} returned only {} file(s), retrying after wait_for_indexing",
-            attempt + 1,
-            files.len()
-        );
+        tracing::info!("rename: retrying after wait_for_indexing");
         client.wait_for_indexing(30).await;
     }
     let edit = edit.unwrap();
