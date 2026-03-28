@@ -172,7 +172,9 @@ jobs:
 
       - name: Install clangd (macOS)
         if: contains(matrix.servers, 'clangd')
-        run: brew install llvm
+        run: |
+          brew install llvm
+          echo "$(brew --prefix llvm)/bin" >> $GITHUB_PATH
 
       - name: Install jdtls (macOS)
         if: contains(matrix.servers, 'jdtls')
