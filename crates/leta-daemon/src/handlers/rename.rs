@@ -117,6 +117,8 @@ pub async fn handle_rename(
         work_done_progress_params: Default::default(),
     };
 
+    tracing::info!("rename: {} source files, expect_multi_file={}", source_files.len(), source_files.len() > 1);
+
     let mut edit = None;
     let expect_multi_file = source_files.len() > 1;
     for attempt in 0..4u32 {
@@ -127,6 +129,7 @@ pub async fn handle_rename(
 
         let workspace_edit = response.ok_or("Rename not supported or failed")?;
         let files = get_files_from_workspace_edit(&workspace_edit);
+        tracing::info!("rename: attempt {} => {} file(s)", attempt + 1, files.len());
 
         if files.len() > 1 || !expect_multi_file || attempt == 3 {
             edit = Some(workspace_edit);
