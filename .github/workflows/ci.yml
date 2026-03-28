@@ -196,12 +196,16 @@ jobs:
           ln -s ~/.local/share/lua-language-server/bin/lua-language-server ~/.local/bin/
           rm lua-ls.tar.gz
 
-      - name: Install OCaml and ocamllsp (macOS)
+      - name: Set up OCaml
+        if: contains(matrix.servers, 'ocamllsp')
+        uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: "5"
+          opam-pin: false
+
+      - name: Install ocamllsp and build fixture
         if: contains(matrix.servers, 'ocamllsp')
         run: |
-          brew install opam
-          opam init --auto-setup --disable-sandboxing --yes
-          eval $(opam env)
           opam install ocaml-lsp-server dune --yes
           echo "$HOME/.opam/default/bin" >> $GITHUB_PATH
           cd test/corpus/languages/ocaml/fixture
