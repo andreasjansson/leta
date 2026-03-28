@@ -71,28 +71,37 @@ pub async fn handle_rename(
 
     let extension = file_path.extension().and_then(|e| e.to_str()).unwrap_or("");
     let source_files = super::find_source_files_with_extension(&workspace_root, extension);
-    tracing::info!(
-        "rename: found {} source files with .{}: {:?}",
-        source_files.len(),
-        extension,
-        source_files.iter().map(|p| relative_path(p, &workspace_root)).collect::<Vec<_>>()
-    );
-    let mut opened_for_rename = Vec::new();
+
+    // Close and reopen ALL source files to ensure the LSP server has
+    // up-to-date content. This is necessary because previous operations
+    // may have modified files on disk without syncing to the LSP.
     for source_file in &source_files {
-        if *source_file != file_path {
-            let already_open = workspace.is_document_open(source_file).await;
-            tracing::info!("rename: {} already_open={} (abs: {})", relative_path(source_file, &workspace_root), already_open, source_file.display());
-            if !already_open {
-                workspace.ensure_document_open(source_file).await?;
-                opened_for_rename.push(source_file.clone());
-            }
-        }
+        let _ = workspace.close_document(source_file).await;
     }
-    tracing::info!("rename: opened {} new files", opened_for_rename.len());
+    for source_file in &source_files {
+        workspace.ensure_document_open(source_file).await?;
+    }
 
     let client = workspace.client().await.ok_or("No LSP client")?;
-
     client.wait_for_indexing(30).await;
+
+    // Probe each file to force the LSP server to parse and bind it.
+    // basedpyright won't find cross-file references until files are parsed.
+    for source_file in &source_files {
+        let probe_uri = leta_fs::path_to_uri(source_file);
+        let _: Result<Option<leta_lsp::lsp_types::DocumentSymbolResponse>, _> = client
+            .send_request(
+                "textDocument/documentSymbol",
+                leta_lsp::lsp_types::DocumentSymbolParams {
+                    text_document: TextDocumentIdentifier {
+                        uri: probe_uri.parse().unwrap(),
+                    },
+                    work_done_progress_params: Default::default(),
+                    partial_result_params: Default::default(),
+                },
+            )
+            .await;
+    }
     let uri = leta_fs::path_to_uri(&file_path);
     let rename_params = LspRenameParams {
         text_document_position: leta_lsp::lsp_types::TextDocumentPositionParams {
