@@ -34,6 +34,7 @@ class UserHandler:
   - [show](#show)
   - [refs](#refs)
   - [calls](#calls)
+  - [graph](#graph)
   - [implementations](#implementations)
   - [supertypes / subtypes](#supertypes--subtypes)
   - [declaration](#declaration)
