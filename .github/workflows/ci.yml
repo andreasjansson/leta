@@ -110,7 +110,7 @@ jobs:
             servers: zig-zls
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.91.1
         with:
           components: rust-analyzer
       - uses: Swatinem/rust-cache@v2
