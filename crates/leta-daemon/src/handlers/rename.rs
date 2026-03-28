@@ -81,7 +81,7 @@ pub async fn handle_rename(
     for source_file in &source_files {
         if *source_file != file_path {
             let already_open = workspace.is_document_open(source_file).await;
-            tracing::info!("rename: {} already_open={}", relative_path(source_file, &workspace_root), already_open);
+            tracing::info!("rename: {} already_open={} (abs: {})", relative_path(source_file, &workspace_root), already_open, source_file.display());
             if !already_open {
                 workspace.ensure_document_open(source_file).await?;
                 opened_for_rename.push(source_file.clone());
