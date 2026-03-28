@@ -45,49 +45,67 @@ jobs:
 
   corpus-test:
     name: "Corpus: ${{ matrix.name }}"
-    runs-on: macos-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         include:
+          # --- Linux jobs (these produce identical output on Ubuntu) ---
           - name: python
+            os: ubuntu-latest
             paths: languages/python languages/multi_language leta leta/cache_invalidation languages/dummy_missing_server
             setup_python: true
             setup_go: true
             servers: basedpyright gopls
-          - name: typescript
-            paths: languages/typescript languages/jsx
-            setup_node: true
-            servers: typescript-ls
           - name: go
+            os: ubuntu-latest
             paths: languages/go
             setup_go: true
             servers: gopls
+          - name: jsx
+            os: ubuntu-latest
+            paths: languages/jsx
+            setup_node: true
+            servers: typescript-ls
+          - name: lua
+            os: ubuntu-latest
+            paths: languages/lua
+            servers: lua-ls-linux
+          - name: php
+            os: ubuntu-latest
+            paths: languages/php
+            setup_node: true
+            servers: intelephense
+          - name: ruby
+            os: ubuntu-latest
+            paths: languages/ruby
+            setup_ruby: true
+            servers: ruby-lsp
+          # --- macOS jobs (platform-sensitive LSP output) ---
+          - name: typescript
+            os: macos-latest
+            paths: languages/typescript
+            setup_node: true
+            servers: typescript-ls
           - name: rust
+            os: macos-latest
             paths: languages/rust
             servers: none
           - name: java
+            os: macos-latest
             paths: languages/java
             setup_java: true
             servers: jdtls
           - name: cpp
+            os: macos-latest
             paths: languages/cpp
             servers: clangd
-          - name: ruby
-            paths: languages/ruby
-            setup_ruby: true
-            servers: ruby-lsp
-          - name: php
-            paths: languages/php
-            setup_node: true
-            servers: intelephense
-          - name: lua
-            paths: languages/lua
-            servers: lua-ls
           - name: ocaml
+            os: macos-latest
             paths: languages/ocaml
             servers: ocamllsp
           - name: zig
+            os: macos-latest
             paths: languages/zig
             servers: zig-zls
     steps:
@@ -96,6 +114,9 @@ jobs:
         with:
           components: rust-analyzer
       - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cctr
 
       - uses: actions/setup-node@v4
         if: matrix.setup_node
@@ -119,14 +140,13 @@ jobs:
           distribution: "temurin"
           java-version: "17"
 
-      - name: Build and install leta + cctr
+      - name: Build and install leta
         run: |
           cargo build --release
           mkdir -p ~/.local/bin
           cp target/release/leta ~/.local/bin/
           cp target/release/leta-daemon ~/.local/bin/
           echo "$HOME/.local/bin" >> $GITHUB_PATH
-          cargo install cctr --git https://github.com/andreasjansson/cctr
 
       - name: Install basedpyright
         if: contains(matrix.servers, 'basedpyright')
@@ -150,19 +170,29 @@ jobs:
         if: contains(matrix.servers, 'ruby-lsp')
         run: gem install ruby-lsp
 
-      - name: Install clangd
+      - name: Install clangd (macOS)
         if: contains(matrix.servers, 'clangd')
         run: brew install llvm
 
-      - name: Install jdtls
+      - name: Install jdtls (macOS)
         if: contains(matrix.servers, 'jdtls')
         run: brew install jdtls
 
-      - name: Install lua-language-server
-        if: contains(matrix.servers, 'lua-ls')
+      - name: Install lua-language-server (macOS)
+        if: matrix.servers == 'lua-ls'
         run: brew install lua-language-server
 
-      - name: Install OCaml and ocamllsp
+      - name: Install lua-language-server (Linux)
+        if: matrix.servers == 'lua-ls-linux'
+        run: |
+          LUA_LS_VERSION="3.13.5"
+          wget -q "https://github.com/LuaLS/lua-language-server/releases/download/${LUA_LS_VERSION}/lua-language-server-${LUA_LS_VERSION}-linux-x64.tar.gz" -O lua-ls.tar.gz
+          mkdir -p ~/.local/share/lua-language-server
+          tar -xzf lua-ls.tar.gz -C ~/.local/share/lua-language-server
+          ln -s ~/.local/share/lua-language-server/bin/lua-language-server ~/.local/bin/
+          rm lua-ls.tar.gz
+
+      - name: Install OCaml and ocamllsp (macOS)
         if: contains(matrix.servers, 'ocamllsp')
         run: |
           brew install opam
@@ -173,7 +203,7 @@ jobs:
           cd test/corpus/languages/ocaml/fixture
           opam exec -- dune build 2>/dev/null || true
 
-      - name: Install Zig and zls
+      - name: Install Zig and zls (macOS)
         if: contains(matrix.servers, 'zig-zls')
         run: brew install zig zls
 
