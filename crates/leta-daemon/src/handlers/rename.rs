@@ -87,31 +87,62 @@ pub async fn handle_rename(
 
     let uri = leta_fs::path_to_uri(&file_path);
 
-    // Probe the definition file with textDocument/references to force the
-    // LSP server to perform full cross-file analysis. documentSymbol only
-    // forces parsing, but rename needs the server to have resolved imports
-    // and cross-file type relationships.
-    let _: Result<Option<Vec<leta_lsp::lsp_types::Location>>, _> = client
-        .send_request(
-            "textDocument/references",
-            leta_lsp::lsp_types::ReferenceParams {
-                text_document_position: leta_lsp::lsp_types::TextDocumentPositionParams {
-                    text_document: TextDocumentIdentifier {
-                        uri: uri.parse().unwrap(),
+    // Wait for the LSP to discover cross-file references before renaming.
+    // basedpyright's background analysis may not have resolved imports yet.
+    // We probe with textDocument/references and only proceed with rename
+    // once the server reports references in multiple files.
+    let expect_multi_file = source_files.len() > 1;
+    if expect_multi_file {
+        for probe_attempt in 0..10u32 {
+            let refs_result: Result<Option<Vec<leta_lsp::lsp_types::Location>>, _> = client
+                .send_request(
+                    "textDocument/references",
+                    leta_lsp::lsp_types::ReferenceParams {
+                        text_document_position: leta_lsp::lsp_types::TextDocumentPositionParams {
+                            text_document: TextDocumentIdentifier {
+                                uri: uri.parse().unwrap(),
+                            },
+                            position: Position {
+                                line: params.line - 1,
+                                character: params.column,
+                            },
+                        },
+                        context: leta_lsp::lsp_types::ReferenceContext {
+                            include_declaration: true,
+                        },
+                        work_done_progress_params: Default::default(),
+                        partial_result_params: Default::default(),
                     },
-                    position: Position {
-                        line: params.line - 1,
-                        character: params.column,
-                    },
-                },
-                context: leta_lsp::lsp_types::ReferenceContext {
-                    include_declaration: true,
-                },
-                work_done_progress_params: Default::default(),
-                partial_result_params: Default::default(),
-            },
-        )
-        .await;
+                )
+                .await;
+
+            let ref_files: HashSet<String> = refs_result
+                .unwrap_or(None)
+                .unwrap_or_default()
+                .iter()
+                .map(|loc| loc.uri.to_string())
+                .collect();
+
+            if ref_files.len() > 1 {
+                tracing::info!("rename: references found in {} files (probe {})", ref_files.len(), probe_attempt + 1);
+                break;
+            }
+
+            if probe_attempt == 9 {
+                tracing::warn!("rename: references only found in {} file(s) after 10 probes, proceeding anyway", ref_files.len());
+                break;
+            }
+
+            // Close and reopen all files to force content re-sync
+            for source_file in &source_files {
+                let _ = workspace.close_document(source_file).await;
+            }
+            for source_file in &source_files {
+                let _ = workspace.ensure_document_open(source_file).await;
+            }
+            client.wait_for_indexing(30).await;
+        }
+    }
 
     let rename_params = LspRenameParams {
         text_document_position: leta_lsp::lsp_types::TextDocumentPositionParams {
