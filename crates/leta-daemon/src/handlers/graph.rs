@@ -25,6 +25,71 @@ fn is_callable(sym: &SymbolInfo) -> bool {
     CALLABLE_KINDS.iter().any(|k| sym.kind == *k)
 }
 
+fn is_test_path(path: &str) -> bool {
+    let parts: Vec<&str> = path.split('/').collect();
+    let filename = parts.last().copied().unwrap_or("");
+
+    // Directory-based patterns (all languages)
+    let test_dirs = [
+        "test", "tests", "spec", "specs", "__tests__", "__test__",
+        "test_fixtures", "testdata", "testing",
+    ];
+    for part in &parts {
+        let lower = part.to_lowercase();
+        if test_dirs.iter().any(|d| lower == *d) {
+            return true;
+        }
+    }
+
+    // Java: src/test/ convention
+    if parts.windows(2).any(|w| w[0] == "src" && w[1] == "test") {
+        return true;
+    }
+
+    let ext = filename.rsplit('.').next().unwrap_or("");
+    let stem = filename.strip_suffix(&format!(".{}", ext)).unwrap_or(filename);
+
+    match ext {
+        // Python: test_*.py, *_test.py, conftest.py
+        "py" => {
+            stem.starts_with("test_")
+                || stem.ends_with("_test")
+                || stem == "conftest"
+        }
+        // Go: *_test.go
+        "go" => stem.ends_with("_test"),
+        // Rust: tests are in tests/ dir (handled above), but also detect test modules
+        "rs" => stem.ends_with("_test") || stem == "tests",
+        // TypeScript/JavaScript: *.test.ts, *.spec.ts, *.test.tsx, *.spec.tsx
+        "ts" | "tsx" | "js" | "jsx" | "mts" | "mjs" => {
+            stem.ends_with(".test")
+                || stem.ends_with(".spec")
+                || stem.ends_with("_test")
+                || stem.ends_with("_spec")
+        }
+        // Java: *Test.java, *Tests.java, *Spec.java, *IT.java
+        "java" => {
+            stem.ends_with("Test")
+                || stem.ends_with("Tests")
+                || stem.ends_with("Spec")
+                || stem.ends_with("IT")
+        }
+        // C/C++: *_test.cpp, *_test.cc, *_test.c, test_*.cpp
+        "cpp" | "cc" | "cxx" | "c" | "h" | "hpp" => {
+            stem.ends_with("_test") || stem.starts_with("test_")
+        }
+        // Ruby: *_test.rb, *_spec.rb
+        "rb" => stem.ends_with("_test") || stem.ends_with("_spec"),
+        // PHP: *Test.php
+        "php" => stem.ends_with("Test"),
+        // Lua: *_test.lua, *_spec.lua
+        "lua" => stem.ends_with("_test") || stem.ends_with("_spec"),
+        // Zig: *_test.zig, test_*.zig
+        "zig" => stem.ends_with("_test") || stem.starts_with("test_"),
+        _ => false,
+    }
+}
+
 fn cache_key(file_path: &Path, mtime: &str) -> String {
     format!("callgraph3:{}:{}", file_path.display(), mtime)
 }
