@@ -1,6 +1,6 @@
 ---
 name: leta
-description: "Fast semantic code navigation via LSP. Load FIRST before ANY code task - even 'simple' ones. Trigger scenarios: (1) fixing lint/type/pyright/mypy warnings or errors, (2) fixing reportAny/reportUnknownType/Any type errors, (3) adding type annotations, (4) refactoring or modifying code, (5) finding where a function/class/symbol is defined, (6) finding where a symbol is used/referenced/imported, (7) understanding what a function calls or what calls it, (8) exploring unfamiliar code or understanding architecture, (9) renaming symbols across codebase, (10) finding interface/protocol implementations, (11) ANY task where you'd use ripgrep to find code or read-file to view a function. Use `leta show SYMBOL` instead of read-file, `leta refs SYMBOL` instead of ripgrep for usages, `leta grep PATTERN` instead of ripgrep for definitions, `leta files` instead of list-directory."
+description: "Fast semantic code navigation via LSP. Load FIRST before ANY code task - even 'simple' ones. Trigger scenarios: (1) fixing lint/type/pyright/mypy warnings or errors, (2) fixing reportAny/reportUnknownType/Any type errors, (3) adding type annotations, (4) refactoring or modifying code, (5) finding where a function/class/symbol is defined, (6) finding where a symbol is used/referenced/imported, (7) understanding what a function calls or what calls it, (8) exploring unfamiliar code or understanding architecture, (9) renaming symbols across codebase, (10) finding interface/protocol implementations, (11) ANY task where you'd use ripgrep to find code or read-file to view a function. Use `leta show SYMBOL` instead of read-file, `leta refs SYMBOL` instead of ripgrep for usages, `leta grep PATTERN` instead of ripgrep for definitions, `leta graph` for full project architecture overview, `leta files` instead of list-directory."
 ---
 
 # Leta - LSP Enabled Tools for Agents
@@ -26,7 +26,8 @@ After loading this skill, **leta should be your DEFAULT tool for code exploratio
 | Manually search for interface implementations | `leta implementations <interface>` |
 | Grep for function calls to trace code flow | `leta calls --to/--from <function>` |
 | Read a function's implementation to understand what it depends on | `leta calls --from <function>` first for overview |
-| Read multiple files to understand how functions connect | `leta calls --from <function>` to see the call graph |
+| Read multiple files to understand how functions connect | `leta graph` for the full picture, or `leta calls --from <function>` for a specific function |
+| Trying to understand an unfamiliar codebase | `leta graph` first for architecture overview |
 
 **The Golden Rule:** If you know the symbol name, **always** use leta. Only use ripgrep when searching for things that aren't symbols (string literals, comments, config values).
 
@@ -52,6 +53,7 @@ When you think "I want to see where this function is imported" or "how is this v
 - Finding where a function/class/method is DEFINED
 - Finding all USAGES of a symbol
 - Understanding call hierarchies (what calls what)
+- Getting a full architectural overview of a project
 - Finding interface implementations
 - Semantic refactoring (rename symbol across codebase)
 - Exploring project structure with symbol information
@@ -78,6 +80,35 @@ leta workspace add /path/to/project
 ```
 
 ## Core Commands
+
+### `leta graph` - Full Workspace Call Graph ⭐ START HERE
+
+**Run this first when exploring an unfamiliar project.** Shows the complete call graph as trees rooted at entry points (functions nothing else calls). This gives you a token-efficient architectural overview of the entire codebase — which functions exist, how they connect, and where the entry points are.
+
+```bash
+# Full call graph (excludes test files by default)
+leta graph
+
+# Include stdlib/dependency calls
+leta graph --include-non-workspace
+
+# Only show Go files
+leta graph -i '\.go$'
+
+# Exclude generated code
+leta graph -x generated -x proto
+
+# Include test files
+leta graph --include-tests
+```
+
+The output shows trees from entry points, with `↑` marking nodes whose subtree was already shown earlier, and `↻` marking recursive calls. For multi-language workspaces, results are grouped by language with the largest subgraph first.
+
+**When to use `graph`:**
+- You're starting work on an unfamiliar codebase — run this first
+- You want to understand the overall architecture and data flow
+- You need to see how all the pieces fit together
+- You want to find entry points and dead code
 
 ### `leta show` - View Symbol Definition ⭐ USE THIS INSTEAD OF READ-FILE
 
@@ -142,9 +173,9 @@ leta grep "^[A-Z]" '\.go$' -k function -C
 - `-C, --case-sensitive` - Case-sensitive matching. Note that `leta grep` is case-insensitive by default
 - `--head N` - Maximum results to return (default: 200)
 
-### `leta files` - Project Overview
+### `leta files` - Project File Tree
 
-Show source file tree with line counts. Good starting point for exploring a project. **Always prefer `leta files` over `list-directory`-like tools** since it prints not just the filenames, but a full tree of files (excluding `.git`, `__pycache__`, etc.), and their sizes and line counts. If you believe this command will output too many tokens, you can pipe it through `| head -n1000` for example.
+Show source file tree with line counts. Use for understanding the file layout when `leta graph` gives you the architecture. **Always prefer `leta files` over `list-directory`-like tools** since it prints not just the filenames, but a full tree of files (excluding `.git`, `__pycache__`, etc.), and their sizes and line counts.
 
 ```bash
 # Overview of entire project
@@ -175,9 +206,9 @@ leta refs UserRepository.save -n 2
 leta refs UserRepository
 ```
 
-### `leta calls` - Call Hierarchy ⭐ USE THIS TO UNDERSTAND FUNCTION DEPENDENCIES
+### `leta calls` - Call Hierarchy
 
-**Before reading a function's implementation, use `calls` to get the architectural overview.** This shows you what a function depends on or what depends on it - much faster than reading code to figure out the call graph.
+**Use this to trace a specific function's dependencies or callers.** For a full project overview, use `leta graph` instead.
 
 ```bash
 # What does main() call? (understand dependencies before reading code)
@@ -193,11 +224,11 @@ leta calls --from main --to save_to_db
 leta calls --from process_request --include-non-workspace
 ```
 
-**When to use `calls`:**
-- You found a function and want to understand what it does at a high level → `--from`
-- You want to know where/how a function is used → `--to`
-- You're tracing data flow through a system → combine `--from` and `--to`
-- You want to understand the architecture before diving into implementation details
+**When to use `calls` vs `graph`:**
+- Use `graph` for: full project architecture, finding entry points, overall understanding
+- Use `calls --from` for: tracing what a specific function depends on
+- Use `calls --to` for: finding all callers of a specific function
+- Use `calls --from X --to Y` for: finding the call path between two functions
 
 ### `leta implementations` - Find Implementations
 
@@ -258,17 +289,17 @@ leta mv src/user.ts src/models/user.ts
 ### Exploring Unfamiliar Code
 
 ```bash
-# 1. Get project overview
+# 1. Get the full call graph — this is the fastest way to understand a project
+leta graph
+
+# 2. If the project is large, focus on specific areas
+leta graph -i 'src/handlers'
+
+# 3. Dive into specific functions you see in the graph
+leta show handle_request
+
+# 4. If you need the file layout
 leta files
-
-# 2. Find main entry points
-leta grep "^main$\|^Main$" -k function,method
-
-# 3. Trace what main calls
-leta calls --from main --max-depth 2
-
-# 4. Find key classes
-leta grep "Repository$\|Service$\|Handler$" -k class -d
 ```
 
 ### Understanding a Function
@@ -291,7 +322,7 @@ leta refs process_request
 
 ```bash
 # 1. Find the interface
-leta grep "Storage" -k interface -d
+leta grep "Storage" -k interface
 
 # 2. Find all implementations
 leta implementations Storage
@@ -302,12 +333,12 @@ leta show FileStorage
 
 ## Tips
 
-1. **Start with `leta files`** to understand project structure before diving in.
+1. **Start with `leta graph`** to understand project architecture — it's the most token-efficient way to get a holistic view of how the codebase fits together.
 
 2. **Combine with ripgrep-like tools** - use leta for "where is X defined/used?" and ripgrep-like tools for "where does string Y appear?"
 
-4. **Symbol formats are flexible** - if `SymbolName` is ambiguous, qualify it with `path:Symbol` or `Parent.Symbol`.
+3. **Symbol formats are flexible** - if `SymbolName` is ambiguous, qualify it with `path:Symbol` or `Parent.Symbol`.
 
-5. **Check workspace first** - if commands fail, ensure you've run `leta workspace add`.
+4. **Check workspace first** - if commands fail, ensure you've run `leta workspace add`.
 
-6. **Don't redirect stderr** (e.g., `2>/dev/null`) - when a symbol is ambiguous, leta outputs disambiguation options to stderr showing how to qualify the symbol name. You need to see this to know how to fix the command.
+5. **Don't redirect stderr** (e.g., `2>/dev/null`) - when a symbol is ambiguous, leta outputs disambiguation options to stderr showing how to qualify the symbol name. You need to see this to know how to fix the command.
