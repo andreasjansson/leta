@@ -29,5 +29,3 @@ user.hpp:126 [Method] listUsers (std::vector<User> ())
 
 user.hpp:50 [Method] save (void (const User &))
 └── user.hpp:19 [Method] email (example::User::email)
-
-65 nodes, 17 edges

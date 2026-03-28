@@ -36,5 +36,3 @@ src/user.ts:103 [Method] deleteUser
 
 src/user.ts:111 [Method] countUsers
 └── src/user.ts:33 [Method] list
-
-97 nodes, 24 edges

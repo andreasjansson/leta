@@ -47,5 +47,3 @@ src/main/java/com/example/UserRepository.java:55 [Method] listUsers() ( : List<U
 
 src/main/java/com/example/UserRepository.java:64 [Method] countUsers() ( : int)
 └── src/main/java/com/example/Storage.java:37 [Method] list() : List<User> (com.example.Storage)
-
-84 nodes, 21 edges

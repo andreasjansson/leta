@@ -30,5 +30,3 @@ src/user.rs:65 [Method] delete_user (fn(&mut self, email: &str) -> bool)
 
 src/user.rs:75 [Method] count (fn(&self) -> usize)
 └── src/storage.rs:16 [Function] list (pub fn list(&self) -> Vec<&User>)
-
-81 nodes, 18 edges

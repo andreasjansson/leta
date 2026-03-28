@@ -55,5 +55,3 @@ utils.go:21 [Function] FormatName (func(first, last string) string)
 
 utils.go:9 [Function] ValidateEmail (func(email string) bool)
 └── [Function] MatchString (regexp • regexp.go)
-
-91 nodes, 23 edges

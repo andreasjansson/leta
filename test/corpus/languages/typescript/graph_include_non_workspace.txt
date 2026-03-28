@@ -83,5 +83,3 @@ src/user.ts:76 [Method] load
 
 src/user.ts:80 [Method] delete
 └── [Method] delete
-
-109 nodes, 45 edges

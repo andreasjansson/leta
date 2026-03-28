@@ -103,5 +103,3 @@ where
 
 src/user.rs:65 [Method] delete_user (fn(&mut self, email: &str) -> bool)
 └── src/storage.rs:13 [Function] delete (pub fn delete(&mut self, key: &str) -> bool)
-
-95 nodes, 43 edges

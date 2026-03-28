@@ -3,4 +3,4 @@ call graph
 ===
 leta graph
 ---
-84 nodes, 0 edges
+Error: Call hierarchy is not supported by intelephense

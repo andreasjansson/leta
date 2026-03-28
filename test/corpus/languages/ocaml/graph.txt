@@ -3,4 +3,4 @@ call graph
 ===
 leta graph
 ---
-115 nodes, 0 edges
+

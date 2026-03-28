@@ -27,5 +27,3 @@ main.go:139 [Method] (*UserRepository).DeleteUser (func(email string) error)
 
 main.go:144 [Method] (*UserRepository).ListUsers (func() ([]*User, error))
 └── main.go:35 [Function] List (sample_project • main.go)
-
-86 nodes, 13 edges

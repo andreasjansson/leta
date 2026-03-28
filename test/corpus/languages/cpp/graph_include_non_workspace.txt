@@ -79,5 +79,3 @@ user.hpp:89 [Method] load (std::optional<User> (const std::string &))
 
 user.hpp:99 [Method] list (std::vector<User> ())
 └── [Constructor] vector<_Tp, _Alloc> (std::vector::vector<_Tp, _Alloc>)
-
-93 nodes, 55 edges

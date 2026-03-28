@@ -40,5 +40,3 @@ src/editable_consumer.tsx:19 [Function] useEditableContainer
 
 src/errors.tsx:26 [Function] validateRequired
 └── src/errors.tsx:6 [Class] ValidationError
-
-184 nodes, 26 edges

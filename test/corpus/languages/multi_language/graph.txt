@@ -19,5 +19,3 @@ Python
 
 app.py:51 [Function] create_service
 └── app.py:26 [Class] PythonService
-
-40 nodes, 6 edges
