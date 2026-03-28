@@ -305,6 +305,43 @@ leta calls --to validate_email
 leta calls --from main --to save --max-depth 5
 ```
 
+### graph
+
+Show the full workspace call graph as trees rooted at entry points. This is
+the most token-efficient way to understand the architecture of a codebase.
+Test files are excluded by default.
+
+```bash
+leta graph [OPTIONS]
+
+Options:
+  --include-non-workspace  Include stdlib/dependency calls
+  --include-tests          Include test files (excluded by default)
+  -x, --exclude-path       Exclude paths matching regex (repeatable)
+  -i, --include-path        Only include paths matching regex (repeatable)
+  --include-orphans        Include symbols with no callers or callees
+```
+
+The output shows trees from entry points (functions nothing else calls),
+largest subgraph first. Nodes already shown get a `↑` marker; recursive
+calls get `↻`. Multi-language workspaces are grouped by language.
+
+Examples:
+
+```bash
+# Full call graph
+leta graph
+
+# Only Go files
+leta graph -i '\.go$'
+
+# Include stdlib calls
+leta graph --include-non-workspace
+
+# Exclude generated code
+leta graph -x generated -x proto
+```
+
 ### implementations
 
 Find implementations of an interface or abstract method.
