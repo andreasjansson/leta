@@ -139,6 +139,8 @@ enum Commands {
         exclude_path: Vec<String>,
         #[arg(short = 'i', long = "include-path", action = clap::ArgAction::Append, help = "Only include paths matching regex")]
         include_path: Vec<String>,
+        #[arg(long, help = "Include test files (excluded by default)")]
+        include_tests: bool,
     },
 
     #[command(about = "Find implementations of an interface or abstract method.")]
