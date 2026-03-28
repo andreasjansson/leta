@@ -43,6 +43,142 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: cargo test --all-features
 
+  corpus-test:
+    name: Corpus Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rust-analyzer
+      - uses: Swatinem/rust-cache@v2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+
+      - name: Build and install leta
+        run: |
+          cargo build --release
+          mkdir -p ~/.local/bin
+          cp target/release/leta ~/.local/bin/
+          cp target/release/leta-daemon ~/.local/bin/
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Install cctr
+        run: cargo install cctr
+
+      - name: Install language servers (npm)
+        run: npm install -g typescript-language-server typescript intelephense
+
+      - name: Install basedpyright
+        run: pip install basedpyright
+
+      - name: Install gopls
+        run: |
+          go install golang.org/x/tools/gopls@latest
+          echo "$HOME/go/bin" >> $GITHUB_PATH
+
+      - name: Install ruby-lsp
+        run: gem install ruby-lsp
+
+      - name: Install clangd
+        run: sudo apt-get install -y clangd
+
+      - name: Install jdtls
+        run: |
+          JDTLS_URL="https://www.eclipse.org/downloads/download.php?file=/jdtls/milestones/1.40.0/jdt-language-server-1.40.0-202409261450.tar.gz&r=1"
+          wget -q "$JDTLS_URL" -O jdtls.tar.gz
+          mkdir -p ~/.local/share/jdtls
+          tar -xzf jdtls.tar.gz -C ~/.local/share/jdtls
+          rm jdtls.tar.gz
+          cat > ~/.local/bin/jdtls << 'WRAPPER'
+          #!/bin/bash
+          JAR=$(ls ~/.local/share/jdtls/plugins/org.eclipse.equinox.launcher_*.jar | head -1)
+          exec java \
+            -Declipse.application=org.eclipse.jdt.ls.core.id1 \
+            -Dosgi.bundles.defaultStartLevel=4 \
+            -Declipse.product=org.eclipse.jdt.ls.core.product \
+            -noverify -Xmx1G \
+            --add-modules=ALL-SYSTEM \
+            --add-opens java.base/java.util=ALL-UNNAMED \
+            --add-opens java.base/java.lang=ALL-UNNAMED \
+            -jar "$JAR" \
+            -configuration ~/.local/share/jdtls/config_linux \
+            "$@"
+          WRAPPER
+          chmod +x ~/.local/bin/jdtls
+
+      - name: Install lua-language-server
+        run: |
+          LUA_LS_VERSION="3.13.5"
+          wget -q "https://github.com/LuaLS/lua-language-server/releases/download/${LUA_LS_VERSION}/lua-language-server-${LUA_LS_VERSION}-linux-x64.tar.gz" -O lua-ls.tar.gz
+          mkdir -p ~/.local/share/lua-language-server
+          tar -xzf lua-ls.tar.gz -C ~/.local/share/lua-language-server
+          ln -s ~/.local/share/lua-language-server/bin/lua-language-server ~/.local/bin/
+          rm lua-ls.tar.gz
+
+      - name: Install OCaml and ocamllsp
+        run: |
+          sudo apt-get install -y opam
+          opam init --auto-setup --disable-sandboxing --yes
+          eval $(opam env)
+          opam install ocaml-lsp-server --yes
+          echo "$HOME/.opam/default/bin" >> $GITHUB_PATH
+
+      - name: Install Zig and zls
+        run: |
+          wget -q "https://ziglang.org/download/0.13.0/zig-linux-x86_64-0.13.0.tar.xz"
+          tar -xf zig-linux-x86_64-0.13.0.tar.xz
+          ln -s "$PWD/zig-linux-x86_64-0.13.0/zig" ~/.local/bin/zig
+          rm zig-linux-x86_64-0.13.0.tar.xz
+          wget -q "https://github.com/zigtools/zls/releases/download/0.13.0/zls-x86_64-linux.tar.xz" -O zls.tar.xz
+          tar -xf zls.tar.xz
+          mv zls ~/.local/bin/
+          rm zls.tar.xz
+
+      - name: Build OCaml fixture
+        run: |
+          eval $(opam env)
+          cd test/corpus/languages/ocaml/fixture
+          opam exec -- dune build 2>/dev/null || true
+
+      - name: Verify language servers
+        run: |
+          echo "Checking language servers..."
+          for cmd in basedpyright-langserver typescript-language-server gopls rust-analyzer ruby-lsp clangd jdtls lua-language-server ocamllsp intelephense zls zig; do
+            if which $cmd > /dev/null 2>&1; then
+              echo "  ✓ $cmd"
+            else
+              echo "  ✗ $cmd MISSING" && exit 1
+            fi
+          done
+
+      - name: Run corpus tests
+        run: |
+          eval $(opam env)
+          leta daemon start
+          sleep 2
+          ./script/corpus-test
+
   check-release:
     name: Check Release
     runs-on: ubuntu-latest
