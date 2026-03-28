@@ -153,21 +153,27 @@ pub async fn handle_rename(
         for source_file in &source_files {
             let _ = workspace.ensure_document_open(source_file).await;
         }
-        for source_file in &source_files {
-            let probe_uri = leta_fs::path_to_uri(source_file);
-            let _: Result<Option<leta_lsp::lsp_types::DocumentSymbolResponse>, _> = client
-                .send_request(
-                    "textDocument/documentSymbol",
-                    leta_lsp::lsp_types::DocumentSymbolParams {
+        let _: Result<Option<Vec<leta_lsp::lsp_types::Location>>, _> = client
+            .send_request(
+                "textDocument/references",
+                leta_lsp::lsp_types::ReferenceParams {
+                    text_document_position: leta_lsp::lsp_types::TextDocumentPositionParams {
                         text_document: TextDocumentIdentifier {
-                            uri: probe_uri.parse().unwrap(),
+                            uri: uri.parse().unwrap(),
                         },
-                        work_done_progress_params: Default::default(),
-                        partial_result_params: Default::default(),
+                        position: Position {
+                            line: params.line - 1,
+                            character: params.column,
+                        },
                     },
-                )
-                .await;
-        }
+                    context: leta_lsp::lsp_types::ReferenceContext {
+                        include_declaration: true,
+                    },
+                    work_done_progress_params: Default::default(),
+                    partial_result_params: Default::default(),
+                },
+            )
+            .await;
     }
     let edit = edit.unwrap();
     tracing::info!("rename: got response from LSP");
