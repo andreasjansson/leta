@@ -83,28 +83,52 @@ pub async fn handle_rename(
 
     client.wait_for_indexing(30).await;
     let uri = leta_fs::path_to_uri(&file_path);
-    let response: Option<WorkspaceEdit> = client
-        .send_request(
-            "textDocument/rename",
-            LspRenameParams {
-                text_document_position: leta_lsp::lsp_types::TextDocumentPositionParams {
-                    text_document: TextDocumentIdentifier {
-                        uri: uri.parse().unwrap(),
-                    },
-                    position: Position {
-                        line: params.line - 1,
-                        character: params.column,
-                    },
-                },
-                new_name: params.new_name.clone(),
-                work_done_progress_params: Default::default(),
+    let rename_params = LspRenameParams {
+        text_document_position: leta_lsp::lsp_types::TextDocumentPositionParams {
+            text_document: TextDocumentIdentifier {
+                uri: uri.parse().unwrap(),
             },
-        )
-        .await
-        .map_err(|e| e.to_string())?;
-    tracing::info!("rename: got response from LSP");
+            position: Position {
+                line: params.line - 1,
+                character: params.column,
+            },
+        },
+        new_name: params.new_name.clone(),
+        work_done_progress_params: Default::default(),
+    };
 
-    let edit = response.ok_or("Rename not supported or failed")?;
+    // Retry rename if the result only contains edits for the definition file.
+    // Some LSP servers (basedpyright) may not have finished analyzing
+    // cross-file references after newly opened documents.
+    let mut edit = None;
+    let expect_multi_file = !opened_for_rename.is_empty();
+    for attempt in 0..4u32 {
+        let response: Option<WorkspaceEdit> = client
+            .send_request("textDocument/rename", rename_params.clone())
+            .await
+            .map_err(|e| e.to_string())?;
+
+        let workspace_edit = response.ok_or("Rename not supported or failed")?;
+        let files = get_files_from_workspace_edit(&workspace_edit);
+        let multi_file = files.len() > 1;
+
+        if multi_file || !expect_multi_file || attempt == 3 {
+            if attempt > 0 {
+                tracing::info!("rename: succeeded on attempt {} ({} files)", attempt + 1, files.len());
+            }
+            edit = Some(workspace_edit);
+            break;
+        }
+
+        tracing::info!(
+            "rename: attempt {} returned only {} file(s), retrying after wait_for_indexing",
+            attempt + 1,
+            files.len()
+        );
+        client.wait_for_indexing(30).await;
+    }
+    let edit = edit.unwrap();
+    tracing::info!("rename: got response from LSP");
 
     // Close ALL documents that will be modified BEFORE applying edits
     // This is critical for servers that won't reindex files if the document is still open
