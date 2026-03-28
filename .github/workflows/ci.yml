@@ -164,7 +164,7 @@ jobs:
 
       - name: Install intelephense
         if: contains(matrix.servers, 'intelephense')
-        run: npm install -g intelephense@1.12.6
+        run: npm install -g intelephense@1.16.3
 
       - name: Install ruby-lsp
         if: contains(matrix.servers, 'ruby-lsp')
