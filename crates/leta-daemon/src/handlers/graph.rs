@@ -129,6 +129,7 @@ pub async fn handle_graph(
     let mut all_edges: Vec<CallGraphEdge> = Vec::new();
     let mut files_from_cache = 0u32;
     let mut files_computed = 0u32;
+    let mut servers_waited: HashSet<String> = HashSet::new();
 
     for (rel_path, file_syms) in &symbols_by_file {
         let file_path = workspace_root.join(rel_path);
@@ -160,7 +161,10 @@ pub async fn handle_graph(
             None => continue,
         };
 
-        client.wait_for_indexing(30).await;
+        let server_name = client.server_name().to_string();
+        if servers_waited.insert(server_name) {
+            client.wait_for_indexing(30).await;
+        }
 
         if !client.supports_call_hierarchy().await {
             debug!(
