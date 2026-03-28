@@ -482,6 +482,16 @@ async fn find_call_path(
     None
 }
 
+fn sort_call_nodes(nodes: &mut [CallNode]) {
+    nodes.sort_by(|a, b| {
+        let path_cmp = a.path.cmp(&b.path);
+        if path_cmp != std::cmp::Ordering::Equal {
+            return path_cmp;
+        }
+        a.line.cmp(&b.line)
+    });
+}
+
 fn call_hierarchy_item_to_node(
     item: &CallHierarchyItem,
     workspace_root: &Path,
