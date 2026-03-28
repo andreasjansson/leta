@@ -179,9 +179,8 @@ jobs:
       - name: Install jdtls (macOS)
         if: contains(matrix.servers, 'jdtls')
         run: |
-          brew install jdtls
-          brew install openjdk
-          echo "export JAVA_HOME=$(brew --prefix openjdk)/libexec/openjdk.jdk/Contents/Home" >> ~/.bashrc
+          brew install jdtls openjdk
+          echo "JAVA_HOME=$(brew --prefix openjdk)/libexec/openjdk.jdk/Contents/Home" >> $GITHUB_ENV
 
       - name: Install lua-language-server (macOS)
         if: matrix.servers == 'lua-ls'
