@@ -69,6 +69,8 @@ pub async fn handle_rename(
 
     workspace.ensure_document_open(&file_path).await?;
     let client = workspace.client().await.ok_or("No LSP client")?;
+
+    client.wait_for_indexing(30).await;
     let uri = leta_fs::path_to_uri(&file_path);
     let response: Option<WorkspaceEdit> = client
         .send_request(
