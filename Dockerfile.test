@@ -1,0 +1,74 @@
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PATH="/root/.local/bin:/root/.cargo/bin:/root/go/bin:/root/.opam/default/bin:${PATH}"
+
+# System dependencies
+RUN apt-get update && apt-get install -y \
+    curl wget git build-essential pkg-config libssl-dev \
+    clangd \
+    opam \
+    maven \
+    && rm -rf /var/lib/apt/lists/*
+
+# Rust
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
+    && . /root/.cargo/env \
+    && rustup component add rust-analyzer
+
+# Node.js 20
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs \
+    && npm install -g typescript-language-server typescript intelephense
+
+# Python + basedpyright
+RUN apt-get update && apt-get install -y python3 python3-pip python3-venv \
+    && pip3 install --break-system-packages basedpyright
+
+# Go + gopls
+RUN wget -q "https://go.dev/dl/go1.22.10.linux-amd64.tar.gz" \
+    && tar -C /usr/local -xzf go1.22.10.linux-amd64.tar.gz \
+    && rm go1.22.10.linux-amd64.tar.gz \
+    && export PATH="/usr/local/go/bin:$PATH" \
+    && go install golang.org/x/tools/gopls@latest
+ENV PATH="/usr/local/go/bin:${PATH}"
+
+# Ruby + ruby-lsp
+RUN apt-get update && apt-get install -y ruby ruby-dev \
+    && gem install ruby-lsp
+
+# Java (JDK already from maven dep) + jdtls
+RUN JDTLS_VERSION="1.40.0" \
+    && mkdir -p /opt/jdtls \
+    && wget -q "https://www.eclipse.org/downloads/download.php?file=/jdtls/milestones/${JDTLS_VERSION}/jdt-language-server-${JDTLS_VERSION}-202409261450.tar.gz&r=1" -O /tmp/jdtls.tar.gz \
+    && tar -xzf /tmp/jdtls.tar.gz -C /opt/jdtls \
+    && rm /tmp/jdtls.tar.gz
+RUN mkdir -p /root/.local/bin && printf '#!/bin/bash\nJAR=$(ls /opt/jdtls/plugins/org.eclipse.equinox.launcher_*.jar | head -1)\nexec java -Declipse.application=org.eclipse.jdt.ls.core.id1 -Dosgi.bundles.defaultStartLevel=4 -Declipse.product=org.eclipse.jdt.ls.core.product -noverify -Xmx1G --add-modules=ALL-SYSTEM --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED -jar "$JAR" -configuration /opt/jdtls/config_linux "$@"\n' > /root/.local/bin/jdtls \
+    && chmod +x /root/.local/bin/jdtls
+
+# Lua language server
+RUN LUA_LS_VERSION="3.13.5" \
+    && wget -q "https://github.com/LuaLS/lua-language-server/releases/download/${LUA_LS_VERSION}/lua-language-server-${LUA_LS_VERSION}-linux-x64.tar.gz" -O /tmp/lua-ls.tar.gz \
+    && mkdir -p /opt/lua-language-server \
+    && tar -xzf /tmp/lua-ls.tar.gz -C /opt/lua-language-server \
+    && ln -s /opt/lua-language-server/bin/lua-language-server /root/.local/bin/ \
+    && rm /tmp/lua-ls.tar.gz
+
+# OCaml + ocamllsp
+RUN opam init --auto-setup --disable-sandboxing --yes \
+    && eval $(opam env) \
+    && opam install ocaml-lsp-server dune --yes
+
+# Zig + zls
+RUN wget -q "https://ziglang.org/download/0.13.0/zig-linux-x86_64-0.13.0.tar.xz" -O /tmp/zig.tar.xz \
+    && tar -xf /tmp/zig.tar.xz -C /opt \
+    && ln -s /opt/zig-linux-x86_64-0.13.0/zig /root/.local/bin/zig \
+    && rm /tmp/zig.tar.xz \
+    && wget -q "https://github.com/zigtools/zls/releases/download/0.13.0/zls-x86_64-linux.tar.xz" -O /tmp/zls.tar.xz \
+    && tar -xf /tmp/zls.tar.xz -C /root/.local/bin \
+    && rm /tmp/zls.tar.xz
+
+# cctr
+RUN . /root/.cargo/env && cargo install cctr --git https://github.com/andreasjansson/cctr
+
+WORKDIR /work
