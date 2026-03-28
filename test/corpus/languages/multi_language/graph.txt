@@ -7,11 +7,11 @@ Go
 ══
 
 main.go:63 [Function] main (func())
-├── main.go:48 [Function] CreateService (multi-language-project • main.go)
-│   └── main.go:18 [Function] NewGoService (multi-language-project • main.go)
-├── main.go:26 [Function] Greet (multi-language-project • main.go)
-├── main.go:31 [Function] AddUser (multi-language-project • main.go)
-└── main.go:36 [Function] GetUsers (multi-language-project • main.go)
+├── main.go:48 [Function] CreateService (multi-language-project)
+│   └── main.go:18 [Function] NewGoService (multi-language-project)
+├── main.go:26 [Function] Greet (multi-language-project)
+├── main.go:31 [Function] AddUser (multi-language-project)
+└── main.go:36 [Function] GetUsers (multi-language-project)
 
 
 Python

@@ -4,26 +4,26 @@ call graph
 leta graph
 ---
 main.go:172 [Function] main (func())
-├── main.go:44 [Function] NewMemoryStorage (sample_project • main.go)
-├── main.go:124 [Function] NewUserRepository (sample_project • main.go)
-├── main.go:149 [Function] createSampleUser (sample_project • main.go)
-│   └── main.go:16 [Function] NewUser (sample_project • main.go)
-├── main.go:129 [Function] AddUser (sample_project • main.go)
-├── main.go:134 [Function] GetUser (sample_project • main.go)
-├── main.go:26 [Function] DisplayName (sample_project • main.go)
-└── main.go:21 [Function] IsAdult (sample_project • main.go)
+├── main.go:44 [Function] NewMemoryStorage (sample_project)
+├── main.go:124 [Function] NewUserRepository (sample_project)
+├── main.go:149 [Function] createSampleUser (sample_project)
+│   └── main.go:16 [Function] NewUser (sample_project)
+├── main.go:129 [Function] AddUser (sample_project)
+├── main.go:134 [Function] GetUser (sample_project)
+├── main.go:26 [Function] DisplayName (sample_project)
+└── main.go:21 [Function] IsAdult (sample_project)
 
 editable.go:25 [Function] editableCreateSample (func() *EditablePerson)
-└── editable.go:15 [Function] NewEditablePerson (sample_project • editable.go)
+└── editable.go:15 [Function] NewEditablePerson (sample_project)
 
 main.go:129 [Method] (*UserRepository).AddUser (func(user *User) error)
-└── main.go:32 [Function] Save (sample_project • main.go)
+└── main.go:32 [Function] Save (sample_project)
 
 main.go:134 [Method] (*UserRepository).GetUser (func(email string) (*User, error))
-└── main.go:33 [Function] Load (sample_project • main.go)
+└── main.go:33 [Function] Load (sample_project)
 
 main.go:139 [Method] (*UserRepository).DeleteUser (func(email string) error)
-└── main.go:34 [Function] Delete (sample_project • main.go)
+└── main.go:34 [Function] Delete (sample_project)
 
 main.go:144 [Method] (*UserRepository).ListUsers (func() ([]*User, error))
-└── main.go:35 [Function] List (sample_project • main.go)
+└── main.go:35 [Function] List (sample_project)
