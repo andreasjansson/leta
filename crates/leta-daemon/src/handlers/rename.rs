@@ -83,10 +83,10 @@ pub async fn handle_rename(
 
     client.wait_for_indexing(30).await;
 
-    // Force the server to process newly opened files by sending a probe request.
-    // LSP servers process requests in order, so by the time this returns,
-    // the server will have indexed the opened documents.
-    if let Some(probe_file) = opened_for_rename.last() {
+    // Force the server to process newly opened files by sending a probe request
+    // to each one. LSP servers process requests in order, so by the time each
+    // returns, the server will have indexed that document.
+    for probe_file in &opened_for_rename {
         let probe_uri = leta_fs::path_to_uri(probe_file);
         let _: Result<Option<leta_lsp::lsp_types::DocumentSymbolResponse>, _> = client
             .send_request(
