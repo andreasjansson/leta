@@ -82,25 +82,6 @@ pub async fn handle_rename(
     let client = workspace.client().await.ok_or("No LSP client")?;
 
     client.wait_for_indexing(30).await;
-
-    // Force the server to process newly opened files by sending a probe request
-    // to each one. LSP servers process requests in order, so by the time each
-    // returns, the server will have indexed that document.
-    for probe_file in &opened_for_rename {
-        let probe_uri = leta_fs::path_to_uri(probe_file);
-        let _: Result<Option<leta_lsp::lsp_types::DocumentSymbolResponse>, _> = client
-            .send_request(
-                "textDocument/documentSymbol",
-                leta_lsp::lsp_types::DocumentSymbolParams {
-                    text_document: TextDocumentIdentifier {
-                        uri: probe_uri.parse().unwrap(),
-                    },
-                    work_done_progress_params: Default::default(),
-                    partial_result_params: Default::default(),
-                },
-            )
-            .await;
-    }
     let uri = leta_fs::path_to_uri(&file_path);
     let response: Option<WorkspaceEdit> = client
         .send_request(
