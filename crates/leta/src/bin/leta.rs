@@ -1481,8 +1481,13 @@ async fn handle_graph(
 
     if json_output {
         println!("{}", serde_json::to_string_pretty(&graph_result)?);
+    } else if let Some(error) = &graph_result.error {
+        return Err(anyhow!("{}", error));
     } else {
-        println!("{}", format_graph_result(&graph_result, include_orphans));
+        let output = format_graph_result(&graph_result, include_orphans);
+        if !output.trim().is_empty() {
+            println!("{}", output);
+        }
     }
     Ok(())
 }
