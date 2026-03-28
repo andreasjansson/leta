@@ -164,6 +164,9 @@ pub async fn handle_graph(
         .collect();
 
     let path_matches = |path: &str| -> bool {
+        if !params.include_tests && is_test_path(path) {
+            return false;
+        }
         if !include_regexes.is_empty() && !include_regexes.iter().any(|re| re.is_match(path)) {
             return false;
         }
