@@ -133,7 +133,7 @@ pub async fn handle_rename(
             break;
         }
 
-        tracing::debug!("rename: attempt {} returned 1 file, retrying after re-sync", attempt + 1);
+        tracing::info!("rename: attempt {} returned 1 file, retrying after re-sync", attempt + 1);
         for source_file in &source_files {
             let _ = workspace.close_document(source_file).await;
         }
