@@ -127,30 +127,19 @@ pub async fn handle_rename(
 
         let workspace_edit = response.ok_or("Rename not supported or failed")?;
         let files = get_files_from_workspace_edit(&workspace_edit);
-        tracing::info!(
-            "rename: attempt {} => {} file(s): {:?}",
-            attempt + 1,
-            files.len(),
-            files.iter().map(|p| relative_path(p, &workspace_root)).collect::<Vec<_>>()
-        );
 
-        let multi_file = files.len() > 1;
-
-        if multi_file || !expect_multi_file || attempt == 3 {
+        if files.len() > 1 || !expect_multi_file || attempt == 3 {
             edit = Some(workspace_edit);
             break;
         }
 
-        tracing::info!("rename: retrying - closing and reopening all source files to sync content");
+        tracing::debug!("rename: attempt {} returned 1 file, retrying after re-sync", attempt + 1);
         for source_file in &source_files {
             let _ = workspace.close_document(source_file).await;
         }
         for source_file in &source_files {
             let _ = workspace.ensure_document_open(source_file).await;
         }
-        // Force the server to parse each reopened file by sending a probe request.
-        // basedpyright's getParseResults calls getBoundSourceFileInfo(force=true)
-        // which synchronously parses and binds the file.
         for source_file in &source_files {
             let probe_uri = leta_fs::path_to_uri(source_file);
             let _: Result<Option<leta_lsp::lsp_types::DocumentSymbolResponse>, _> = client
