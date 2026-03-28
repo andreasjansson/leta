@@ -1292,12 +1292,6 @@ pub fn format_graph_result(result: &GraphResult, include_orphans: bool) -> Strin
         }
     }
 
-    lines.push(format!(
-        "{} nodes, {} edges",
-        result.nodes.len(),
-        result.edges.len(),
-    ));
-
     lines.join("\n")
 }
 
