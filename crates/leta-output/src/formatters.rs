@@ -1304,11 +1304,13 @@ fn format_graph_node_label(node: &leta_types::CallGraphSymbol, show_path: bool) 
     parts.push(node.name.clone());
     if let Some(detail) = &node.detail {
         if !detail.is_empty() && detail != "()" {
-            let oneline: String = detail
-                .split_whitespace()
-                .collect::<Vec<_>>()
-                .join(" ");
-            parts.push(format!("({})", oneline));
+            let oneline: String = detail.split_whitespace().collect::<Vec<_>>().join(" ");
+            let trimmed = if show_path {
+                oneline.split(" • ").next().unwrap_or(&oneline)
+            } else {
+                &oneline
+            };
+            parts.push(format!("({})", trimmed));
         }
     }
     parts.join(" ")
