@@ -124,7 +124,11 @@ pub async fn handle_rename(
                 .collect();
 
             if ref_files.len() > 1 {
-                tracing::info!("rename: references found in {} files (probe {})", ref_files.len(), probe_attempt + 1);
+                tracing::info!(
+                    "rename: references found in {} files (probe {})",
+                    ref_files.len(),
+                    probe_attempt + 1
+                );
                 break;
             }
 
@@ -170,7 +174,10 @@ pub async fn handle_rename(
     // restart the server and retry.
     if expect_multi_file && get_files_from_workspace_edit(&edit).len() <= 1 {
         tracing::info!("rename: only 1 file changed but expected multi-file, restarting server");
-        ctx.session.restart_workspace(&workspace_root).await.map_err(|e| e.to_string())?;
+        ctx.session
+            .restart_workspace(&workspace_root)
+            .await
+            .map_err(|e| e.to_string())?;
 
         let workspace = ctx
             .session
@@ -211,7 +218,10 @@ pub async fn handle_rename(
             .await
             .map_err(|e| e.to_string())?;
         edit = retry_response.ok_or("Rename not supported or failed")?;
-        tracing::info!("rename: after restart, {} file(s) changed", get_files_from_workspace_edit(&edit).len());
+        tracing::info!(
+            "rename: after restart, {} file(s) changed",
+            get_files_from_workspace_edit(&edit).len()
+        );
     }
     tracing::info!("rename: got response from LSP");
 

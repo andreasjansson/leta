@@ -260,10 +260,15 @@ impl LspClient {
         for attempt in 0..=MAX_RETRIES {
             match self.send_request_once(method, params.clone()).await {
                 Ok(val) => return Ok(val),
-                Err(LspProtocolError::Response(ref e)) if e.is_retryable() && attempt < MAX_RETRIES => {
+                Err(LspProtocolError::Response(ref e))
+                    if e.is_retryable() && attempt < MAX_RETRIES =>
+                {
                     tracing::debug!(
                         "LSP {} returned retryable error (attempt {}/{}): {}",
-                        method, attempt + 1, MAX_RETRIES, e
+                        method,
+                        attempt + 1,
+                        MAX_RETRIES,
+                        e
                     );
                     self.wait_for_indexing(30).await;
                     last_err = Some(LspProtocolError::Response(e.clone()));
