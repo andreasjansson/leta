@@ -9,9 +9,9 @@ use leta_cache::LmdbCache;
 use leta_config::Config;
 use leta_daemon::handlers::{handle_add_workspace, handle_remove_workspace};
 use leta_daemon::handlers::{
-    handle_calls, handle_declaration, handle_files, handle_grep, handle_implementations,
-    handle_move_file, handle_references, handle_rename, handle_resolve_symbol, handle_show,
-    handle_subtypes, handle_supertypes, HandlerContext,
+    handle_calls, handle_declaration, handle_files, handle_graph, handle_grep,
+    handle_implementations, handle_move_file, handle_references, handle_rename,
+    handle_resolve_symbol, handle_show, handle_subtypes, handle_supertypes, HandlerContext,
 };
 use leta_daemon::session::Session;
 use leta_output::*;
