@@ -23,3 +23,12 @@ src/UserRepository.php:9-11
 class UserRepository
 {
 
+tests/MainTest.php:6-8
+use LetaFixture\MemoryStorage;
+use LetaFixture\UserRepository;
+
+
+tests/MainTest.php:15-17
+        $storage = new MemoryStorage();
+        $repo = new UserRepository($storage);
+        $user = Main::createSampleUser();

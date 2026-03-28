@@ -1,0 +1,5 @@
+===
+call graph with tests
+===
+leta graph --include-tests
+---

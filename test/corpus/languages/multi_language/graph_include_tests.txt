@@ -1,0 +1,25 @@
+===
+call graph with tests
+===
+leta graph --include-tests
+---
+Go
+══
+
+main.go:63 [Function] main (func())
+├── main.go:48 [Function] CreateService (multi-language-project)
+│   └── main.go:18 [Function] NewGoService (multi-language-project)
+├── main.go:26 [Function] Greet (multi-language-project)
+├── main.go:31 [Function] AddUser (multi-language-project)
+└── main.go:36 [Function] GetUsers (multi-language-project)
+
+main_test.go:5 [Function] TestCreateService (func(t *testing.T))
+└── main.go:48 [Function] CreateService (multi-language-project) ↑
+
+
+Python
+══════
+
+test_app.py:4 [Function] test_create_service
+└── app.py:51 [Function] create_service
+    └── app.py:26 [Class] PythonService

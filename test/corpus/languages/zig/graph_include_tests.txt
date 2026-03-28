@@ -1,0 +1,6 @@
+===
+call graph with tests
+===
+leta graph --include-tests
+---
+Error: Call hierarchy is not supported by zls

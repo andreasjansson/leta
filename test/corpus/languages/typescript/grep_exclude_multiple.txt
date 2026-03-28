@@ -3,6 +3,8 @@ grep exclude multiple patterns
 ===
 leta grep "." --kind function --exclude "editable*" --exclude "errors.ts" -C
 ---
+src/main.test.ts:4 [Function] testCreateSampleUser
+src/main.test.ts:9 [Function] testUserRepository
 src/main.ts:6 [Function] createSampleUser
 src/main.ts:13 [Function] processUsers
 src/main.ts:14 [Function] map() callback in processUsers

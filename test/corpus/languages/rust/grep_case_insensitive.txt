@@ -4,3 +4,4 @@ grep case insensitive (default)
 leta grep "^user$" src/user.rs
 ---
 src/user.rs:5 [Struct] User
+src/user.rs:105 [Variable] user in test_user_creation

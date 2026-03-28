@@ -6,4 +6,6 @@ leta calls --to createSampleUser
 src/main/java/com/example/Main.java:15 [Method] createSampleUser() : User (com.example.Main)
 
 Incoming calls:
-  └── src/main/java/com/example/Main.java:50 [Method] main(String[]) : void (com.example.Main)
+  ├── src/main/java/com/example/Main.java:50 [Method] main(String[]) : void (com.example.Main)
+  ├── src/test/java/com/example/MainTest.java:12 [Method] testUserRepository() : void (com.example.MainTest)
+  └── src/test/java/com/example/MainTest.java:5 [Method] testCreateSampleUser() : void (com.example.MainTest)

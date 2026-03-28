@@ -9,3 +9,5 @@ src/main.rs:22 [Function] main (fn())
 src/user.rs:13 [Function] new (fn(name: String, email: String, age: u32) -> Self) in impl User
 src/user.rs:50 [Function] new (fn(storage: S) -> Self) in impl UserRepository<S>
 src/user.rs:81 [Function] validate_user (fn(user: &User) -> Result<(), String>)
+src/user.rs:104 [Function] test_user_creation (fn()) in tests
+src/user.rs:110 [Function] test_is_adult (fn()) in tests

@@ -6,5 +6,7 @@ leta calls --to create_sample_user
 main.py:114 [Function] create_sample_user
 
 Incoming calls:
-  └── main.py:128 [Function] main
-      └── main.py:1 [Module] (module) main.py
+  ├── main.py:128 [Function] main
+  │   └── main.py:1 [Module] (module) main.py
+  ├── test_main.py:4 [Function] test_create_sample_user
+  └── test_main.py:9 [Function] test_user_repository

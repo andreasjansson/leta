@@ -54,3 +54,8 @@ main.py:128 [Function] main
 main.py:130 [Variable] repo in main
 main.py:131 [Variable] user in main
 main.py:139 [Variable] found in main
+test_main.py:4 [Function] test_create_sample_user
+test_main.py:5 [Variable] user in test_create_sample_user
+test_main.py:9 [Function] test_user_repository
+test_main.py:10 [Variable] repo in test_user_repository
+test_main.py:11 [Variable] user in test_user_repository

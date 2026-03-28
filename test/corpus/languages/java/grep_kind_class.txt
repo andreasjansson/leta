@@ -10,3 +10,4 @@ src/main/java/com/example/Main.java:8 [Class] Main
 src/main/java/com/example/MemoryStorage.java:12 [Class] MemoryStorage
 src/main/java/com/example/User.java:9 [Class] User
 src/main/java/com/example/UserRepository.java:9 [Class] UserRepository
+src/test/java/com/example/MainTest.java:3 [Class] MainTest
