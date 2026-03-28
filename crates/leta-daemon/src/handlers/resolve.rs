@@ -33,11 +33,10 @@ fn extract_search_term(symbol_path: &str) -> Option<String> {
         symbol_path
     };
 
-    let target = if symbol_part.contains('.') {
-        symbol_part.rsplit('.').next()?
-    } else {
-        symbol_part
-    };
+    // For qualified names like "ZeroTrustAccessApplicationResource.Create",
+    // use the longest component as the prefilter since it's most selective.
+    let parts: Vec<&str> = symbol_part.split('.').collect();
+    let target = parts.iter().max_by_key(|p| p.len())?;
 
     if target.len() > 2 {
         Some(target.to_string())
@@ -177,7 +176,6 @@ pub async fn handle_resolve_symbol(
             column: sym.column,
             container: sym.container.clone(),
             detail: None,
-            documentation: None,
             range_start_line: None,
             range_end_line: None,
             reference: Some(generate_unambiguous_ref(sym, &final_matches, target_name)),

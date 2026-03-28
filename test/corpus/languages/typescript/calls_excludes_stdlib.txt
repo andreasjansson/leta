@@ -6,5 +6,5 @@ leta calls --from processUsers --max-depth 1
 src/main.ts:13 [Function] processUsers
 
 Outgoing calls:
-  ├── src/user.ts:107 [Method] listUsers (UserRepository)
-  └── src/user.ts:21 [Method] displayName (User)
+  ├── src/user.ts:21 [Method] displayName (User)
+  └── src/user.ts:107 [Method] listUsers (UserRepository)

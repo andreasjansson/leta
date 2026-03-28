@@ -226,8 +226,6 @@ pub struct GrepParams {
     pub kinds: Option<Vec<String>>,
     #[serde(default)]
     pub case_sensitive: bool,
-    #[serde(default)]
-    pub include_docs: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub path_pattern: Option<String>,
     #[serde(default)]
@@ -521,6 +519,23 @@ pub struct CallsResult {
 
 // ============================================================================
 // Rename
+// ============================================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GraphParams {
+    pub workspace_root: String,
+    #[serde(default)]
+    pub include_non_workspace: bool,
+    #[serde(default)]
+    pub exclude_patterns: Vec<String>,
+    #[serde(default)]
+    pub include_patterns: Vec<String>,
+    #[serde(default)]
+    pub include_tests: bool,
+}
+
+// ============================================================================
+// Rename (symbol)
 // ============================================================================
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

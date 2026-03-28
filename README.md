@@ -34,6 +34,7 @@ class UserHandler:
   - [show](#show)
   - [refs](#refs)
   - [calls](#calls)
+  - [graph](#graph)
   - [implementations](#implementations)
   - [supertypes / subtypes](#supertypes--subtypes)
   - [declaration](#declaration)
@@ -104,6 +105,12 @@ cd /path/to/your/project
 leta workspace add
 ```
 
+Get a full architectural overview:
+
+```bash
+leta graph                     # Full call graph as trees from entry points
+```
+
 Search for symbols:
 
 ```bash
@@ -167,7 +174,6 @@ leta grep <PATTERN> [PATH] [OPTIONS]
 Options:
   -k, --kind <KIND>        Filter by symbol kind (comma-separated: class, function, method, etc.)
   -x, --exclude <EXCLUDE>  Exclude files matching regex (repeatable)
-  -d, --docs               Include documentation for each symbol
   -C, --case-sensitive     Case-sensitive matching
   -N, --head <N>           Maximum results (0 = unlimited) [default: 500]
 ```
@@ -189,9 +195,6 @@ leta grep "User" "models/"
 
 # Find symbols in test files
 leta grep "test" "test/"
-
-# Search with documentation
-leta grep "parse" -k function -d
 
 # Exclude test files
 leta grep "User" -x test -x mock
@@ -301,6 +304,43 @@ leta calls --to validate_email
 
 # Find call path from main to save
 leta calls --from main --to save --max-depth 5
+```
+
+### graph
+
+Show the full workspace call graph as trees rooted at entry points. This is
+the most token-efficient way to understand the architecture of a codebase.
+Test files are excluded by default.
+
+```bash
+leta graph [OPTIONS]
+
+Options:
+  --include-non-workspace  Include stdlib/dependency calls
+  --include-tests          Include test files (excluded by default)
+  -x, --exclude-path       Exclude paths matching regex (repeatable)
+  -i, --include-path        Only include paths matching regex (repeatable)
+  --include-orphans        Include symbols with no callers or callees
+```
+
+The output shows trees from entry points (functions nothing else calls),
+largest subgraph first. Nodes already shown get a `↑` marker; recursive
+calls get `↻`. Multi-language workspaces are grouped by language.
+
+Examples:
+
+```bash
+# Full call graph
+leta graph
+
+# Only Go files
+leta graph -i '\.go$'
+
+# Include stdlib calls
+leta graph --include-non-workspace
+
+# Exclude generated code
+leta graph -x generated -x proto
 ```
 
 ### implementations

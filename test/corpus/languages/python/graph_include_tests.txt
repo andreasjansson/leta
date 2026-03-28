@@ -1,0 +1,34 @@
+===
+call graph with tests
+===
+leta graph --include-tests
+---
+main.py:128 [Function] main
+├── main.py:81 [Class] UserRepository
+├── main.py:114 [Function] create_sample_user
+│   └── main.py:27 [Class] User
+├── utils.py:9 [Function] validate_email
+├── main.py:90 [Method] add_user
+├── main.py:94 [Method] get_user
+└── main.py:40 [Method] is_adult
+
+test_main.py:9 [Function] test_user_repository
+├── main.py:81 [Class] UserRepository
+├── main.py:114 [Function] create_sample_user ↑
+├── main.py:90 [Method] add_user
+└── main.py:109 [Method] count_users
+
+editable_consumer.py:14 [Function] create_and_greet
+├── editable.py:21 [Function] editable_create_sample
+│   └── editable.py:11 [Class] EditablePerson
+└── editable_consumer.py:9 [Function] use_editable_person
+    └── editable.py:17 [Method] greet
+
+main.py:119 [Function] process_users
+├── main.py:44 [Method] display_name
+└── main.py:105 [Method] list_users
+
+test_main.py:4 [Function] test_create_sample_user
+└── main.py:114 [Function] create_sample_user ↑
+
+utils.py:48 [Function] fibonacci ↻

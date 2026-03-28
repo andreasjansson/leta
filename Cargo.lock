@@ -821,6 +821,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "leta-lib"
+version = "0.12.0"
+dependencies = [
+ "anyhow",
+ "leta-cache",
+ "leta-config",
+ "leta-daemon",
+ "leta-output",
+ "leta-types",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
 name = "leta-lsp"
 version = "0.12.0"
 dependencies = [

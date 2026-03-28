@@ -8,3 +8,4 @@ src/Main.php:10 [Class] Main
 src/MemoryStorage.php:10 [Class] MemoryStorage
 src/User.php:10 [Class] User
 src/UserRepository.php:10 [Class] UserRepository
+tests/MainTest.php:9 [Class] MainTest

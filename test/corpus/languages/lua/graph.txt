@@ -1,0 +1,6 @@
+===
+call graph
+===
+leta graph
+---
+Error: Call hierarchy is not supported by lua-language-server

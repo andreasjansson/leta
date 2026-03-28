@@ -9,6 +9,8 @@ src/errors.ts:17 [Function] missingReturn
 src/errors.ts:27 [Function] propertyError
 src/errors.ts:32 [Function] twoArgs
 src/errors.ts:36 [Function] callError
+src/main.test.ts:4 [Function] testCreateSampleUser
+src/main.test.ts:9 [Function] testUserRepository
 src/main.ts:6 [Function] createSampleUser
 src/main.ts:13 [Function] processUsers
 src/main.ts:14 [Function] map() callback in processUsers

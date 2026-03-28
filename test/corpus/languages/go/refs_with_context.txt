@@ -12,3 +12,8 @@ main.go:173-175
 storage := NewMemoryStorage()
 repo := NewUserRepository(storage)
 user := createSampleUser()
+
+main_test.go:13-15
+storage := NewMemoryStorage()
+repo := NewUserRepository(storage)
+user := createSampleUser()

@@ -23,3 +23,12 @@ src/main/java/com/example/UserRepository.java:8-10
 public class UserRepository {
     private Storage storage;
 
+src/test/java/com/example/MainTest.java:10-12
+        Storage storage = new MemoryStorage();
+        UserRepository repo = new UserRepository(storage);
+        User user = Main.createSampleUser();
+
+src/test/java/com/example/MainTest.java:10-12
+        Storage storage = new MemoryStorage();
+        UserRepository repo = new UserRepository(storage);
+        User user = Main.createSampleUser();

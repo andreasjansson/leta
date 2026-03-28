@@ -23,3 +23,5 @@ src/main/java/com/example/User.java:9 public class User {
 src/main/java/com/example/UserRepository.java:26     public void addUser(User user) {
 src/main/java/com/example/UserRepository.java:36     public User getUser(String email) {
 src/main/java/com/example/UserRepository.java:55     public List<User> listUsers() {
+src/test/java/com/example/MainTest.java:5         User user = Main.createSampleUser();
+src/test/java/com/example/MainTest.java:12         User user = Main.createSampleUser();

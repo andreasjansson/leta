@@ -1,0 +1,34 @@
+#!/bin/bash
+set -e
+cd "$(dirname "$0")/.."
+
+IMAGE_NAME="leta-corpus-test"
+
+# Build the Docker image if needed
+if ! docker image inspect "$IMAGE_NAME" &>/dev/null || [ "${REBUILD:-}" = "1" ]; then
+    echo "Building test image..."
+    docker build -f Dockerfile.test -t "$IMAGE_NAME" .
+fi
+
+# Build leta inside the container and run corpus tests
+# Mount the project directory so cctr -u can update test files in place
+docker run --rm \
+    -v "$PWD:/work" \
+    -e "HOME=/root" \
+    "$IMAGE_NAME" \
+    bash -c '
+        eval $(opam env)
+        cd /work
+        cargo build --release
+        cp target/release/leta /root/.local/bin/
+        cp target/release/leta-daemon /root/.local/bin/
+
+        # Build OCaml fixture
+        cd test/corpus/languages/ocaml/fixture
+        opam exec -- dune build 2>/dev/null || true
+        cd /work
+
+        leta daemon start
+        sleep 2
+        cctr test/corpus "$@"
+    ' -- "$@"

@@ -6,23 +6,9 @@ use leta_lsp::lsp_types::{
     DocumentSymbol, DocumentSymbolParams, DocumentSymbolResponse, SymbolInformation,
     TextDocumentIdentifier,
 };
-use leta_types::ShowParams;
+use leta_types::{ShowParams, ShowResult};
 
 use super::{relative_path, HandlerContext};
-
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub struct ShowResult {
-    pub path: String,
-    pub start_line: u32,
-    pub end_line: u32,
-    pub content: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub symbol: Option<String>,
-    #[serde(default)]
-    pub truncated: bool,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub total_lines: Option<u32>,
-}
 
 #[trace]
 pub async fn handle_show(ctx: &HandlerContext, params: ShowParams) -> Result<ShowResult, String> {

@@ -1,0 +1,57 @@
+===
+call graph with non-workspace
+===
+leta graph --include-non-workspace
+---
+main.go:172 [Function] main (func())
+├── main.go:44 [Function] NewMemoryStorage (sample_project)
+├── main.go:124 [Function] NewUserRepository (sample_project)
+├── main.go:149 [Function] createSampleUser (sample_project)
+│   └── main.go:16 [Function] NewUser (sample_project)
+├── main.go:129 [Function] AddUser (sample_project)
+├── [Function] Printf (fmt • print.go)
+├── main.go:134 [Function] GetUser (sample_project)
+├── main.go:26 [Function] DisplayName (sample_project)
+└── main.go:21 [Function] IsAdult (sample_project)
+
+editable.go:20 [Method] (*EditablePerson).Greet (func() string)
+└── [Function] Sprintf (fmt • print.go)
+
+editable.go:25 [Function] editableCreateSample (func() *EditablePerson)
+└── editable.go:15 [Function] NewEditablePerson (sample_project)
+
+main.go:101 [Method] (*FileStorage).Load (func(email string) (*User, error))
+└── [Function] New (errors • errors.go)
+
+main.go:129 [Method] (*UserRepository).AddUser (func(user *User) error)
+└── main.go:32 [Function] Save (sample_project)
+
+main.go:134 [Method] (*UserRepository).GetUser (func(email string) (*User, error))
+└── main.go:33 [Function] Load (sample_project)
+
+main.go:139 [Method] (*UserRepository).DeleteUser (func(email string) error)
+└── main.go:34 [Function] Delete (sample_project)
+
+main.go:144 [Method] (*UserRepository).ListUsers (func() ([]*User, error))
+└── main.go:35 [Function] List (sample_project)
+
+main.go:159 [Function] ValidateUser (func(user *User) error)
+└── [Function] New (errors • errors.go)
+
+main.go:26 [Method] (*User).DisplayName (func() string)
+└── [Function] Sprintf (fmt • print.go)
+
+main.go:49 [Method] (*MemoryStorage).Save (func(user *User) error)
+└── [Function] New (errors • errors.go)
+
+main.go:58 [Method] (*MemoryStorage).Load (func(email string) (*User, error))
+└── [Function] New (errors • errors.go)
+
+main.go:67 [Method] (*MemoryStorage).Delete (func(email string) error)
+└── [Function] New (errors • errors.go)
+
+utils.go:21 [Function] FormatName (func(first, last string) string)
+└── [Function] TrimSpace (strings • strings.go)
+
+utils.go:9 [Function] ValidateEmail (func(email string) bool)
+└── [Function] MatchString (regexp • regexp.go)

@@ -96,3 +96,21 @@ pub const DEFAULT_PORTS: [u16; 5] = [
     8443,
     3000,
 ];
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_user_creation() {
+        let user = User::new("Alice".to_string(), "alice@example.com".to_string(), 30);
+        assert_eq!(user.name(), "Alice");
+    }
+
+    #[test]
+    fn test_is_adult() {
+        let adult = User::new("Bob".to_string(), "bob@example.com".to_string(), 25);
+        assert!(adult.is_adult());
+        let minor = User::new("Charlie".to_string(), "charlie@example.com".to_string(), 12);
+        assert!(!minor.is_adult());
+    }
+}

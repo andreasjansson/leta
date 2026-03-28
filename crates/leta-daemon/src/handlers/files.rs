@@ -9,39 +9,27 @@ use tokio::sync::mpsc;
 use super::{relative_path, HandlerContext};
 
 const DEFAULT_EXCLUDE_DIRS: &[&str] = &[
-    ".git",
     "__pycache__",
+    "__pypackages__",
     "node_modules",
-    ".venv",
     "venv",
     "target",
     "build",
     "dist",
-    ".tox",
-    ".mypy_cache",
-    ".pytest_cache",
-    ".eggs",
-    ".cache",
-    ".coverage",
-    ".hypothesis",
-    ".nox",
-    ".ruff_cache",
-    "__pypackages__",
-    ".pants.d",
-    ".pyre",
-    ".pytype",
     "vendor",
     "third_party",
-    ".bundle",
-    ".next",
-    ".nuxt",
-    ".svelte-kit",
-    ".turbo",
-    ".parcel-cache",
     "coverage",
-    ".nyc_output",
-    ".zig-cache",
-    ".wrangler",
+];
+
+// Dot-directories are excluded by default; only these are recursed into
+const WHITELISTED_DOT_DIRS: &[&str] = &[
+    ".github",
+    ".gitlab",
+    ".circleci",
+    ".vscode",
+    ".devcontainer",
+    ".changeset",
+    ".changesets",
 ];
 
 const BINARY_EXTENSIONS: &[&str] = &[
@@ -65,6 +53,7 @@ pub async fn handle_files(
         .unwrap_or_else(|| workspace_root.clone());
 
     let mut exclude_dirs: HashSet<&str> = DEFAULT_EXCLUDE_DIRS.iter().copied().collect();
+    let whitelisted_dot_dirs: HashSet<&str> = WHITELISTED_DOT_DIRS.iter().copied().collect();
 
     for pattern in &params.include_patterns {
         exclude_dirs.remove(pattern.as_str());
@@ -84,11 +73,15 @@ pub async fn handle_files(
     } else {
         params.head as usize
     };
+    let dir_filters = DirFilters {
+        exclude_dirs: &exclude_dirs,
+        whitelisted_dot_dirs: &whitelisted_dot_dirs,
+        binary_exts: &binary_exts,
+    };
     let (files_info, excluded_dirs, total_bytes, total_lines, truncated) = walk_directory(
         &target_path,
         &workspace_root,
-        &exclude_dirs,
-        &binary_exts,
+        &dir_filters,
         &params,
         filter_regex.as_ref(),
         head_limit,
@@ -106,11 +99,16 @@ pub async fn handle_files(
     })
 }
 
+struct DirFilters<'a> {
+    exclude_dirs: &'a HashSet<&'a str>,
+    whitelisted_dot_dirs: &'a HashSet<&'a str>,
+    binary_exts: &'a HashSet<&'a str>,
+}
+
 fn walk_directory(
     target_path: &Path,
     workspace_root: &Path,
-    exclude_dirs: &HashSet<&str>,
-    binary_exts: &HashSet<&str>,
+    dir_filters: &DirFilters<'_>,
     params: &FilesParams,
     filter_regex: Option<&Regex>,
     head: usize,
@@ -155,8 +153,11 @@ fn walk_directory(
                 continue;
             }
 
-            let is_default_excluded = exclude_dirs.contains(name.as_ref());
-            let is_egg_info = name.ends_with(".egg-info");
+            let name_ref: &str = &name;
+            let is_hidden_dot_dir =
+                name_ref.starts_with('.') && !dir_filters.whitelisted_dot_dirs.contains(name_ref);
+            let is_default_excluded = dir_filters.exclude_dirs.contains(name_ref);
+            let is_egg_info = name_ref.ends_with(".egg-info");
             let is_pattern_excluded = exclude_regexes.iter().any(|re| re.is_match(&rel_path));
             let is_included = include_regexes.iter().any(|re| re.is_match(&rel_path));
 
@@ -165,7 +166,7 @@ fn walk_directory(
                 continue;
             }
 
-            if (is_default_excluded || is_pattern_excluded) && !is_included {
+            if (is_hidden_dot_dir || is_default_excluded || is_pattern_excluded) && !is_included {
                 if filter_regex.is_none() {
                     found_excluded.insert(rel_path);
                 }
@@ -178,7 +179,10 @@ fn walk_directory(
 
         let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
 
-        if binary_exts.contains(&format!(".{}", ext).as_str()) {
+        if dir_filters
+            .binary_exts
+            .contains(&format!(".{}", ext).as_str())
+        {
             continue;
         }
 
@@ -276,6 +280,7 @@ async fn handle_files_streaming_inner(
         .unwrap_or_else(|| workspace_root.clone());
 
     let mut exclude_dirs: HashSet<&str> = DEFAULT_EXCLUDE_DIRS.iter().copied().collect();
+    let whitelisted_dot_dirs: HashSet<&str> = WHITELISTED_DOT_DIRS.iter().copied().collect();
 
     for pattern in &params.include_patterns {
         exclude_dirs.remove(pattern.as_str());
@@ -334,12 +339,18 @@ async fn handle_files_streaming_inner(
                 continue;
             }
 
-            let is_default_excluded = exclude_dirs.contains(name.as_ref());
-            let is_egg_info = name.ends_with(".egg-info");
+            let name_ref: &str = &name;
+            let is_hidden_dot_dir =
+                name_ref.starts_with('.') && !whitelisted_dot_dirs.contains(name_ref);
+            let is_default_excluded = exclude_dirs.contains(name_ref);
+            let is_egg_info = name_ref.ends_with(".egg-info");
             let is_pattern_excluded = exclude_regexes.iter().any(|re| re.is_match(&rel_path));
             let is_included = include_regexes.iter().any(|re| re.is_match(&rel_path));
 
-            if is_egg_info || ((is_default_excluded || is_pattern_excluded) && !is_included) {
+            if is_egg_info
+                || ((is_hidden_dot_dir || is_default_excluded || is_pattern_excluded)
+                    && !is_included)
+            {
                 if filter_regex.is_none() && !is_egg_info {
                     let _ = tx
                         .send(StreamMessage::ExcludedDir {

@@ -67,7 +67,7 @@ pub async fn handle_calls(
             };
             let calls = collect_outgoing_calls(&mut ctx, item, 0).await;
 
-            let root = call_hierarchy_item_to_node(item, &workspace_root);
+            let root = call_hierarchy_item_to_node(item, &workspace_root, true);
             Ok(CallsResult {
                 root: Some(CallNode {
                     calls: Some(calls),
@@ -121,7 +121,7 @@ pub async fn handle_calls(
             };
             let called_by = collect_incoming_calls(&mut ctx, item, 0).await;
 
-            let root = call_hierarchy_item_to_node(item, &workspace_root);
+            let root = call_hierarchy_item_to_node(item, &workspace_root, true);
             Ok(CallsResult {
                 root: Some(CallNode {
                     called_by: Some(called_by),
@@ -329,23 +329,26 @@ async fn collect_outgoing_calls(
     for call in calls {
         let call_item = &call.to;
 
-        if !ctx.include_non_workspace
-            && !is_path_in_workspace(call_item.uri.as_str(), ctx.workspace_root)
-        {
+        let in_workspace = is_path_in_workspace(call_item.uri.as_str(), ctx.workspace_root);
+
+        if !ctx.include_non_workspace && !in_workspace {
             continue;
         }
 
-        let mut node = call_hierarchy_item_to_node(call_item, ctx.workspace_root);
+        let mut node = call_hierarchy_item_to_node(call_item, ctx.workspace_root, in_workspace);
 
-        let children = Box::pin(collect_outgoing_calls(ctx, call_item, current_depth + 1)).await;
-
-        if !children.is_empty() {
-            node.calls = Some(children);
+        if in_workspace {
+            let children =
+                Box::pin(collect_outgoing_calls(ctx, call_item, current_depth + 1)).await;
+            if !children.is_empty() {
+                node.calls = Some(children);
+            }
         }
 
         result.push(node);
     }
 
+    sort_call_nodes(&mut result);
     result
 }
 
@@ -386,23 +389,26 @@ async fn collect_incoming_calls(
     for call in calls {
         let call_item = &call.from;
 
-        if !ctx.include_non_workspace
-            && !is_path_in_workspace(call_item.uri.as_str(), ctx.workspace_root)
-        {
+        let in_workspace = is_path_in_workspace(call_item.uri.as_str(), ctx.workspace_root);
+
+        if !ctx.include_non_workspace && !in_workspace {
             continue;
         }
 
-        let mut node = call_hierarchy_item_to_node(call_item, ctx.workspace_root);
+        let mut node = call_hierarchy_item_to_node(call_item, ctx.workspace_root, in_workspace);
 
-        let children = Box::pin(collect_incoming_calls(ctx, call_item, current_depth + 1)).await;
-
-        if !children.is_empty() {
-            node.called_by = Some(children);
+        if in_workspace {
+            let children =
+                Box::pin(collect_incoming_calls(ctx, call_item, current_depth + 1)).await;
+            if !children.is_empty() {
+                node.called_by = Some(children);
+            }
         }
 
         result.push(node);
     }
 
+    sort_call_nodes(&mut result);
     result
 }
 
@@ -431,7 +437,7 @@ async fn find_call_path(
     }
     ctx.visited.insert(key.clone());
 
-    let current_node = call_hierarchy_item_to_node(item, ctx.workspace_root);
+    let current_node = call_hierarchy_item_to_node(item, ctx.workspace_root, true);
 
     if key == ctx.target_key {
         return Some(vec![current_node]);
@@ -457,9 +463,13 @@ async fn find_call_path(
     for call in calls {
         let call_item = &call.to;
 
-        if !ctx.include_non_workspace
-            && !is_path_in_workspace(call_item.uri.as_str(), ctx.workspace_root)
-        {
+        let in_workspace = is_path_in_workspace(call_item.uri.as_str(), ctx.workspace_root);
+
+        if !ctx.include_non_workspace && !in_workspace {
+            continue;
+        }
+
+        if !in_workspace {
             continue;
         }
 
@@ -472,7 +482,21 @@ async fn find_call_path(
     None
 }
 
-fn call_hierarchy_item_to_node(item: &CallHierarchyItem, workspace_root: &Path) -> CallNode {
+fn sort_call_nodes(nodes: &mut [CallNode]) {
+    nodes.sort_by(|a, b| {
+        let path_cmp = a.path.cmp(&b.path);
+        if path_cmp != std::cmp::Ordering::Equal {
+            return path_cmp;
+        }
+        a.line.cmp(&b.line)
+    });
+}
+
+fn call_hierarchy_item_to_node(
+    item: &CallHierarchyItem,
+    workspace_root: &Path,
+    in_workspace: bool,
+) -> CallNode {
     let file_path = uri_to_path(item.uri.as_str());
     let rel_path = relative_path(&file_path, workspace_root);
     let kind = SymbolKind::from_lsp(item.kind);
@@ -484,6 +508,7 @@ fn call_hierarchy_item_to_node(item: &CallHierarchyItem, workspace_root: &Path) 
         path: Some(rel_path),
         line: Some(item.selection_range.start.line + 1),
         column: Some(item.selection_range.start.character),
+        in_workspace,
         calls: None,
         called_by: None,
     }

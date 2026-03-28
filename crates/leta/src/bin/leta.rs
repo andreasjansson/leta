@@ -39,8 +39,6 @@ entire code base.
 understand a code base. Note that `leta grep` only exposes symbols that are
 declared in its workspace, so use (rip)grep or other search tools when you're
 looking for specific multi-symbol strings, puncuation, or library functions.
-`leta grep PATTERN [PATH] --docs` prints function and method documentation for
-all matching symbols.
 
 `leta files` is a good starting point when starting work on a project.
 
@@ -77,8 +75,6 @@ enum Commands {
         kind: Option<String>,
         #[arg(short = 'x', long, action = clap::ArgAction::Append, help = "Exclude pattern")]
         exclude: Vec<String>,
-        #[arg(short = 'd', long, help = "Include documentation")]
-        docs: bool,
         #[arg(short = 'C', long, help = "Case-sensitive matching")]
         case_sensitive: bool,
         #[arg(short = 'N', long, default_value_t = DEFAULT_HEAD_LIMIT, help = "Maximum results (0 = unlimited)")]
@@ -131,6 +127,20 @@ enum Commands {
         include_non_workspace: bool,
         #[arg(short = 'N', long, default_value_t = DEFAULT_HEAD_LIMIT, help = "Maximum results (0 = unlimited)")]
         head: u32,
+    },
+
+    #[command(about = "Show full workspace call graph.")]
+    Graph {
+        #[arg(long, help = "Include stdlib/dependency calls")]
+        include_non_workspace: bool,
+        #[arg(long, help = "Include symbols with no callers or callees")]
+        include_orphans: bool,
+        #[arg(short = 'x', long = "exclude-path", action = clap::ArgAction::Append, help = "Exclude paths matching regex")]
+        exclude_path: Vec<String>,
+        #[arg(short = 'i', long = "include-path", action = clap::ArgAction::Append, help = "Only include paths matching regex")]
+        include_path: Vec<String>,
+        #[arg(long, help = "Include test files (excluded by default)")]
+        include_tests: bool,
     },
 
     #[command(about = "Find implementations of an interface or abstract method.")]
@@ -268,7 +278,6 @@ async fn main() -> Result<()> {
                     path,
                     kind,
                     exclude,
-                    docs,
                     case_sensitive,
                     head,
                 } => {
@@ -282,7 +291,6 @@ async fn main() -> Result<()> {
                             kind,
                             exclude,
                             head,
-                            docs,
                             case_sensitive,
                         },
                     )
@@ -354,6 +362,24 @@ async fn main() -> Result<()> {
                         max_depth,
                         include_non_workspace,
                         head,
+                    )
+                    .await
+                }
+                Commands::Graph {
+                    include_non_workspace,
+                    include_orphans,
+                    exclude_path,
+                    include_path,
+                    include_tests,
+                } => {
+                    handle_graph(
+                        &config,
+                        cli.json,
+                        include_non_workspace,
+                        include_orphans,
+                        exclude_path,
+                        include_path,
+                        include_tests,
                     )
                     .await
                 }
@@ -849,7 +875,6 @@ struct GrepOptions {
     kind: Option<String>,
     exclude: Vec<String>,
     head: u32,
-    docs: bool,
     case_sensitive: bool,
 }
 
@@ -865,7 +890,6 @@ async fn handle_grep(
         kind,
         exclude,
         head,
-        docs,
         case_sensitive,
     } = opts;
     if pattern.contains(' ') {
@@ -879,91 +903,56 @@ async fn handle_grep(
 
     let workspace_root = get_workspace_root(config)?;
 
+    let request_params = json!({
+        "workspace_root": workspace_root.to_string_lossy(),
+        "pattern": pattern,
+        "kinds": kinds,
+        "case_sensitive": case_sensitive,
+        "path_pattern": path,
+        "exclude_patterns": exclude,
+        "limit": head,
+    });
+
+    let build_command_base = || {
+        let mut cmd_parts = vec![format!("leta grep \"{}\"", pattern)];
+        if let Some(p) = &path {
+            cmd_parts.push(format!("\"{}\"", p));
+        }
+        if let Some(k) = &kind {
+            cmd_parts.push(format!("-k {}", k));
+        }
+        for ex in &exclude {
+            cmd_parts.push(format!("-x \"{}\"", ex));
+        }
+        if case_sensitive {
+            cmd_parts.push("-C".to_string());
+        }
+        cmd_parts.join(" ")
+    };
+
     if json_output || profile {
-        // Use non-streaming path for JSON output or profiling (profiling needs full timing data)
-        let response = send_request_with_profile(
-            "grep",
-            json!({
-                "workspace_root": workspace_root.to_string_lossy(),
-                "pattern": pattern,
-                "kinds": kinds,
-                "case_sensitive": case_sensitive,
-                "include_docs": docs,
-                "path_pattern": path,
-                "exclude_patterns": exclude,
-                "limit": head,
-            }),
-            profile,
-        )
-        .await?;
+        let response = send_request_with_profile("grep", request_params, profile).await?;
 
         let grep_result: GrepResult = serde_json::from_value(response.result)?;
         if json_output {
             println!("{}", serde_json::to_string_pretty(&grep_result)?);
         } else {
-            let mut cmd_parts = vec![format!("leta grep \"{}\"", pattern)];
-            if let Some(p) = &path {
-                cmd_parts.push(format!("\"{}\"", p));
-            }
-            if let Some(k) = &kind {
-                cmd_parts.push(format!("-k {}", k));
-            }
-            for ex in &exclude {
-                cmd_parts.push(format!("-x \"{}\"", ex));
-            }
-            if docs {
-                cmd_parts.push("-d".to_string());
-            }
-            if case_sensitive {
-                cmd_parts.push("-C".to_string());
-            }
-            let command_base = cmd_parts.join(" ");
+            let command_base = build_command_base();
             println!("{}", format_grep_result(&grep_result, head, &command_base));
         }
         display_profiling(response.profiling);
     } else {
-        // Use streaming path - print symbols immediately as they arrive
         let mut count = 0u32;
-        let done = send_streaming_request(
-            "grep",
-            json!({
-                "workspace_root": workspace_root.to_string_lossy(),
-                "pattern": pattern,
-                "kinds": kinds,
-                "case_sensitive": case_sensitive,
-                "include_docs": docs,
-                "path_pattern": path,
-                "exclude_patterns": exclude,
-                "limit": head,
-            }),
-            false,
-            |msg| {
-                if let StreamMessage::Symbol(sym) = msg {
-                    println!("{}", format_symbol_line(&sym));
-                    count += 1;
-                }
-            },
-        )
+        let done = send_streaming_request("grep", request_params, false, |msg| {
+            if let StreamMessage::Symbol(sym) = msg {
+                println!("{}", format_symbol_line(&sym));
+                count += 1;
+            }
+        })
         .await?;
 
         if done.truncated {
-            let mut cmd_parts = vec![format!("leta grep \"{}\"", pattern)];
-            if let Some(p) = &path {
-                cmd_parts.push(format!("\"{}\"", p));
-            }
-            if let Some(k) = &kind {
-                cmd_parts.push(format!("-k {}", k));
-            }
-            for ex in &exclude {
-                cmd_parts.push(format!("-x \"{}\"", ex));
-            }
-            if docs {
-                cmd_parts.push("-d".to_string());
-            }
-            if case_sensitive {
-                cmd_parts.push("-C".to_string());
-            }
-            let command_base = cmd_parts.join(" ");
+            let command_base = build_command_base();
             println!(
                 "\n[showing first {} results, use `{} --head {}` to show more, or `{} -N0` to show all]",
                 count,
@@ -1461,6 +1450,44 @@ async fn handle_calls(
             "{}",
             format_calls_result(&calls_result, head, &command_base)
         );
+    }
+    Ok(())
+}
+
+async fn handle_graph(
+    config: &Config,
+    json_output: bool,
+    include_non_workspace: bool,
+    include_orphans: bool,
+    exclude_path: Vec<String>,
+    include_path: Vec<String>,
+    include_tests: bool,
+) -> Result<()> {
+    let workspace_root = get_workspace_root(config)?;
+
+    let result = send_request(
+        "graph",
+        json!({
+            "workspace_root": workspace_root.to_string_lossy(),
+            "include_non_workspace": include_non_workspace,
+            "exclude_patterns": exclude_path,
+            "include_patterns": include_path,
+            "include_tests": include_tests,
+        }),
+    )
+    .await?;
+
+    let graph_result: GraphResult = serde_json::from_value(result)?;
+
+    if json_output {
+        println!("{}", serde_json::to_string_pretty(&graph_result)?);
+    } else if let Some(error) = &graph_result.error {
+        return Err(anyhow!("{}", error));
+    } else {
+        let output = format_graph_result(&graph_result, include_orphans);
+        if !output.trim().is_empty() {
+            println!("{}", output);
+        }
     }
     Ok(())
 }

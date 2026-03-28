@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 
 use leta_types::*;
@@ -726,23 +726,13 @@ pub fn format_symbol_line(sym: &SymbolInfo) -> String {
     if let Some(container) = &sym.container {
         parts.push(format!("in {}", container));
     }
-    let mut output = parts.join(" ");
-
-    if let Some(doc) = &sym.documentation {
-        for doc_line in doc.trim().lines() {
-            output.push_str(&format!("\n    {}", doc_line));
-        }
-    }
-    output
+    parts.join(" ")
 }
 
 fn format_symbols(symbols: &[SymbolInfo]) -> String {
     let mut lines = Vec::new();
     for sym in symbols {
         lines.push(format_symbol_line(sym));
-        if sym.documentation.is_some() {
-            lines.push(String::new());
-        }
     }
     lines.join("\n")
 }
@@ -1082,7 +1072,7 @@ fn render_calls_tree(items: &[CallNode], lines: &mut Vec<String>, prefix: &str, 
         let line = item.line.unwrap_or(0);
 
         let mut parts: Vec<String> = Vec::new();
-        if is_stdlib_path(path) {
+        if !item.in_workspace || is_stdlib_path(path) {
             if let Some(kind) = &item.kind {
                 parts.push(format!("[{}]", kind));
             }
@@ -1133,4 +1123,266 @@ fn format_call_path(path: &[CallNode]) -> String {
     }
 
     lines.join("\n")
+}
+
+pub fn format_graph_result(result: &GraphResult, include_orphans: bool) -> String {
+    use leta_types::{CallGraphEdge, CallGraphSymbol};
+
+    let node_key = |s: &CallGraphSymbol| format!("{}:{}:{}", s.path, s.line, s.name);
+
+    let mut outgoing: HashMap<String, Vec<&CallGraphEdge>> = HashMap::new();
+    let mut has_incoming: HashSet<String> = HashSet::new();
+    let mut has_outgoing: HashSet<String> = HashSet::new();
+    let mut self_recursive: HashSet<String> = HashSet::new();
+    let mut node_map: HashMap<String, &CallGraphSymbol> = HashMap::new();
+
+    for node in &result.nodes {
+        node_map.insert(node_key(node), node);
+    }
+
+    for edge in &result.edges {
+        let caller_key = node_key(&edge.caller);
+        let callee_key = node_key(&edge.callee);
+
+        node_map.entry(callee_key.clone()).or_insert(&edge.callee);
+
+        if caller_key == callee_key {
+            self_recursive.insert(caller_key);
+            continue;
+        }
+
+        outgoing.entry(caller_key.clone()).or_default().push(edge);
+        has_incoming.insert(callee_key);
+        has_outgoing.insert(caller_key);
+    }
+
+    for children in outgoing.values_mut() {
+        children.sort_by_key(|e| e.call_site_line.unwrap_or(u32::MAX));
+    }
+
+    let mut roots: Vec<String> = Vec::new();
+    for key in has_outgoing.iter() {
+        if !has_incoming.contains(key) {
+            roots.push(key.clone());
+        }
+    }
+    for key in self_recursive.iter() {
+        if !has_incoming.contains(key) && !has_outgoing.contains(key) {
+            roots.push(key.clone());
+        }
+    }
+
+    fn count_reachable(
+        key: &str,
+        outgoing: &HashMap<String, Vec<&CallGraphEdge>>,
+        seen: &mut HashSet<String>,
+    ) -> usize {
+        if !seen.insert(key.to_string()) {
+            return 0;
+        }
+        let mut count = 1;
+        let node_key = |s: &CallGraphSymbol| format!("{}:{}:{}", s.path, s.line, s.name);
+        if let Some(children) = outgoing.get(key) {
+            for edge in children {
+                count += count_reachable(&node_key(&edge.callee), outgoing, seen);
+            }
+        }
+        count
+    }
+
+    roots.sort_by(|a, b| {
+        let size_a = count_reachable(a, &outgoing, &mut HashSet::new());
+        let size_b = count_reachable(b, &outgoing, &mut HashSet::new());
+        size_b.cmp(&size_a).then_with(|| a.cmp(b))
+    });
+
+    let mut roots_by_lang: Vec<(String, Vec<String>)> = Vec::new();
+    let mut lang_map: HashMap<String, Vec<String>> = HashMap::new();
+    for root_key in roots {
+        let lang = node_map
+            .get(root_key.as_str())
+            .map(|n| language_from_path(&n.path))
+            .unwrap_or_else(|| "Unknown".to_string());
+        lang_map.entry(lang).or_default().push(root_key);
+    }
+    for (lang, lang_roots) in lang_map {
+        roots_by_lang.push((lang, lang_roots));
+    }
+    roots_by_lang.sort_by(|a, b| {
+        let size_a: usize =
+            a.1.iter()
+                .map(|r| count_reachable(r, &outgoing, &mut HashSet::new()))
+                .sum();
+        let size_b: usize =
+            b.1.iter()
+                .map(|r| count_reachable(r, &outgoing, &mut HashSet::new()))
+                .sum();
+        size_b.cmp(&size_a).then_with(|| a.0.cmp(&b.0))
+    });
+
+    let mut visited: HashSet<String> = HashSet::new();
+    let mut lines: Vec<String> = Vec::new();
+    let show_lang_headers = roots_by_lang.len() > 1;
+
+    for (lang, lang_roots) in &roots_by_lang {
+        if show_lang_headers {
+            if !lines.is_empty() {
+                lines.push(String::new());
+            }
+            lines.push(lang.clone());
+            lines.push("═".repeat(lang.len()));
+            lines.push(String::new());
+        }
+
+        for root_key in lang_roots {
+            let node = match node_map.get(root_key.as_str()) {
+                Some(n) => n,
+                None => continue,
+            };
+
+            let mut root_line = format_graph_node_label(node, true);
+            let has_children = outgoing.contains_key(root_key.as_str());
+            let is_self_recursive = self_recursive.contains(root_key.as_str());
+
+            if is_self_recursive && !has_children {
+                root_line.push_str(" ↻");
+                lines.push(root_line);
+                lines.push(String::new());
+                visited.insert(root_key.clone());
+                continue;
+            }
+
+            if is_self_recursive {
+                root_line.push_str(" ↻");
+            }
+
+            lines.push(root_line);
+            visited.insert(root_key.clone());
+
+            if let Some(children) = outgoing.get(root_key.as_str()) {
+                render_graph_tree(
+                    children,
+                    &outgoing,
+                    &self_recursive,
+                    &mut visited,
+                    &mut lines,
+                    "",
+                );
+            }
+
+            lines.push(String::new());
+        }
+    }
+
+    // Leaf-only nodes (have incoming but no outgoing, not self-recursive) are
+    // already shown as leaves in the trees above, so skip them.
+    // But if include_orphans, show nodes with no edges at all.
+    if include_orphans {
+        for node in &result.nodes {
+            let key = node_key(node);
+            if !has_incoming.contains(&key)
+                && !has_outgoing.contains(&key)
+                && !self_recursive.contains(&key)
+            {
+                lines.push(format!("{} (orphan)", format_graph_node_label(node, true)));
+                lines.push(String::new());
+            }
+        }
+    }
+
+    lines.join("\n")
+}
+
+fn format_graph_node_label(node: &leta_types::CallGraphSymbol, show_path: bool) -> String {
+    let mut parts = Vec::new();
+    if show_path {
+        parts.push(format!("{}:{}", node.path, node.line));
+    }
+    parts.push(format!("[{}]", node.kind));
+    parts.push(node.name.clone());
+    if let Some(detail) = &node.detail {
+        if !detail.is_empty() && detail != "()" {
+            let oneline: String = detail.split_whitespace().collect::<Vec<_>>().join(" ");
+            let trimmed = if show_path {
+                oneline.split(" • ").next().unwrap_or(&oneline)
+            } else {
+                &oneline
+            };
+            parts.push(format!("({})", trimmed));
+        }
+    }
+    parts.join(" ")
+}
+
+fn render_graph_tree(
+    children: &[&leta_types::CallGraphEdge],
+    outgoing: &HashMap<String, Vec<&leta_types::CallGraphEdge>>,
+    self_recursive: &HashSet<String>,
+    visited: &mut HashSet<String>,
+    lines: &mut Vec<String>,
+    prefix: &str,
+) {
+    let node_key = |s: &leta_types::CallGraphSymbol| format!("{}:{}:{}", s.path, s.line, s.name);
+
+    for (i, edge) in children.iter().enumerate() {
+        let callee = &edge.callee;
+        let in_workspace = edge.in_workspace;
+        let is_last = i == children.len() - 1;
+        let connector = if is_last { "└── " } else { "├── " };
+        let child_prefix = format!("{}{}", prefix, if is_last { "    " } else { "│   " });
+
+        let key = node_key(callee);
+        let label = format_graph_node_label(callee, in_workspace);
+        let is_self_recursive = self_recursive.contains(&key);
+
+        if !visited.insert(key.clone()) {
+            let mut line = format!("{}{}{}", prefix, connector, label);
+            if is_self_recursive {
+                line.push_str(" ↻");
+            }
+            if outgoing.contains_key(key.as_str()) {
+                line.push_str(" ↑");
+            }
+            lines.push(line);
+            continue;
+        }
+
+        let grandchildren = outgoing.get(key.as_str());
+        let mut line = format!("{}{}{}", prefix, connector, label);
+        if is_self_recursive {
+            line.push_str(" ↻");
+        }
+        lines.push(line);
+
+        if let Some(grandchildren) = grandchildren {
+            render_graph_tree(
+                grandchildren,
+                outgoing,
+                self_recursive,
+                visited,
+                lines,
+                &child_prefix,
+            );
+        }
+    }
+}
+
+fn language_from_path(path: &str) -> String {
+    let ext = path.rsplit('.').next().unwrap_or("");
+    match ext {
+        "py" => "Python",
+        "rs" => "Rust",
+        "go" => "Go",
+        "ts" | "tsx" => "TypeScript",
+        "js" | "jsx" => "JavaScript",
+        "java" => "Java",
+        "rb" => "Ruby",
+        "cpp" | "cc" | "cxx" | "c" | "h" | "hpp" => "C/C++",
+        "php" => "PHP",
+        "lua" => "Lua",
+        "ml" | "mli" => "OCaml",
+        "zig" => "Zig",
+        _ => ext,
+    }
+    .to_string()
 }

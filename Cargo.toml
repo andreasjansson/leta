@@ -3,6 +3,7 @@ resolver = "2"
 members = [
     "crates/leta",
     "crates/leta-daemon",
+    "crates/leta-lib",
     "crates/leta-lsp",
     "crates/leta-types",
     "crates/leta-config",
@@ -33,6 +34,7 @@ leta-servers = { version = "0.12.0", path = "crates/leta-servers" }
 leta-output = { version = "0.12.0", path = "crates/leta-output" }
 leta-fs = { version = "0.12.0", path = "crates/leta-fs" }
 leta-daemon = { version = "0.12.0", path = "crates/leta-daemon" }
+leta-lib = { version = "0.12.0", path = "crates/leta-lib" }
 
 # Async runtime
 tokio = { version = "1.40", features = ["full", "fs", "io-util", "macros", "process", "rt-multi-thread", "signal", "sync"] }

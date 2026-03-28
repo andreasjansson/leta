@@ -6,4 +6,6 @@ leta calls --to createSampleUser
 main.go:149 [Function] createSampleUser (sample_project • main.go)
 
 Incoming calls:
-  └── main.go:172 [Function] main (sample_project • main.go)
+  ├── main.go:172 [Function] main (sample_project • main.go)
+  ├── main_test.go:5 [Function] TestCreateSampleUser (sample_project • main_test.go)
+  └── main_test.go:12 [Function] TestUserRepository (sample_project • main_test.go)

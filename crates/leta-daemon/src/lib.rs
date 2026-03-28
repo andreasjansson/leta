@@ -3,10 +3,10 @@ use leta_config::{get_cache_dir, get_log_dir, Config, DaemonLock};
 use tracing::info;
 use tracing_subscriber::EnvFilter;
 
-mod handlers;
+pub mod handlers;
 mod profiling;
 mod server;
-mod session;
+pub mod session;
 
 #[trace]
 pub async fn run() -> anyhow::Result<()> {

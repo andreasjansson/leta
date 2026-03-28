@@ -151,8 +151,6 @@ pub struct SymbolInfo {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub detail: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub documentation: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub range_start_line: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub range_end_line: Option<u32>,
@@ -170,7 +168,6 @@ impl SymbolInfo {
             column: 0,
             container: None,
             detail: None,
-            documentation: None,
             range_start_line: None,
             range_end_line: None,
             reference: None,

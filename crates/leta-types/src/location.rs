@@ -69,6 +69,8 @@ pub struct CallNode {
     pub line: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub column: Option<u32>,
+    #[serde(default)]
+    pub in_workspace: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub calls: Option<Vec<CallNode>>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -84,8 +86,43 @@ impl CallNode {
             path: None,
             line: None,
             column: None,
+            in_workspace: true,
             calls: None,
             called_by: None,
         }
     }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub struct CallGraphSymbol {
+    pub name: String,
+    pub kind: String,
+    pub path: String,
+    pub line: u32,
+    pub column: u32,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub detail: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CallGraphEdge {
+    pub caller: CallGraphSymbol,
+    pub callee: CallGraphSymbol,
+    pub in_workspace: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub call_site_line: Option<u32>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CallGraphFileEdges {
+    pub edges: Vec<CallGraphEdge>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GraphResult {
+    pub nodes: Vec<CallGraphSymbol>,
+    pub edges: Vec<CallGraphEdge>,
+    pub indexing_time_ms: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
 }

@@ -3,4 +3,8 @@ declaration not supported
 ===
 leta declaration repo
 ---
-Error: textDocument/declaration is not supported by typescript-language-server
+Error: Symbol 'repo' is ambiguous (2 matches)
+  testUserRepository.repo
+    src/main.test.ts:11 [Constant] repo in testUserRepository
+  main.repo
+    src/main.ts:57 [Constant] repo in main

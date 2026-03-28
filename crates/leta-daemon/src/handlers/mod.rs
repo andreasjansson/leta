@@ -1,5 +1,6 @@
 mod calls;
 mod files;
+mod graph;
 mod grep;
 mod index;
 mod refs;
@@ -20,6 +21,7 @@ use leta_types::{CacheStats, LocationInfo, SymbolInfo, SymbolKind};
 
 pub use calls::handle_calls;
 pub use files::{handle_files, handle_files_streaming};
+pub use graph::handle_graph;
 pub use grep::{get_file_symbols, handle_grep, handle_grep_streaming};
 pub use index::handle_add_workspace;
 pub use refs::{

@@ -68,30 +68,162 @@ pub async fn handle_rename(
         .map_err(|e| e.to_string())?;
 
     workspace.ensure_document_open(&file_path).await?;
+
+    let extension = file_path.extension().and_then(|e| e.to_str()).unwrap_or("");
+    let source_files = super::find_source_files_with_extension(&workspace_root, extension);
+
+    // Close and reopen ALL source files to ensure the LSP server has
+    // up-to-date content. This is necessary because previous operations
+    // may have modified files on disk without syncing to the LSP.
+    for source_file in &source_files {
+        let _ = workspace.close_document(source_file).await;
+    }
+    for source_file in &source_files {
+        workspace.ensure_document_open(source_file).await?;
+    }
+
     let client = workspace.client().await.ok_or("No LSP client")?;
+    client.wait_for_indexing(30).await;
+
     let uri = leta_fs::path_to_uri(&file_path);
-    let response: Option<WorkspaceEdit> = client
-        .send_request(
-            "textDocument/rename",
-            LspRenameParams {
-                text_document_position: leta_lsp::lsp_types::TextDocumentPositionParams {
-                    text_document: TextDocumentIdentifier {
-                        uri: uri.parse().unwrap(),
+
+    // Wait for the LSP to discover cross-file references before renaming.
+    // basedpyright's background analysis may not have resolved imports yet.
+    // We probe with textDocument/references and only proceed with rename
+    // once the server reports references in multiple files.
+    let expect_multi_file = source_files.len() > 1;
+    if expect_multi_file {
+        for probe_attempt in 0..10u32 {
+            let refs_result: Result<Option<Vec<leta_lsp::lsp_types::Location>>, _> = client
+                .send_request(
+                    "textDocument/references",
+                    leta_lsp::lsp_types::ReferenceParams {
+                        text_document_position: leta_lsp::lsp_types::TextDocumentPositionParams {
+                            text_document: TextDocumentIdentifier {
+                                uri: uri.parse().unwrap(),
+                            },
+                            position: Position {
+                                line: params.line - 1,
+                                character: params.column,
+                            },
+                        },
+                        context: leta_lsp::lsp_types::ReferenceContext {
+                            include_declaration: true,
+                        },
+                        work_done_progress_params: Default::default(),
+                        partial_result_params: Default::default(),
                     },
-                    position: Position {
-                        line: params.line - 1,
-                        character: params.column,
-                    },
-                },
-                new_name: params.new_name.clone(),
-                work_done_progress_params: Default::default(),
+                )
+                .await;
+
+            let ref_files: HashSet<String> = refs_result
+                .unwrap_or(None)
+                .unwrap_or_default()
+                .iter()
+                .map(|loc| loc.uri.to_string())
+                .collect();
+
+            if ref_files.len() > 1 {
+                tracing::info!(
+                    "rename: references found in {} files (probe {})",
+                    ref_files.len(),
+                    probe_attempt + 1
+                );
+                break;
+            }
+
+            if probe_attempt == 9 {
+                tracing::warn!("rename: references only found in {} file(s) after 10 probes, proceeding anyway", ref_files.len());
+                break;
+            }
+
+            // Close and reopen all files to force content re-sync
+            for source_file in &source_files {
+                let _ = workspace.close_document(source_file).await;
+            }
+            for source_file in &source_files {
+                let _ = workspace.ensure_document_open(source_file).await;
+            }
+            client.wait_for_indexing(30).await;
+        }
+    }
+
+    let rename_params = LspRenameParams {
+        text_document_position: leta_lsp::lsp_types::TextDocumentPositionParams {
+            text_document: TextDocumentIdentifier {
+                uri: uri.parse().unwrap(),
             },
-        )
+            position: Position {
+                line: params.line - 1,
+                character: params.column,
+            },
+        },
+        new_name: params.new_name.clone(),
+        work_done_progress_params: Default::default(),
+    };
+
+    let response: Option<WorkspaceEdit> = client
+        .send_request("textDocument/rename", rename_params.clone())
         .await
         .map_err(|e| e.to_string())?;
-    tracing::info!("rename: got response from LSP");
 
-    let edit = response.ok_or("Rename not supported or failed")?;
+    let mut edit = response.ok_or("Rename not supported or failed")?;
+
+    // Workaround for basedpyright intermittently selecting singleFileMode:
+    // if references found cross-file refs but rename only changed 1 file,
+    // restart the server and retry.
+    if expect_multi_file && get_files_from_workspace_edit(&edit).len() <= 1 {
+        tracing::info!("rename: only 1 file changed but expected multi-file, restarting server");
+        ctx.session
+            .restart_workspace(&workspace_root)
+            .await
+            .map_err(|e| e.to_string())?;
+
+        let workspace = ctx
+            .session
+            .get_or_create_workspace(&file_path, &workspace_root)
+            .await
+            .map_err(|e| e.to_string())?;
+        for source_file in &source_files {
+            workspace.ensure_document_open(source_file).await?;
+        }
+        let client = workspace.client().await.ok_or("No LSP client")?;
+        client.wait_for_indexing(30).await;
+
+        // Re-probe references to warm up analysis
+        let _: Result<Option<Vec<leta_lsp::lsp_types::Location>>, _> = client
+            .send_request(
+                "textDocument/references",
+                leta_lsp::lsp_types::ReferenceParams {
+                    text_document_position: leta_lsp::lsp_types::TextDocumentPositionParams {
+                        text_document: TextDocumentIdentifier {
+                            uri: uri.parse().unwrap(),
+                        },
+                        position: Position {
+                            line: params.line - 1,
+                            character: params.column,
+                        },
+                    },
+                    context: leta_lsp::lsp_types::ReferenceContext {
+                        include_declaration: true,
+                    },
+                    work_done_progress_params: Default::default(),
+                    partial_result_params: Default::default(),
+                },
+            )
+            .await;
+
+        let retry_response: Option<WorkspaceEdit> = client
+            .send_request("textDocument/rename", rename_params.clone())
+            .await
+            .map_err(|e| e.to_string())?;
+        edit = retry_response.ok_or("Rename not supported or failed")?;
+        tracing::info!(
+            "rename: after restart, {} file(s) changed",
+            get_files_from_workspace_edit(&edit).len()
+        );
+    }
+    tracing::info!("rename: got response from LSP");
 
     // Close ALL documents that will be modified BEFORE applying edits
     // This is critical for servers that won't reindex files if the document is still open

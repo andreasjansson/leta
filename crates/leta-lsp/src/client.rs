@@ -249,7 +249,38 @@ impl LspClient {
     }
 
     #[trace]
-    pub async fn send_request<P: serde::Serialize, R: serde::de::DeserializeOwned>(
+    pub async fn send_request<P: serde::Serialize + Clone, R: serde::de::DeserializeOwned>(
+        &self,
+        method: &'static str,
+        params: P,
+    ) -> Result<R, LspProtocolError> {
+        const MAX_RETRIES: u32 = 3;
+        let mut last_err = None;
+
+        for attempt in 0..=MAX_RETRIES {
+            match self.send_request_once(method, params.clone()).await {
+                Ok(val) => return Ok(val),
+                Err(LspProtocolError::Response(ref e))
+                    if e.is_retryable() && attempt < MAX_RETRIES =>
+                {
+                    tracing::debug!(
+                        "LSP {} returned retryable error (attempt {}/{}): {}",
+                        method,
+                        attempt + 1,
+                        MAX_RETRIES,
+                        e
+                    );
+                    self.wait_for_indexing(30).await;
+                    last_err = Some(LspProtocolError::Response(e.clone()));
+                }
+                Err(e) => return Err(e),
+            }
+        }
+
+        Err(last_err.unwrap())
+    }
+
+    async fn send_request_once<P: serde::Serialize, R: serde::de::DeserializeOwned>(
         &self,
         method: &'static str,
         params: P,

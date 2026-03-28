@@ -6,4 +6,6 @@ leta calls --to createSampleUser
 user.hpp:135 [Function] createSampleUser
 
 Incoming calls:
-  └── main.cpp:7 [Function] main (main)
+  ├── main.cpp:7 [Function] main (main)
+  ├── test_main.cpp:3 [Function] test_create_sample_user (test_create_sample_user)
+  └── test_main.cpp:7 [Function] test_user_repository (test_user_repository)

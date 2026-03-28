@@ -1,0 +1,21 @@
+===
+call graph
+===
+leta graph
+---
+Go
+══
+
+main.go:63 [Function] main (func())
+├── main.go:48 [Function] CreateService (multi-language-project)
+│   └── main.go:18 [Function] NewGoService (multi-language-project)
+├── main.go:26 [Function] Greet (multi-language-project)
+├── main.go:31 [Function] AddUser (multi-language-project)
+└── main.go:36 [Function] GetUsers (multi-language-project)
+
+
+Python
+══════
+
+app.py:51 [Function] create_service
+└── app.py:26 [Class] PythonService

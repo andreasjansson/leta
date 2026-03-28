@@ -3,6 +3,7 @@ grep kind filter function
 ===
 leta grep "User" '\.tsx$' -k function -C
 ---
+src/App.test.tsx:3 [Function] testUserAvatar
 src/App.tsx:62 [Function] UserDetailsPanel
 src/components.tsx:54 [Function] UserAvatar
 src/components.tsx:84 [Function] UserCard

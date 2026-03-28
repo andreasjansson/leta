@@ -1,6 +1,0 @@
-===
-grep with docs
-===
-leta grep "^create_sample_user$" --kind function --docs src/main.rs -C
----
-src/main.rs:10 [Function] create_sample_user (fn() -> User)
