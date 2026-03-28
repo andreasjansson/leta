@@ -530,6 +530,8 @@ pub struct GraphParams {
     pub exclude_patterns: Vec<String>,
     #[serde(default)]
     pub include_patterns: Vec<String>,
+    #[serde(default)]
+    pub include_tests: bool,
 }
 
 // ============================================================================
