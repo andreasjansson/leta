@@ -158,55 +158,12 @@ pub async fn handle_rename(
         work_done_progress_params: Default::default(),
     };
 
-    tracing::info!("rename: {} source files, expect_multi_file={}", source_files.len(), source_files.len() > 1);
+    let response: Option<WorkspaceEdit> = client
+        .send_request("textDocument/rename", rename_params.clone())
+        .await
+        .map_err(|e| e.to_string())?;
 
-    let mut edit = None;
-    let expect_multi_file = source_files.len() > 1;
-    for attempt in 0..4u32 {
-        let response: Option<WorkspaceEdit> = client
-            .send_request("textDocument/rename", rename_params.clone())
-            .await
-            .map_err(|e| e.to_string())?;
-
-        let workspace_edit = response.ok_or("Rename not supported or failed")?;
-        let files = get_files_from_workspace_edit(&workspace_edit);
-        tracing::info!("rename: attempt {} => {} file(s)", attempt + 1, files.len());
-
-        if files.len() > 1 || !expect_multi_file || attempt == 3 {
-            edit = Some(workspace_edit);
-            break;
-        }
-
-        tracing::info!("rename: attempt {} returned 1 file, retrying after re-sync", attempt + 1);
-        for source_file in &source_files {
-            let _ = workspace.close_document(source_file).await;
-        }
-        for source_file in &source_files {
-            let _ = workspace.ensure_document_open(source_file).await;
-        }
-        let _: Result<Option<Vec<leta_lsp::lsp_types::Location>>, _> = client
-            .send_request(
-                "textDocument/references",
-                leta_lsp::lsp_types::ReferenceParams {
-                    text_document_position: leta_lsp::lsp_types::TextDocumentPositionParams {
-                        text_document: TextDocumentIdentifier {
-                            uri: uri.parse().unwrap(),
-                        },
-                        position: Position {
-                            line: params.line - 1,
-                            character: params.column,
-                        },
-                    },
-                    context: leta_lsp::lsp_types::ReferenceContext {
-                        include_declaration: true,
-                    },
-                    work_done_progress_params: Default::default(),
-                    partial_result_params: Default::default(),
-                },
-            )
-            .await;
-    }
-    let edit = edit.unwrap();
+    let edit = response.ok_or("Rename not supported or failed")?;
     tracing::info!("rename: got response from LSP");
 
     // Close ALL documents that will be modified BEFORE applying edits
