@@ -3,7 +3,7 @@ call graph with non-workspace
 ===
 leta graph --include-non-workspace
 ---
-src/main/java/com/example/Main.java:47 [Method] main(String[]) ( : void)
+src/main/java/com/example/Main.java:47 [Method] main(String[]) (: void)
 ├── src/main/java/com/example/MemoryStorage.java:18 [Constructor] MemoryStorage() (com.example.MemoryStorage)
 │   └── src/main/java/com/example/AbstractStorage.java:15 [Constructor] AbstractStorage(String) (com.example.AbstractStorage)
 ├── src/main/java/com/example/UserRepository.java:17 [Constructor] UserRepository(Storage) (com.example.UserRepository)
@@ -14,36 +14,36 @@ src/main/java/com/example/Main.java:47 [Method] main(String[]) ( : void)
 ├── src/main/java/com/example/User.java:81 [Method] isAdult() : boolean (com.example.User)
 └── src/main/java/com/example/Main.java:25 [Method] processUsers(UserRepository) : List<String> (com.example.Main)
 
-src/main/java/com/example/Main.java:25 [Method] processUsers(UserRepository) ( : List<String>)
+src/main/java/com/example/Main.java:25 [Method] processUsers(UserRepository) (: List<String>)
 ├── src/main/java/com/example/UserRepository.java:55 [Method] listUsers() : List<User> (com.example.UserRepository)
 └── src/main/java/com/example/User.java:90 [Method] displayName() : String (com.example.User)
 
-src/main/java/com/example/AbstractStorage.java:34 [Method] exists(String) ( : boolean)
+src/main/java/com/example/AbstractStorage.java:34 [Method] exists(String) (: boolean)
 └── src/main/java/com/example/Storage.java:22 [Method] load(String) : User (com.example.Storage)
 
 src/main/java/com/example/FileStorage.java:21 [Constructor] FileStorage(String)
 └── src/main/java/com/example/AbstractStorage.java:15 [Constructor] AbstractStorage(String) (com.example.AbstractStorage)
 
-src/main/java/com/example/FileStorage.java:39 [Method] save(User) ( : void)
+src/main/java/com/example/FileStorage.java:39 [Method] save(User) (: void)
 └── src/main/java/com/example/User.java:63 [Method] getEmail() : String (com.example.User)
 
-src/main/java/com/example/Main.java:15 [Method] createSampleUser() ( : User)
+src/main/java/com/example/Main.java:15 [Method] createSampleUser() (: User)
 └── src/main/java/com/example/User.java:43 [Constructor] User(String, String, int) (com.example.User)
 
-src/main/java/com/example/MemoryStorage.java:26 [Method] save(User) ( : void)
+src/main/java/com/example/MemoryStorage.java:26 [Method] save(User) (: void)
 └── src/main/java/com/example/User.java:63 [Method] getEmail() : String (com.example.User)
 
-src/main/java/com/example/UserRepository.java:26 [Method] addUser(User) ( : void)
+src/main/java/com/example/UserRepository.java:26 [Method] addUser(User) (: void)
 └── src/main/java/com/example/Storage.java:14 [Method] save(User) : void (com.example.Storage)
 
-src/main/java/com/example/UserRepository.java:36 [Method] getUser(String) ( : User)
+src/main/java/com/example/UserRepository.java:36 [Method] getUser(String) (: User)
 └── src/main/java/com/example/Storage.java:22 [Method] load(String) : User (com.example.Storage)
 
-src/main/java/com/example/UserRepository.java:46 [Method] deleteUser(String) ( : boolean)
+src/main/java/com/example/UserRepository.java:46 [Method] deleteUser(String) (: boolean)
 └── src/main/java/com/example/Storage.java:30 [Method] delete(String) : boolean (com.example.Storage)
 
-src/main/java/com/example/UserRepository.java:55 [Method] listUsers() ( : List<User>)
+src/main/java/com/example/UserRepository.java:55 [Method] listUsers() (: List<User>)
 └── src/main/java/com/example/Storage.java:37 [Method] list() : List<User> (com.example.Storage)
 
-src/main/java/com/example/UserRepository.java:64 [Method] countUsers() ( : int)
+src/main/java/com/example/UserRepository.java:64 [Method] countUsers() (: int)
 └── src/main/java/com/example/Storage.java:37 [Method] list() : List<User> (com.example.Storage)

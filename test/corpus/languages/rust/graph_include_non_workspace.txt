@@ -21,14 +21,8 @@ src/main.rs:22 [Function] main (fn())
     │   └── src/storage.rs:16 [Function] list (pub fn list(&self) -> Vec<&User>)
     ├── [Function] iter (pub const fn iter(&self) -> Iter<'_, T>)
     ├── src/user.rs:38 [Function] display_name (pub fn display_name(&self) -> String)
-    ├── [Function] map (pub fn map<B, F>(self, f: F) -> Map<Self, F>
-where
-    Self: Sized,
-    F: FnMut(Self::Item) -> B,)
-    └── [Function] collect (pub fn collect<B>(self) -> B
-where
-    B: FromIterator<Self::Item>,
-    Self: Sized,)
+    ├── [Function] map (pub fn map<B, F>(self, f: F) -> Map<Self, F> where Self: Sized, F: FnMut(Self::Item) -> B,)
+    └── [Function] collect (pub fn collect<B>(self) -> B where B: FromIterator<Self::Item>, Self: Sized,)
 
 src/user.rs:81 [Function] validate_user (fn(user: &User) -> Result<(), String>)
 ├── [Function] is_empty (pub const fn is_empty(&self) -> bool)
@@ -43,32 +37,18 @@ src/storage.rs:34 [Function] default (fn() -> Self)
 
 src/storage.rs:48 [Method] delete (fn(&mut self, key: &str) -> bool)
 ├── [Function] is_some (pub const fn is_some(&self) -> bool)
-└── [Function] remove (pub fn remove<Q>(&mut self, k: &Q) -> Option<V>
-where
-    Q: ?Sized,
-    K: Borrow<Q>,
-    Q: Hash + Eq,)
+└── [Function] remove (pub fn remove<Q>(&mut self, k: &Q) -> Option<V> where Q: ?Sized, K: Borrow<Q>, Q: Hash + Eq,)
 
 src/storage.rs:52 [Method] list (fn(&self) -> Vec<&User>)
-├── [Function] collect (pub fn collect<B>(self) -> B
-where
-    B: FromIterator<Self::Item>,
-    Self: Sized,)
+├── [Function] collect (pub fn collect<B>(self) -> B where B: FromIterator<Self::Item>, Self: Sized,)
 └── [Function] values (pub fn values(&self) -> Values<'_, K, V>)
 
 src/storage.rs:88 [Method] delete (fn(&mut self, key: &str) -> bool)
 ├── [Function] is_some (pub const fn is_some(&self) -> bool)
-└── [Function] remove (pub fn remove<Q>(&mut self, k: &Q) -> Option<V>
-where
-    Q: ?Sized,
-    K: Borrow<Q>,
-    Q: Hash + Eq,)
+└── [Function] remove (pub fn remove<Q>(&mut self, k: &Q) -> Option<V> where Q: ?Sized, K: Borrow<Q>, Q: Hash + Eq,)
 
 src/storage.rs:92 [Method] list (fn(&self) -> Vec<&User>)
-├── [Function] collect (pub fn collect<B>(self) -> B
-where
-    B: FromIterator<Self::Item>,
-    Self: Sized,)
+├── [Function] collect (pub fn collect<B>(self) -> B where B: FromIterator<Self::Item>, Self: Sized,)
 └── [Function] values (pub fn values(&self) -> Values<'_, K, V>)
 
 src/user.rs:75 [Method] count (fn(&self) -> usize)
@@ -82,11 +62,7 @@ src/storage.rs:40 [Method] save (fn(&mut self, key: String, user: User))
 └── [Function] insert (pub fn insert(&mut self, k: K, v: V) -> Option<V>)
 
 src/storage.rs:44 [Method] load (fn(&self, key: &str) -> Option<&User>)
-└── [Function] get (pub fn get<Q>(&self, k: &Q) -> Option<&V>
-where
-    Q: ?Sized,
-    K: Borrow<Q>,
-    Q: Hash + Eq,)
+└── [Function] get (pub fn get<Q>(&self, k: &Q) -> Option<&V> where Q: ?Sized, K: Borrow<Q>, Q: Hash + Eq,)
 
 src/storage.rs:65 [Function] new (fn(base_path: String) -> Self)
 └── [Function] new (pub fn new() -> HashMap<K, V, RandomState>)
@@ -95,11 +71,7 @@ src/storage.rs:79 [Method] save (fn(&mut self, key: String, user: User))
 └── [Function] insert (pub fn insert(&mut self, k: K, v: V) -> Option<V>)
 
 src/storage.rs:84 [Method] load (fn(&self, key: &str) -> Option<&User>)
-└── [Function] get (pub fn get<Q>(&self, k: &Q) -> Option<&V>
-where
-    Q: ?Sized,
-    K: Borrow<Q>,
-    Q: Hash + Eq,)
+└── [Function] get (pub fn get<Q>(&self, k: &Q) -> Option<&V> where Q: ?Sized, K: Borrow<Q>, Q: Hash + Eq,)
 
 src/user.rs:65 [Method] delete_user (fn(&mut self, email: &str) -> bool)
 └── src/storage.rs:13 [Function] delete (pub fn delete(&mut self, key: &str) -> bool)
