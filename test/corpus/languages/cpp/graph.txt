@@ -24,7 +24,7 @@ errors.cpp:25 [Function] argumentError (void ())
 user.hpp:122 [Method] deleteUser (bool (const std::string &))
 └── user.hpp:43 [Method] remove (example::Storage::remove)
 
-user.hpp:126 [Method] listUsers (std::vector<User> ())
+user.hpp:126 [Method] listUsers (vector<User> ())
 └── user.hpp:44 [Method] list (example::Storage::list)
 
 user.hpp:50 [Method] save (void (const User &))
