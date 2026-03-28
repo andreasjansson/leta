@@ -6,6 +6,7 @@ ENV PATH="/root/.local/bin:/root/.cargo/bin:/root/go/bin:/root/.opam/default/bin
 # System dependencies
 RUN apt-get update && apt-get install -y \
     curl wget git build-essential pkg-config libssl-dev \
+    ca-certificates xz-utils \
     clangd \
     opam \
     maven \
