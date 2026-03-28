@@ -348,6 +348,7 @@ async fn collect_outgoing_calls(
         result.push(node);
     }
 
+    sort_call_nodes(&mut result);
     result
 }
 
@@ -407,6 +408,7 @@ async fn collect_incoming_calls(
         result.push(node);
     }
 
+    sort_call_nodes(&mut result);
     result
 }
 
