@@ -85,6 +85,8 @@ pub async fn handle_rename(
     let client = workspace.client().await.ok_or("No LSP client")?;
     client.wait_for_indexing(30).await;
 
+    let uri = leta_fs::path_to_uri(&file_path);
+
     // Probe the definition file with textDocument/references to force the
     // LSP server to perform full cross-file analysis. documentSymbol only
     // forces parsing, but rename needs the server to have resolved imports
@@ -110,7 +112,7 @@ pub async fn handle_rename(
             },
         )
         .await;
-    let uri = leta_fs::path_to_uri(&file_path);
+
     let rename_params = LspRenameParams {
         text_document_position: leta_lsp::lsp_types::TextDocumentPositionParams {
             text_document: TextDocumentIdentifier {
