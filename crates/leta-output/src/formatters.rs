@@ -1292,14 +1292,11 @@ pub fn format_graph_result(result: &GraphResult, include_orphans: bool) -> Strin
         }
     }
 
-    if let Some(time_ms) = result.indexing_time_ms {
-        lines.push(format!(
-            "{} nodes, {} edges, indexed in {}ms",
-            result.nodes.len(),
-            result.edges.len(),
-            time_ms,
-        ));
-    }
+    lines.push(format!(
+        "{} nodes, {} edges",
+        result.nodes.len(),
+        result.edges.len(),
+    ));
 
     lines.join("\n")
 }
