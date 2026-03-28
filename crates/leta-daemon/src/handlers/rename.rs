@@ -163,7 +163,65 @@ pub async fn handle_rename(
         .await
         .map_err(|e| e.to_string())?;
 
-    let edit = response.ok_or("Rename not supported or failed")?;
+    let mut edit = response.ok_or("Rename not supported or failed")?;
+
+    // Verify rename result: if references found cross-file refs but rename
+    // only changed 1 file, retry with a full close/reopen cycle.
+    if expect_multi_file {
+        let rename_files = get_files_from_workspace_edit(&edit);
+        if rename_files.len() <= 1 {
+            for retry in 0..5u32 {
+                tracing::info!("rename: only {} file(s) changed but expected multi-file, retry {}", rename_files.len(), retry + 1);
+                for source_file in &source_files {
+                    let _ = workspace.close_document(source_file).await;
+                }
+                for source_file in &source_files {
+                    let _ = workspace.ensure_document_open(source_file).await;
+                }
+                client.wait_for_indexing(30).await;
+
+                // Re-probe references to warm up analysis
+                let _: Result<Option<Vec<leta_lsp::lsp_types::Location>>, _> = client
+                    .send_request(
+                        "textDocument/references",
+                        leta_lsp::lsp_types::ReferenceParams {
+                            text_document_position: leta_lsp::lsp_types::TextDocumentPositionParams {
+                                text_document: TextDocumentIdentifier {
+                                    uri: uri.parse().unwrap(),
+                                },
+                                position: Position {
+                                    line: params.line - 1,
+                                    character: params.column,
+                                },
+                            },
+                            context: leta_lsp::lsp_types::ReferenceContext {
+                                include_declaration: true,
+                            },
+                            work_done_progress_params: Default::default(),
+                            partial_result_params: Default::default(),
+                        },
+                    )
+                    .await;
+
+                let retry_response: Option<WorkspaceEdit> = client
+                    .send_request("textDocument/rename", rename_params.clone())
+                    .await
+                    .map_err(|e| e.to_string())?;
+
+                let retry_edit = retry_response.ok_or("Rename not supported or failed")?;
+                let retry_files = get_files_from_workspace_edit(&retry_edit);
+                if retry_files.len() > 1 {
+                    tracing::info!("rename: retry {} succeeded with {} files", retry + 1, retry_files.len());
+                    edit = retry_edit;
+                    break;
+                }
+                if retry == 4 {
+                    tracing::warn!("rename: giving up after 5 retries, proceeding with {} file(s)", retry_files.len());
+                    edit = retry_edit;
+                }
+            }
+        }
+    }
     tracing::info!("rename: got response from LSP");
 
     // Close ALL documents that will be modified BEFORE applying edits
