@@ -123,4 +123,6 @@ pub struct GraphResult {
     pub nodes: Vec<CallGraphSymbol>,
     pub edges: Vec<CallGraphEdge>,
     pub indexing_time_ms: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
 }
