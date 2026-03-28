@@ -160,6 +160,8 @@ pub async fn handle_graph(
             None => continue,
         };
 
+        client.wait_for_indexing(30).await;
+
         if !client.supports_call_hierarchy().await {
             debug!(
                 "Skipping {} - server doesn't support call hierarchy",
