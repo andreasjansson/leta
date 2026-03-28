@@ -1,0 +1,6 @@
+===
+call graph
+===
+leta graph
+---
+54 nodes, 0 edges

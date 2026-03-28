@@ -1,0 +1,90 @@
+===
+call graph with non-workspace
+===
+leta graph --include-non-workspace
+---
+main.py:128 [Function] main
+├── main.py:81 [Class] UserRepository
+├── main.py:114 [Function] create_sample_user
+│   └── main.py:27 [Class] User
+├── utils.py:9 [Function] validate_email
+│   ├── [Class] bool
+│   ├── [Function] match
+│   └── [Function] match
+├── [Function] print
+├── [Function] print
+├── main.py:90 [Method] add_user
+├── main.py:94 [Method] get_user
+│   ├── [Method] get
+│   ├── [Method] get
+│   └── [Method] get
+└── main.py:40 [Method] is_adult
+
+main.py:73 [Method] load
+├── [Function] join
+├── [Function] join
+├── [Function] exists
+├── [Function] open
+├── [Function] open
+├── [Function] open
+├── [Function] open
+├── [Function] open
+├── [Function] open
+├── [Function] open
+└── [Method] read
+
+main.py:68 [Method] save
+├── [Function] join
+├── [Function] join
+├── [Function] open
+├── [Function] open
+├── [Function] open
+├── [Function] open
+├── [Function] open
+├── [Function] open
+├── [Function] open
+└── [Method] write
+
+editable_consumer.py:14 [Function] create_and_greet
+├── editable.py:21 [Function] editable_create_sample
+│   └── editable.py:11 [Class] EditablePerson
+└── editable_consumer.py:9 [Function] use_editable_person
+    └── editable.py:17 [Method] greet
+
+main.py:119 [Function] process_users
+├── main.py:44 [Method] display_name
+└── main.py:105 [Method] list_users
+    ├── [Class] list
+    └── [Method] values
+
+utils.py:27 [Function] memoize
+├── [Method] items
+├── [Function] sorted
+├── [Function] sorted
+└── [Class] tuple
+
+utils.py:38 [Function] wrapper
+├── [Method] items
+├── [Function] sorted
+├── [Function] sorted
+└── [Class] tuple
+
+editable.py:41 [Method] load
+├── [Method] get
+├── [Method] get
+└── [Method] get
+
+main.py:58 [Method] load
+├── [Method] get
+├── [Method] get
+└── [Method] get
+
+main.py:109 [Method] count_users
+└── [Function] len
+
+utils.py:112 [Method] unwrap
+└── [Class] ValueError
+
+utils.py:48 [Function] fibonacci ↻
+
+146 nodes, 61 edges

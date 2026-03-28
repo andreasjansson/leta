@@ -1,0 +1,87 @@
+===
+call graph with non-workspace
+===
+leta graph --include-non-workspace
+---
+src/main.ts:55 [Function] main
+├── src/user.ts:39 [Class] MemoryStorage
+├── src/user.ts:92 [Class] UserRepository
+├── src/main.ts:6 [Function] createSampleUser
+│   └── src/user.ts:4 [Class] User
+├── src/user.ts:119 [Function] validateUser
+├── [Method] error
+├── src/user.ts:95 [Method] addUser (UserRepository)
+│   └── src/user.ts:30 [Method] save
+├── src/user.ts:99 [Method] getUser (UserRepository)
+│   └── src/user.ts:31 [Method] load
+├── src/user.ts:21 [Method] displayName (User)
+├── [Method] log
+├── src/user.ts:14 [Method] isAdult (User)
+├── src/main.ts:13 [Function] processUsers
+│   ├── src/user.ts:21 [Method] displayName (User)
+│   ├── src/user.ts:107 [Method] listUsers (UserRepository)
+│   │   └── src/user.ts:33 [Method] list
+│   └── [Method] map
+├── [Method] forEach
+├── src/main.ts:28 [Class] Counter
+└── src/main.ts:35 [Method] getValue (Counter)
+
+src/editable_consumer.ts:18 [Function] createAndGreet
+├── src/editable.ts:24 [Function] editableCreateSample
+│   └── src/editable.ts:10 [Class] EditablePerson
+└── src/editable_consumer.ts:11 [Function] useEditablePerson
+    └── src/editable.ts:16 [Method] greet (EditablePerson)
+
+src/user.ts:54 [Method] list
+├── [Method] from
+├── [Method] from
+└── [Method] values
+
+src/user.ts:84 [Method] list
+├── [Method] from
+├── [Method] from
+└── [Method] values
+
+src/editable.ts:31 [Function] editableValidateEmail
+└── [Method] includes
+
+src/editable.ts:41 [Method] save
+└── [Method] set
+
+src/editable.ts:45 [Method] load
+└── [Method] get
+
+src/errors.ts:27 [Function] propertyError
+└── [Method] log
+
+src/errors.ts:36 [Function] callError
+└── src/errors.ts:32 [Function] twoArgs
+
+src/main.ts:20 [Function] validateEmail
+└── [Method] test
+
+src/user.ts:103 [Method] deleteUser
+└── src/user.ts:32 [Method] delete
+
+src/user.ts:111 [Method] countUsers
+└── src/user.ts:33 [Method] list
+
+src/user.ts:42 [Method] save
+└── [Method] set
+
+src/user.ts:46 [Method] load
+└── [Method] get
+
+src/user.ts:50 [Method] delete
+└── [Method] delete
+
+src/user.ts:71 [Method] save
+└── [Method] set
+
+src/user.ts:76 [Method] load
+└── [Method] get
+
+src/user.ts:80 [Method] delete
+└── [Method] delete
+
+109 nodes, 45 edges

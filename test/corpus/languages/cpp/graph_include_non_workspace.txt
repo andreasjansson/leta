@@ -1,0 +1,83 @@
+===
+call graph with non-workspace
+===
+leta graph --include-non-workspace
+---
+main.cpp:7 [Function] main (int ())
+├── [Function] make_unique (std::make_unique)
+├── user.hpp:111 [Constructor] UserRepository (example::UserRepository::UserRepository)
+│   ├── [Function] move (std::move)
+│   └── [Constructor] unique_ptr<_Tp, _Dp> (std::unique_ptr::unique_ptr<_Tp, _Dp>)
+├── [Function] move (std::move)
+├── [Constructor] unique_ptr<_Tp, _Dp> (std::unique_ptr::unique_ptr<_Tp, _Dp>)
+├── user.hpp:135 [Function] createSampleUser (example::createSampleUser)
+│   ├── user.hpp:15 [Constructor] User (example::User::User)
+│   │   ├── [Constructor] basic_string<_CharT, _Traits, _Allocator> (std::basic_string::basic_string<_CharT, _Traits, _Allocator>)
+│   │   └── [Function] move (std::move)
+│   └── [Constructor] basic_string<_CharT, _Traits, _Allocator> (std::basic_string::basic_string<_CharT, _Traits, _Allocator>)
+├── user.hpp:140 [Function] validateUser (example::validateUser)
+│   ├── [Method] empty (std::basic_string::empty)
+│   ├── user.hpp:18 [Method] name (example::User::name)
+│   ├── [Constructor] invalid_argument (std::invalid_argument::invalid_argument)
+│   ├── user.hpp:19 [Method] email (example::User::email)
+│   └── user.hpp:20 [Method] age (example::User::age)
+├── user.hpp:114 [Method] addUser (example::UserRepository::addUser)
+│   ├── [Method] operator-> (std::unique_ptr::operator->)
+│   └── user.hpp:41 [Method] save (example::Storage::save)
+├── [Constructor] basic_string<_CharT, _Traits, _Allocator> (std::basic_string::basic_string<_CharT, _Traits, _Allocator>)
+├── user.hpp:118 [Method] getUser (example::UserRepository::getUser)
+│   ├── user.hpp:42 [Method] load (example::Storage::load)
+│   └── [Method] operator-> (std::unique_ptr::operator->)
+├── [Function] operator bool (std::optional::operator bool)
+├── user.hpp:26 [Method] displayName (example::User::displayName)
+│   ├── [Function] operator+ (std::operator+)
+│   └── [Function] operator+ (std::operator+)
+├── [Function] endl (std::endl)
+├── [Method] operator-> (std::optional::operator->)
+├── [Function] operator<< (std::__1::operator<<)
+├── [Function] operator<< (std::__1::operator<<)
+├── [Method] operator<< (std::basic_ostream::operator<<)
+└── user.hpp:23 [Method] isAdult (example::User::isAdult)
+
+user.hpp:66 [Method] list (std::vector<User> ())
+├── [Constructor] vector<_Tp, _Alloc> (std::vector::vector<_Tp, _Alloc>)
+├── [Method] reserve (std::vector::reserve)
+├── [Method] size (std::unordered_map::size)
+├── [Method] push_back (std::vector::push_back)
+└── [Constructor] vector<_Tp, _Alloc> (std::vector::vector<_Tp, _Alloc>)
+
+user.hpp:54 [Method] load (std::optional<User> (const std::string &))
+├── [Method] find (std::unordered_map::find)
+├── [Method] end (std::unordered_map::end)
+├── [Constructor] optional<_Tp> (std::optional::optional<_Tp>)
+└── [Constructor] optional<_Tp> (std::optional::optional<_Tp>)
+
+user.hpp:122 [Method] deleteUser (bool (const std::string &))
+├── [Method] operator-> (std::unique_ptr::operator->)
+└── user.hpp:43 [Method] remove (example::Storage::remove)
+
+user.hpp:126 [Method] listUsers (std::vector<User> ())
+├── user.hpp:44 [Method] list (example::Storage::list)
+└── [Method] operator-> (std::unique_ptr::operator->)
+
+user.hpp:50 [Method] save (void (const User &))
+├── user.hpp:19 [Method] email (example::User::email)
+└── [Method] operator[] (std::unordered_map::operator[])
+
+user.hpp:82 [Constructor] FileStorage ((std::string))
+├── [Constructor] basic_string<_CharT, _Traits, _Allocator> (std::basic_string::basic_string<_CharT, _Traits, _Allocator>)
+└── [Function] move (std::move)
+
+errors.cpp:25 [Function] argumentError (void ())
+└── errors.cpp:23 [Function] twoArgs (twoArgs)
+
+user.hpp:62 [Method] remove (bool (const std::string &))
+└── [Method] erase (std::unordered_map::erase)
+
+user.hpp:89 [Method] load (std::optional<User> (const std::string &))
+└── [Constructor] optional<_Tp> (std::optional::optional<_Tp>)
+
+user.hpp:99 [Method] list (std::vector<User> ())
+└── [Constructor] vector<_Tp, _Alloc> (std::vector::vector<_Tp, _Alloc>)
+
+93 nodes, 55 edges

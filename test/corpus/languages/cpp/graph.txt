@@ -1,0 +1,33 @@
+===
+call graph
+===
+leta graph
+---
+main.cpp:7 [Function] main (int ())
+├── user.hpp:111 [Constructor] UserRepository (example::UserRepository::UserRepository)
+├── user.hpp:135 [Function] createSampleUser (example::createSampleUser)
+│   └── user.hpp:15 [Constructor] User (example::User::User)
+├── user.hpp:140 [Function] validateUser (example::validateUser)
+│   ├── user.hpp:18 [Method] name (example::User::name)
+│   ├── user.hpp:19 [Method] email (example::User::email)
+│   └── user.hpp:20 [Method] age (example::User::age)
+├── user.hpp:114 [Method] addUser (example::UserRepository::addUser)
+│   └── user.hpp:41 [Method] save (example::Storage::save)
+├── user.hpp:118 [Method] getUser (example::UserRepository::getUser)
+│   └── user.hpp:42 [Method] load (example::Storage::load)
+├── user.hpp:26 [Method] displayName (example::User::displayName)
+└── user.hpp:23 [Method] isAdult (example::User::isAdult)
+
+errors.cpp:25 [Function] argumentError (void ())
+└── errors.cpp:23 [Function] twoArgs (twoArgs)
+
+user.hpp:122 [Method] deleteUser (bool (const std::string &))
+└── user.hpp:43 [Method] remove (example::Storage::remove)
+
+user.hpp:126 [Method] listUsers (std::vector<User> ())
+└── user.hpp:44 [Method] list (example::Storage::list)
+
+user.hpp:50 [Method] save (void (const User &))
+└── user.hpp:19 [Method] email (example::User::email)
+
+65 nodes, 17 edges
