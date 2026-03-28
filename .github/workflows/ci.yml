@@ -196,17 +196,24 @@ jobs:
           ln -s ~/.local/share/lua-language-server/bin/lua-language-server ~/.local/bin/
           rm lua-ls.tar.gz
 
-      - name: Set up OCaml
+      - name: Cache opam switch
         if: contains(matrix.servers, 'ocamllsp')
-        uses: ocaml/setup-ocaml@v3
+        id: opam-cache
+        uses: actions/cache@v4
         with:
-          ocaml-compiler: "5"
-          opam-pin: false
+          path: ~/.opam
+          key: opam-ocamllsp-${{ runner.os }}-${{ runner.arch }}
 
-      - name: Install ocamllsp and build fixture
+      - name: Set up OCaml and ocamllsp
         if: contains(matrix.servers, 'ocamllsp')
         run: |
-          opam install ocaml-lsp-server dune --yes
+          brew install opam
+          if [ "${{ steps.opam-cache.outputs.cache-hit }}" != "true" ]; then
+            opam init --auto-setup --disable-sandboxing --yes
+            eval $(opam env)
+            opam install ocaml-lsp-server dune --yes
+          fi
+          eval $(opam env)
           echo "$HOME/.opam/default/bin" >> $GITHUB_PATH
           cd test/corpus/languages/ocaml/fixture
           opam exec -- dune build 2>/dev/null || true
