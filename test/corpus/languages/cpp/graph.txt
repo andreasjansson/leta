@@ -1,7 +1,7 @@
 ===
 call graph
 ===
-leta graph
+leta graph --include-signature
 ---
 main.cpp:7 [Function] main (int ())
 ├── user.hpp:111 [Constructor] UserRepository (example::UserRepository::UserRepository)

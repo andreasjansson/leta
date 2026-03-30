@@ -355,7 +355,7 @@ pub async fn graph(working_dir: &Path, options: GraphOptions) -> Result<String> 
         return Err(anyhow!("{}", error));
     }
 
-    Ok(format_graph_result(&result, false))
+    Ok(format_graph_result(&result, false, false))
 }
 
 pub async fn declaration(

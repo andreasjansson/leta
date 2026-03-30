@@ -141,6 +141,8 @@ enum Commands {
         include_path: Vec<String>,
         #[arg(long, help = "Include test files (excluded by default)")]
         include_tests: bool,
+        #[arg(long, help = "Show [Kind] and (signature) for each symbol")]
+        include_signature: bool,
     },
 
     #[command(about = "Find implementations of an interface or abstract method.")]
@@ -371,6 +373,7 @@ async fn main() -> Result<()> {
                     exclude_path,
                     include_path,
                     include_tests,
+                    include_signature,
                 } => {
                     handle_graph(
                         &config,
@@ -380,6 +383,7 @@ async fn main() -> Result<()> {
                         exclude_path,
                         include_path,
                         include_tests,
+                        include_signature,
                     )
                     .await
                 }
@@ -1454,6 +1458,7 @@ async fn handle_calls(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn handle_graph(
     config: &Config,
     json_output: bool,
@@ -1462,6 +1467,7 @@ async fn handle_graph(
     exclude_path: Vec<String>,
     include_path: Vec<String>,
     include_tests: bool,
+    include_signature: bool,
 ) -> Result<()> {
     let workspace_root = get_workspace_root(config)?;
 
@@ -1484,7 +1490,7 @@ async fn handle_graph(
     } else if let Some(error) = &graph_result.error {
         return Err(anyhow!("{}", error));
     } else {
-        let output = format_graph_result(&graph_result, include_orphans);
+        let output = format_graph_result(&graph_result, include_orphans, include_signature);
         if !output.trim().is_empty() {
             println!("{}", output);
         }

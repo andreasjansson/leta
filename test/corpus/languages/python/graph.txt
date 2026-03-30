@@ -1,7 +1,7 @@
 ===
 call graph
 ===
-leta graph
+leta graph --include-signature
 ---
 main.py:128 [Function] main
 ├── main.py:81 [Class] UserRepository

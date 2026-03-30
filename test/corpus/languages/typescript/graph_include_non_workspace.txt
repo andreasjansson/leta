@@ -1,36 +1,36 @@
 ===
 call graph with non-workspace
 ===
-leta graph --include-non-workspace
+leta graph --include-signature --include-non-workspace
 ---
 src/main.ts:55 [Function] main
-├── src/user.ts:39 [Class] MemoryStorage
-├── src/user.ts:92 [Class] UserRepository
-├── src/main.ts:6 [Function] createSampleUser
-│   └── src/user.ts:4 [Class] User
-├── src/user.ts:119 [Function] validateUser
+├── ./user.ts:39 [Class] MemoryStorage
+├── ./user.ts:92 [Class] UserRepository
+├── ./main.ts:6 [Function] createSampleUser
+│   └── ./user.ts:4 [Class] User
+├── ./user.ts:119 [Function] validateUser
 ├── [Method] error
-├── src/user.ts:95 [Method] addUser (UserRepository)
-│   └── src/user.ts:30 [Method] save
-├── src/user.ts:99 [Method] getUser (UserRepository)
-│   └── src/user.ts:31 [Method] load
-├── src/user.ts:21 [Method] displayName (User)
+├── ./user.ts:95 [Method] addUser (UserRepository)
+│   └── ./user.ts:30 [Method] save
+├── ./user.ts:99 [Method] getUser (UserRepository)
+│   └── ./user.ts:31 [Method] load
+├── ./user.ts:21 [Method] displayName (User)
 ├── [Method] log
-├── src/user.ts:14 [Method] isAdult (User)
-├── src/main.ts:13 [Function] processUsers
-│   ├── src/user.ts:21 [Method] displayName (User)
-│   ├── src/user.ts:107 [Method] listUsers (UserRepository)
-│   │   └── src/user.ts:33 [Method] list
+├── ./user.ts:14 [Method] isAdult (User)
+├── ./main.ts:13 [Function] processUsers
+│   ├── ./user.ts:21 [Method] displayName (User)
+│   ├── ./user.ts:107 [Method] listUsers (UserRepository)
+│   │   └── ./user.ts:33 [Method] list
 │   └── [Method] map
 ├── [Method] forEach
-├── src/main.ts:28 [Class] Counter
-└── src/main.ts:35 [Method] getValue (Counter)
+├── ./main.ts:28 [Class] Counter
+└── ./main.ts:35 [Method] getValue (Counter)
 
 src/editable_consumer.ts:18 [Function] createAndGreet
-├── src/editable.ts:24 [Function] editableCreateSample
-│   └── src/editable.ts:10 [Class] EditablePerson
-└── src/editable_consumer.ts:11 [Function] useEditablePerson
-    └── src/editable.ts:16 [Method] greet (EditablePerson)
+├── ./editable.ts:24 [Function] editableCreateSample
+│   └── ./editable.ts:10 [Class] EditablePerson
+└── ./editable_consumer.ts:11 [Function] useEditablePerson
+    └── ./editable.ts:16 [Method] greet (EditablePerson)
 
 src/user.ts:54 [Method] list
 ├── [Method] from
@@ -55,16 +55,16 @@ src/errors.ts:27 [Function] propertyError
 └── [Method] log
 
 src/errors.ts:36 [Function] callError
-└── src/errors.ts:32 [Function] twoArgs
+└── ./errors.ts:32 [Function] twoArgs
 
 src/main.ts:20 [Function] validateEmail
 └── [Method] test
 
 src/user.ts:103 [Method] deleteUser
-└── src/user.ts:32 [Method] delete
+└── ./user.ts:32 [Method] delete
 
 src/user.ts:111 [Method] countUsers
-└── src/user.ts:33 [Method] list
+└── ./user.ts:33 [Method] list
 
 src/user.ts:42 [Method] save
 └── [Method] set

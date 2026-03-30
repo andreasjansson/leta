@@ -1,32 +1,32 @@
 ===
 call graph with tests
 ===
-leta graph --include-tests
+leta graph --include-signature --include-tests
 ---
 src/main.rs:22 [Function] main (fn())
-├── src/storage.rs:26 [Function] new (pub fn new() -> Self)
-├── src/user.rs:50 [Function] new (pub fn new(storage: S) -> Self)
-├── src/main.rs:10 [Function] create_sample_user (fn create_sample_user() -> User)
-│   └── src/user.rs:13 [Function] new (pub fn new(name: String, email: String, age: u32) -> Self)
-├── src/user.rs:55 [Function] add_user (pub fn add_user(&mut self, user: User))
-│   ├── src/user.rs:23 [Function] email (pub fn email(&self) -> &str)
-│   └── src/storage.rs:7 [Function] save (pub fn save(&mut self, key: String, user: User))
-├── src/user.rs:60 [Function] get_user (pub fn get_user(&self, email: &str) -> Option<&User>)
-│   └── src/storage.rs:10 [Function] load (pub fn load(&self, key: &str) -> Option<&User>)
-└── src/main.rs:15 [Function] process_users (fn process_users(repo: &UserRepository<MemoryStorage>) -> Vec<String>)
-    ├── src/user.rs:70 [Function] list_users (pub fn list_users(&self) -> Vec<&User>)
-    │   └── src/storage.rs:16 [Function] list (pub fn list(&self) -> Vec<&User>)
-    └── src/user.rs:38 [Function] display_name (pub fn display_name(&self) -> String)
+├── ./storage.rs:26 [Function] new (pub fn new() -> Self)
+├── ./user.rs:50 [Function] new (pub fn new(storage: S) -> Self)
+├── ./main.rs:10 [Function] create_sample_user (fn create_sample_user() -> User)
+│   └── ./user.rs:13 [Function] new (pub fn new(name: String, email: String, age: u32) -> Self)
+├── ./user.rs:55 [Function] add_user (pub fn add_user(&mut self, user: User))
+│   ├── ./user.rs:23 [Function] email (pub fn email(&self) -> &str)
+│   └── ./storage.rs:7 [Function] save (pub fn save(&mut self, key: String, user: User))
+├── ./user.rs:60 [Function] get_user (pub fn get_user(&self, email: &str) -> Option<&User>)
+│   └── ./storage.rs:10 [Function] load (pub fn load(&self, key: &str) -> Option<&User>)
+└── ./main.rs:15 [Function] process_users (fn process_users(repo: &UserRepository<MemoryStorage>) -> Vec<String>)
+    ├── ./user.rs:70 [Function] list_users (pub fn list_users(&self) -> Vec<&User>)
+    │   └── ./storage.rs:16 [Function] list (pub fn list(&self) -> Vec<&User>)
+    └── ./user.rs:38 [Function] display_name (pub fn display_name(&self) -> String)
 
 src/user.rs:81 [Function] validate_user (fn(user: &User) -> Result<(), String>)
-├── src/user.rs:18 [Function] name (pub fn name(&self) -> &str)
-└── src/user.rs:23 [Function] email (pub fn email(&self) -> &str)
+├── ./user.rs:18 [Function] name (pub fn name(&self) -> &str)
+└── ./user.rs:23 [Function] email (pub fn email(&self) -> &str)
 
 src/storage.rs:34 [Function] default (fn() -> Self)
-└── src/storage.rs:26 [Function] new (pub fn new() -> Self)
+└── ./storage.rs:26 [Function] new (pub fn new() -> Self)
 
 src/user.rs:65 [Method] delete_user (fn(&mut self, email: &str) -> bool)
-└── src/storage.rs:13 [Function] delete (pub fn delete(&mut self, key: &str) -> bool)
+└── ./storage.rs:13 [Function] delete (pub fn delete(&mut self, key: &str) -> bool)
 
 src/user.rs:75 [Method] count (fn(&self) -> usize)
-└── src/storage.rs:16 [Function] list (pub fn list(&self) -> Vec<&User>)
+└── ./storage.rs:16 [Function] list (pub fn list(&self) -> Vec<&User>)

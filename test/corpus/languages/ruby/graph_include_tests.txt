@@ -1,6 +1,6 @@
 ===
 call graph with tests
 ===
-leta graph --include-tests
+leta graph --include-signature --include-tests
 ---
 Error: Call hierarchy is not supported by ruby-lsp

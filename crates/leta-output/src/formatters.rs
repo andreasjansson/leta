@@ -1125,7 +1125,11 @@ fn format_call_path(path: &[CallNode]) -> String {
     lines.join("\n")
 }
 
-pub fn format_graph_result(result: &GraphResult, include_orphans: bool) -> String {
+pub fn format_graph_result(
+    result: &GraphResult,
+    include_orphans: bool,
+    include_signature: bool,
+) -> String {
     use leta_types::{CallGraphEdge, CallGraphSymbol};
 
     let node_key = |s: &CallGraphSymbol| format!("{}:{}:{}", s.path, s.line, s.name);
@@ -1240,7 +1244,7 @@ pub fn format_graph_result(result: &GraphResult, include_orphans: bool) -> Strin
                 None => continue,
             };
 
-            let mut root_line = format_graph_node_label(node, true);
+            let mut root_line = format_graph_node_label(node, true, None, include_signature);
             let has_children = outgoing.contains_key(root_key.as_str());
             let is_self_recursive = self_recursive.contains(root_key.as_str());
 
@@ -1267,6 +1271,8 @@ pub fn format_graph_result(result: &GraphResult, include_orphans: bool) -> Strin
                     &mut visited,
                     &mut lines,
                     "",
+                    &node.path,
+                    include_signature,
                 );
             }
 
@@ -1284,7 +1290,10 @@ pub fn format_graph_result(result: &GraphResult, include_orphans: bool) -> Strin
                 && !has_outgoing.contains(&key)
                 && !self_recursive.contains(&key)
             {
-                lines.push(format!("{} (orphan)", format_graph_node_label(node, true)));
+                lines.push(format!(
+                    "{} (orphan)",
+                    format_graph_node_label(node, true, None, include_signature)
+                ));
                 lines.push(String::new());
             }
         }
@@ -1293,27 +1302,53 @@ pub fn format_graph_result(result: &GraphResult, include_orphans: bool) -> Strin
     lines.join("\n")
 }
 
-fn format_graph_node_label(node: &leta_types::CallGraphSymbol, show_path: bool) -> String {
+fn format_graph_node_label(
+    node: &leta_types::CallGraphSymbol,
+    show_path: bool,
+    caller_path: Option<&str>,
+    include_signature: bool,
+) -> String {
     let mut parts = Vec::new();
     if show_path {
-        parts.push(format!("{}:{}", node.path, node.line));
+        let display_path = match caller_path {
+            Some(cp) => abbreviate_path(&node.path, cp),
+            None => node.path.clone(),
+        };
+        parts.push(format!("{}:{}", display_path, node.line));
     }
-    parts.push(format!("[{}]", node.kind));
+    if include_signature {
+        parts.push(format!("[{}]", node.kind));
+    }
     parts.push(node.name.clone());
-    if let Some(detail) = &node.detail {
-        if !detail.is_empty() && detail != "()" {
-            let oneline: String = detail.split_whitespace().collect::<Vec<_>>().join(" ");
-            let trimmed = if show_path {
-                oneline.split(" • ").next().unwrap_or(&oneline)
-            } else {
-                &oneline
-            };
-            parts.push(format!("({})", trimmed));
+    if include_signature {
+        if let Some(detail) = &node.detail {
+            if !detail.is_empty() && detail != "()" {
+                let oneline: String = detail.split_whitespace().collect::<Vec<_>>().join(" ");
+                let trimmed = if show_path {
+                    oneline.split(" • ").next().unwrap_or(&oneline)
+                } else {
+                    &oneline
+                };
+                parts.push(format!("({})", trimmed));
+            }
         }
     }
     parts.join(" ")
 }
 
+fn abbreviate_path(path: &str, caller_path: &str) -> String {
+    let path_dir = path.rsplit_once('/').map(|(d, _)| d);
+    let caller_dir = caller_path.rsplit_once('/').map(|(d, _)| d);
+    match (path_dir, caller_dir) {
+        (Some(pd), Some(cd)) if pd == cd => {
+            let filename = path.rsplit_once('/').unwrap().1;
+            format!("./{}", filename)
+        }
+        _ => path.to_string(),
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
 fn render_graph_tree(
     children: &[&leta_types::CallGraphEdge],
     outgoing: &HashMap<String, Vec<&leta_types::CallGraphEdge>>,
@@ -1321,6 +1356,8 @@ fn render_graph_tree(
     visited: &mut HashSet<String>,
     lines: &mut Vec<String>,
     prefix: &str,
+    caller_path: &str,
+    include_signature: bool,
 ) {
     let node_key = |s: &leta_types::CallGraphSymbol| format!("{}:{}:{}", s.path, s.line, s.name);
 
@@ -1332,7 +1369,8 @@ fn render_graph_tree(
         let child_prefix = format!("{}{}", prefix, if is_last { "    " } else { "│   " });
 
         let key = node_key(callee);
-        let label = format_graph_node_label(callee, in_workspace);
+        let label =
+            format_graph_node_label(callee, in_workspace, Some(caller_path), include_signature);
         let is_self_recursive = self_recursive.contains(&key);
 
         if !visited.insert(key.clone()) {
@@ -1362,6 +1400,8 @@ fn render_graph_tree(
                 visited,
                 lines,
                 &child_prefix,
+                &callee.path,
+                include_signature,
             );
         }
     }
@@ -1377,7 +1417,7 @@ fn language_from_path(path: &str) -> String {
         "js" | "jsx" => "JavaScript",
         "java" => "Java",
         "rb" => "Ruby",
-        "cpp" | "cc" | "cxx" | "c" | "h" | "hpp" => "C/C++",
+        "cpp" | "cc" | "cxx" | "c" | "h" | "hpp" | "c++" | "h++" => "C/C++",
         "php" => "PHP",
         "lua" => "Lua",
         "ml" | "mli" => "OCaml",

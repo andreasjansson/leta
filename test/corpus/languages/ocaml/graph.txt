@@ -1,6 +1,6 @@
 ===
 call graph
 ===
-leta graph
+leta graph --include-signature
 ---
 

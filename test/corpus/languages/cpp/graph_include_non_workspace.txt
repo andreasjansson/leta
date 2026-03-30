@@ -1,7 +1,7 @@
 ===
 call graph with non-workspace
 ===
-leta graph --include-non-workspace
+leta graph --include-signature --include-non-workspace
 ---
 main.cpp:7 [Function] main (int ())
 ├── [Function] make_unique (std::make_unique)

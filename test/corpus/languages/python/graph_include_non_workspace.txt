@@ -1,7 +1,7 @@
 ===
 call graph with non-workspace
 ===
-leta graph --include-non-workspace
+leta graph --include-signature --include-non-workspace
 ---
 main.py:128 [Function] main
 ├── main.py:81 [Class] UserRepository
