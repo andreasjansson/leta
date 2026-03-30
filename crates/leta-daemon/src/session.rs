@@ -117,6 +117,17 @@ impl Workspace {
                     self.server_config.languages.join(", "),
                     e
                 );
+                if self.server_config.name == "rust-analyzer" {
+                    if let Some(toolchain) = detect_rust_toolchain(&self.root) {
+                        msg.push_str(&format!(
+                            "\n\nThis project pins to Rust toolchain '{}' (via rust-toolchain.toml), \
+                             which doesn't have rust-analyzer installed.\n\n\
+                             To fix, run:\n  rustup component add rust-analyzer --toolchain {}",
+                            toolchain, toolchain
+                        ));
+                        return Err(msg);
+                    }
+                }
                 if let Some(install_cmd) = self.server_config.install_cmd {
                     msg.push_str(&format!(
                         "\n\nTo install {}, run:\n  {}\n\nIf you just installed it, run `leta daemon restart` to pick up PATH changes.",
@@ -744,4 +755,48 @@ impl<'a> WorkspaceHandle<'a> {
             .send_notification("workspace/didChangeWatchedFiles", params)
             .await;
     }
+}
+
+fn detect_rust_toolchain(workspace_root: &Path) -> Option<String> {
+    // Check rust-toolchain.toml first (TOML format)
+    let toml_path = workspace_root.join("rust-toolchain.toml");
+    if let Ok(content) = std::fs::read_to_string(&toml_path) {
+        for line in content.lines() {
+            let line = line.trim();
+            if line.starts_with("channel") {
+                if let Some(value) = line.split('=').nth(1) {
+                    let channel = value.trim().trim_matches('"').trim_matches('\'');
+                    if !channel.is_empty() {
+                        return Some(channel.to_string());
+                    }
+                }
+            }
+        }
+    }
+
+    // Check rust-toolchain (plain text or TOML)
+    let plain_path = workspace_root.join("rust-toolchain");
+    if let Ok(content) = std::fs::read_to_string(&plain_path) {
+        let trimmed = content.trim();
+        // Plain format: just the channel name on a single line
+        if !trimmed.contains('[') {
+            if !trimmed.is_empty() {
+                return Some(trimmed.to_string());
+            }
+        }
+        // TOML format (same as above)
+        for line in content.lines() {
+            let line = line.trim();
+            if line.starts_with("channel") {
+                if let Some(value) = line.split('=').nth(1) {
+                    let channel = value.trim().trim_matches('"').trim_matches('\'');
+                    if !channel.is_empty() {
+                        return Some(channel.to_string());
+                    }
+                }
+            }
+        }
+    }
+
+    None
 }
