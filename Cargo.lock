@@ -817,6 +817,8 @@ name = "leta-fs"
 version = "0.13.0"
 dependencies = [
  "fastrace",
+ "ignore",
+ "memmap2",
  "thiserror",
 ]
 

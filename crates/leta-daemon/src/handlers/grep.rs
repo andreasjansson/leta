@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use fastrace::future::FutureExt as _;
 use fastrace::trace;
 use fastrace::Span;
-use leta_fs::{get_language_id, read_file_content};
+use leta_fs::{build_gitignore, get_language_id, is_gitignored, is_minified, read_file_content};
 use leta_lsp::lsp_types::{DocumentSymbolParams, TextDocumentIdentifier};
 use leta_servers::get_server_for_language;
 use leta_types::{GrepParams, GrepResult, StreamDone, StreamMessage, SymbolInfo};
@@ -203,24 +203,39 @@ pub fn enumerate_source_files(
     excluded_languages: &HashSet<String>,
 ) -> Vec<PathBuf> {
     let skip_dirs: HashSet<&str> = SKIP_DIRS.iter().copied().collect();
+    let gitignore = build_gitignore(workspace_root);
     let mut files = Vec::new();
     let mut entries_seen = 0u64;
     let mut files_checked = 0u64;
+    let mut skipped_gitignored = 0u64;
+    let mut skipped_minified = 0u64;
 
     for entry in jwalk::WalkDir::new(workspace_root)
         .sort(true)
-        .process_read_dir(move |_depth, _path, _state, children| {
-            children.retain(|entry| {
-                entry
-                    .as_ref()
-                    .map(|e| {
-                        let name = e.file_name().to_string_lossy();
-                        !name.starts_with('.')
-                            && !skip_dirs.contains(name.as_ref())
-                            && !name.ends_with(".egg-info")
-                    })
-                    .unwrap_or(false)
-            });
+        .process_read_dir({
+            let gitignore = gitignore.clone();
+            move |_depth, _path, _state, children| {
+                children.retain(|entry| {
+                    entry
+                        .as_ref()
+                        .map(|e| {
+                            let name = e.file_name().to_string_lossy();
+                            if name.starts_with('.')
+                                || skip_dirs.contains(name.as_ref())
+                                || name.ends_with(".egg-info")
+                            {
+                                return false;
+                            }
+                            if let Some(gi) = &gitignore {
+                                if is_gitignored(Some(gi), &e.path(), e.file_type.is_dir()) {
+                                    return false;
+                                }
+                            }
+                            true
+                        })
+                        .unwrap_or(false)
+                });
+            }
         })
     {
         entries_seen += 1;
@@ -235,6 +250,14 @@ pub fn enumerate_source_files(
 
         files_checked += 1;
         let path = entry.path();
+
+        if let Some(gi) = &gitignore {
+            if is_gitignored(Some(gi), &path, false) {
+                skipped_gitignored += 1;
+                continue;
+            }
+        }
+
         let lang = get_language_id(&path);
 
         if lang == "plaintext" || excluded_languages.contains(lang) {
@@ -242,6 +265,11 @@ pub fn enumerate_source_files(
         }
 
         if get_server_for_language(lang, None).is_some() {
+            if is_minified(&path) {
+                skipped_minified += 1;
+                debug!("Skipping minified file: {}", path.display());
+                continue;
+            }
             files.push(path);
         }
     }
@@ -251,6 +279,8 @@ pub fn enumerate_source_files(
             ("entries_seen", entries_seen.to_string()),
             ("files_checked", files_checked.to_string()),
             ("source_files", files.len().to_string()),
+            ("skipped_gitignored", skipped_gitignored.to_string()),
+            ("skipped_minified", skipped_minified.to_string()),
         ]
     });
 
