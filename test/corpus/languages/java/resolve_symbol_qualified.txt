@@ -3,9 +3,7 @@ show qualified name
 ===
 leta show MemoryStorage.save
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 src/main/java/com/example/MemoryStorage.java:22-28
 
     /**

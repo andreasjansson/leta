@@ -3,9 +3,7 @@ calls path found
 ===
 leta calls --from main --to createSampleUser
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 Call path:
 src/main.ts:55 [Function] main
   → src/main.ts:6 [Function] createSampleUser

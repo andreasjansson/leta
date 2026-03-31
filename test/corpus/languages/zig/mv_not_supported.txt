@@ -3,7 +3,5 @@ move file not supported
 ===
 leta mv src/user.zig src/models/user.zig
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 Error: move-file is not supported by zls

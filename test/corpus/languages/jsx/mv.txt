@@ -16,9 +16,7 @@ move file to models directory
 ===
 leta mv src/editable.tsx src/models/editable.tsx
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 Moved file and updated imports in 2 file(s):
   src/editable_consumer.tsx
   src/models/editable.tsx
@@ -35,9 +33,7 @@ restore file back
 ===
 leta mv src/models/editable.tsx src/editable.tsx
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 Moved file and updated imports in 2 file(s):
   src/editable.tsx
   src/editable_consumer.tsx

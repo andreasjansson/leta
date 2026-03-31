@@ -3,9 +3,7 @@ grep exclude multiple patterns
 ===
 leta grep "." --kind function --exclude "editable*" --exclude "errors.ts" -C
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 src/main.test.ts:4 [Function] testCreateSampleUser
 src/main.test.ts:9 [Function] testUserRepository
 src/main.ts:6 [Function] createSampleUser

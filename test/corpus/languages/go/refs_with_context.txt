@@ -3,9 +3,7 @@ refs with context
 ===
 leta refs NewUserRepository -n 1
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 main.go:123-125
 // NewUserRepository creates a new repository with the given storage.
 func NewUserRepository(storage Storage) *UserRepository {

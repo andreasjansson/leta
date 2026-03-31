@@ -3,9 +3,7 @@ grep pattern matching
 ===
 leta grep "_user$" -x _build
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 main.ml:2 [Variable] create_sample_user
 test/test_user.ml:1 [Variable] test_create_user
 user.ml:9 [Variable] create_user

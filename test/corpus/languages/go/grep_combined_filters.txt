@@ -3,8 +3,6 @@ grep combined filters Storage structs
 ===
 leta grep "Storage" --kind struct main.go -C
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 main.go:39 [Struct] MemoryStorage (struct{...})
 main.go:85 [Struct] FileStorage (struct{...})

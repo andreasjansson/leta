@@ -3,7 +3,5 @@ grep combined filters
 ===
 leta grep "^Memory" --kind object user.lua -C
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 user.lua:72 [Object] MemoryStorage

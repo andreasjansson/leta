@@ -3,9 +3,7 @@ grep kind filter function
 ===
 leta grep "." --kind function src/main.ts -C
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 src/main.ts:6 [Function] createSampleUser
 src/main.ts:13 [Function] processUsers
 src/main.ts:14 [Function] map() callback in processUsers

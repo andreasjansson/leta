@@ -3,9 +3,7 @@ implementations with context
 ===
 leta implementations Storage -n 1
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 src/user.ts:38-40
  */
 export class MemoryStorage implements Storage {

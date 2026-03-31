@@ -3,9 +3,7 @@ call graph with tests
 ===
 leta graph --include-signature --include-tests
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 main.go:172 [Function] main (func())
 ├── main.go:44 [Function] NewMemoryStorage (sample_project)
 ├── main.go:124 [Function] NewUserRepository (sample_project)

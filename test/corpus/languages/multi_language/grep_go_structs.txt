@@ -3,8 +3,6 @@ grep Go structs only
 ===
 leta grep "." main.go --kind struct
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 main.go:6 [Struct] GoUser (struct{...})
 main.go:12 [Struct] GoService (struct{...})

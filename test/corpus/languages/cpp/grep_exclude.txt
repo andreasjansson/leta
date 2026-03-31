@@ -3,9 +3,7 @@ grep exclude pattern
 ===
 leta grep "." --kind function --exclude "errors*" -C
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 main.cpp:7 [Function] main (int ())
 test_main.cpp:3 [Function] test_create_sample_user (void ())
 test_main.cpp:7 [Function] test_user_repository (void ())

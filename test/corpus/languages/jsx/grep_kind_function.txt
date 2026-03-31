@@ -3,9 +3,7 @@ grep kind filter function
 ===
 leta grep "User" '\.tsx$' -k function -C
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 src/App.test.tsx:3 [Function] testUserAvatar
 src/App.tsx:62 [Function] UserDetailsPanel
 src/components.tsx:54 [Function] UserAvatar

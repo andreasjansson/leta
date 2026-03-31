@@ -3,9 +3,7 @@ resolve ambiguous symbol shows matches
 ===
 leta show init
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 Error: Symbol 'init' is ambiguous (4 matches)
   User.init
     src/user.zig:10 [Function] init in User

@@ -3,8 +3,6 @@ grep combined filters Storage classes
 ===
 leta grep "Storage" --kind class -C
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 src/FileStorage.php:10 [Class] FileStorage
 src/MemoryStorage.php:10 [Class] MemoryStorage

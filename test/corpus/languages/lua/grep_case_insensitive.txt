@@ -3,9 +3,7 @@ grep case insensitive (default)
 ===
 leta grep "storage" --kind object user.lua
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 user.lua:43 [Object] Storage
 user.lua:72 [Object] MemoryStorage
 user.lua:122 [Object] FileStorage

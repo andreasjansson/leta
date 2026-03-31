@@ -3,9 +3,7 @@ refs basic
 ===
 leta refs User
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 main.go:9 type User struct {
 main.go:16 func NewUser(name, email string, age int) *User {
 main.go:17 return &User{Name: name, Email: email, Age: age}

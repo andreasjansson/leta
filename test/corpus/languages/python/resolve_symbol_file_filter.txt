@@ -3,9 +3,7 @@ show with file filter
 ===
 leta show main.py:save
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 Error: Symbol 'save' is ambiguous (3 matches)
   StorageProtocol.save
     main.py:17 [Method] save in StorageProtocol

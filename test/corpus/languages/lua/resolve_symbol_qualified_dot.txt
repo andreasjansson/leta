@@ -3,9 +3,7 @@ resolve qualified name with dot
 ===
 leta show User.new
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 user.lua:19-25
 
 function User.new(name, email, age)

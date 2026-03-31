@@ -3,9 +3,7 @@ show method with context
 ===
 leta show getName -n 1
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 src/User.php:47-57
 
 

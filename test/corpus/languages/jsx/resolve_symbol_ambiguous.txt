@@ -3,9 +3,7 @@ resolve ambiguous symbol shows matches
 ===
 leta show name
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 Error: Symbol 'name' is ambiguous (6 matches)
   user.name
     src/App.test.tsx:4 [Property] name in user

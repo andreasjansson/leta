@@ -3,9 +3,7 @@ show multiline array constant
 ===
 leta show COUNTRY_CODES
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 user.hpp:162-170
 
 constexpr const char* COUNTRY_CODES[] = {

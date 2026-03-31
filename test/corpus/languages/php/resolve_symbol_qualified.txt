@@ -3,9 +3,7 @@ resolve qualified method
 ===
 leta show MemoryStorage.save
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 src/MemoryStorage.php:15-23
 
     /**

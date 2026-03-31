@@ -3,9 +3,7 @@ call graph
 ===
 leta graph --include-signature
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 src/main.ts:55 [Function] main
 ├── ./user.ts:39 [Class] MemoryStorage
 ├── ./user.ts:92 [Class] UserRepository

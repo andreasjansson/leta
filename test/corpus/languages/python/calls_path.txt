@@ -3,9 +3,7 @@ find call path between functions
 ===
 leta calls --from main --to create_sample_user
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 Call path:
 main.py:128 [Function] main
   → main.py:114 [Function] create_sample_user

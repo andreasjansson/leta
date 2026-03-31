@@ -3,9 +3,7 @@ resolve ambiguous symbol shows matches
 ===
 leta show createSampleUser
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 Error: Symbol 'createSampleUser' is ambiguous (2 matches)
   main.lua:8:createSampleUser
     main.lua:8 [Function] createSampleUser

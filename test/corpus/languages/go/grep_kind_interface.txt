@@ -3,8 +3,6 @@ grep kind filter interface
 ===
 leta grep "." --kind interface main.go -C
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 main.go:31 [Interface] Storage (interface{...})
 main.go:154 [Interface] Validator (interface{...})

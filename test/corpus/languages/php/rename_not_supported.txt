@@ -3,7 +3,5 @@ rename not supported
 ===
 leta rename User Person
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 Error: Rename not supported or failed

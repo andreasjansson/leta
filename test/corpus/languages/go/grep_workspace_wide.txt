@@ -3,9 +3,7 @@ grep workspace wide Validate functions
 ===
 leta grep "Validate" --kind function --exclude "editable*" -C
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 main.go:159 [Function] ValidateUser (func(user *User) error)
 utils.go:9 [Function] ValidateEmail (func(email string) bool)
 utils.go:16 [Function] ValidateAge (func(age int) bool)

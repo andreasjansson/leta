@@ -3,9 +3,7 @@ show function definition
 ===
 leta show create_sample_user
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 main.py:114-116
 
 def create_sample_user() -> User:

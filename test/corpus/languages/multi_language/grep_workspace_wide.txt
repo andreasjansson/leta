@@ -3,9 +3,7 @@ grep workspace-wide finds both languages
 ===
 leta grep "Service" --kind struct,class
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 app.py:10 [Class] ServiceProtocol
 app.py:26 [Class] PythonService
 main.go:12 [Struct] GoService (struct{...})

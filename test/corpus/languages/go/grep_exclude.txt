@@ -3,9 +3,7 @@ grep all functions excluding editable
 ===
 leta grep "." --kind function --exclude "editable*" -C
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 errors.go:4 [Function] ErrorFunc (func())
 errors.go:17 [Function] TypeErrorFunc (func() int)
 main.go:16 [Function] NewUser (func(name, email string, age int) *User)

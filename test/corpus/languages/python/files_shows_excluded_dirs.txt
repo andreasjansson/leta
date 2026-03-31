@@ -3,9 +3,7 @@ files shows excluded directories
 ===
 leta files $CCTR_FIXTURE_DIR
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 editable.py (1.1KB, 43 lines)
 editable_consumer.py (561B, 17 lines)
 errors.py (554B, 25 lines)

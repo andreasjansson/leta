@@ -3,9 +3,7 @@ show function definition
 ===
 leta show Button
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 src/components.tsx:8-28
 
 export function Button({

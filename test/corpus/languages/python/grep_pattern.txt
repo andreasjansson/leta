@@ -3,8 +3,6 @@ grep with pattern filter (case sensitive)
 ===
 leta grep "^User" main.py -C
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 main.py:27 [Class] User
 main.py:81 [Class] UserRepository

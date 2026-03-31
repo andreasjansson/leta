@@ -3,9 +3,7 @@ grep case insensitive (default)
 ===
 leta grep "^user$"
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 src/main.zig:2 [Constant] user
 src/main_test.zig:2 [Constant] user
 src/user.zig:4 [Constant] User

@@ -3,9 +3,7 @@ grep Python classes only
 ===
 leta grep "." app.py --kind class
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 app.py:10 [Class] ServiceProtocol
 app.py:19 [Class] PythonUser
 app.py:26 [Class] PythonService

@@ -3,9 +3,7 @@ grep case sensitive
 ===
 leta grep "Button" -C
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 src/components.tsx:8 [Function] Button
 src/editable.tsx:12 [Function] EditableButton
 src/editable_consumer.tsx:12 [Function] useEditableButton

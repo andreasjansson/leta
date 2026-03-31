@@ -3,9 +3,7 @@ incoming calls to function
 ===
 leta calls --to create_sample_user
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 main.py:114 [Function] create_sample_user
 
 Incoming calls:

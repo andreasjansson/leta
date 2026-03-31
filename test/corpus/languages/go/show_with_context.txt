@@ -3,9 +3,7 @@ show function with context
 ===
 leta show NewUserRepository -n 1
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 main.go:123-127
 
 // NewUserRepository creates a new repository with the given storage.

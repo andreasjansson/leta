@@ -10,9 +10,7 @@ rename EditablePerson to RenamedPerson
 ===
 leta rename EditablePerson RenamedPerson
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 Renamed in 2 file(s):
   editable.py
   editable_consumer.py

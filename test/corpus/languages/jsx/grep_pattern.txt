@@ -3,9 +3,7 @@ grep pattern for hooks
 ===
 leta grep "^use[A-Z]" '\.ts$' -k function -C
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 src/hooks.ts:7 [Function] useUser
 src/hooks.ts:12 [Function] useCallback() callback in updateUser
 src/hooks.ts:18 [Function] useCallback() callback in clearUser

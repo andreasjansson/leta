@@ -3,9 +3,7 @@ grep pattern filter functions
 ===
 leta grep "^init" --kind function -C
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 src/user.zig:10 [Function] init (fn init(name: []const u8, email: []const u8, age: i32) User) in User
 src/user.zig:55 [Function] init (fn init(allocator: std.mem.Allocator) MemoryStorage) in MemoryStorage
 src/user.zig:88 [Function] init (fn init(base_path: []const u8) FileStorage) in FileStorage

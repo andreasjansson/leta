@@ -3,8 +3,6 @@ refs returns empty (solargraph limitation)
 ===
 leta refs User
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 main.rb:9   User.new('John Doe', 'john@example.com', 30)
 user.rb:8 class User

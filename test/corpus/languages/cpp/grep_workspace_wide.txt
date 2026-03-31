@@ -3,7 +3,5 @@ grep workspace wide
 ===
 leta grep "validate" --kind function -C
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 user.hpp:140 [Function] validateUser (void (const User &)) in example

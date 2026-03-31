@@ -3,9 +3,7 @@ grep kind filter constant
 ===
 leta grep "." --kind constant src/user.zig -C
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 src/user.zig:1 [Constant] std
 src/user.zig:4 [Constant] User
 src/user.zig:31 [Constant] Storage

@@ -3,7 +3,5 @@ grep kind filter interface (trait)
 ===
 leta grep "." --kind interface src/storage.rs -C
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 src/storage.rs:5 [Interface] Storage

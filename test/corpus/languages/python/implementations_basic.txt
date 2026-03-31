@@ -3,9 +3,7 @@ find implementations of protocol
 ===
 leta implementations StorageProtocol
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 editable.py:31 class EditableStorage:
 main.py:14 class StorageProtocol(Protocol):
 main.py:49 class MemoryStorage:

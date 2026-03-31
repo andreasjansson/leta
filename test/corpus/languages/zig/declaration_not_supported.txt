@@ -3,7 +3,5 @@ declaration not supported
 ===
 leta declaration sample_user
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 Error: Symbol 'sample_user' not found

@@ -3,7 +3,5 @@ grep pattern filter methods
 ===
 leta grep "^create" --kind method -C
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 src/main/java/com/example/Main.java:15 [Method] createSampleUser() ( : User) in Main

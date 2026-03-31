@@ -3,9 +3,7 @@ resolve with file filter
 ===
 leta show src/main.zig:main
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 src/main.zig:4-19
 
 pub fn main() !void {

@@ -3,9 +3,7 @@ grep exclude multiple patterns
 ===
 leta grep "." -x hooks -x editable -k function -C --head 5
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 src/App.test.tsx:3 [Function] testUserAvatar
 src/App.test.tsx:8 [Function] testCard
 src/App.tsx:26 [Function] Header

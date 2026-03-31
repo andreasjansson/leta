@@ -3,9 +3,7 @@ refs basic
 ===
 leta refs User
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 src/App.tsx:2 import { User, DEFAULT_THEME } from './types';
 src/App.tsx:17 const SAMPLE_USERS: User[] = [
 src/App.tsx:66     user: User | null;

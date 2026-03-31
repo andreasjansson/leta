@@ -3,8 +3,6 @@ grep kind filter struct
 ===
 leta grep "." --kind struct src/user.rs -C
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 src/user.rs:5 [Struct] User
 src/user.rs:44 [Struct] UserRepository

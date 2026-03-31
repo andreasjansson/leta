@@ -3,7 +3,5 @@ implementations with context not supported
 ===
 leta implementations Storage -n 1
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 Error: Server 'zls' does not support implementations (may require a license)

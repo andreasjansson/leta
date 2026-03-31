@@ -3,9 +3,7 @@ find implementations with context
 ===
 leta implementations StorageProtocol -n 1
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 editable.py:30-32
 
 class EditableStorage:

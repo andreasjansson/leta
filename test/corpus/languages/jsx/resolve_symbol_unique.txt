@@ -3,9 +3,7 @@ resolve unique symbol
 ===
 leta show Spinner
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 src/components.tsx:210-218
 
 export function Spinner({ size = 'medium' }: { size?: 'small' | 'medium' | 'large' }) {

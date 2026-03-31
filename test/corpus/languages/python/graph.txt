@@ -3,9 +3,7 @@ call graph
 ===
 leta graph --include-signature
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 main.py:128 [Function] main
 ├── main.py:81 [Class] UserRepository
 ├── main.py:114 [Function] create_sample_user

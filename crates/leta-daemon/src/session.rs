@@ -779,10 +779,8 @@ fn detect_rust_toolchain(workspace_root: &Path) -> Option<String> {
     if let Ok(content) = std::fs::read_to_string(&plain_path) {
         let trimmed = content.trim();
         // Plain format: just the channel name on a single line
-        if !trimmed.contains('[') {
-            if !trimmed.is_empty() {
-                return Some(trimmed.to_string());
-            }
+        if !trimmed.contains('[') && !trimmed.is_empty() {
+            return Some(trimmed.to_string());
         }
         // TOML format (same as above)
         for line in content.lines() {

@@ -3,9 +3,7 @@ call graph with tests
 ===
 leta graph --include-signature --include-tests
 ---
-{{ _analyzing1 : optional string }}
-{{ _analyzing2 : optional string }}
-{{ _analyzing3 : optional string }}
+{{ analyzing : optional string }}
 src/App.tsx:120 [Function] App
 ├── ./hooks.ts:67 [Function] useToggle
 ├── ./components.tsx:210 [Function] Spinner
