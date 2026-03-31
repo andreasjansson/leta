@@ -3,4 +3,7 @@ mv not supported
 ===
 leta mv user.ml lib/user.ml
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 Error: move-file is not supported by ocamllsp

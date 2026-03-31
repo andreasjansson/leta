@@ -3,6 +3,9 @@ grep exclude multiple patterns
 ===
 leta grep "." --kind class --exclude "Errors" --exclude "Abstract" -C
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 src/main/java/com/example/FileStorage.java:12 [Class] FileStorage
 src/main/java/com/example/Main.java:8 [Class] Main
 src/main/java/com/example/MemoryStorage.java:12 [Class] MemoryStorage

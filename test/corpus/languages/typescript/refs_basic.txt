@@ -3,6 +3,9 @@ refs basic
 ===
 leta refs User
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 src/main.ts:1 import { User, UserRepository, MemoryStorage, validateUser } from './user';
 src/main.ts:6 function createSampleUser(): User {
 src/main.ts:7     return new User("John Doe", "john@example.com", 30);

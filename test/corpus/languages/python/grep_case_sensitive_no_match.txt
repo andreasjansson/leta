@@ -3,3 +3,6 @@ grep case sensitive no match
 ===
 leta grep "^USER$" -C
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}

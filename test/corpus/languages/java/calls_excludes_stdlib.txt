@@ -3,6 +3,9 @@ calls outgoing excludes stdlib by default
 ===
 leta calls --from User.displayName
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 src/main/java/com/example/User.java:90 [Method] displayName() : String (com.example.User)
 
 Outgoing calls:

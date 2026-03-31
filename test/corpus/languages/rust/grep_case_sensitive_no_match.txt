@@ -3,3 +3,7 @@ grep case sensitive lowercase no match
 ===
 leta grep "^user$" src/user.rs -C
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
+src/user.rs:105 [Variable] user in test_user_creation

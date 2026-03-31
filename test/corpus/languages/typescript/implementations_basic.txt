@@ -3,5 +3,8 @@ implementations basic
 ===
 leta implementations Storage
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 src/user.ts:39 export class MemoryStorage implements Storage {
 src/user.ts:62 export class FileStorage implements Storage {

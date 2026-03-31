@@ -3,6 +3,9 @@ grep with multiple exclude patterns
 ===
 leta grep . --kind function -x "editable*" -x "utils.py"
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 errors.py:4 [Function] undefined_variable
 errors.py:9 [Function] type_error
 errors.py:15 [Function] missing_return

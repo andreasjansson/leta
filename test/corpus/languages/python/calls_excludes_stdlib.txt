@@ -3,6 +3,9 @@ outgoing calls excludes stdlib by default
 ===
 leta calls --from validate_email
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 utils.py:9 [Function] validate_email
 
 Outgoing calls:

@@ -10,6 +10,9 @@ rename User to Person
 ===
 leta rename User Person
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 Renamed in 1 file(s):
   user.lua
 
@@ -25,6 +28,9 @@ restore original name
 ===
 leta rename Person User
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 Renamed in 1 file(s):
   user.lua
 

@@ -3,6 +3,9 @@ show function with context lines
 ===
 leta show create_sample_user -n 2
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 main.py:112-118
 
 

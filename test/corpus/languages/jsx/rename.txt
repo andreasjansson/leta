@@ -10,6 +10,9 @@ rename EditableButton to RenamedButton
 ===
 leta rename EditableButton RenamedButton
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 Renamed in 2 file(s):
   src/editable.tsx
   src/editable_consumer.tsx
@@ -33,6 +36,9 @@ restore original name
 ===
 leta rename RenamedButton EditableButton
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 Renamed in 2 file(s):
   src/editable.tsx
   src/editable_consumer.tsx

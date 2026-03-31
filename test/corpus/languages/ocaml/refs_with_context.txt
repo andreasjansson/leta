@@ -3,6 +3,9 @@ refs with context
 ===
 leta refs "^main.ml$:create_sample_user" -n 2
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 main.ml:1-4
 (** Creates a sample user for testing. *)
 let create_sample_user () =

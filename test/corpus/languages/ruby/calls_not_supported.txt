@@ -3,4 +3,7 @@ calls not supported
 ===
 leta calls --from main
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 Error: textDocument/prepareCallHierarchy is not supported by ruby-lsp

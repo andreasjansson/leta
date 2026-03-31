@@ -10,6 +10,9 @@ move file and update imports
 ===
 leta mv editable.py editable_renamed.py
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 Moved file and updated imports in 2 file(s):
   editable_consumer.py
   editable_renamed.py
@@ -26,6 +29,9 @@ restore file back
 ===
 leta mv editable_renamed.py editable.py
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 Moved file and updated imports in 2 file(s):
   editable.py
   editable_consumer.py

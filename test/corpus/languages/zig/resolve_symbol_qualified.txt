@@ -3,6 +3,9 @@ resolve qualified method
 ===
 leta show User.init
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 src/user.zig:10-16
 
     pub fn init(name: []const u8, email: []const u8, age: i32) User {

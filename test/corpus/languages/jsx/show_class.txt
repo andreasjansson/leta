@@ -3,6 +3,9 @@ show class definition
 ===
 leta show ValidationError
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 src/errors.tsx:6-11
 
 export class ValidationError extends Error {

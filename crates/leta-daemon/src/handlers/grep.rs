@@ -669,6 +669,8 @@ async fn fetch_symbols_for_language(
         .get_or_create_workspace_for_language(lang, workspace_root)
         .await?;
 
+    workspace.wait_for_ready(300).await;
+
     let mut symbols = Vec::new();
     for file_path in files {
         match get_file_symbols_no_wait(ctx, &workspace, workspace_root, file_path).await {
@@ -773,7 +775,7 @@ pub async fn get_file_symbols(
     workspace_root: &Path,
     file_path: &Path,
 ) -> Result<Vec<SymbolInfo>, String> {
-    workspace.wait_for_ready(30).await;
+    workspace.wait_for_ready(300).await;
     get_file_symbols_no_wait(ctx, workspace, workspace_root, file_path).await
 }
 
@@ -835,7 +837,9 @@ pub async fn get_file_symbols_no_wait(
     let flatten_time = flatten_start.elapsed();
 
     let cache_start = std::time::Instant::now();
-    ctx.symbol_cache.set(&cache_key, &symbols);
+    if !symbols.is_empty() {
+        ctx.symbol_cache.set(&cache_key, &symbols);
+    }
     let cache_set_time = cache_start.elapsed();
 
     fastrace::local::LocalSpan::add_properties(|| {

@@ -3,6 +3,9 @@ refs with context
 ===
 leta refs User -n 1
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 user.lua:10-12
 -- @field age number The user's age in years
 local User = {}

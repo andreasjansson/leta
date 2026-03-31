@@ -3,6 +3,9 @@ resolve symbol with file filter
 ===
 leta show main.cpp:main
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 main.cpp:7-22
 
 int main() {

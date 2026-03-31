@@ -3,6 +3,9 @@ grep all functions excluding editable
 ===
 leta grep "." --kind function --exclude "editable*" -C
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 src/errors.ts:6 [Function] undefinedVariable
 src/errors.ts:11 [Function] typeError
 src/errors.ts:17 [Function] missingReturn

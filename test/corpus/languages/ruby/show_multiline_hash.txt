@@ -3,6 +3,9 @@ show multiline hash constant
 ===
 leta show COUNTRY_CODES
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 user.rb:144-152
 
 COUNTRY_CODES = {

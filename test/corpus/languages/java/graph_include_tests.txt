@@ -3,6 +3,9 @@ call graph with tests
 ===
 leta graph --include-signature --include-tests
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 src/main/java/com/example/Main.java:47 [Method] main(String[]) (: void)
 ├── ./MemoryStorage.java:18 [Constructor] MemoryStorage() (com.example.MemoryStorage)
 │   └── ./AbstractStorage.java:15 [Constructor] AbstractStorage(String) (com.example.AbstractStorage)

@@ -3,6 +3,9 @@ call graph with non-workspace
 ===
 leta graph --include-signature --include-non-workspace
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 src/main.ts:55 [Function] main
 ├── ./user.ts:39 [Class] MemoryStorage
 ├── ./user.ts:92 [Class] UserRepository

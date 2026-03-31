@@ -3,6 +3,9 @@ show generic method by simple name
 ===
 leta show IsOk
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 utils.go:74-76
 
 func (r *Result[T]) IsOk() bool {

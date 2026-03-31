@@ -3,6 +3,9 @@ show unique symbol
 ===
 leta show validateEmail
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 src/main/java/com/example/Main.java:31-40
 
     /**

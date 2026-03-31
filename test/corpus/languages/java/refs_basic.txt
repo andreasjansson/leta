@@ -3,6 +3,9 @@ refs basic
 ===
 leta refs User
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 src/main/java/com/example/FileStorage.java:14     private Map<String, User> cache = new HashMap<>();
 src/main/java/com/example/FileStorage.java:39     public void save(User user) {
 src/main/java/com/example/FileStorage.java:48     public User load(String email) {

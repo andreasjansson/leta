@@ -3,6 +3,9 @@ show ambiguous symbol shows options
 ===
 leta show save
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 Error: Symbol 'save' is ambiguous (4 matches)
   EditableStorage.save
     editable.py:37 [Method] save in EditableStorage

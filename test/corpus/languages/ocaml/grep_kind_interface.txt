@@ -3,4 +3,7 @@ grep kind filter interface
 ===
 leta grep "." -k interface -x _build
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 storage.ml:2 [Interface] Storage

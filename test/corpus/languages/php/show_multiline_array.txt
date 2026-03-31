@@ -3,6 +3,9 @@ show multiline array constant
 ===
 leta show COUNTRY_CODES
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 src/User.php:15-23
 
     public const COUNTRY_CODES = [

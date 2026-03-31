@@ -3,6 +3,9 @@ resolve ambiguous symbol shows matches
 ===
 leta show Save
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 Error: Symbol 'Save' is ambiguous (4 matches)
   EditableStorage.Save
     editable.go:50 [Method] (*EditableStorage).Save

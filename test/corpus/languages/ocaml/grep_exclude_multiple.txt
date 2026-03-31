@@ -3,5 +3,8 @@ grep exclude multiple patterns
 ===
 leta grep "^create" -x _build -x storage -x user.mli
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 main.ml:2 [Variable] create_sample_user
 user.ml:9 [Variable] create_user

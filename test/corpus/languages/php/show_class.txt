@@ -3,6 +3,9 @@ show class definition
 ===
 leta show User
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 src/User.php:7-97
 
 /**

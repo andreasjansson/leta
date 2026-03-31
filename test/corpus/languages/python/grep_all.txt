@@ -3,6 +3,9 @@ grep all symbols in main.py
 ===
 leta grep . main.py
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 main.py:14 [Class] StorageProtocol
 main.py:17 [Method] save in StorageProtocol
 main.py:17 [Variable] key in save

@@ -3,6 +3,9 @@ show class definition
 ===
 leta show example.User
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 user.hpp:13-34
 
 class User {

@@ -3,6 +3,9 @@ calls path found
 ===
 leta calls --from main --to createSampleUser
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 Call path:
 main.go:172 [Function] main (sample_project • main.go)
   → main.go:149 [Function] createSampleUser (sample_project • main.go)

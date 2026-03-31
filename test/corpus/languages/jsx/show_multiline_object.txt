@@ -3,6 +3,9 @@ show multiline object constant
 ===
 leta show DEFAULT_THEME
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 src/types.ts:60-64
 
 export const DEFAULT_THEME: ThemeConfig = {

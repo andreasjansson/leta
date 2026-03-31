@@ -3,6 +3,9 @@ resolve unique symbol
 ===
 leta show createSampleUser
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 src/main.zig:22-24
 
 pub fn createSampleUser() user.User {

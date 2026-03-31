@@ -3,6 +3,9 @@ check before rename
 ===
 leta grep "validateEmail" --kind method -C
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 src/main/java/com/example/Main.java:37 [Method] validateEmail(String) ( : boolean) in Main
 
 ===
@@ -10,6 +13,9 @@ rename validateEmail to checkEmail
 ===
 leta rename validateEmail checkEmail
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 Renamed in 1 file(s):
   src/main/java/com/example/Main.java
 
@@ -18,6 +24,9 @@ verify rename worked
 ===
 leta grep "checkEmail" --kind method -C
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 src/main/java/com/example/Main.java:37 [Method] checkEmail(String) ( : boolean) in Main
 
 ===
@@ -25,6 +34,9 @@ restore original name
 ===
 leta rename checkEmail validateEmail
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 Renamed in 1 file(s):
   src/main/java/com/example/Main.java
 
@@ -33,4 +45,7 @@ verify restore worked
 ===
 leta grep "validateEmail" --kind method -C
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 src/main/java/com/example/Main.java:37 [Method] validateEmail(String) ( : boolean) in Main

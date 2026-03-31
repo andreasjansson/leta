@@ -211,7 +211,7 @@ impl Workspace {
         }
         let open_elapsed = open_start.elapsed();
 
-        client.wait_for_indexing(30).await;
+        client.wait_for_indexing(300).await;
 
         info!(
             "Pre-indexing complete, closing {} documents",

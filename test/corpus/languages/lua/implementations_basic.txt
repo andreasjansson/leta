@@ -3,4 +3,7 @@ implementations basic
 ===
 leta implementations Storage
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 user.lua:43 local Storage = {}

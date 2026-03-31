@@ -3,6 +3,9 @@ show object with context
 ===
 leta show Storage -n 2
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 user.lua:41-45
 
 --- Interface for user storage backends.

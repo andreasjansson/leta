@@ -3,6 +3,9 @@ grep kind filter class
 ===
 leta grep "." --kind class -C
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 src/Errors.php:10 [Class] Errors
 src/FileStorage.php:10 [Class] FileStorage
 src/Main.php:10 [Class] Main

@@ -3,5 +3,8 @@ grep case insensitive (default)
 ===
 leta grep "^user$"
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 user.hpp:13 [Class] User (class) in example
 user.hpp:15 [Constructor] User ((std::string, std::string, int)) in User

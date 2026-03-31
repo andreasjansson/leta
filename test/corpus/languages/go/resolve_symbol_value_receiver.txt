@@ -3,6 +3,9 @@ resolve value receiver method
 ===
 leta show User.IsAdult
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 main.go:21-23
 
 func (u *User) IsAdult() bool {

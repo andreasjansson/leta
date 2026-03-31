@@ -3,6 +3,9 @@ help
 ===
 leta --help
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 Leta (LSP Enabled Tools for Agents) is a command line LSP client. It can
 quickly search for symbols across large code bases with regular expressions,
 print full function and method bodies, find references, implementations,
@@ -53,6 +56,9 @@ workspace help
 ===
 leta workspace --help
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 Manage workspaces.
 
 Usage: leta workspace [OPTIONS] <COMMAND>
@@ -74,6 +80,9 @@ daemon help
 ===
 leta daemon --help
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 Manage the leta daemon.
 
 Usage: leta daemon [OPTIONS] <COMMAND>

@@ -3,4 +3,7 @@ call graph with tests
 ===
 leta graph --include-signature --include-tests
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 Error: Call hierarchy is not supported by ruby-lsp

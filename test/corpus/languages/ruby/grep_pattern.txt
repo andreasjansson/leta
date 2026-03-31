@@ -3,6 +3,9 @@ grep pattern filter
 ===
 leta grep "Storage" --kind class user.rb -C
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 user.rb:38 [Class] Storage
 user.rb:71 [Class] MemoryStorage
 user.rb:113 [Class] FileStorage

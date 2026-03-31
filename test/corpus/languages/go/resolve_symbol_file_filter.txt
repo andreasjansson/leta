@@ -3,6 +3,9 @@ resolve with file filter
 ===
 leta show main.go:NewUser
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 main.go:16-18
 
 func NewUser(name, email string, age int) *User {

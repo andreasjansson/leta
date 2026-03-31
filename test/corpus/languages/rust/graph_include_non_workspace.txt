@@ -3,6 +3,9 @@ call graph with non-workspace
 ===
 leta graph --include-signature --include-non-workspace
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 src/main.rs:22 [Function] main (fn())
 ├── ./storage.rs:26 [Function] new (pub fn new() -> Self)
 │   └── [Function] new (pub fn new() -> HashMap<K, V, RandomState>)

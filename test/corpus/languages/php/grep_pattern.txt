@@ -3,6 +3,9 @@ grep pattern filter methods
 ===
 leta grep "^get" --kind method src/User.php -C
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 src/User.php:53 [Method] getName in User
 src/User.php:63 [Method] getEmail in User
 src/User.php:73 [Method] getAge in User

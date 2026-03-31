@@ -3,6 +3,9 @@ refs with context
 ===
 leta refs create_sample_user -n 1
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 src/main.rs:9-11
 /// Creates a sample user for testing.
 fn create_sample_user() -> User {

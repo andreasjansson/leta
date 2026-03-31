@@ -3,6 +3,9 @@ grep exclude multiple patterns
 ===
 leta grep "." --kind class --exclude "Errors" --exclude "Storage" -C
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 src/Main.php:10 [Class] Main
 src/User.php:10 [Class] User
 src/UserRepository.php:10 [Class] UserRepository

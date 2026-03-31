@@ -79,6 +79,7 @@ struct LanguageStatusParams {
 struct ServerStatusParams {
     quiescent: Option<bool>,
     health: Option<String>,
+    message: Option<String>,
 }
 
 const REQUEST_TIMEOUT_SECS: u64 = 30;
@@ -531,6 +532,10 @@ impl LspClient {
 
     #[trace]
     async fn handle_notification(&self, method: &str, params: Option<Value>) {
+        debug!(
+            "Server {} notification: {}",
+            self.server_name, method
+        );
         match method {
             "language/status" => {
                 if let Some(p) =
@@ -548,15 +553,24 @@ impl LspClient {
                 {
                     let quiescent = p.quiescent.unwrap_or(false);
                     let health = p.health.as_deref().unwrap_or("ok");
+                    let message = p.message.as_deref().unwrap_or("");
 
                     debug!(
-                        "Server {} serverStatus: quiescent={}, health={}",
-                        self.server_name, quiescent, health
+                        "Server {} serverStatus: quiescent={}, health={}, message={}",
+                        self.server_name, quiescent, health, message
                     );
 
-                    if quiescent && health != "error" {
+                    if quiescent {
                         *self.indexing_done.write().await = true;
-                        info!("Server {} is quiescent (ready)", self.server_name);
+                        if health == "error" {
+                            warn!(
+                                "Server {} finished with error: {}",
+                                self.server_name,
+                                if message.is_empty() { "unknown error" } else { message }
+                            );
+                        } else {
+                            info!("Server {} is quiescent (ready)", self.server_name);
+                        }
                     } else {
                         let was_done = *self.indexing_done.read().await;
                         if was_done {

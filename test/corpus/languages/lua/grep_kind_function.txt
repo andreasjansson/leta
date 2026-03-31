@@ -3,6 +3,9 @@ grep kind filter function
 ===
 leta grep "." --kind function main.lua -C
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 main.lua:8 [Function] createSampleUser (function ())
 main.lua:14 [Function] validateUser (function (u))
 main.lua:28 [Function] processUsers (function (repo))

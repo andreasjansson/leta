@@ -3,6 +3,9 @@ show qualified name
 ===
 leta show MemoryStorage.save
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 main.py:55-56
 
     def save(self, key: str, value: str) -> None:

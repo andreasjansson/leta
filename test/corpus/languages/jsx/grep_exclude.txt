@@ -3,5 +3,8 @@ grep exclude pattern
 ===
 leta grep "." -x editable -k class -C
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 src/errors.tsx:6 [Class] ValidationError
 src/errors.tsx:16 [Class] NetworkError

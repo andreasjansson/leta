@@ -3,4 +3,7 @@ grep workspace wide validate methods
 ===
 leta grep "validate" --kind method -C
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 src/Main.php:28 [Method] validateUser (static) in Main

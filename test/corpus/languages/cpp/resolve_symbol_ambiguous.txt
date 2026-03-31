@@ -3,6 +3,9 @@ resolve symbol ambiguous
 ===
 leta show save
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 Error: Symbol 'save' is ambiguous (3 matches)
   Storage.save
     user.hpp:41 [Method] save in Storage

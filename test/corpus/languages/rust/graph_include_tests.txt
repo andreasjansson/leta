@@ -3,6 +3,9 @@ call graph with tests
 ===
 leta graph --include-signature --include-tests
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 src/main.rs:22 [Function] main (fn())
 ├── ./storage.rs:26 [Function] new (pub fn new() -> Self)
 ├── ./user.rs:50 [Function] new (pub fn new(storage: S) -> Self)

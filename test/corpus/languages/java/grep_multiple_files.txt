@@ -3,6 +3,9 @@ grep multiple files via path regex
 ===
 leta grep "^get" --kind method "User\.java" -C
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 src/main/java/com/example/User.java:54 [Method] getName() ( : String) in User
 src/main/java/com/example/User.java:63 [Method] getEmail() ( : String) in User
 src/main/java/com/example/User.java:72 [Method] getAge() ( : int) in User

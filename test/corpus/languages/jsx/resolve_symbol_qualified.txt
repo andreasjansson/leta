@@ -3,6 +3,9 @@ resolve symbol with qualified name
 ===
 leta show User.name
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 src/types.ts:10
 
     name: string;

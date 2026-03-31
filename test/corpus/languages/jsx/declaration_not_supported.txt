@@ -3,4 +3,7 @@ declaration not supported
 ===
 leta declaration Button
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 Error: textDocument/declaration is not supported by typescript-language-server

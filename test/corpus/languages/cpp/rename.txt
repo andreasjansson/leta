@@ -11,6 +11,9 @@ rename User to Person
 ===
 leta rename example.User Person
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 Renamed in 2 file(s):
   main.cpp
   user.hpp
@@ -27,6 +30,9 @@ restore original name
 ===
 leta rename example.Person User
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 Renamed in 2 file(s):
   main.cpp
   user.hpp

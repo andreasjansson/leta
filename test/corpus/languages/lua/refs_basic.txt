@@ -3,6 +3,9 @@ refs basic
 ===
 leta refs User
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 user.lua:11 local User = {}
 user.lua:12 User.__index = User
 user.lua:12 User.__index = User

@@ -3,4 +3,7 @@ calls path not found
 ===
 leta calls --from validateUser --to main
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 No call path found from 'validateUser' to 'main' within depth 3

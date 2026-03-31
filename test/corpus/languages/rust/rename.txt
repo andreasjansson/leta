@@ -10,6 +10,9 @@ rename User to Person
 ===
 leta rename User Person
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 Renamed in 3 file(s):
   src/main.rs
   src/storage.rs
@@ -27,6 +30,9 @@ restore original name
 ===
 leta rename Person User
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 Renamed in 3 file(s):
   src/main.rs
   src/storage.rs

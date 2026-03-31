@@ -3,6 +3,9 @@ outgoing calls including non-workspace (stdlib)
 ===
 leta calls --from validate_email --include-non-workspace
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 utils.py:9 [Function] validate_email
 
 Outgoing calls:

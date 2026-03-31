@@ -3,4 +3,7 @@ call graph
 ===
 leta graph --include-signature
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 Error: Call hierarchy is not supported by lua-language-server

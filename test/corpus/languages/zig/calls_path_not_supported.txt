@@ -3,4 +3,7 @@ calls path returns empty
 ===
 leta calls --from main --to createSampleUser
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 Error: textDocument/prepareCallHierarchy is not supported by zls

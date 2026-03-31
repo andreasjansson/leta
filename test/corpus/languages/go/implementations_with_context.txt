@@ -3,6 +3,9 @@ implementations with context
 ===
 leta implementations Storage -n 1
 ---
+{{ _analyzing1 : optional string }}
+{{ _analyzing2 : optional string }}
+{{ _analyzing3 : optional string }}
 main.go:38-40
 // MemoryStorage stores users in memory.
 type MemoryStorage struct {
