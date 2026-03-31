@@ -1,48 +1,49 @@
 ===
 call graph with tests
 ===
-leta graph --include-tests
+leta graph --include-signature --include-tests
 ---
+{{ analyzing : optional string }}
 src/App.tsx:120 [Function] App
-├── src/hooks.ts:67 [Function] useToggle
-├── src/components.tsx:210 [Function] Spinner
-├── src/components.tsx:237 [Function] ThemeProvider
-├── src/App.tsx:26 [Function] Header
-├── src/App.tsx:42 [Function] Sidebar
-├── src/App.tsx:88 [Function] DashboardStats
-│   └── src/components.tsx:33 [Function] Card
-├── src/components.tsx:185 [Function] Expandable
-│   └── src/hooks.ts:67 [Function] useToggle
-├── src/components.tsx:131 [Function] UserList
-│   ├── src/components.tsx:112 [Function] List
-│   └── src/components.tsx:84 [Function] UserCard
-│       ├── src/components.tsx:33 [Function] Card
-│       ├── src/components.tsx:54 [Function] UserAvatar
-│       └── src/components.tsx:8 [Function] Button
-├── src/components.tsx:33 [Function] Card
-├── src/components.tsx:8 [Function] Button
-└── src/App.tsx:62 [Function] UserDetailsPanel
-    └── src/components.tsx:152 [Function] Modal
+├── ./hooks.ts:67 [Function] useToggle
+├── ./components.tsx:210 [Function] Spinner
+├── ./components.tsx:237 [Function] ThemeProvider
+├── ./App.tsx:26 [Function] Header
+├── ./App.tsx:42 [Function] Sidebar
+├── ./App.tsx:88 [Function] DashboardStats
+│   └── ./components.tsx:33 [Function] Card
+├── ./components.tsx:185 [Function] Expandable
+│   └── ./hooks.ts:67 [Function] useToggle
+├── ./components.tsx:131 [Function] UserList
+│   ├── ./components.tsx:112 [Function] List
+│   └── ./components.tsx:84 [Function] UserCard
+│       ├── ./components.tsx:33 [Function] Card
+│       ├── ./components.tsx:54 [Function] UserAvatar
+│       └── ./components.tsx:8 [Function] Button
+├── ./components.tsx:33 [Function] Card
+├── ./components.tsx:8 [Function] Button
+└── ./App.tsx:62 [Function] UserDetailsPanel
+    └── ./components.tsx:152 [Function] Modal
 
 src/components.tsx:223 [Function] ErrorFallback
-├── src/components.tsx:33 [Function] Card
-└── src/components.tsx:8 [Function] Button
+├── ./components.tsx:33 [Function] Card
+└── ./components.tsx:8 [Function] Button
 
 src/editable.tsx:36 [Function] editableCreateElements
-├── src/editable.tsx:29 [Function] EditableContainer
-└── src/editable.tsx:12 [Function] EditableButton
+├── ./editable.tsx:29 [Function] EditableContainer
+└── ./editable.tsx:12 [Function] EditableButton
 
 src/App.test.tsx:3 [Function] testUserAvatar
-└── src/components.tsx:54 [Function] UserAvatar
+└── ./components.tsx:54 [Function] UserAvatar
 
 src/App.test.tsx:8 [Function] testCard
-└── src/components.tsx:33 [Function] Card
+└── ./components.tsx:33 [Function] Card
 
 src/editable_consumer.tsx:12 [Function] useEditableButton
-└── src/editable.tsx:12 [Function] EditableButton
+└── ./editable.tsx:12 [Function] EditableButton
 
 src/editable_consumer.tsx:19 [Function] useEditableContainer
-└── src/editable.tsx:29 [Function] EditableContainer
+└── ./editable.tsx:29 [Function] EditableContainer
 
 src/errors.tsx:26 [Function] validateRequired
-└── src/errors.tsx:6 [Class] ValidationError
+└── ./errors.tsx:6 [Class] ValidationError

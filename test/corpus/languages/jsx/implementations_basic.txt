@@ -3,4 +3,5 @@ implementations basic
 ===
 leta implementations ThemeConfig
 ---
+{{ analyzing : optional string }}
 src/types.ts:60 export const DEFAULT_THEME: ThemeConfig = {

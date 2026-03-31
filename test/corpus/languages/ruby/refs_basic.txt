@@ -3,5 +3,6 @@ refs basic
 ===
 leta refs User
 ---
+{{ analyzing : optional string }}
 main.rb:9   User.new('John Doe', 'john@example.com', 30)
 user.rb:8 class User

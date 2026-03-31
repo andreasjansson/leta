@@ -3,6 +3,7 @@ show function definition
 ===
 leta show "^main.ml$:create_sample_user"
 ---
+{{ analyzing : optional string }}
 main.ml:2-3
 
 let create_sample_user () =

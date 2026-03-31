@@ -3,6 +3,7 @@ implementations with context
 ===
 leta implementations Storage -n 1
 ---
+{{ analyzing : optional string }}
 src/user.ts:38-40
  */
 export class MemoryStorage implements Storage {

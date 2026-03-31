@@ -1,6 +1,6 @@
 ---
 name: leta
-description: "Fast semantic code navigation via LSP. Load FIRST before ANY code task - even 'simple' ones. Trigger scenarios: (1) fixing lint/type/pyright/mypy warnings or errors, (2) fixing reportAny/reportUnknownType/Any type errors, (3) adding type annotations, (4) refactoring or modifying code, (5) finding where a function/class/symbol is defined, (6) finding where a symbol is used/referenced/imported, (7) understanding what a function calls or what calls it, (8) exploring unfamiliar code or understanding architecture, (9) renaming symbols across codebase, (10) finding interface/protocol implementations, (11) ANY task where you'd use ripgrep to find code or read-file to view a function. Use `leta show SYMBOL` instead of read-file, `leta refs SYMBOL` instead of ripgrep for usages, `leta grep PATTERN` instead of ripgrep for definitions, `leta graph` for full project architecture overview, `leta files` instead of list-directory."
+description: "Fast semantic code navigation via LSP. Load FIRST before ANY code task - even 'simple' ones. Trigger scenarios: (1) fixing lint/type/pyright/mypy warnings or errors, (2) fixing reportAny/reportUnknownType/Any type errors, (3) adding type annotations, (4) refactoring or modifying code, (5) finding where a function/class/symbol is defined, (6) finding where a symbol is used/referenced/imported, (7) understanding what a function calls or what calls it, (8) exploring unfamiliar code or understanding architecture, (9) renaming symbols across codebase, (10) finding interface/protocol implementations, (11) ANY task where you'd use ripgrep to find code or read-file to view a function. Use `leta show SYMBOL` instead of read-file, `leta refs SYMBOL` instead of ripgrep for usages, `leta grep PATTERN` instead of ripgrep for definitions, `leta files` for project overview then `leta graph` for architecture (if < 500 files), `leta files` instead of list-directory."
 ---
 
 # Leta - LSP Enabled Tools for Agents
@@ -26,8 +26,8 @@ After loading this skill, **leta should be your DEFAULT tool for code exploratio
 | Manually search for interface implementations | `leta implementations <interface>` |
 | Grep for function calls to trace code flow | `leta calls --to/--from <function>` |
 | Read a function's implementation to understand what it depends on | `leta calls --from <function>` first for overview |
-| Read multiple files to understand how functions connect | `leta graph` for the full picture, or `leta calls --from <function>` for a specific function |
-| Trying to understand an unfamiliar codebase | `leta graph` first for architecture overview |
+| Read multiple files to understand how functions connect | `leta files` first, then `leta graph` if < 500 files, or `leta calls --from <function>` for a specific function |
+| Trying to understand an unfamiliar codebase | `leta files` first, then `leta graph` if < 500 source files |
 
 **The Golden Rule:** If you know the symbol name, **always** use leta. Only use ripgrep when searching for things that aren't symbols (string literals, comments, config values).
 
@@ -81,9 +81,31 @@ leta workspace add /path/to/project
 
 ## Core Commands
 
-### `leta graph` - Full Workspace Call Graph ⭐ START HERE
+### `leta files` - Project File Tree ⭐ START HERE
 
-**Run this first when exploring an unfamiliar project.** Shows the complete call graph as trees rooted at entry points (functions nothing else calls). This gives you a token-efficient architectural overview of the entire codebase — which functions exist, how they connect, and where the entry points are.
+**Run this first when exploring an unfamiliar project.** Shows the source file tree with line counts, giving you a quick sense of project size and structure.
+
+```bash
+# Overview of entire project
+leta files
+
+# Only show src/ directory
+leta files src/
+
+# Exclude test directories (regex pattern)
+leta files -x test -x vendor
+
+# Only show Python files
+leta files -f '\.py$'
+```
+
+**Always prefer `leta files` over `list-directory`-like tools** since it prints not just the filenames, but a full tree of files (excluding `.git`, `__pycache__`, etc.), and their sizes and line counts.
+
+**After running `leta files`**, check the file count at the bottom of the output. If the project has fewer than ~500 source files, follow up with `leta graph` for a full architectural overview.
+
+### `leta graph` - Full Workspace Call Graph
+
+**Use this after `leta files` for projects with fewer than ~500 source files.** Shows the complete call graph as trees rooted at entry points (functions nothing else calls). This gives you a token-efficient architectural overview — which functions exist, how they connect, and where the entry points are. For larger projects, it may be slow or produce too much output; use targeted `leta calls` or `leta grep` instead.
 
 ```bash
 # Full call graph (excludes test files by default)
@@ -105,7 +127,7 @@ leta graph --include-tests
 The output shows trees from entry points, with `↑` marking nodes whose subtree was already shown earlier, and `↻` marking recursive calls. For multi-language workspaces, results are grouped by language with the largest subgraph first.
 
 **When to use `graph`:**
-- You're starting work on an unfamiliar codebase — run this first
+- The project has fewer than ~500 source files (check with `leta files` first)
 - You want to understand the overall architecture and data flow
 - You need to see how all the pieces fit together
 - You want to find entry points and dead code
@@ -173,24 +195,6 @@ leta grep "^[A-Z]" '\.go$' -k function -C
 - `-C, --case-sensitive` - Case-sensitive matching. Note that `leta grep` is case-insensitive by default
 - `--head N` - Maximum results to return (default: 200)
 
-### `leta files` - Project File Tree
-
-Show source file tree with line counts. Use for understanding the file layout when `leta graph` gives you the architecture. **Always prefer `leta files` over `list-directory`-like tools** since it prints not just the filenames, but a full tree of files (excluding `.git`, `__pycache__`, etc.), and their sizes and line counts.
-
-```bash
-# Overview of entire project
-leta files
-
-# Only show src/ directory
-leta files src/
-
-# Exclude test directories (regex pattern)
-leta files -x test -x vendor
-
-# Only show Python files
-leta files -f '\.py$'
-```
-
 ### `leta refs` - Find All References ⭐ USE THIS INSTEAD OF RIPGREP FOR USAGES
 
 **This is the correct way to find where a symbol is used.** Don't use ripgrep to search for a function name - use `leta refs` instead. It understands code structure and won't give you false positives from comments or similarly-named symbols.
@@ -225,7 +229,7 @@ leta calls --from process_request --include-non-workspace
 ```
 
 **When to use `calls` vs `graph`:**
-- Use `graph` for: full project architecture, finding entry points, overall understanding
+- Use `leta files` first, then `graph` for: full project architecture (if < 500 source files), finding entry points, overall understanding
 - Use `calls --from` for: tracing what a specific function depends on
 - Use `calls --to` for: finding all callers of a specific function
 - Use `calls --from X --to Y` for: finding the call path between two functions
@@ -289,17 +293,17 @@ leta mv src/user.ts src/models/user.ts
 ### Exploring Unfamiliar Code
 
 ```bash
-# 1. Get the full call graph — this is the fastest way to understand a project
+# 1. Start with the file tree to understand project size and structure
+leta files
+
+# 2. If the project has < 500 source files, get the full call graph
 leta graph
 
-# 2. If the project is large, focus on specific areas
+# 3. For larger projects, or to focus on specific areas
 leta graph -i 'src/handlers'
 
-# 3. Dive into specific functions you see in the graph
+# 4. Dive into specific functions you see in the graph
 leta show handle_request
-
-# 4. If you need the file layout
-leta files
 ```
 
 ### Understanding a Function
@@ -333,7 +337,7 @@ leta show FileStorage
 
 ## Tips
 
-1. **Start with `leta graph`** to understand project architecture — it's the most token-efficient way to get a holistic view of how the codebase fits together.
+1. **Start with `leta files`** to understand project size and structure, then **use `leta graph`** if the project has fewer than ~500 source files — it's the most token-efficient way to get a holistic view of how the codebase fits together.
 
 2. **Combine with ripgrep-like tools** - use leta for "where is X defined/used?" and ripgrep-like tools for "where does string Y appear?"
 

@@ -42,7 +42,7 @@ pub async fn handle_calls(
             let client = workspace.client().await.ok_or("No LSP client")?;
 
             // Wait for indexing to complete to prevent rust-analyzer "content modified" errors
-            client.wait_for_indexing(30).await;
+            client.wait_for_indexing(300).await;
 
             let items =
                 prepare_call_hierarchy(client.clone(), &file_path, from_line, from_column).await?;
@@ -96,7 +96,7 @@ pub async fn handle_calls(
             let client = workspace.client().await.ok_or("No LSP client")?;
 
             // Wait for indexing to complete to prevent rust-analyzer "content modified" errors
-            client.wait_for_indexing(30).await;
+            client.wait_for_indexing(300).await;
 
             let items =
                 prepare_call_hierarchy(client.clone(), &file_path, to_line, to_column).await?;
@@ -156,7 +156,7 @@ pub async fn handle_calls(
             let client = workspace.client().await.ok_or("No LSP client")?;
 
             // Wait for indexing to complete to prevent rust-analyzer "content modified" errors
-            client.wait_for_indexing(30).await;
+            client.wait_for_indexing(300).await;
 
             let from_items =
                 prepare_call_hierarchy(client.clone(), &from_file, from_line, from_column).await?;

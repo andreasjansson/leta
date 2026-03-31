@@ -3,4 +3,5 @@ grep combined filters
 ===
 leta grep "^Memory" --kind class user.rb
 ---
+{{ analyzing : optional string }}
 user.rb:71 [Class] MemoryStorage

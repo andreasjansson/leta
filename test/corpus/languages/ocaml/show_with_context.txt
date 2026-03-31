@@ -3,6 +3,7 @@ show with context
 ===
 leta show "^main.ml$:create_sample_user" -n 2
 ---
+{{ analyzing : optional string }}
 main.ml:1-5
 
 (** Creates a sample user for testing. *)

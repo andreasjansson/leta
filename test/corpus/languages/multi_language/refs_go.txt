@@ -3,6 +3,7 @@ refs Go struct
 ===
 leta refs GoUser
 ---
+{{ analyzing : optional string }}
 main.go:6 type GoUser struct {
 main.go:14 users []GoUser
 main.go:21 users: make([]GoUser, 0),

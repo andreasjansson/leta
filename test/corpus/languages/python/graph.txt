@@ -1,8 +1,9 @@
 ===
 call graph
 ===
-leta graph
+leta graph --include-signature
 ---
+{{ analyzing : optional string }}
 main.py:128 [Function] main
 ├── main.py:81 [Class] UserRepository
 ├── main.py:114 [Function] create_sample_user

@@ -3,6 +3,7 @@ grep classes only
 ===
 leta grep . main.py --kind class
 ---
+{{ analyzing : optional string }}
 main.py:14 [Class] StorageProtocol
 main.py:27 [Class] User
 main.py:49 [Class] MemoryStorage

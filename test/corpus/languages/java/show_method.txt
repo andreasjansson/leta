@@ -3,6 +3,7 @@ show method definition
 ===
 leta show createSampleUser
 ---
+{{ analyzing : optional string }}
 src/main/java/com/example/Main.java:10-17
 
     /**

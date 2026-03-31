@@ -3,6 +3,7 @@ implementations with context
 ===
 leta implementations Storage -n 1
 ---
+{{ analyzing : optional string }}
 user.hpp:47-49
 /// Stores users in memory.
 class MemoryStorage : public Storage {

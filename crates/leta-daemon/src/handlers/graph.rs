@@ -247,7 +247,7 @@ pub async fn handle_graph(
 
         let server_name = client.server_name().to_string();
         if servers_waited.insert(server_name.clone()) {
-            client.wait_for_indexing(30).await;
+            client.wait_for_indexing(300).await;
         }
 
         if !client.supports_call_hierarchy().await {

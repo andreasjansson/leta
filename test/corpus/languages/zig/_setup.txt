@@ -3,4 +3,5 @@ setup workspace
 ===
 leta workspace add $CCTR_FIXTURE_DIR && leta grep . $CCTR_FIXTURE_DIR > /dev/null 2>&1
 ---
+{{ analyzing : optional string }}
 Added workspace: {{ path }}

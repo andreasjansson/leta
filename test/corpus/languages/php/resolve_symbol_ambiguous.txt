@@ -3,6 +3,7 @@ resolve ambiguous symbol shows matches
 ===
 leta show save
 ---
+{{ analyzing : optional string }}
 Error: Symbol 'save' is ambiguous (3 matches)
   FileStorage.save
     src/FileStorage.php:36 [Method] save in FileStorage

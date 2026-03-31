@@ -3,6 +3,7 @@ grep multiple files via path regex
 ===
 leta grep "." --kind function "main\.zig" -C
 ---
+{{ analyzing : optional string }}
 src/main.zig:4 [Function] main (fn main() !void)
 src/main.zig:22 [Function] createSampleUser (fn createSampleUser() user.User)
 src/main.zig:27 [Function] validateUser (fn validateUser(u: user.User) !void)

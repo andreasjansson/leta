@@ -3,4 +3,5 @@ call path not found
 ===
 leta calls --from validateEmail --to main
 ---
+{{ analyzing : optional string }}
 No call path found from 'validateEmail' to 'main' within depth 3

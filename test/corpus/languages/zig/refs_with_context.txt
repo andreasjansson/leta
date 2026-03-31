@@ -3,6 +3,7 @@ refs with context
 ===
 leta refs createSampleUser -n 1
 ---
+{{ analyzing : optional string }}
 src/main.zig:11-13
 
     const sample_user = createSampleUser();

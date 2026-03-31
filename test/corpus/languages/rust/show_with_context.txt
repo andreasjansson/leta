@@ -3,6 +3,7 @@ show function with context
 ===
 leta show create_sample_user -n 1
 ---
+{{ analyzing : optional string }}
 src/main.rs:8-13
 
 

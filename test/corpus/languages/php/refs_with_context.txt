@@ -3,6 +3,7 @@ refs with context
 ===
 leta refs UserRepository -n 1
 ---
+{{ analyzing : optional string }}
 src/Main.php:43-45
      *
      * @param UserRepository $repo The repository to process

@@ -3,4 +3,5 @@ declaration not supported
 ===
 leta declaration sample_user
 ---
+{{ analyzing : optional string }}
 Error: Symbol 'sample_user' not found

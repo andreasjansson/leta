@@ -3,4 +3,5 @@ supertypes of class
 ===
 leta supertypes MemoryStorage
 ---
+{{ analyzing : optional string }}
 user.rb:38 [Class] Storage (user.rb)

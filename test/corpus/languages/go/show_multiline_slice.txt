@@ -3,6 +3,7 @@ show multiline slice variable
 ===
 leta show DefaultPorts
 ---
+{{ analyzing : optional string }}
 utils.go:111-117
 
 var DefaultPorts = []int{

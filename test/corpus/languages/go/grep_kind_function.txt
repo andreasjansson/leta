@@ -3,6 +3,7 @@ grep kind filter function
 ===
 leta grep "." --kind function main.go -C
 ---
+{{ analyzing : optional string }}
 main.go:16 [Function] NewUser (func(name, email string, age int) *User)
 main.go:44 [Function] NewMemoryStorage (func() *MemoryStorage)
 main.go:90 [Function] NewFileStorage (func(basePath string) *FileStorage)

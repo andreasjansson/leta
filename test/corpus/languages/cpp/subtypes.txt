@@ -3,5 +3,6 @@ subtypes
 ===
 leta subtypes Storage
 ---
+{{ analyzing : optional string }}
 user.hpp:48 [Class] MemoryStorage (example::MemoryStorage)
 user.hpp:80 [Class] FileStorage (example::FileStorage)

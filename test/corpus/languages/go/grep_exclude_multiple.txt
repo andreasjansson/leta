@@ -3,6 +3,7 @@ grep exclude multiple patterns
 ===
 leta grep "." --kind function --exclude "editable*" --exclude "utils.go" -C
 ---
+{{ analyzing : optional string }}
 errors.go:4 [Function] ErrorFunc (func())
 errors.go:17 [Function] TypeErrorFunc (func() int)
 main.go:16 [Function] NewUser (func(name, email string, age int) *User)

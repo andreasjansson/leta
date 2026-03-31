@@ -3,6 +3,7 @@ find references with context
 ===
 leta refs User -n 1
 ---
+{{ analyzing : optional string }}
 main.py:26-28
 @dataclass
 class User:

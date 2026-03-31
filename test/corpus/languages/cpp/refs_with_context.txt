@@ -3,6 +3,7 @@ refs with context
 ===
 leta refs createSampleUser -n 1
 ---
+{{ analyzing : optional string }}
 main.cpp:10-12
 
     User user = createSampleUser();

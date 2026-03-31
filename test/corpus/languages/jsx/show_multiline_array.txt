@@ -3,6 +3,7 @@ show multiline array constant
 ===
 leta show SAMPLE_USERS
 ---
+{{ analyzing : optional string }}
 src/App.tsx:17-21
 
 const SAMPLE_USERS: User[] = [

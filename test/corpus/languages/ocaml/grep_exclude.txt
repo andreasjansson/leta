@@ -3,6 +3,7 @@ grep exclude files
 ===
 leta grep "^create" -x _build -x errors
 ---
+{{ analyzing : optional string }}
 main.ml:2 [Variable] create_sample_user
 storage.ml:4 [Variable] create in Storage
 storage.ml:15 [Variable] create in MemoryStorage

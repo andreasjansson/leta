@@ -24,7 +24,7 @@ pub fn get_language_id(path: &Path) -> &'static str {
         "jsx" => "javascriptreact",
         "go" => "go",
         "c" | "h" => "c",
-        "cpp" | "hpp" | "cc" | "cxx" | "hxx" => "cpp",
+        "cpp" | "hpp" | "cc" | "cxx" | "hxx" | "c++" | "h++" => "cpp",
         "java" => "java",
         "rb" | "rake" => "ruby",
         "php" | "phtml" => "php",

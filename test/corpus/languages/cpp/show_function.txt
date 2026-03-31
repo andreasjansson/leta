@@ -3,6 +3,7 @@ show function definition
 ===
 leta show createSampleUser
 ---
+{{ analyzing : optional string }}
 user.hpp:135-137
 
 inline User createSampleUser() {

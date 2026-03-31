@@ -10,3 +10,5 @@ homepage.workspace = true
 [dependencies]
 fastrace = { workspace = true }
 thiserror = { workspace = true }
+ignore = { workspace = true }
+memmap2 = { workspace = true }

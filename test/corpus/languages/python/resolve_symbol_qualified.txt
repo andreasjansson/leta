@@ -3,6 +3,7 @@ show qualified name
 ===
 leta show MemoryStorage.save
 ---
+{{ analyzing : optional string }}
 main.py:55-56
 
     def save(self, key: str, value: str) -> None:

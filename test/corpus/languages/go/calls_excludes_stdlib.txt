@@ -3,6 +3,7 @@ calls outgoing excludes stdlib by default
 ===
 leta calls --from User.DisplayName
 ---
+{{ analyzing : optional string }}
 main.go:26 [Function] DisplayName (sample_project • main.go)
 
 Outgoing calls:

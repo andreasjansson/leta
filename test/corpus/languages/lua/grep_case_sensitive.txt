@@ -3,4 +3,5 @@ grep case sensitive finds Storage
 ===
 leta grep "^Storage$" --kind object user.lua -C
 ---
+{{ analyzing : optional string }}
 user.lua:43 [Object] Storage

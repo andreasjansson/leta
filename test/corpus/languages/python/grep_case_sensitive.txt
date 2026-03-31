@@ -3,6 +3,7 @@ grep case sensitive
 ===
 leta grep "user" main.py -C
 ---
+{{ analyzing : optional string }}
 main.py:88 [Variable] _users in UserRepository
 main.py:90 [Method] add_user in UserRepository
 main.py:90 [Variable] user in add_user

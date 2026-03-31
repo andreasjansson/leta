@@ -3,6 +3,7 @@ show class definition
 ===
 leta show example.User
 ---
+{{ analyzing : optional string }}
 user.hpp:13-34
 
 class User {

@@ -3,6 +3,7 @@ show custom hook
 ===
 leta show useUser
 ---
+{{ analyzing : optional string }}
 src/hooks.ts:7-24
 
 export function useUser(initialUser: User | null = null) {

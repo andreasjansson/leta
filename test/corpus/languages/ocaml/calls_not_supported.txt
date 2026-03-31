@@ -3,4 +3,5 @@ calls not supported
 ===
 leta calls --from "^main.ml$:main"
 ---
+{{ analyzing : optional string }}
 Error: textDocument/prepareCallHierarchy is not supported by ocamllsp

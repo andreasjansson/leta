@@ -3,6 +3,7 @@ show with file filter
 ===
 leta show src/main/java/com/example/Main.java:createSampleUser
 ---
+{{ analyzing : optional string }}
 src/main/java/com/example/Main.java:10-17
 
     /**

@@ -3,6 +3,7 @@ show function definition
 ===
 leta show isAdult
 ---
+{{ analyzing : optional string }}
 user.lua:29-31
 
 function User:isAdult()

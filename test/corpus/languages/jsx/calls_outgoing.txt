@@ -3,6 +3,7 @@ calls outgoing
 ===
 leta calls --from UserCard
 ---
+{{ analyzing : optional string }}
 src/components.tsx:84 [Function] UserCard
 
 Outgoing calls:

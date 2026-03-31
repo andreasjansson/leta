@@ -2,6 +2,7 @@ use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
 use fastrace::trace;
+use leta_fs::{build_gitignore, is_gitignored};
 use leta_types::{FileInfo, FilesParams, FilesResult, StreamDone, StreamMessage};
 use regex::Regex;
 use tokio::sync::mpsc;
@@ -78,6 +79,7 @@ pub async fn handle_files(
         whitelisted_dot_dirs: &whitelisted_dot_dirs,
         binary_exts: &binary_exts,
     };
+    let gitignore = build_gitignore(&workspace_root);
     let (files_info, excluded_dirs, total_bytes, total_lines, truncated) = walk_directory(
         &target_path,
         &workspace_root,
@@ -85,6 +87,7 @@ pub async fn handle_files(
         &params,
         filter_regex.as_ref(),
         head_limit,
+        gitignore.as_deref(),
     );
 
     let total_files = files_info.len() as u32;
@@ -112,6 +115,7 @@ fn walk_directory(
     params: &FilesParams,
     filter_regex: Option<&Regex>,
     head: usize,
+    gitignore: Option<&ignore::gitignore::Gitignore>,
 ) -> (HashMap<String, FileInfo>, Vec<String>, u64, u32, bool) {
     let mut files_info: HashMap<String, FileInfo> = HashMap::new();
     let mut found_excluded: HashSet<String> = HashSet::new();
@@ -160,13 +164,19 @@ fn walk_directory(
             let is_egg_info = name_ref.ends_with(".egg-info");
             let is_pattern_excluded = exclude_regexes.iter().any(|re| re.is_match(&rel_path));
             let is_included = include_regexes.iter().any(|re| re.is_match(&rel_path));
+            let is_gitignored_dir = is_gitignored(gitignore, path, true);
 
             if is_egg_info {
                 iter.skip_current_dir();
                 continue;
             }
 
-            if (is_hidden_dot_dir || is_default_excluded || is_pattern_excluded) && !is_included {
+            if (is_hidden_dot_dir
+                || is_default_excluded
+                || is_pattern_excluded
+                || is_gitignored_dir)
+                && !is_included
+            {
                 if filter_regex.is_none() {
                     found_excluded.insert(rel_path);
                 }
@@ -183,6 +193,10 @@ fn walk_directory(
             .binary_exts
             .contains(&format!(".{}", ext).as_str())
         {
+            continue;
+        }
+
+        if is_gitignored(gitignore, path, false) {
             continue;
         }
 
@@ -315,6 +329,7 @@ async fn handle_files_streaming_inner(
 
     let mut count = 0u32;
     let mut truncated = false;
+    let gitignore = build_gitignore(&workspace_root);
     let mut iter = walkdir::WalkDir::new(&target_path)
         .sort_by_file_name()
         .into_iter();
@@ -346,9 +361,13 @@ async fn handle_files_streaming_inner(
             let is_egg_info = name_ref.ends_with(".egg-info");
             let is_pattern_excluded = exclude_regexes.iter().any(|re| re.is_match(&rel_path));
             let is_included = include_regexes.iter().any(|re| re.is_match(&rel_path));
+            let is_gitignored_dir = is_gitignored(gitignore.as_deref(), path, true);
 
             if is_egg_info
-                || ((is_hidden_dot_dir || is_default_excluded || is_pattern_excluded)
+                || ((is_hidden_dot_dir
+                    || is_default_excluded
+                    || is_pattern_excluded
+                    || is_gitignored_dir)
                     && !is_included)
             {
                 if filter_regex.is_none() && !is_egg_info {
@@ -366,6 +385,10 @@ async fn handle_files_streaming_inner(
         let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
 
         if binary_exts.contains(&format!(".{}", ext).as_str()) {
+            continue;
+        }
+
+        if is_gitignored(gitignore.as_deref(), path, false) {
             continue;
         }
 

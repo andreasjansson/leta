@@ -3,6 +3,7 @@ calls incoming
 ===
 leta calls --to createSampleUser
 ---
+{{ analyzing : optional string }}
 src/main.ts:6 [Function] createSampleUser
 
 Incoming calls:

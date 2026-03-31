@@ -3,3 +3,4 @@ grep case sensitive no match
 ===
 leta grep "xyz" -C
 ---
+{{ analyzing : optional string }}

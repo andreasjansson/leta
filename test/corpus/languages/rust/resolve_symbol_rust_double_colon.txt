@@ -3,6 +3,7 @@ show qualified name with Rust :: syntax
 ===
 leta show MemoryStorage::new
 ---
+{{ analyzing : optional string }}
 src/storage.rs:25-30
 
     /// Creates a new empty memory storage.

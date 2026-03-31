@@ -3,6 +3,7 @@ calls outgoing include non-workspace
 ===
 leta calls --from processUsers --include-non-workspace --max-depth 1
 ---
+{{ analyzing : optional string }}
 src/main.ts:13 [Function] processUsers
 
 Outgoing calls:

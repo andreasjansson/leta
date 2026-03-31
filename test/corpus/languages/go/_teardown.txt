@@ -3,4 +3,5 @@ teardown workspace
 ===
 leta workspace remove $CCTR_FIXTURE_DIR
 ---
+{{ analyzing : optional string }}
 Removed workspace: {{ path }}

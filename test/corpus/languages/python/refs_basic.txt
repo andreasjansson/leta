@@ -3,6 +3,7 @@ find references to User class
 ===
 leta refs User
 ---
+{{ analyzing : optional string }}
 main.py:27 class User:
 main.py:88         self._users: dict[str, User] = {}
 main.py:90     def add_user(self, user: User) -> None:

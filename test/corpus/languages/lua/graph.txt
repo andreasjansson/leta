@@ -1,6 +1,7 @@
 ===
 call graph
 ===
-leta graph
+leta graph --include-signature
 ---
+{{ analyzing : optional string }}
 Error: Call hierarchy is not supported by lua-language-server

@@ -10,6 +10,7 @@ move file and update imports
 ===
 leta mv src/user.rs src/person.rs
 ---
+{{ analyzing : optional string }}
 Moved file and updated imports in 3 file(s):
   src/main.rs
   src/person.rs
@@ -27,6 +28,7 @@ restore file back
 ===
 leta mv src/person.rs src/user.rs
 ---
+{{ analyzing : optional string }}
 Moved file and updated imports in 3 file(s):
   src/main.rs
   src/storage.rs

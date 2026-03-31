@@ -3,6 +3,7 @@ show multiline array constant
 ===
 leta show DEFAULT_PORTS
 ---
+{{ analyzing : optional string }}
 src/user.rs:91-98
 
 /// Default ports for various services.

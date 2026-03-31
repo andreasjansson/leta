@@ -3,6 +3,7 @@ resolve unique symbol
 ===
 leta show User
 ---
+{{ analyzing : optional string }}
 user.rb:8-35
 
 class User

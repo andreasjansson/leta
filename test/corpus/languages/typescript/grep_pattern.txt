@@ -3,6 +3,7 @@ grep pattern filter
 ===
 leta grep "Storage" --kind class,interface src/user.ts -C
 ---
+{{ analyzing : optional string }}
 src/user.ts:29 [Interface] Storage
 src/user.ts:39 [Class] MemoryStorage
 src/user.ts:62 [Class] FileStorage

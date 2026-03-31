@@ -3,6 +3,7 @@ show function definition
 ===
 leta show Button
 ---
+{{ analyzing : optional string }}
 src/components.tsx:8-28
 
 export function Button({

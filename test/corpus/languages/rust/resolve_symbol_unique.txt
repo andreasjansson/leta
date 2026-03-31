@@ -3,6 +3,7 @@ show unique symbol
 ===
 leta show UserRepository
 ---
+{{ analyzing : optional string }}
 src/user.rs:43-46
 
 /// Repository for managing user entities.

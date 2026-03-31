@@ -1,8 +1,9 @@
 ===
 call graph
 ===
-leta graph
+leta graph --include-signature
 ---
+{{ analyzing : optional string }}
 main.go:172 [Function] main (func())
 ├── main.go:44 [Function] NewMemoryStorage (sample_project)
 ├── main.go:124 [Function] NewUserRepository (sample_project)

@@ -3,6 +3,7 @@ grep multiple files via path regex
 ===
 leta grep "." --kind function "main\.cpp" -C
 ---
+{{ analyzing : optional string }}
 main.cpp:7 [Function] main (int ())
 test_main.cpp:3 [Function] test_create_sample_user (void ())
 test_main.cpp:7 [Function] test_user_repository (void ())

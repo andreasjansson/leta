@@ -3,4 +3,5 @@ supertypes
 ===
 leta supertypes MemoryStorage
 ---
+{{ analyzing : optional string }}
 user.hpp:37 [Class] Storage (example::Storage)

@@ -3,6 +3,7 @@ calls incoming
 ===
 leta calls --to createSampleUser
 ---
+{{ analyzing : optional string }}
 main.go:149 [Function] createSampleUser (sample_project • main.go)
 
 Incoming calls:

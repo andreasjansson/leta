@@ -3,6 +3,7 @@ show Python class
 ===
 leta show PythonService
 ---
+{{ analyzing : optional string }}
 app.py:26-48
 
 class PythonService:

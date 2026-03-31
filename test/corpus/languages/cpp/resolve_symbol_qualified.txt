@@ -3,6 +3,7 @@ resolve symbol qualified
 ===
 leta show User.isAdult
 ---
+{{ analyzing : optional string }}
 user.hpp:23
 
     bool isAdult() const { return age_ >= 18; }

@@ -3,6 +3,7 @@ show ambiguous symbol shows matches
 ===
 leta show new
 ---
+{{ analyzing : optional string }}
 Error: Symbol 'new' is ambiguous (4 matches)
   MemoryStorage.new
     src/storage.rs:26 [Function] new in impl MemoryStorage

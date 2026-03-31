@@ -141,6 +141,8 @@ enum Commands {
         include_path: Vec<String>,
         #[arg(long, help = "Include test files (excluded by default)")]
         include_tests: bool,
+        #[arg(long, help = "Show [Kind] and (signature) for each symbol")]
+        include_signature: bool,
     },
 
     #[command(about = "Find implementations of an interface or abstract method.")]
@@ -371,6 +373,7 @@ async fn main() -> Result<()> {
                     exclude_path,
                     include_path,
                     include_tests,
+                    include_signature,
                 } => {
                     handle_graph(
                         &config,
@@ -380,6 +383,7 @@ async fn main() -> Result<()> {
                         exclude_path,
                         include_path,
                         include_tests,
+                        include_signature,
                     )
                     .await
                 }
@@ -529,7 +533,7 @@ where
 
     loop {
         line.clear();
-        let n = tokio::time::timeout(Duration::from_secs(120), reader.read_line(&mut line))
+        let n = tokio::time::timeout(Duration::from_secs(600), reader.read_line(&mut line))
             .await
             .map_err(|_| anyhow!("Timeout waiting for daemon response (method: {})", method))??;
 
@@ -548,6 +552,78 @@ where
             _ => {
                 on_message(msg);
             }
+        }
+    }
+}
+
+async fn poll_daemon_symbol_count(socket_path: &std::path::Path) -> Option<u64> {
+    let stream = tokio::time::timeout(Duration::from_secs(2), UnixStream::connect(socket_path))
+        .await
+        .ok()?
+        .ok()?;
+
+    let mut stream = stream;
+    let mut request = serde_json::to_vec(&json!({
+        "method": "describe-session",
+        "params": {"include_profiling": false},
+    }))
+    .ok()?;
+    request.push(b'\n');
+
+    stream.write_all(&request).await.ok()?;
+    stream.shutdown().await.ok()?;
+
+    let mut data = Vec::new();
+    tokio::time::timeout(Duration::from_secs(2), stream.read_to_end(&mut data))
+        .await
+        .ok()?
+        .ok()?;
+
+    let response: Value = serde_json::from_slice(&data).ok()?;
+    response
+        .get("result")
+        .and_then(|r| r.get("caches"))
+        .and_then(|c| c.get("symbol_cache"))
+        .and_then(|s| s.get("entries"))
+        .and_then(|e| e.as_u64())
+}
+
+async fn show_progress_while_waiting(mut cancel: tokio::sync::watch::Receiver<bool>) {
+    let socket_path = get_socket_path();
+
+    tokio::select! {
+        _ = cancel.changed() => return,
+        _ = tokio::time::sleep(Duration::from_secs(5)) => {},
+    }
+
+    let mut last_count: Option<u64> = None;
+    loop {
+        if *cancel.borrow() {
+            return;
+        }
+
+        let count = tokio::select! {
+            _ = cancel.changed() => return,
+            count = poll_daemon_symbol_count(&socket_path) => count,
+        };
+
+        if *cancel.borrow() {
+            return;
+        }
+
+        let msg = match count {
+            Some(n) if Some(n) != last_count => {
+                last_count = Some(n);
+                format!("Analyzing... ({} symbols discovered)", n)
+            }
+            _ => "Analyzing...".to_string(),
+        };
+
+        eprintln!("{}", msg);
+
+        tokio::select! {
+            _ = cancel.changed() => return,
+            _ = tokio::time::sleep(Duration::from_secs(5)) => {},
         }
     }
 }
@@ -574,13 +650,36 @@ async fn send_request_with_profile(
     stream.write_all(&request).await?;
     stream.shutdown().await?;
 
-    let mut response_data = Vec::new();
-    tokio::time::timeout(
-        Duration::from_secs(120),
-        stream.read_to_end(&mut response_data),
+    let (cancel_tx, cancel_rx) = tokio::sync::watch::channel(false);
+    let progress_handle = tokio::spawn(show_progress_while_waiting(cancel_rx));
+
+    let read_result = tokio::time::timeout(
+        Duration::from_secs(600),
+        async {
+            let mut response_data = Vec::new();
+            let mut buf = [0u8; 4096];
+
+            let n = stream.read(&mut buf).await?;
+            if n == 0 {
+                return Ok::<_, std::io::Error>(response_data);
+            }
+            response_data.extend_from_slice(&buf[..n]);
+
+            // Cancel progress as soon as first data arrives
+            let _ = cancel_tx.send(true);
+
+            stream.read_to_end(&mut response_data).await?;
+            Ok(response_data)
+        },
     )
-    .await
-    .map_err(|_| anyhow!("Timeout waiting for daemon response (method: {})", method))??;
+    .await;
+
+    let _ = cancel_tx.send(true);
+    let _ = progress_handle.await;
+
+    let response_data = read_result
+        .map_err(|_| anyhow!("Timeout waiting for daemon response (method: {})", method))?
+        ?;
 
     let response: Value = serde_json::from_slice(&response_data)?;
 
@@ -1454,6 +1553,7 @@ async fn handle_calls(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn handle_graph(
     config: &Config,
     json_output: bool,
@@ -1462,6 +1562,7 @@ async fn handle_graph(
     exclude_path: Vec<String>,
     include_path: Vec<String>,
     include_tests: bool,
+    include_signature: bool,
 ) -> Result<()> {
     let workspace_root = get_workspace_root(config)?;
 
@@ -1484,7 +1585,7 @@ async fn handle_graph(
     } else if let Some(error) = &graph_result.error {
         return Err(anyhow!("{}", error));
     } else {
-        let output = format_graph_result(&graph_result, include_orphans);
+        let output = format_graph_result(&graph_result, include_orphans, include_signature);
         if !output.trim().is_empty() {
             println!("{}", output);
         }

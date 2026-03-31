@@ -3,6 +3,7 @@ show function with context
 ===
 leta show createSampleUser -n 1
 ---
+{{ analyzing : optional string }}
 user.hpp:134-138
 
 /// Creates a sample user for testing.

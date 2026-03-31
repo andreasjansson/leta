@@ -3,6 +3,7 @@ resolve symbol unique
 ===
 leta show example.UserRepository
 ---
+{{ analyzing : optional string }}
 user.hpp:109-132
 
 class UserRepository {

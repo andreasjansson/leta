@@ -3,6 +3,7 @@ show struct definition
 ===
 leta show User
 ---
+{{ analyzing : optional string }}
 main.go:9-13
 
 type User struct {

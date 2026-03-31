@@ -3,6 +3,7 @@ refs basic
 ===
 leta refs User
 ---
+{{ analyzing : optional string }}
 src/FileStorage.php:34      * @param User $user The user to save
 src/FileStorage.php:36     public function save(User $user): void
 src/FileStorage.php:45      * @return User|null The user if found

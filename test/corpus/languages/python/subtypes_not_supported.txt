@@ -3,4 +3,5 @@ subtypes not supported by pyright
 ===
 leta subtypes StorageProtocol
 ---
+{{ analyzing : optional string }}
 Error: textDocument/prepareTypeHierarchy is not supported by basedpyright

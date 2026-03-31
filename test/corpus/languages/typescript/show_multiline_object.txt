@@ -3,6 +3,7 @@ show multiline object constant
 ===
 leta show COUNTRY_CODES
 ---
+{{ analyzing : optional string }}
 src/user.ts:135-143
 
 export const COUNTRY_CODES: Record<string, string> = {

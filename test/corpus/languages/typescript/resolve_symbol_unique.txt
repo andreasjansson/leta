@@ -3,6 +3,7 @@ resolve unique symbol
 ===
 leta show Counter
 ---
+{{ analyzing : optional string }}
 src/main.ts:28-50
 
 class Counter {

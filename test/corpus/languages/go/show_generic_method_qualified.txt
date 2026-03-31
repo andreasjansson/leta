@@ -3,6 +3,7 @@ show generic method by qualified name
 ===
 leta show Result.IsOk
 ---
+{{ analyzing : optional string }}
 utils.go:74-76
 
 func (r *Result[T]) IsOk() bool {

@@ -3,6 +3,7 @@ calls outgoing excludes stdlib by default
 ===
 leta calls --from DashboardStats --max-depth 1
 ---
+{{ analyzing : optional string }}
 src/App.tsx:88 [Function] DashboardStats
 
 Outgoing calls:

@@ -10,6 +10,7 @@ rename User to RenamedUser
 ===
 leta rename User RenamedUser
 ---
+{{ analyzing : optional string }}
 Renamed in 1 file(s):
   src/user.zig
 
@@ -25,6 +26,7 @@ restore original name
 ===
 leta rename RenamedUser User
 ---
+{{ analyzing : optional string }}
 Renamed in 1 file(s):
   src/user.zig
 

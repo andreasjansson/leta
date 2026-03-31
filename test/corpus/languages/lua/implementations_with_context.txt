@@ -3,6 +3,7 @@ implementations with context
 ===
 leta implementations Storage -n 1
 ---
+{{ analyzing : optional string }}
 user.lua:42-44
 -- @class Storage
 local Storage = {}

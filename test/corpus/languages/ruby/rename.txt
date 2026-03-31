@@ -10,6 +10,7 @@ rename Storage to StorageInterface
 ===
 leta rename Storage StorageInterface
 ---
+{{ analyzing : optional string }}
 Renamed in 1 file(s):
   user.rb
 
@@ -25,6 +26,7 @@ restore original name
 ===
 leta rename StorageInterface Storage
 ---
+{{ analyzing : optional string }}
 Renamed in 1 file(s):
   user.rb
 

@@ -3,4 +3,5 @@ declaration not supported
 ===
 leta declaration User
 ---
+{{ analyzing : optional string }}
 Error: textDocument/declaration is not supported by ruby-lsp

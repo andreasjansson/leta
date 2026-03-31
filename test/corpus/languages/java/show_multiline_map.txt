@@ -3,6 +3,7 @@ show multiline map constant
 ===
 leta show COUNTRY_CODES
 ---
+{{ analyzing : optional string }}
 src/main/java/com/example/User.java:10-21
 
     /**

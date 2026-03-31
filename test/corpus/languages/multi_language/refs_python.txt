@@ -3,6 +3,7 @@ refs Python class
 ===
 leta refs PythonUser
 ---
+{{ analyzing : optional string }}
 app.py:19 class PythonUser:
 app.py:36         self._users: list[PythonUser] = []
 app.py:42     def add_user(self, user: PythonUser) -> None:

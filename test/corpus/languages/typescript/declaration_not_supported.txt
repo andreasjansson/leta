@@ -3,6 +3,7 @@ declaration not supported
 ===
 leta declaration repo
 ---
+{{ analyzing : optional string }}
 Error: Symbol 'repo' is ambiguous (2 matches)
   testUserRepository.repo
     src/main.test.ts:11 [Constant] repo in testUserRepository

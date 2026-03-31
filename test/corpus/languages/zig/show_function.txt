@@ -3,6 +3,7 @@ show function definition
 ===
 leta show createSampleUser
 ---
+{{ analyzing : optional string }}
 src/main.zig:22-24
 
 pub fn createSampleUser() user.User {

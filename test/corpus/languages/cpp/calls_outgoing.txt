@@ -3,6 +3,7 @@ calls outgoing
 ===
 leta calls --from main --max-depth 1
 ---
+{{ analyzing : optional string }}
 main.cpp:7 [Function] main
 
 Outgoing calls:

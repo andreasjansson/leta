@@ -3,6 +3,7 @@ resolve ambiguous symbol shows matches
 ===
 leta show save
 ---
+{{ analyzing : optional string }}
 Error: Symbol 'save' is ambiguous (4 matches)
   EditableStorage.save
     src/editable.ts:41 [Method] save in EditableStorage

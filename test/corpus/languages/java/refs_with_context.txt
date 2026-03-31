@@ -3,6 +3,7 @@ refs with context
 ===
 leta refs UserRepository -n 1
 ---
+{{ analyzing : optional string }}
 src/main/java/com/example/Main.java:24-26
      */
     public static List<String> processUsers(UserRepository repo) {

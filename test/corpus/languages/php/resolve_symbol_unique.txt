@@ -3,6 +3,7 @@ show unique symbol
 ===
 leta show UserRepository
 ---
+{{ analyzing : optional string }}
 src/UserRepository.php:7-62
 
 /**

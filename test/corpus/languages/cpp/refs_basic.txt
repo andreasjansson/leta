@@ -3,6 +3,7 @@ refs basic
 ===
 leta refs example.User
 ---
+{{ analyzing : optional string }}
 main.cpp:11     User user = createSampleUser();
 user.hpp:13 class User {
 user.hpp:15     User(std::string name, std::string email, int age)

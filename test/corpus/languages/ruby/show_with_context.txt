@@ -3,6 +3,7 @@ show method with context
 ===
 leta show create_sample_user -n 2
 ---
+{{ analyzing : optional string }}
 main.rb:6-12
 
 #

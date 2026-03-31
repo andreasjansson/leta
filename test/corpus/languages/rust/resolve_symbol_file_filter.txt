@@ -3,6 +3,7 @@ show with file filter
 ===
 leta show storage.rs:Storage
 ---
+{{ analyzing : optional string }}
 src/storage.rs:4-17
 
 /// Trait defining the storage interface.

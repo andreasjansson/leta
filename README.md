@@ -105,7 +105,13 @@ cd /path/to/your/project
 leta workspace add
 ```
 
-Get a full architectural overview:
+Get an overview of the project structure:
+
+```bash
+leta files                     # File tree with line counts
+```
+
+For smaller projects (under ~500 source files), get a full architectural overview:
 
 ```bash
 leta graph                     # Full call graph as trees from entry points

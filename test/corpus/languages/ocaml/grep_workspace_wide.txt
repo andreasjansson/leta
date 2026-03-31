@@ -3,5 +3,6 @@ grep workspace wide
 ===
 leta grep "^Storage$" -x _build
 ---
+{{ analyzing : optional string }}
 main.ml:11 [Variable] storage in main
 storage.ml:2 [Interface] Storage

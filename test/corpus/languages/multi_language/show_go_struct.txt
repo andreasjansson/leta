@@ -3,6 +3,7 @@ show Go struct
 ===
 leta show GoService
 ---
+{{ analyzing : optional string }}
 main.go:12-15
 
 type GoService struct {

@@ -3,5 +3,6 @@ grep multiple files via path regex
 ===
 leta grep "User" --kind class "user\.rb"
 ---
+{{ analyzing : optional string }}
 user.rb:8 [Class] User
 user.rb:163 [Class] UserRepository

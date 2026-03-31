@@ -3,6 +3,7 @@ show class definition
 ===
 leta show User
 ---
+{{ analyzing : optional string }}
 main.py:26-46
 
 @dataclass

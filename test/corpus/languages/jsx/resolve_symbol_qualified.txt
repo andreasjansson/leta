@@ -3,6 +3,7 @@ resolve symbol with qualified name
 ===
 leta show User.name
 ---
+{{ analyzing : optional string }}
 src/types.ts:10
 
     name: string;

@@ -3,6 +3,7 @@ grep kind filter class
 ===
 leta grep "." --kind class -C
 ---
+{{ analyzing : optional string }}
 src/main/java/com/example/AbstractStorage.java:7 [Class] AbstractStorage
 src/main/java/com/example/Errors.java:6 [Class] Errors
 src/main/java/com/example/FileStorage.java:12 [Class] FileStorage

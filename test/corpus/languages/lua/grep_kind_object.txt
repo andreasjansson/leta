@@ -3,4 +3,5 @@ grep kind filter object
 ===
 leta grep "^User$" --kind object user.lua -C
 ---
+{{ analyzing : optional string }}
 user.lua:11 [Object] User

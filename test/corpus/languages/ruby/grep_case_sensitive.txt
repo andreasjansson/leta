@@ -3,4 +3,5 @@ grep case sensitive
 ===
 leta grep "^User$" -C
 ---
+{{ analyzing : optional string }}
 user.rb:8 [Class] User

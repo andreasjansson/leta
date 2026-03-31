@@ -3,4 +3,5 @@ declaration not supported
 ===
 leta declaration Button
 ---
+{{ analyzing : optional string }}
 Error: textDocument/declaration is not supported by typescript-language-server

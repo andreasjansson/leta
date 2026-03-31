@@ -3,6 +3,7 @@ show function with context
 ===
 leta show createSampleUser -n 1
 ---
+{{ analyzing : optional string }}
 src/main.zig:21-25
 
 /// Creates a sample user for testing.

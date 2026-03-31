@@ -83,7 +83,7 @@ pub async fn handle_rename(
     }
 
     let client = workspace.client().await.ok_or("No LSP client")?;
-    client.wait_for_indexing(30).await;
+    client.wait_for_indexing(300).await;
 
     let uri = leta_fs::path_to_uri(&file_path);
 
@@ -144,7 +144,7 @@ pub async fn handle_rename(
             for source_file in &source_files {
                 let _ = workspace.ensure_document_open(source_file).await;
             }
-            client.wait_for_indexing(30).await;
+            client.wait_for_indexing(300).await;
         }
     }
 
@@ -188,7 +188,7 @@ pub async fn handle_rename(
             workspace.ensure_document_open(source_file).await?;
         }
         let client = workspace.client().await.ok_or("No LSP client")?;
-        client.wait_for_indexing(30).await;
+        client.wait_for_indexing(300).await;
 
         // Re-probe references to warm up analysis
         let _: Result<Option<Vec<leta_lsp::lsp_types::Location>>, _> = client

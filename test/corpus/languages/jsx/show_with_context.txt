@@ -3,6 +3,7 @@ show with context lines
 ===
 leta show Card -n 2
 ---
+{{ analyzing : optional string }}
 src/components.tsx:31-51
 
  * Card component for content containers.

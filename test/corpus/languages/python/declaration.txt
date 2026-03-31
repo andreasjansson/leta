@@ -3,4 +3,5 @@ find declaration of class
 ===
 leta declaration User
 ---
+{{ analyzing : optional string }}
 main.py:27 class User:

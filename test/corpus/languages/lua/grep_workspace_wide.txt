@@ -3,4 +3,5 @@ grep workspace wide
 ===
 leta grep "main" --kind function -C
 ---
+{{ analyzing : optional string }}
 main.lua:36 [Function] main (function ())

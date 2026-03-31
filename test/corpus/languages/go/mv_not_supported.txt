@@ -3,4 +3,5 @@ move file not supported
 ===
 leta mv utils.go helpers.go
 ---
+{{ analyzing : optional string }}
 Error: move-file is not supported by gopls

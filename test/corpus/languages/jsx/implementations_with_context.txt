@@ -3,6 +3,7 @@ implementations with context
 ===
 leta implementations ThemeConfig -n 2
 ---
+{{ analyzing : optional string }}
 src/types.ts:58-62
  * Default theme values.
  */

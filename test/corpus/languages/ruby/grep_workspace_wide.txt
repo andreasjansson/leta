@@ -3,4 +3,5 @@ grep workspace wide
 ===
 leta grep "main" --kind method
 ---
+{{ analyzing : optional string }}
 main.rb:31 [Method] main

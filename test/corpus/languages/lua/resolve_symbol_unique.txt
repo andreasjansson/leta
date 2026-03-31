@@ -3,6 +3,7 @@ resolve unique symbol
 ===
 leta show User
 ---
+{{ analyzing : optional string }}
 user.lua:11
 
 local User = {}

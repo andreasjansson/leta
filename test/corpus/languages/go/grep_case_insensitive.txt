@@ -3,4 +3,5 @@ grep case insensitive (default)
 ===
 leta grep "^user$"
 ---
+{{ analyzing : optional string }}
 main.go:9 [Struct] User (struct{...})

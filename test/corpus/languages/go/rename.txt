@@ -10,6 +10,7 @@ rename EditablePerson to RenamedPerson
 ===
 leta rename EditablePerson RenamedPerson
 ---
+{{ analyzing : optional string }}
 Renamed in 1 file(s):
   editable.go
 
@@ -25,6 +26,7 @@ restore original name
 ===
 leta rename RenamedPerson EditablePerson
 ---
+{{ analyzing : optional string }}
 Renamed in 1 file(s):
   editable.go
 

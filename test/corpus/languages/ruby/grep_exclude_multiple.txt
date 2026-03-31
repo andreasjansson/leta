@@ -3,6 +3,7 @@ grep with multiple exclude patterns
 ===
 leta grep "." --kind class --exclude "errors*" --exclude "main*"
 ---
+{{ analyzing : optional string }}
 user.rb:8 [Class] User
 user.rb:38 [Class] Storage
 user.rb:71 [Class] MemoryStorage

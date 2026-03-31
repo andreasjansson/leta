@@ -3,4 +3,5 @@ subtypes of interface
 ===
 leta subtypes Storage
 ---
+{{ analyzing : optional string }}
 src/main/java/com/example/AbstractStorage.java:7 [Class] AbstractStorage (com.example)

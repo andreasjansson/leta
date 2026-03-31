@@ -3,6 +3,7 @@ grep exclude multiple patterns
 ===
 leta grep "." --kind function --exclude "errors*" --exclude "user*" -C
 ---
+{{ analyzing : optional string }}
 main.lua:8 [Function] createSampleUser (function ())
 main.lua:14 [Function] validateUser (function (u))
 main.lua:28 [Function] processUsers (function (repo))

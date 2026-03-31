@@ -3,4 +3,5 @@ grep case sensitive finds User
 ===
 leta grep "^User$" src/user.ts -C
 ---
+{{ analyzing : optional string }}
 src/user.ts:4 [Class] User

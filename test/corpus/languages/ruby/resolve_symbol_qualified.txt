@@ -3,6 +3,7 @@ resolve qualified symbol
 ===
 leta show MemoryStorage.save
 ---
+{{ analyzing : optional string }}
 user.rb:79-81
 
   def save(user)

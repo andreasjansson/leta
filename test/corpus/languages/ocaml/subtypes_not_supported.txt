@@ -3,4 +3,5 @@ subtypes not supported
 ===
 leta subtypes "^storage.ml$:Storage"
 ---
+{{ analyzing : optional string }}
 Error: textDocument/prepareTypeHierarchy is not supported by ocamllsp

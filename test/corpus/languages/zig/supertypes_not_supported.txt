@@ -3,4 +3,5 @@ supertypes returns empty
 ===
 leta supertypes MemoryStorage
 ---
+{{ analyzing : optional string }}
 Error: textDocument/prepareTypeHierarchy is not supported by zls

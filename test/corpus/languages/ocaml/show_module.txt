@@ -3,6 +3,7 @@ show module definition
 ===
 leta show "^storage.ml$:MemoryStorage"
 ---
+{{ analyzing : optional string }}
 storage.ml:12-32
 
 module MemoryStorage : Storage = struct

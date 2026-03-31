@@ -3,6 +3,7 @@ show method definition
 ===
 leta show createSampleUser
 ---
+{{ analyzing : optional string }}
 src/Main.php:12-20
 
     /**

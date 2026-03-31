@@ -3,4 +3,5 @@ grep case sensitive finds User
 ===
 leta grep "^User$" -C
 ---
+{{ analyzing : optional string }}
 src/User.php:10 [Class] User

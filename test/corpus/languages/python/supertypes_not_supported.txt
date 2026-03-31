@@ -3,4 +3,5 @@ supertypes not supported by pyright
 ===
 leta supertypes MemoryStorage
 ---
+{{ analyzing : optional string }}
 Error: textDocument/prepareTypeHierarchy is not supported by basedpyright

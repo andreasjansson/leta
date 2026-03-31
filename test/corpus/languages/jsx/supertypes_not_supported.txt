@@ -3,4 +3,5 @@ supertypes not supported
 ===
 leta supertypes ValidationError
 ---
+{{ analyzing : optional string }}
 Error: textDocument/prepareTypeHierarchy is not supported by typescript-language-server

@@ -3,4 +3,5 @@ grep multiple files via path regex
 ===
 leta grep "^validate" --kind function "main\.ts" -C
 ---
+{{ analyzing : optional string }}
 src/main.ts:20 [Function] validateEmail

@@ -3,4 +3,5 @@ supertypes of struct
 ===
 leta supertypes MemoryStorage
 ---
+{{ analyzing : optional string }}
 main.go:31 [Interface] Storage (sample_project)

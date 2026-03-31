@@ -3,6 +3,7 @@ calls outgoing include non-workspace
 ===
 leta calls --from User.DisplayName --include-non-workspace --max-depth 1
 ---
+{{ analyzing : optional string }}
 main.go:26 [Function] DisplayName (sample_project • main.go)
 
 Outgoing calls:

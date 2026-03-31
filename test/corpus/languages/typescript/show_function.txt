@@ -3,6 +3,7 @@ show function definition
 ===
 leta show createSampleUser
 ---
+{{ analyzing : optional string }}
 src/main.ts:6-8
 
 function createSampleUser(): User {

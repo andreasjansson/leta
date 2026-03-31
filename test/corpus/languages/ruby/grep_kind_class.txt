@@ -3,6 +3,7 @@ grep kind filter class
 ===
 leta grep "." --kind class user.rb -C
 ---
+{{ analyzing : optional string }}
 user.rb:8 [Class] User
 user.rb:38 [Class] Storage
 user.rb:71 [Class] MemoryStorage

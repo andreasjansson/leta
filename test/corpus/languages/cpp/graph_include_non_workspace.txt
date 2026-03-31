@@ -1,8 +1,9 @@
 ===
 call graph with non-workspace
 ===
-leta graph --include-non-workspace
+leta graph --include-signature --include-non-workspace
 ---
+{{ analyzing : optional string }}
 main.cpp:7 [Function] main (int ())
 ├── [Function] make_unique (std::make_unique)
 ├── user.hpp:111 [Constructor] UserRepository (example::UserRepository::UserRepository)

@@ -1,5 +1,6 @@
 ===
 call graph with tests
 ===
-leta graph --include-tests
+leta graph --include-signature --include-tests
 ---
+{{ analyzing : optional string }}

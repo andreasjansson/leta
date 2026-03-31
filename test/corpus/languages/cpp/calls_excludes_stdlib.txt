@@ -3,6 +3,7 @@ calls excludes stdlib by default
 ===
 leta calls --from User.displayName
 ---
+{{ analyzing : optional string }}
 user.hpp:26 [Method] displayName
 
 Outgoing calls:

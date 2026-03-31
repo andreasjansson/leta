@@ -3,6 +3,7 @@ implementations with context
 ===
 leta implementations Storage -n 1
 ---
+{{ analyzing : optional string }}
 src/storage.rs:38-40
 
 impl Storage for MemoryStorage {

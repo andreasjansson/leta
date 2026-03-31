@@ -3,6 +3,7 @@ calls path
 ===
 leta calls --from main --to createSampleUser
 ---
+{{ analyzing : optional string }}
 Call path:
 main.cpp:7 [Function] main
   → user.hpp:135 [Function] createSampleUser (example::createSampleUser)

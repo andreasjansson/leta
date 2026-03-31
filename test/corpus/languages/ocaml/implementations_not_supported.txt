@@ -3,4 +3,5 @@ implementations not supported
 ===
 leta implementations "^storage.ml$:Storage"
 ---
+{{ analyzing : optional string }}
 Error: Server 'ocamllsp' does not support implementations (may require a license)

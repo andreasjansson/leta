@@ -3,4 +3,5 @@ declaration not supported
 ===
 leta declaration repo
 ---
+{{ analyzing : optional string }}
 Error: Symbol 'repo' not found

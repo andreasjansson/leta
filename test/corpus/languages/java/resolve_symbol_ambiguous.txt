@@ -3,6 +3,7 @@ show ambiguous symbol shows options
 ===
 leta show save
 ---
+{{ analyzing : optional string }}
 Error: Symbol 'save' is ambiguous (3 matches)
   FileStorage.save
     src/main/java/com/example/FileStorage.java:39 [Method] save(User) in FileStorage

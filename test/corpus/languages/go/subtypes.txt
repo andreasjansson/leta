@@ -3,5 +3,6 @@ subtypes of interface
 ===
 leta subtypes Storage
 ---
+{{ analyzing : optional string }}
 main.go:39 [Class] MemoryStorage (sample_project)
 main.go:85 [Class] FileStorage (sample_project)

@@ -3,6 +3,7 @@ resolve qualified method
 ===
 leta show Counter.increment
 ---
+{{ analyzing : optional string }}
 src/main.ts:39-41
 
     increment(): number {

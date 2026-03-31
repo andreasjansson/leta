@@ -3,6 +3,7 @@ resolve symbol with file filter
 ===
 leta show "types.ts:User"
 ---
+{{ analyzing : optional string }}
 src/types.ts:8-13
 
 export interface User {

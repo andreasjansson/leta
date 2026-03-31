@@ -3,6 +3,7 @@ calls outgoing excludes stdlib by default
 ===
 leta calls --from processUsers --max-depth 1
 ---
+{{ analyzing : optional string }}
 src/main.ts:13 [Function] processUsers
 
 Outgoing calls:

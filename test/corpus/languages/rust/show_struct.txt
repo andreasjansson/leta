@@ -3,6 +3,7 @@ show struct definition
 ===
 leta show User
 ---
+{{ analyzing : optional string }}
 src/user.rs:3-9
 
 /// Represents a user in the system.

@@ -3,4 +3,5 @@ subtypes returns empty
 ===
 leta subtypes User
 ---
+{{ analyzing : optional string }}
 Error: textDocument/prepareTypeHierarchy is not supported by zls

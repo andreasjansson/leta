@@ -3,6 +3,7 @@ calls outgoing
 ===
 leta calls --from createSampleUser
 ---
+{{ analyzing : optional string }}
 src/main.ts:6 [Function] createSampleUser
 
 Outgoing calls:

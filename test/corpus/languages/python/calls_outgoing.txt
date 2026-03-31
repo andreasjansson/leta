@@ -3,6 +3,7 @@ outgoing calls from function
 ===
 leta calls --from create_sample_user
 ---
+{{ analyzing : optional string }}
 main.py:114 [Function] create_sample_user
 
 Outgoing calls:

@@ -3,6 +3,7 @@ show method definition
 ===
 leta show create_sample_user
 ---
+{{ analyzing : optional string }}
 main.rb:8-10
 
 def create_sample_user

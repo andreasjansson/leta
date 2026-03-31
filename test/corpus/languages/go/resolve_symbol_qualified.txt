@@ -3,6 +3,7 @@ resolve qualified method pointer receiver
 ===
 leta show MemoryStorage.Save
 ---
+{{ analyzing : optional string }}
 main.go:49-55
 
 func (m *MemoryStorage) Save(user *User) error {

@@ -3,6 +3,7 @@ show react component with JSX
 ===
 leta show UserCard
 ---
+{{ analyzing : optional string }}
 src/components.tsx:84-107
 
 export function UserCard({ user, onSelect }: UserDisplayProps) {

@@ -3,6 +3,7 @@ implementations with context
 ===
 leta implementations Storage -n 1
 ---
+{{ analyzing : optional string }}
 src/main/java/com/example/AbstractStorage.java:6-8
  */
 public abstract class AbstractStorage implements Storage {

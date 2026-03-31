@@ -3,6 +3,7 @@ show function definition
 ===
 leta show NewUserRepository
 ---
+{{ analyzing : optional string }}
 main.go:124-126
 
 func NewUserRepository(storage Storage) *UserRepository {

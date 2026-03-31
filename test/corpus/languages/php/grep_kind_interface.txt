@@ -3,4 +3,5 @@ grep kind filter interface
 ===
 leta grep "." --kind interface -C
 ---
+{{ analyzing : optional string }}
 src/Storage.php:10 [Interface] Storage

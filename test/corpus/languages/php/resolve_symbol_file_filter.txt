@@ -3,6 +3,7 @@ resolve with file filter
 ===
 leta show User.php:User
 ---
+{{ analyzing : optional string }}
 src/User.php:7-97
 
 /**

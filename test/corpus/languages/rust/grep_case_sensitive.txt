@@ -3,4 +3,5 @@ grep case sensitive finds User
 ===
 leta grep "^User$" src/user.rs -C
 ---
+{{ analyzing : optional string }}
 src/user.rs:5 [Struct] User
