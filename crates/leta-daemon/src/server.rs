@@ -23,6 +23,44 @@ use crate::handlers::{
 use crate::profiling::CollectingReporter;
 use crate::session::Session;
 
+const RPC_METHODS: &[&str] = &[
+    "grep",
+    "show",
+    "references",
+    "declaration",
+    "implementations",
+    "subtypes",
+    "supertypes",
+    "calls",
+    "graph",
+    "rename",
+    "move-file",
+    "files",
+    "resolve-symbol",
+    "describe-session",
+    "restart-workspace",
+    "remove-workspace",
+    "add-workspace",
+    "shutdown",
+    "raw-lsp-request",
+];
+
+fn profiling_span_name(method: &str) -> Cow<'static, str> {
+    RPC_METHODS
+        .iter()
+        .find(|&&known_method| known_method == method)
+        .map_or_else(
+            || Cow::Owned(method.to_owned()),
+            |&known_method| Cow::Borrowed(known_method),
+        )
+}
+
+fn attach_profiling(response: &mut Value, profiling: ProfilingData) {
+    if let Some(object) = response.as_object_mut() {
+        object.insert("profiling".to_string(), serde_json::to_value(profiling).unwrap());
+    }
+}
+
 pub struct DaemonServer {
     session: Arc<Session>,
     hover_cache: Arc<LmdbCache>,
