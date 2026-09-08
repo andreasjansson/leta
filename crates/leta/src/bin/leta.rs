@@ -369,11 +369,13 @@ async fn dispatch(cli: Cli) -> Result<()> {
                         &config,
                         json_output,
                         profile,
-                        from,
-                        to,
-                        max_depth,
-                        include_non_workspace,
-                        head,
+                        CallsOptions {
+                            from,
+                            to,
+                            max_depth,
+                            include_non_workspace,
+                            head,
+                        },
                     )
                     .await
                 }
@@ -1462,16 +1464,27 @@ async fn handle_supertypes(
     Ok(())
 }
 
-async fn handle_calls(
-    config: &Config,
-    json_output: bool,
-    profile: bool,
+struct CallsOptions {
     from: Option<String>,
     to: Option<String>,
     max_depth: u32,
     include_non_workspace: bool,
     head: u32,
+}
+
+async fn handle_calls(
+    config: &Config,
+    json_output: bool,
+    profile: bool,
+    opts: CallsOptions,
 ) -> Result<()> {
+    let CallsOptions {
+        from,
+        to,
+        max_depth,
+        include_non_workspace,
+        head,
+    } = opts;
     if from.is_none() && to.is_none() {
         return Err(anyhow!("At least one of --from or --to must be specified"));
     }
