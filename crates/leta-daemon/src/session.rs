@@ -251,8 +251,6 @@ impl Workspace {
     }
 
     pub async fn ensure_document_open(&mut self, path: &Path) -> Result<(), String> {
-        self.cleanup_deleted_documents().await;
-
         let uri = path_to_uri(path);
 
         if let Some(doc) = self.open_documents.get(&uri) {
