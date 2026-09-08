@@ -258,23 +258,29 @@ enum WorkspaceCommands {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let total_start = profile_start("total");
     let cli = Cli::parse();
+    PROFILING_ENABLED.store(cli.profile, Ordering::Relaxed);
 
-    if cli.profile {
-        PROFILING_ENABLED.store(true, Ordering::Relaxed);
-    }
+    let total_start = profile_start("CLI total");
+    let result = dispatch(cli).await;
+    profile_end(total_start);
+    result
+}
 
-    let result = match cli.command {
-        Commands::Daemon { command } => handle_daemon_command(command).await,
-        Commands::Workspace { command } => handle_workspace_command(command).await,
+async fn dispatch(cli: Cli) -> Result<()> {
+    let profile = cli.profile;
+    let json_output = cli.json;
+
+    match cli.command {
+        Commands::Daemon { command } => handle_daemon_command(command, profile).await,
+        Commands::Workspace { command } => handle_workspace_command(command, profile).await,
         Commands::Config => handle_config(),
         Commands::HelpAll => handle_help_all(),
-        _ => {
+        command => {
             ensure_daemon_running().await?;
             let config = Config::load()?;
 
-            match cli.command {
+            match command {
                 Commands::Grep {
                     pattern,
                     path,
@@ -285,8 +291,8 @@ async fn main() -> Result<()> {
                 } => {
                     handle_grep(
                         &config,
-                        cli.json,
-                        cli.profile,
+                        json_output,
+                        profile,
                         GrepOptions {
                             pattern,
                             path,
@@ -307,8 +313,8 @@ async fn main() -> Result<()> {
                 } => {
                     handle_files(
                         &config,
-                        cli.json,
-                        cli.profile,
+                        json_output,
+                        profile,
                         FilesOptions {
                             path,
                             exclude,
@@ -323,32 +329,35 @@ async fn main() -> Result<()> {
                     symbol,
                     context,
                     head,
-                } => handle_show(&config, cli.json, cli.profile, symbol, context, head).await,
+                } => handle_show(&config, json_output, profile, symbol, context, head).await,
                 Commands::Refs {
                     symbol,
                     context,
                     head,
-                } => handle_refs(&config, cli.json, symbol, context, head).await,
+                } => handle_refs(&config, json_output, profile, symbol, context, head).await,
                 Commands::Declaration {
                     symbol,
                     context,
                     head,
-                } => handle_declaration(&config, cli.json, symbol, context, head).await,
+                } => handle_declaration(&config, json_output, profile, symbol, context, head).await,
                 Commands::Implementations {
                     symbol,
                     context,
                     head,
-                } => handle_implementations(&config, cli.json, symbol, context, head).await,
+                } => {
+                    handle_implementations(&config, json_output, profile, symbol, context, head)
+                        .await
+                }
                 Commands::Subtypes {
                     symbol,
                     context,
                     head,
-                } => handle_subtypes(&config, cli.json, symbol, context, head).await,
+                } => handle_subtypes(&config, json_output, profile, symbol, context, head).await,
                 Commands::Supertypes {
                     symbol,
                     context,
                     head,
-                } => handle_supertypes(&config, cli.json, symbol, context, head).await,
+                } => handle_supertypes(&config, json_output, profile, symbol, context, head).await,
                 Commands::Calls {
                     from,
                     to,
@@ -358,7 +367,8 @@ async fn main() -> Result<()> {
                 } => {
                     handle_calls(
                         &config,
-                        cli.json,
+                        json_output,
+                        profile,
                         from,
                         to,
                         max_depth,
@@ -377,7 +387,8 @@ async fn main() -> Result<()> {
                 } => {
                     handle_graph(
                         &config,
-                        cli.json,
+                        json_output,
+                        profile,
                         include_non_workspace,
                         include_orphans,
                         exclude_path,
@@ -388,18 +399,18 @@ async fn main() -> Result<()> {
                     .await
                 }
                 Commands::Rename { symbol, new_name } => {
-                    handle_rename(&config, cli.json, symbol, new_name).await
+                    handle_rename(&config, json_output, profile, symbol, new_name).await
                 }
                 Commands::Mv { old_path, new_path } => {
-                    handle_mv(&config, cli.json, old_path, new_path).await
+                    handle_mv(&config, json_output, profile, old_path, new_path).await
                 }
-                _ => unreachable!(),
+                Commands::Daemon { .. }
+                | Commands::Workspace { .. }
+                | Commands::Config
+                | Commands::HelpAll => unreachable!(),
             }
         }
-    };
-
-    profile_end(total_start);
-    result
+    }
 }
 
 fn handle_help_all() -> Result<()> {
@@ -474,32 +485,16 @@ struct DaemonResponse {
     profiling: Option<ProfilingData>,
 }
 
-async fn send_request(method: &str, params: Value) -> Result<Value> {
-    send_request_with_profile(method, params, false)
-        .await
-        .map(|r| r.result)
-}
-
-fn display_profiling(profiling: Option<ProfilingData>) {
+fn display_profiling(method: &str, profiling: Option<ProfilingData>) {
     if let Some(data) = profiling {
-        eprintln!("\n{}", format_profiling_data(&data));
+        eprintln!("\n[profile] {}\n{}", method, format_profiling_data(&data));
     }
 }
 
-fn merge_profiling(a: Option<ProfilingData>, b: Option<ProfilingData>) -> Option<ProfilingData> {
-    match (a, b) {
-        (None, None) => None,
-        (Some(a), None) => Some(a),
-        (None, Some(b)) => Some(b),
-        (Some(mut a), Some(b)) => {
-            a.functions.extend(b.functions);
-            a.cache.symbol_hits += b.cache.symbol_hits;
-            a.cache.symbol_misses += b.cache.symbol_misses;
-            a.cache.hover_hits += b.cache.hover_hits;
-            a.cache.hover_misses += b.cache.hover_misses;
-            Some(a)
-        }
-    }
+async fn send_profiled_request(method: &str, params: Value, profile: bool) -> Result<Value> {
+    let response = send_request_with_profile(method, params, profile).await?;
+    display_profiling(method, response.profiling);
+    Ok(response.result)
 }
 
 async fn send_streaming_request<F>(
@@ -651,35 +646,33 @@ async fn send_request_with_profile(
     stream.shutdown().await?;
 
     let (cancel_tx, cancel_rx) = tokio::sync::watch::channel(false);
-    let progress_handle = tokio::spawn(show_progress_while_waiting(cancel_rx));
+    let progress_handle = (!profile).then(|| tokio::spawn(show_progress_while_waiting(cancel_rx)));
 
-    let read_result = tokio::time::timeout(
-        Duration::from_secs(600),
-        async {
-            let mut response_data = Vec::new();
-            let mut buf = [0u8; 4096];
+    let read_result = tokio::time::timeout(Duration::from_secs(600), async {
+        let mut response_data = Vec::new();
+        let mut buf = [0u8; 4096];
 
-            let n = stream.read(&mut buf).await?;
-            if n == 0 {
-                return Ok::<_, std::io::Error>(response_data);
-            }
-            response_data.extend_from_slice(&buf[..n]);
+        let n = stream.read(&mut buf).await?;
+        if n == 0 {
+            return Ok::<_, std::io::Error>(response_data);
+        }
+        response_data.extend_from_slice(&buf[..n]);
 
-            // Cancel progress as soon as first data arrives
-            let _ = cancel_tx.send(true);
+        // Cancel progress as soon as first data arrives
+        let _ = cancel_tx.send(true);
 
-            stream.read_to_end(&mut response_data).await?;
-            Ok(response_data)
-        },
-    )
+        stream.read_to_end(&mut response_data).await?;
+        Ok(response_data)
+    })
     .await;
 
     let _ = cancel_tx.send(true);
-    let _ = progress_handle.await;
+    if let Some(progress_handle) = progress_handle {
+        let _ = progress_handle.await;
+    }
 
     let response_data = read_result
-        .map_err(|_| anyhow!("Timeout waiting for daemon response (method: {})", method))?
-        ?;
+        .map_err(|_| anyhow!("Timeout waiting for daemon response (method: {})", method))??;
 
     let response: Value = serde_json::from_slice(&response_data)?;
 
@@ -733,12 +726,10 @@ fn get_workspace_root_for_path(config: &Config, path: &Path) -> Result<PathBuf> 
 
 struct ResolveResult {
     resolved: ResolveSymbolResult,
-    profiling: Option<ProfilingData>,
 }
 
 struct ResolveError {
     message: String,
-    profiling: Option<ProfilingData>,
 }
 
 impl ResolveError {
@@ -766,17 +757,17 @@ async fn resolve_symbol(
         Err(e) => {
             return Err(ResolveError {
                 message: e.to_string(),
-                profiling: None,
             })
         }
     };
+
+    display_profiling("resolve-symbol", response.profiling);
 
     let resolved: ResolveSymbolResult = match serde_json::from_value(response.result) {
         Ok(r) => r,
         Err(e) => {
             return Err(ResolveError {
                 message: e.to_string(),
-                profiling: response.profiling,
             })
         }
     };
@@ -810,19 +801,13 @@ async fn resolve_symbol(
                 }
             }
         }
-        return Err(ResolveError {
-            message: msg,
-            profiling: response.profiling,
-        });
+        return Err(ResolveError { message: msg });
     }
 
-    Ok(ResolveResult {
-        resolved,
-        profiling: response.profiling,
-    })
+    Ok(ResolveResult { resolved })
 }
 
-async fn handle_daemon_command(command: DaemonCommands) -> Result<()> {
+async fn handle_daemon_command(command: DaemonCommands, profile: bool) -> Result<()> {
     match command {
         DaemonCommands::Start => {
             if is_daemon_running() {
@@ -836,13 +821,13 @@ async fn handle_daemon_command(command: DaemonCommands) -> Result<()> {
             if !is_daemon_running() {
                 println!("Daemon is not running");
             } else {
-                send_request("shutdown", json!({})).await?;
+                send_profiled_request("shutdown", json!({}), profile).await?;
                 println!("Daemon stopped");
             }
         }
         DaemonCommands::Restart => {
             if is_daemon_running() {
-                send_request("shutdown", json!({})).await?;
+                send_profiled_request("shutdown", json!({}), profile).await?;
                 for _ in 0..50 {
                     if !get_socket_path().exists() {
                         break;
@@ -853,23 +838,29 @@ async fn handle_daemon_command(command: DaemonCommands) -> Result<()> {
             ensure_daemon_running().await?;
             println!("Daemon restarted");
         }
-        DaemonCommands::Info { profile } => {
+        DaemonCommands::Info {
+            profile: include_profiling,
+        } => {
             ensure_daemon_running().await?;
-            let result = send_request(
+            let result = send_profiled_request(
                 "describe-session",
                 json!({
-                    "include_profiling": profile,
+                    "include_profiling": include_profiling,
                 }),
+                profile,
             )
             .await?;
             let session: DescribeSessionResult = serde_json::from_value(result)?;
-            println!("{}", format_describe_session_result(&session, profile));
+            println!(
+                "{}",
+                format_describe_session_result(&session, include_profiling)
+            );
         }
     }
     Ok(())
 }
 
-async fn handle_workspace_command(command: WorkspaceCommands) -> Result<()> {
+async fn handle_workspace_command(command: WorkspaceCommands, profile: bool) -> Result<()> {
     let config = Config::load()?;
 
     match command {
@@ -884,11 +875,12 @@ async fn handle_workspace_command(command: WorkspaceCommands) -> Result<()> {
 
             ensure_daemon_running().await?;
 
-            let result = send_request(
+            let result = send_profiled_request(
                 "add-workspace",
                 json!({
                     "workspace_root": workspace_root.to_string_lossy(),
                 }),
+                profile,
             )
             .await?;
 
@@ -908,11 +900,12 @@ async fn handle_workspace_command(command: WorkspaceCommands) -> Result<()> {
 
             ensure_daemon_running().await?;
 
-            let result = send_request(
+            let result = send_profiled_request(
                 "remove-workspace",
                 json!({
                     "workspace_root": workspace_root.to_string_lossy(),
                 }),
+                profile,
             )
             .await?;
 
@@ -927,11 +920,12 @@ async fn handle_workspace_command(command: WorkspaceCommands) -> Result<()> {
             };
 
             ensure_daemon_running().await?;
-            let result = send_request(
+            let result = send_profiled_request(
                 "restart-workspace",
                 json!({
                     "workspace_root": workspace_root.to_string_lossy(),
                 }),
+                profile,
             )
             .await?;
             let restart: RestartWorkspaceResult = serde_json::from_value(result)?;
@@ -1030,16 +1024,15 @@ async fn handle_grep(
     };
 
     if json_output || profile {
-        let response = send_request_with_profile("grep", request_params, profile).await?;
+        let result = send_profiled_request("grep", request_params, profile).await?;
 
-        let grep_result: GrepResult = serde_json::from_value(response.result)?;
+        let grep_result: GrepResult = serde_json::from_value(result)?;
         if json_output {
             println!("{}", serde_json::to_string_pretty(&grep_result)?);
         } else {
             let command_base = build_command_base();
             println!("{}", format_grep_result(&grep_result, head, &command_base));
         }
-        display_profiling(response.profiling);
     } else {
         let mut count = 0u32;
         let done = send_streaming_request("grep", request_params, false, |msg| {
@@ -1102,7 +1095,7 @@ async fn handle_files(
 
     if json_output || profile {
         // Use non-streaming path for JSON output or profiling
-        let response = send_request_with_profile(
+        let result = send_profiled_request(
             "files",
             json!({
                 "workspace_root": workspace_root.to_string_lossy(),
@@ -1116,7 +1109,7 @@ async fn handle_files(
         )
         .await?;
 
-        let files_result: FilesResult = serde_json::from_value(response.result)?;
+        let files_result: FilesResult = serde_json::from_value(result)?;
 
         if json_output {
             println!("{}", serde_json::to_string_pretty(&files_result)?);
@@ -1140,8 +1133,6 @@ async fn handle_files(
                 format_files_result(&files_result, head, &command_base)
             );
         }
-
-        display_profiling(response.profiling);
     } else {
         // Use streaming path - print files immediately as they arrive
         let mut count = 0u32;
@@ -1212,14 +1203,11 @@ async fn handle_show(
     let workspace_root = get_workspace_root(config)?;
     let resolve_result = match resolve_symbol(&symbol, &workspace_root, profile).await {
         Ok(r) => r,
-        Err(e) => {
-            display_profiling(e.profiling);
-            return Err(anyhow!("{}", e.message));
-        }
+        Err(e) => return Err(anyhow!("{}", e.message)),
     };
     let resolved = resolve_result.resolved;
 
-    let response = send_request_with_profile(
+    let result = send_profiled_request(
         "show",
         json!({
             "path": resolved.path,
@@ -1238,7 +1226,7 @@ async fn handle_show(
     )
     .await?;
 
-    let show_result: ShowResult = serde_json::from_value(response.result)?;
+    let show_result: ShowResult = serde_json::from_value(result)?;
 
     if json_output {
         println!("{}", serde_json::to_string_pretty(&show_result)?);
@@ -1246,26 +1234,23 @@ async fn handle_show(
         println!("{}", format_show_result(&show_result, head));
     }
 
-    display_profiling(merge_profiling(
-        resolve_result.profiling,
-        response.profiling,
-    ));
     Ok(())
 }
 
 async fn handle_refs(
     config: &Config,
     json_output: bool,
+    profile: bool,
     symbol: String,
     context: u32,
     head: u32,
 ) -> Result<()> {
     let workspace_root = get_workspace_root(config)?;
-    let resolved = resolve_symbol(&symbol, &workspace_root, false)
+    let resolved = resolve_symbol(&symbol, &workspace_root, profile)
         .await
         .map_err(|e| e.into_anyhow())?;
 
-    let result = send_request(
+    let result = send_profiled_request(
         "references",
         json!({
             "path": resolved.resolved.path,
@@ -1275,6 +1260,7 @@ async fn handle_refs(
             "context": context,
             "head": head,
         }),
+        profile,
     )
     .await?;
 
@@ -1299,16 +1285,17 @@ async fn handle_refs(
 async fn handle_declaration(
     config: &Config,
     json_output: bool,
+    profile: bool,
     symbol: String,
     context: u32,
     head: u32,
 ) -> Result<()> {
     let workspace_root = get_workspace_root(config)?;
-    let resolved = resolve_symbol(&symbol, &workspace_root, false)
+    let resolved = resolve_symbol(&symbol, &workspace_root, profile)
         .await
         .map_err(|e| e.into_anyhow())?;
 
-    let result = send_request(
+    let result = send_profiled_request(
         "declaration",
         json!({
             "path": resolved.resolved.path,
@@ -1318,6 +1305,7 @@ async fn handle_declaration(
             "context": context,
             "head": head,
         }),
+        profile,
     )
     .await?;
 
@@ -1342,16 +1330,17 @@ async fn handle_declaration(
 async fn handle_implementations(
     config: &Config,
     json_output: bool,
+    profile: bool,
     symbol: String,
     context: u32,
     head: u32,
 ) -> Result<()> {
     let workspace_root = get_workspace_root(config)?;
-    let resolved = resolve_symbol(&symbol, &workspace_root, false)
+    let resolved = resolve_symbol(&symbol, &workspace_root, profile)
         .await
         .map_err(|e| e.into_anyhow())?;
 
-    let result = send_request(
+    let result = send_profiled_request(
         "implementations",
         json!({
             "path": resolved.resolved.path,
@@ -1361,6 +1350,7 @@ async fn handle_implementations(
             "context": context,
             "head": head,
         }),
+        profile,
     )
     .await?;
 
@@ -1385,16 +1375,17 @@ async fn handle_implementations(
 async fn handle_subtypes(
     config: &Config,
     json_output: bool,
+    profile: bool,
     symbol: String,
     context: u32,
     head: u32,
 ) -> Result<()> {
     let workspace_root = get_workspace_root(config)?;
-    let resolved = resolve_symbol(&symbol, &workspace_root, false)
+    let resolved = resolve_symbol(&symbol, &workspace_root, profile)
         .await
         .map_err(|e| e.into_anyhow())?;
 
-    let result = send_request(
+    let result = send_profiled_request(
         "subtypes",
         json!({
             "path": resolved.resolved.path,
@@ -1404,6 +1395,7 @@ async fn handle_subtypes(
             "context": context,
             "head": head,
         }),
+        profile,
     )
     .await?;
 
@@ -1428,16 +1420,17 @@ async fn handle_subtypes(
 async fn handle_supertypes(
     config: &Config,
     json_output: bool,
+    profile: bool,
     symbol: String,
     context: u32,
     head: u32,
 ) -> Result<()> {
     let workspace_root = get_workspace_root(config)?;
-    let resolved = resolve_symbol(&symbol, &workspace_root, false)
+    let resolved = resolve_symbol(&symbol, &workspace_root, profile)
         .await
         .map_err(|e| e.into_anyhow())?;
 
-    let result = send_request(
+    let result = send_profiled_request(
         "supertypes",
         json!({
             "path": resolved.resolved.path,
@@ -1447,6 +1440,7 @@ async fn handle_supertypes(
             "context": context,
             "head": head,
         }),
+        profile,
     )
     .await?;
 
@@ -1471,6 +1465,7 @@ async fn handle_supertypes(
 async fn handle_calls(
     config: &Config,
     json_output: bool,
+    profile: bool,
     from: Option<String>,
     to: Option<String>,
     max_depth: u32,
@@ -1491,10 +1486,10 @@ async fn handle_calls(
     });
 
     if let (Some(from_sym), Some(to_sym)) = (&from, &to) {
-        let from_resolved = resolve_symbol(from_sym, &workspace_root, false)
+        let from_resolved = resolve_symbol(from_sym, &workspace_root, profile)
             .await
             .map_err(|e| e.into_anyhow())?;
-        let to_resolved = resolve_symbol(to_sym, &workspace_root, false)
+        let to_resolved = resolve_symbol(to_sym, &workspace_root, profile)
             .await
             .map_err(|e| e.into_anyhow())?;
 
@@ -1508,7 +1503,7 @@ async fn handle_calls(
         params["to_symbol"] = json!(to_sym);
         params["mode"] = json!("path");
     } else if let Some(from_sym) = &from {
-        let resolved = resolve_symbol(from_sym, &workspace_root, false)
+        let resolved = resolve_symbol(from_sym, &workspace_root, profile)
             .await
             .map_err(|e| e.into_anyhow())?;
         params["from_path"] = json!(resolved.resolved.path);
@@ -1517,7 +1512,7 @@ async fn handle_calls(
         params["from_symbol"] = json!(from_sym);
         params["mode"] = json!("outgoing");
     } else if let Some(to_sym) = &to {
-        let resolved = resolve_symbol(to_sym, &workspace_root, false)
+        let resolved = resolve_symbol(to_sym, &workspace_root, profile)
             .await
             .map_err(|e| e.into_anyhow())?;
         params["to_path"] = json!(resolved.resolved.path);
@@ -1527,7 +1522,7 @@ async fn handle_calls(
         params["mode"] = json!("incoming");
     }
 
-    let result = send_request("calls", params).await?;
+    let result = send_profiled_request("calls", params, profile).await?;
     let calls_result: CallsResult = serde_json::from_value(result)?;
 
     if json_output {
@@ -1557,6 +1552,7 @@ async fn handle_calls(
 async fn handle_graph(
     config: &Config,
     json_output: bool,
+    profile: bool,
     include_non_workspace: bool,
     include_orphans: bool,
     exclude_path: Vec<String>,
@@ -1566,7 +1562,7 @@ async fn handle_graph(
 ) -> Result<()> {
     let workspace_root = get_workspace_root(config)?;
 
-    let result = send_request(
+    let result = send_profiled_request(
         "graph",
         json!({
             "workspace_root": workspace_root.to_string_lossy(),
@@ -1575,6 +1571,7 @@ async fn handle_graph(
             "include_patterns": include_path,
             "include_tests": include_tests,
         }),
+        profile,
     )
     .await?;
 
@@ -1596,15 +1593,16 @@ async fn handle_graph(
 async fn handle_rename(
     config: &Config,
     json_output: bool,
+    profile: bool,
     symbol: String,
     new_name: String,
 ) -> Result<()> {
     let workspace_root = get_workspace_root(config)?;
-    let resolved = resolve_symbol(&symbol, &workspace_root, false)
+    let resolved = resolve_symbol(&symbol, &workspace_root, profile)
         .await
         .map_err(|e| e.into_anyhow())?;
 
-    let result = send_request(
+    let result = send_profiled_request(
         "rename",
         json!({
             "path": resolved.resolved.path,
@@ -1613,6 +1611,7 @@ async fn handle_rename(
             "column": resolved.resolved.column.unwrap_or(0),
             "new_name": new_name,
         }),
+        profile,
     )
     .await?;
 
@@ -1629,6 +1628,7 @@ async fn handle_rename(
 async fn handle_mv(
     config: &Config,
     json_output: bool,
+    profile: bool,
     old_path: String,
     new_path: String,
 ) -> Result<()> {
@@ -1637,13 +1637,14 @@ async fn handle_mv(
     let new_path = std::env::current_dir()?.join(&new_path);
     let workspace_root = get_workspace_root_for_path(config, &old_path)?;
 
-    let result = send_request(
+    let result = send_profiled_request(
         "move-file",
         json!({
             "old_path": old_path.to_string_lossy(),
             "new_path": new_path.to_string_lossy(),
             "workspace_root": workspace_root.to_string_lossy(),
         }),
+        profile,
     )
     .await?;
 
