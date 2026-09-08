@@ -1,4 +1,5 @@
 use fastrace::trace;
+use std::borrow::Cow;
 use std::sync::Arc;
 
 use fastrace::collector::Config as FastraceConfig;
