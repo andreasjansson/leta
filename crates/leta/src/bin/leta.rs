@@ -225,7 +225,7 @@ enum DaemonCommands {
     #[command(about = "Show current daemon state.")]
     Info {
         #[arg(long, help = "Show startup and indexing profiling data")]
-        profile: bool,
+        include_profiling: bool,
     },
     #[command(about = "Restart the leta daemon.")]
     Restart,
@@ -677,8 +677,12 @@ async fn send_request_with_profile(
         .map_err(|_| anyhow!("Timeout waiting for daemon response (method: {})", method))??;
 
     let response: Value = serde_json::from_slice(&response_data)?;
+    let profiling: Option<ProfilingData> = response
+        .get("profiling")
+        .and_then(|p| serde_json::from_value(p.clone()).ok());
 
     if let Some(error) = response.get("error").and_then(|e| e.as_str()) {
+        display_profiling(method, profiling);
         if error.contains("Internal error") || error.to_lowercase().contains("internal error") {
             let log_dir = get_log_dir();
             let log_path = log_dir.join("daemon.log");
@@ -699,9 +703,6 @@ async fn send_request_with_profile(
     }
 
     let result = response.get("result").cloned().unwrap_or(Value::Null);
-    let profiling: Option<ProfilingData> = response
-        .get("profiling")
-        .and_then(|p| serde_json::from_value(p.clone()).ok());
 
     Ok(DaemonResponse { result, profiling })
 }
@@ -840,9 +841,7 @@ async fn handle_daemon_command(command: DaemonCommands, profile: bool) -> Result
             ensure_daemon_running().await?;
             println!("Daemon restarted");
         }
-        DaemonCommands::Info {
-            profile: include_profiling,
-        } => {
+        DaemonCommands::Info { include_profiling } => {
             ensure_daemon_running().await?;
             let result = send_profiled_request(
                 "describe-session",
