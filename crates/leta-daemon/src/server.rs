@@ -295,8 +295,7 @@ impl DaemonServer {
 
         ctx.cache_stats.reset();
 
-        let method_owned: &'static str = Box::leak(method.to_string().into_boxed_str());
-        let root = Span::root(method_owned, SpanContext::random());
+        let root = Span::root(profiling_span_name(method), SpanContext::random());
 
         let mut response = self.dispatch(ctx, method, params).in_span(root).await;
 
@@ -304,20 +303,12 @@ impl DaemonServer {
 
         let span_tree = collector.build_span_tree();
         let cache = ctx.cache_stats.to_cache_stats();
-
-        if let Some(obj) = response.as_object_mut() {
-            if obj.contains_key("result") {
-                let profiling = leta_types::ProfilingData {
-                    functions: Vec::new(),
-                    cache,
-                    span_tree: Some(span_tree),
-                };
-                obj.insert(
-                    "profiling".to_string(),
-                    serde_json::to_value(&profiling).unwrap(),
-                );
-            }
-        }
+        let profiling = ProfilingData {
+            functions: Vec::new(),
+            cache,
+            span_tree: Some(span_tree),
+        };
+        attach_profiling(&mut response, profiling);
 
         response
     }
