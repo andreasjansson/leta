@@ -57,7 +57,10 @@ fn profiling_span_name(method: &str) -> Cow<'static, str> {
 
 fn attach_profiling(response: &mut Value, profiling: ProfilingData) {
     if let Some(object) = response.as_object_mut() {
-        object.insert("profiling".to_string(), serde_json::to_value(profiling).unwrap());
+        object.insert(
+            "profiling".to_string(),
+            serde_json::to_value(profiling).unwrap(),
+        );
     }
 }
 
