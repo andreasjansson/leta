@@ -369,3 +369,23 @@ impl DaemonServer {
         remove_pid(&get_pid_path());
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn attaches_profiling_to_error_response() {
+        let mut response = json!({"error": "Unknown method: unknown"});
+        let profiling = ProfilingData {
+            functions: Vec::new(),
+            cache: CacheStats::default(),
+            span_tree: Some(SpanTree::default()),
+        };
+
+        attach_profiling(&mut response, profiling);
+
+        assert_eq!(response["error"], "Unknown method: unknown");
+        assert!(response["profiling"].is_object());
+    }
+}
